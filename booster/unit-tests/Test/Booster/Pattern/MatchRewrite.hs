@@ -366,7 +366,9 @@ internalLists =
                 "Match two lists with symbolic middle, reverse direction indeterminate"
                 list2
                 list1
-                (remainder [(klist [] (Just (var "LIST2" listSort, [lastElem])), klist [] (Just (var "LIST1" listSort, [])))])
+                ( remainder
+                    [(klist [] (Just (var "LIST2" listSort, [lastElem])), klist [] (Just (var "LIST1" listSort, [])))]
+                )
         ]
   where
     headElem = [trm| \dv{SomeSort{}}("head") |]
@@ -428,26 +430,25 @@ internalMaps =
                     )
                 ]
             )
-        , 
-          -- this would not produce a matching substitution and should therefore fail
+        , -- this would not produce a matching substitution and should therefore fail
           -- at match time
-           test
-              "Fails to match {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
-              concreteAndSymbolicKMapWithTwoItems
-              concreteKMapWithOneItemAndRest
-              ( failed $
-                  DifferentSymbols
-                      ( KMap
-                          testKMapDefinition
-                          [
-                              ( [trm| A:SortTestKMapKey{}|]
-                              , [trm| \dv{SortTestKMapItem{}}("value2") |]
-                              )
-                          ]
-                          Nothing
-                      )
-                      (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
-              )
+          test
+            "Fails to match {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
+            concreteAndSymbolicKMapWithTwoItems
+            concreteKMapWithOneItemAndRest
+            ( failed $
+                DifferentSymbols
+                    ( KMap
+                        testKMapDefinition
+                        [
+                            ( [trm| A:SortTestKMapKey{}|]
+                            , [trm| \dv{SortTestKMapItem{}}("value2") |]
+                            )
+                        ]
+                        Nothing
+                    )
+                    (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
+            )
         , test
             "Can match {\"f()\" |-> \"value\", ...REST} with {\"f()\" |-> B}"
             functionKMapWithOneItemAndRest

@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -22,7 +23,7 @@ import Data.Either.Extra
 import Data.List.NonEmpty as NE (NonEmpty, fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Sequence (Seq, pattern (:<|), pattern (:|>), (><))
+import Data.Sequence (Seq, (><), pattern (:<|), pattern (:|>))
 import Data.Sequence qualified as Seq
 
 import Data.Set (Set)
@@ -39,9 +40,9 @@ import Booster.Pattern.Util (
     sortOfTerm,
     substituteInTerm,
  )
+import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Data.ByteString (ByteString)
 import Data.List (partition)
-import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 
 -- | Result of matching a pattern to a subject (a substitution or an indication of what went wrong)
 data MatchResult
@@ -424,7 +425,8 @@ matchVar
                 lift . withExcept (MatchFailed . SubsortingError) $
                     checkSubsort subsorts termSort variableSort
             if isSubsort
-                then bindVariable matchType var $
+                then
+                    bindVariable matchType var $
                         if termSort == variableSort
                             then term2
                             else Injection termSort variableSort term2
@@ -442,12 +444,12 @@ mkPairs ts1 ts2
         (zip ts1 ts2, Nothing)
     | l1 > l2 =
         let (ts1', rest1) = splitAt l2 ts1
-        in (zip ts1' ts2, Just $ Left rest1)
+         in (zip ts1' ts2, Just $ Left rest1)
     | otherwise -- l1 < l2
         =
         let (ts2', rest2) = splitAt l1 ts2
-        in (zip ts1 ts2', Just $ Right rest2)
-    where
+         in (zip ts1 ts2', Just $ Right rest2)
+  where
     l1 = length ts1
     l2 = length ts2
 
@@ -463,38 +465,41 @@ matchLists
     heads1
     rest1
     heads2
-    rest2
-    = do
-        let (matchedConcrete, remainderHeads) = mkPairs heads1 heads2
-        
-        runMaybeT
-            ( matchListBacks rest1 rest2 remainderHeads
-            )
-            >>= \case
-                Just newProblems ->
-                    enqueueRegularProblems $ (Seq.fromList matchedConcrete) >< newProblems
-                Nothing -> pure ()
+    rest2 =
+        do
+            let (matchedConcrete, remainderHeads) = mkPairs heads1 heads2
 
-    where
+            runMaybeT
+                ( matchListRests rest1 rest2 remainderHeads
+                )
+                >>= \case
+                    Just newProblems ->
+                        enqueueRegularProblems $ (Seq.fromList matchedConcrete) >< newProblems
+                    Nothing -> pure ()
+      where
         emptyList = KList def [] Nothing
 
         noRemainderList xs = KList def xs Nothing
 
-        matchListBacks :: Maybe (Term, [Term]) -> Maybe (Term, [Term]) -> Maybe (Either [Term] [Term]) -> MaybeT (StateT MatchState (Except MatchResult)) (Seq (Term, Term))
-        matchListBacks Nothing Nothing = \case
+        matchListRests ::
+            Maybe (Term, [Term]) ->
+            Maybe (Term, [Term]) ->
+            Maybe (Either [Term] [Term]) ->
+            MaybeT (StateT MatchState (Except MatchResult)) (Seq (Term, Term))
+        matchListRests Nothing Nothing = \case
             -- match [] with []
             Nothing -> pure mempty
             -- match [X, Y, ...] with []
             Just (Left hs1) -> lift $ failWith $ DifferentValues (KList def hs1 Nothing) emptyList
             -- match [] with [X, Y, ...]
             Just (Right hs2) -> lift $ failWith $ DifferentValues emptyList (KList def hs2 Nothing)
-        matchListBacks Nothing t2@Just{} = \headRemainders ->
-            -- match [] with [...REST, X, Y, ...] 
+        matchListRests Nothing t2@Just{} = \headRemainders ->
+            -- match [] with [...REST, X, Y, ...]
             lift $ failWith $ uncurry DifferentValues $ case headRemainders of
                 Nothing -> (emptyList, KList def [] t2)
                 Just (Left hs1) -> (KList def hs1 Nothing, KList def [] t2)
                 Just (Right hs2) -> (emptyList, KList def hs2 t2)
-        matchListBacks t1@(Just (mid, ts1)) Nothing = \case 
+        matchListRests t1@(Just (mid, ts1)) Nothing = \case
             Nothing -> case ts1 of
                 -- match [...REST] with []
                 [] -> pure $ Seq.singleton (mid, emptyList)
@@ -505,35 +510,35 @@ matchLists
                 lift $ failWith $ DifferentValues (KList def hs1 t1) emptyList
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X', Y', ...]
-                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse hs2) in
-                case remainderBack of
-                    -- match [...REST, X1, ..., Xn] with [X'1, ..., X'n]
-                    -- succeed matching [...REST] with [] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Nothing -> pure $ Seq.fromList $ (mid, emptyList) : zippedBack
-                    -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1, ..., X'n]
-                    -- fail matching [...REST, X'1, ..., X'm] with []
-                    Just (Left ts1') -> lift $ failWith $ DifferentValues (KList def [] (Just (mid, ts1'))) emptyList
-                    -- match [...REST, X1, ..., Xn] with [X'1, ..., X'm, X'1, ..., X'n]
-                    -- succeed matching [...REST] with [X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Just (Right ts2') -> pure $ Seq.fromList $ (mid, noRemainderList ts2') : zippedBack
-        matchListBacks t1@(Just (mid1, ts1)) t2@(Just (mid2, ts2)) = \case 
-            Nothing -> 
+                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse hs2)
+                 in case remainderBack of
+                        -- match [...REST, X1, ..., Xn] with [X'1, ..., X'n]
+                        -- succeed matching [...REST] with [] and [X1, ..., Xn] with [X'1, ..., X'n]
+                        Nothing -> pure $ Seq.fromList $ (mid, emptyList) : zippedBack
+                        -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1, ..., X'n]
+                        -- fail matching [...REST, X'1, ..., X'm] with []
+                        Just (Left ts1') -> lift $ failWith $ DifferentValues (KList def [] (Just (mid, ts1'))) emptyList
+                        -- match [...REST, X1, ..., Xn] with [X'1, ..., X'm, X'1, ..., X'n]
+                        -- succeed matching [...REST] with [X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
+                        Just (Right ts2') -> pure $ Seq.fromList $ (mid, noRemainderList ts2') : zippedBack
+        matchListRests t1@(Just (mid1, ts1)) t2@(Just (mid2, ts2)) = \case
+            Nothing ->
                 -- match [...REST, ...] with [...REST', ...]
-                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2) in
-                case remainderBack of
-                    -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'n]
-                    -- succeed matching [...REST] with [...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Nothing -> 
-                        pure $ Seq.fromList $ (mid1, mid2) : zippedBack
-                    -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [...REST', X'1, ..., X'n]
-                    -- indeterminate matching [...REST, X'1, ..., X'm] with [...REST']
-                    Just (Left ts1') -> do
-                        lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, [])))
-                        fail "indeterminate list match"
-                    -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'm, X'1, ..., X'n]
-                    -- succeed matching [...REST] with [...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Just (Right ts2') -> 
-                        pure $ Seq.fromList $ (mid1, KList def [] (Just (mid2, ts2'))) : zippedBack
+                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2)
+                 in case remainderBack of
+                        -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'n]
+                        -- succeed matching [...REST] with [...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
+                        Nothing ->
+                            pure $ Seq.fromList $ (mid1, mid2) : zippedBack
+                        -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [...REST', X'1, ..., X'n]
+                        -- indeterminate matching [...REST, X'1, ..., X'm] with [...REST']
+                        Just (Left ts1') -> do
+                            lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, [])))
+                            fail "indeterminate list match"
+                        -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'm, X'1, ..., X'n]
+                        -- succeed matching [...REST] with [...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
+                        Just (Right ts2') ->
+                            pure $ Seq.fromList $ (mid1, KList def [] (Just (mid2, ts2'))) : zippedBack
             Just (Left hs1) -> do
                 -- match [X1,...,Xk,...REST, ...] with [...REST', ...]
                 -- indeterminate
@@ -541,117 +546,21 @@ matchLists
                 fail "indeterminate list match"
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X'1,...,X'k,...REST', ...]
-
-                -- do lift $ addIndeterminate (KList def [] t1) (KList def hs2 t2)
-                --    fail "indeterminate list match"
-                
-                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2) in
-                case remainderBack of
-                    -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
-                    -- succeed matching [...REST] with [X'1,...,X'k,...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Nothing -> 
-                        pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, []))) : zippedBack
-                    -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
-                    -- indeterminate matching [...REST, X'1, ..., X'm] with [X'1,...,X'k,...REST']
-                    Just (Left ts1') -> do
-                        lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, [])))
-                        fail "indeterminate list match"
-                    -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'm, X'1, ..., X'n]
-                    -- succeed matching [...REST] with [X'1,...,X'k,...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Just (Right ts2') -> 
-                        pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, ts2'))) : zippedBack
-
-
-        -- | -- two fully-concrete lists of the same length
-        --   Nothing <- rest1
-        -- , Nothing <- rest2 =
-        --     if length heads1 == length heads2
-        --         then void $ enqueuePairs heads1 heads2
-        --         else failWith $ DifferentValues (KList def heads1 rest1) (KList def heads2 rest2)
-        -- | -- left list has a symbolic part, right one is fully concrete
-        --   Just (symb1, tails1) <- rest1
-        -- , Nothing <- rest2 = do
-        --     let emptyList = KList def [] Nothing
-        --     remainder <- enqueuePairs heads1 heads2
-        --     case remainder of
-        --         Nothing -- equal head length, rest1 must become .List
-        --             | null tails1 ->
-        --                 enqueueRegularProblem symb1 emptyList
-        --             | otherwise -> do
-        --                 -- fully concrete list too short
-        --                 let surplusLeft = KList def [] rest1
-        --                 failWith $ DifferentValues surplusLeft emptyList
-        --         Just (Left leftover1) -> do
-        --             -- fully concrete list too short
-        --             let surplusLeft = KList def leftover1 rest1
-        --             failWith $ DifferentValues surplusLeft emptyList
-        --         Just (Right leftover2)
-        --             | null tails1 -> do
-        --                 let newRight = KList def leftover2 Nothing
-        --                 enqueueRegularProblem symb1 newRight
-        --             | otherwise -> do
-        --                 tailRemainder <- -- reversed!
-        --                     enqueuePairs (reverse tails1) (reverse leftover2)
-        --                 case tailRemainder of
-        --                     Nothing ->
-        --                         -- again symb1 needs to become `.List`
-        --                         enqueueRegularProblem symb1 emptyList
-        --                     Just (Left tail1) -> do
-        --                         -- fully concrete list too short
-        --                         let surplusLeft = KList def [] $ Just (symb1, reverse tail1)
-        --                         failWith $ DifferentValues surplusLeft emptyList
-        --                     Just (Right tail2) -> do
-        --                         let newRight = KList def (reverse tail2) Nothing
-        --                         enqueueRegularProblem symb1 newRight
-        -- | -- mirrored case above: left list fully concrete, right one isn't
-        --   Nothing <- rest1
-        -- , Just _ <- rest2 =
-        --     matchLists def heads2 rest2 heads1 rest1 -- won't loop, will fail later if unification succeeds
-        -- | -- two lists with symbolic middle
-        --   Just (symb1, tails1) <- rest1
-        -- , Just (symb2, tails2) <- rest2 = do
-        --     remainder <- enqueuePairs heads1 heads2
-        --     case remainder of
-        --         Nothing -> do
-        --             -- proceed with tails and then symb
-        --             tailRem <-
-        --                 fmap (bimap reverse reverse)
-        --                     <$> enqueuePairs (reverse tails1) (reverse tails2)
-        --             case tailRem of
-        --                 Nothing ->
-        --                     enqueueRegularProblem symb1 symb2
-        --                 Just (Left tails1') -> do
-        --                     let newLeft = KList def [] (Just (symb1, tails1'))
-        --                     enqueueRegularProblem newLeft symb2
-        --                 Just (Right tails2') -> do
-        --                     let newRight = KList def [] (Just (symb2, tails2'))
-        --                     enqueueRegularProblem symb1 newRight
-        --         Just headRem -> do
-        --             -- either left or right was longer, remove tails and proceed
-        --             tailRem <-
-        --                 fmap (bimap reverse reverse)
-        --                     <$> enqueuePairs (reverse tails1) (reverse tails2)
-        --             case (headRem, tailRem) of
-        --                 (Left heads1', Nothing) -> do
-        --                     let newLeft = KList def heads1' (Just (symb1, []))
-        --                     enqueueRegularProblem newLeft symb2
-        --                 (Left heads1', Just (Left tails1')) -> do
-        --                     let newLeft = KList def heads1' (Just (symb1, tails1'))
-        --                     enqueueRegularProblem newLeft symb2
-        --                 (Left heads1', Just (Right tails2')) -> do
-        --                     let surplusLeft = KList def heads1' (Just (symb1, []))
-        --                         surplusRight = KList def [] (Just (symb2, tails2'))
-        --                     addIndeterminate surplusLeft surplusRight
-        --                 (Right heads2', Nothing) -> do
-        --                     let newRight = KList def heads2' (Just (symb2, []))
-        --                     enqueueRegularProblem symb1 newRight
-        --                 (Right heads2', Just (Right tails2')) -> do
-        --                     let newRight = KList def heads2' (Just (symb2, tails2'))
-        --                     enqueueRegularProblem symb1 newRight
-        --                 (Right heads2', Just (Left tails1')) -> do
-        --                     let surplusLeft = KList def [] (Just (symb1, tails1'))
-        --                         surplusRight = KList def heads2' (Just (symb2, []))
-        --                     addIndeterminate surplusLeft surplusRight
+                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2)
+                 in case remainderBack of
+                        -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
+                        -- succeed matching [...REST] with [X'1,...,X'k,...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
+                        Nothing ->
+                            pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, []))) : zippedBack
+                        -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
+                        -- indeterminate matching [...REST, X'1, ..., X'm] with [X'1,...,X'k,...REST']
+                        Just (Left ts1') -> do
+                            lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, [])))
+                            fail "indeterminate list match"
+                        -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'm, X'1, ..., X'n]
+                        -- succeed matching [...REST] with [X'1,...,X'k,...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
+                        Just (Right ts2') ->
+                            pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, ts2'))) : zippedBack
 {-# INLINE matchLists #-}
 
 ------ Internalised Maps
@@ -759,7 +668,9 @@ matchMaps
         -- fails as the size of the maps is different and there is no substitution `subst`, s.t.
         -- subst({}) = {...rest} or {K -> V, ...}
         matchRemainderMaps (Rest EmptyMap) subj =
-            lift $ failWith $ DifferentSymbols (fromRemainderMap def (Rest EmptyMap)) (fromRemainderMap def subj)
+            lift $
+                failWith $
+                    DifferentSymbols (fromRemainderMap def (Rest EmptyMap)) (fromRemainderMap def subj)
         -- match {...pat} with subj
         -- succeeds as `pat` must be a variable of sort map or a function which evaluates to a map
         matchRemainderMaps (Rest (Remainder pat)) subj = pure $ Seq.singleton (pat, fromRemainderMap def subj)
@@ -808,7 +719,6 @@ enqueueMapProblem term1 term2 =
 enqueueRegularProblems :: Monad m => Seq (Term, Term) -> StateT MatchState m ()
 enqueueRegularProblems ts =
     modify $ \s@State{mQueue} -> s{mQueue = mQueue >< ts}
-
 
 {- | Binds a variable to a term to add to the resulting unifier.
 

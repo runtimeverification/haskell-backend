@@ -234,10 +234,10 @@ kmapTerms =
             )
         , -- pattern has more assocs than subject
           test
-                "Extra concrete key in pattern, no rest in subject: fail on rest"
-                concreteKMapWithTwoItems
-                concreteKMapWithOneItem
-                (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] emptyKMap)
+            "Extra concrete key in pattern, no rest in subject: fail on rest"
+            concreteKMapWithTwoItems
+            concreteKMapWithOneItem
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] emptyKMap)
         , -- cases with disjoint keys
           test
             "Variable key ~= concrete key (and common element) without rest: match key"
