@@ -19,7 +19,6 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Sequence (Seq)
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
@@ -69,6 +68,7 @@ import Prof
 import SMT (
     SMT,
  )
+import System.IO qualified as IO
 
 traceProfSimplify ::
     MonadProf prof =>
@@ -85,7 +85,7 @@ traceProfSimplify =
         . Pattern.toTermLike
 
 mkSimplifierEnv ::
-    Bool ->
+    Maybe IO.Handle ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
@@ -172,21 +172,28 @@ evalSimplifier ::
     Map AxiomIdentifier [Equation VariableName] ->
     Simplifier a ->
     SMT a
-evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv False verifiedModule sortGraph overloadGraph metadataTools rawEquations
-    runSimplifier env simplifier
+evalSimplifier = evalSimplifierLogged Nothing
 
+-- | Evaluate a simplifier computation, logging the simplification into the provided 'Handle'
 evalSimplifierLogged ::
+    Maybe IO.Handle ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
     Simplifier a ->
-    SMT (Seq SimplifierTrace, a)
-evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv True verifiedModule sortGraph overloadGraph metadataTools rawEquations
-    runSimplifierLogged env simplifier
+    SMT a
+evalSimplifierLogged simlifierTraceHandle verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <-
+        mkSimplifierEnv
+            simlifierTraceHandle
+            verifiedModule
+            sortGraph
+            overloadGraph
+            metadataTools
+            rawEquations
+    runSimplifier env simplifier
 
 evalSimplifierProofs ::
     VerifiedModule Attribute.Symbol ->

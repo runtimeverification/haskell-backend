@@ -495,7 +495,8 @@ rpcExec
       where
         simplifierRun
             | tracingEnabled =
-                fmap snd . evalSimplifierLogged verifiedModule' sortGraph overloadGraph metadataTools equations
+                -- FIXME: we need to pass the log stream handle to evalSimplifierLogged here
+                evalSimplifierLogged Nothing verifiedModule' sortGraph overloadGraph metadataTools equations
             | otherwise =
                 evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations
 

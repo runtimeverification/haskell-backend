@@ -57,7 +57,6 @@ module Kore.Simplify.Simplify (
     -- * Re-exports
     MonadSMT,
     MonadLog,
-    runSimplifierLogged,
     SimplifierTrace (..),
 ) where
 
@@ -132,6 +131,7 @@ import SMT (
     MonadSMT (..),
     SMT,
  )
+import System.IO qualified as IO
 
 -- * Simplifier
 
@@ -151,7 +151,7 @@ data Env = Env
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
     , hookedSymbols :: !(Map Id Text)
-    , tracingEnabled :: Bool
+    , tracingEnabled :: Maybe IO.Handle
     }
 
 data SimplifierTrace = SimplifierTrace
@@ -185,14 +185,6 @@ that may branch.
 runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
     runReaderT (evalStateT simplifier (initCache, mempty)) env
-
-runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq SimplifierTrace, a)
-runSimplifierLogged env (Simplifier simplifier) =
-    runReaderT
-        ( runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->
-            pure (logs, res)
-        )
-        env
 
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::

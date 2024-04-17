@@ -261,10 +261,12 @@ applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
     debugApplyEquation equation result
     doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
-    when doTracing $
+    when (isJust doTracing) emitEquationTrace
+    pure results
+  where
+    emitEquationTrace =
         modify $
             second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
-    pure results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 
