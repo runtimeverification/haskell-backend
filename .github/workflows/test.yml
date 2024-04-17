@@ -134,7 +134,7 @@ jobs:
               - '*.mk'
               - 'flake.nix'
               - 'deps/*'
-              - '.github/'
+              - '.github/*'
             kore_tests:
               - 'test/**'
 
