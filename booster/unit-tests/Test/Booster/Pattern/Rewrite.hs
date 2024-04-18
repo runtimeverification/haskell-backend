@@ -202,16 +202,9 @@ rewriteSuccess =
                          , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
                          )
 unifyNotMatch =
-    testCase "Indeterminate case when subject has variables" $ do
-        let t =
-                [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-            -- "non-match" substitution:
-            subst =
-                Map.fromList
-                    [ (Variable someSort "X", dv someSort "otherThing")
-                    ]
-        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-            `failsWith` IsNotMatch rule3 t subst
+    testCase "Stuck case when subject has variables" $ do
+        getsStuck $ [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
+
 definednessUnclear =
     testCase "con4 rewrite to f2 might become undefined" $ do
         let pcon4 =

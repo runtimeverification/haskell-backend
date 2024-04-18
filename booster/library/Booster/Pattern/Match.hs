@@ -17,9 +17,12 @@ module Booster.Pattern.Match (
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
+import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State
 import Data.Bifunctor (Bifunctor (first), bimap)
+import Data.ByteString (ByteString)
 import Data.Either.Extra
+import Data.List (partition)
 import Data.List.NonEmpty as NE (NonEmpty, fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -40,9 +43,6 @@ import Booster.Pattern.Util (
     sortOfTerm,
     substituteInTerm,
  )
-import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
-import Data.ByteString (ByteString)
-import Data.List (partition)
 
 -- | Result of matching a pattern to a subject (a substitution or an indication of what went wrong)
 data MatchResult
@@ -79,6 +79,8 @@ data FailReason
       SubsortingError SortError
     | -- | The two terms have differing argument lengths
       ArgLengthsDiffer Term Term
+    | -- | Not a matching substitution
+      SubjectVariableMatch Term Variable
     deriving stock (Eq, Show)
 
 instance Pretty FailReason where
@@ -113,6 +115,8 @@ instance Pretty FailReason where
             pretty $ show err
         ArgLengthsDiffer t1 t2 ->
             vsep ["Argument length differ", pretty t1, pretty t2]
+        SubjectVariableMatch t v ->
+            vsep ["Cannot match variable in subject:", pretty v, pretty t]
 
 type Substitution = Map Variable Term
 
@@ -211,8 +215,7 @@ match1 _       t1@DomainValue{}                           t2@KList{}            
 match1 _       t1@DomainValue{}                           t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@DomainValue{}                           t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@DomainValue{}                           t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@DomainValue{}                           (Var var2)                                 = matchVar Rewrite var2 t1
-match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
+match1 _       t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Rewrite t1@Injection{}                             (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 Eval    t1@Injection{}                             t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -233,8 +236,7 @@ match1 _       t1@KMap{}                                  t2@KList{}            
 match1 _       t1@KMap{}                                  t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KMap{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KMap{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KMap{}                                  (Var var2)                                 = matchVar Rewrite var2 t1
-match1 Eval    t1@KMap{}                                  t2@Var{}                                   = addIndeterminate t1 t2
+match1 _       t1@KMap{}                                  (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Rewrite t1@KList{}                                 (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 Eval    t1@KList{}                                 t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@KList{}                                 t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -246,7 +248,7 @@ match1 Eval    t1@KList{}                                 t2@KList{}            
 match1 _       t1@KList{}                                 t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KList{}                                 t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KList{}                                 t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 _       t1@KList{}                                 t2@Var{}                                   = failWith $ DifferentSymbols t1 t2
+match1 _       t1@KList{}                                 (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Rewrite t1@KSet{}                                  (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 Eval    t1@KSet{}                                  t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@KSet{}                                  t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -257,7 +259,7 @@ match1 _       t1@KSet{}                                  t2@KList{}            
 match1 _       t1@KSet{}                                  t2@KSet{}                                  = addIndeterminate t1 t2
 match1 _       t1@KSet{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 _       t1@KSet{}                                  t2@Var{}                                   = failWith $ DifferentSymbols t1 t2
+match1 _       t1@KSet{}                                  (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Rewrite t1@ConsApplication{}                       (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 Eval    t1@ConsApplication{}                       t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@ConsApplication{}                       t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -268,7 +270,7 @@ match1 _       t1@ConsApplication{}                       t2@KSet{}             
 match1 matchTy (ConsApplication symbol1 sorts1 args1)     (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications matchTy symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 Rewrite t1@ConsApplication{}                       t2@FunctionApplication{}                   = addIndeterminate t1 t2
 match1 Eval    (ConsApplication symbol1 sorts1 args1)     (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@ConsApplication{}                       t2@Var{}                                   = failWith $ DifferentSymbols t1 t2
+match1 _       t1@ConsApplication{}                       (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Rewrite t1@FunctionApplication{}                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 Eval    t1@FunctionApplication{}                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 Rewrite t1@FunctionApplication{}                   t2@DomainValue{}                           = addIndeterminate t1 t2
@@ -285,7 +287,7 @@ match1 Rewrite t1@FunctionApplication{}                   t2@ConsApplication{}  
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 Rewrite t1@FunctionApplication{}                   t2@FunctionApplication{}                   = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@FunctionApplication{}                   t2@Var{}                                   = failWith $ DifferentSymbols t1 t2
+match1 _       t1@FunctionApplication{}                   (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Rewrite t1@Var{}                                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 Eval    t1@Var{}                                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 matchTy (Var var1)                                 t2@DomainValue{}                           = matchVar matchTy var1 t2
@@ -453,6 +455,20 @@ mkPairs ts1 ts2
     l1 = length ts1
     l2 = length ts2
 
+
+{- | pair up the tails of argument lists by first reversing the lists and pairing them up using `mkPairs` and
+then reversing the resulting paired up list as well as reversing any potential remainders.
+-}
+mkTailPairs :: [a] -> [a] -> ([(a, a)], Maybe (Either [a] [a]))
+mkTailPairs ts1 ts2 = 
+    let (matchedTailReversed, remainderReversed) = mkPairs (reverse ts1) (reverse ts2)
+    in (reverse matchedTailReversed, bimap reverse reverse <$> remainderReversed)
+
+
+abortWithIndeterminate :: Term -> Term -> MaybeT (StateT MatchState (Except MatchResult)) a
+abortWithIndeterminate t1 t2 = lift (addIndeterminate t1 t2) >> fail ""
+
+
 matchLists ::
     KListDefinition ->
     [Term] ->
@@ -510,7 +526,7 @@ matchLists
                 lift $ failWith $ DifferentValues (KList def hs1 t1) emptyList
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X', Y', ...]
-                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse hs2)
+                let (zippedBack, remainderBack) = mkTailPairs ts1 hs2
                  in case remainderBack of
                         -- match [...REST, X1, ..., Xn] with [X'1, ..., X'n]
                         -- succeed matching [...REST] with [] and [X1, ..., Xn] with [X'1, ..., X'n]
@@ -524,7 +540,7 @@ matchLists
         matchListRests t1@(Just (mid1, ts1)) t2@(Just (mid2, ts2)) = \case
             Nothing ->
                 -- match [...REST, ...] with [...REST', ...]
-                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2)
+                let (zippedBack, remainderBack) = mkTailPairs ts1 ts2
                  in case remainderBack of
                         -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'n]
                         -- succeed matching [...REST] with [...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
@@ -532,9 +548,8 @@ matchLists
                             pure $ Seq.fromList $ (mid1, mid2) : zippedBack
                         -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [...REST', X'1, ..., X'n]
                         -- indeterminate matching [...REST, X'1, ..., X'm] with [...REST']
-                        Just (Left ts1') -> do
-                            lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, [])))
-                            fail "indeterminate list match"
+                        Just (Left ts1') ->
+                            abortWithIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, [])))
                         -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'm, X'1, ..., X'n]
                         -- succeed matching [...REST] with [...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
                         Just (Right ts2') ->
@@ -542,11 +557,10 @@ matchLists
             Just (Left hs1) -> do
                 -- match [X1,...,Xk,...REST, ...] with [...REST', ...]
                 -- indeterminate
-                lift $ addIndeterminate (KList def hs1 t1) (KList def [] t2)
-                fail "indeterminate list match"
+                abortWithIndeterminate (KList def hs1 t1) (KList def [] t2)
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X'1,...,X'k,...REST', ...]
-                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2)
+                let (zippedBack, remainderBack) =  mkTailPairs ts1 ts2
                  in case remainderBack of
                         -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
                         -- succeed matching [...REST] with [X'1,...,X'k,...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
@@ -554,9 +568,8 @@ matchLists
                             pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, []))) : zippedBack
                         -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
                         -- indeterminate matching [...REST, X'1, ..., X'm] with [X'1,...,X'k,...REST']
-                        Just (Left ts1') -> do
-                            lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, [])))
-                            fail "indeterminate list match"
+                        Just (Left ts1') ->
+                            abortWithIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, [])))
                         -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'm, X'1, ..., X'n]
                         -- succeed matching [...REST] with [X'1,...,X'k,...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
                         Just (Right ts2') ->
@@ -606,6 +619,13 @@ hasNoRemainder = \case
     EmptyMap -> True
     Remainder{} -> False
 
+containsOtherKeys :: RemainderMap -> Bool
+containsOtherKeys = \case
+    ConstructorKey _ _ rest -> containsOtherKeys rest
+    Rest OtherKey{} -> True
+    Rest _ -> False
+
+
 ------ Internalised Maps
 matchMaps ::
     KMapDefinition ->
@@ -619,8 +639,7 @@ matchMaps
     patKeyVals
     patRest
     subjKeyVals
-    subjRest
-        | def == def = do
+    subjRest = do
             st <- get
             if not (Seq.null st.mQueue)
                 then -- delay matching 'KMap's until there are no regular
@@ -649,8 +668,6 @@ matchMaps
                             Just newProblems ->
                                 enqueueRegularProblems $ (Seq.fromList $ Map.elems commonMap) >< newProblems
                             Nothing -> pure ()
-        | otherwise =
-            failWith $ DifferentSorts (KMap def patKeyVals patRest) (KMap def subjKeyVals subjRest)
       where
         checkDuplicateKeys assocs rest =
             let duplicates =
@@ -659,46 +676,55 @@ matchMaps
                     [] -> pure ()
                     (k, _) : _ -> failWith $ DuplicateKeys k $ KMap def assocs rest
 
+        -- This function takes the remaining keys and a potential "...REST" term (usually a variable or a function) of the two maps being matched,
+        -- after the common keys have been identified. 
+        -- The remainder maps are encoded in the `RemainderMap` type, which is a list encoding two types of keys, either a `ConstructorKey k ...`,
+        -- where `k` is a constructorLike (made up of only domain values or constructors) or `OtherKey k`, where `k` is e.g. a function symbol or a variable.
+        -- the key/value pairs are ordered so that the constructor-like keys come before all other keys and the "...REST" term.
         matchRemainderMaps ::
             RemainderMap -> RemainderMap -> MaybeT (StateT MatchState (Except MatchResult)) (Seq (Term, Term))
+        -- match {K -> V, ...} with {...} where K is constructor-like
+        -- if `{...}` does not contain `OtherKeys`, fail because we already matched all concrete keys, so we know `K` does not appear in {...}
+        -- otherwise, one of the other keys could potentially match `K`, if `{...}` contains some OtherKey `f()` which evaluates to `K`
+        matchRemainderMaps pat@(ConstructorKey patKey _ _) subj 
+            | not (containsOtherKeys subj) = lift $ failWith $ KeyNotFound patKey (fromRemainderMap def subj)
+            | otherwise = do
+                abortWithIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj)
         -- match {} with {}
         -- succeeds
         matchRemainderMaps (Rest EmptyMap) (Rest EmptyMap) = pure mempty
-        -- match {} with {...rest} or {K -> V, ...}
+        -- match {} with {...REST} or {K -> V, ...}
         -- fails as the size of the maps is different and there is no substitution `subst`, s.t.
-        -- subst({}) = {...rest} or {K -> V, ...}
+        -- subst({}) = {...REST} or {K -> V, ...}
         matchRemainderMaps (Rest EmptyMap) subj =
             lift $
                 failWith $
                     DifferentSymbols (fromRemainderMap def (Rest EmptyMap)) (fromRemainderMap def subj)
-        -- match {...pat} with subj
-        -- succeeds as `pat` must be a variable of sort map or a function which evaluates to a map
-        matchRemainderMaps (Rest (Remainder pat)) subj = pure $ Seq.singleton (pat, fromRemainderMap def subj)
-        -- match {K -> V ...} with `subj` where K is concrete
-        -- fail here because we already matched all concrete keys, so we know `K` does not appear in `subj`
-        matchRemainderMaps (ConstructorKey patKey _ _) subj = lift $ failWith $ KeyNotFound patKey (fromRemainderMap def subj)
-        -- match {K -> V} with {K' -> V'} where K' is a constructor like and K is not (i.e. a variable or function)
-        -- we can proceed matching because the two key/value pairs must match
+        -- match {K -> V} with {K' -> V'} where K' is constructor-like and K is not (i.e. a variable or function)
+        -- we can proceed matching because each map only has one element, so the two key/value pairs must match
         matchRemainderMaps (SingleOtherKey patKey patVal) (SingleConstructorKey subjKey subjVal) =
             pure $ Seq.fromList [(patKey, subjKey), (patVal, subjVal)]
         -- match {K -> V} with {K' -> V'} where K and K' are both non-constructor like (i.e. a variable or function)
-        -- same as above
+        -- same arguemnt as above
         matchRemainderMaps (SingleOtherKey patKey patVal) (SingleOtherKey subjKey subjVal) =
             pure $ Seq.fromList [(patKey, subjKey), (patVal, subjVal)]
-        -- match {K -> V ...} with {}
-        -- fails
+        -- match {K -> V, ...} with {}
+        -- fails, maps are different sizes
         matchRemainderMaps pat@(Rest OtherKey{}) subj@(Rest EmptyMap) =
             lift $ failWith $ DifferentSymbols (fromRemainderMap def pat) (fromRemainderMap def subj)
-        -- match {?K/f(..) -> V ...} with {...?REST} where ?REST is a variable
-        -- fail because there is no substitution `sub` such that sub({?K -> V ...}) = {...?REST}
+        -- match {K -> V, ...} with {...REST} where {K -> V, ...} has no remainder and ...REST is a map variable
+        -- fail because there is no substitution `sub` such that sub({K -> V, ...}) = {...REST}
         matchRemainderMaps (Rest pat@OtherKey{}) subj@(Rest (Remainder Var{}))
             | hasNoRemainder pat =
                 lift $ failWith $ DifferentSymbols (fromRemainderMap def (Rest pat)) (fromRemainderMap def subj)
-        -- match {?K/f(..) -> V ...} with {C -> V' ...} or {C -> V'} or {...}
-        -- indeterminate
+        -- match {K -> V, ...} with {...} where K is a function/variable
+        -- all other cases are indeterminate
         matchRemainderMaps pat@(Rest OtherKey{}) subj = do
-            lift $ addIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj)
-            fail "all other cases are indeterminate"
+            abortWithIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj)
+        -- match {...REST} with {...}
+        -- succeeds as `...REST` is a variable of sort map or a function which evaluates to a map
+        matchRemainderMaps (Rest (Remainder pat)) subj = pure $ Seq.singleton (pat, fromRemainderMap def subj)
+        
 {-# INLINE matchMaps #-}
 
 failWith :: FailReason -> StateT s (Except MatchResult) a

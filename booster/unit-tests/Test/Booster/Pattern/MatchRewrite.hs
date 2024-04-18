@@ -68,7 +68,7 @@ sorts =
         "sort variables"
         [ test "sort variable in pattern" (app con1 [varX]) (app con1 [dSome]) $
             sortErr (FoundSortVariable "sort me!")
-        , test "sort variable in subject" (app con1 [dSub]) (app con1 [varZ]) $
+        , test "sort variable in subject" (app con1 [varZ]) (app con1 [dSub]) $
             sortErr (FoundSortVariable "me, too!")
         , test "several sort variables" (app con3 [varX, varY]) (app con3 [dSome, varZ]) $
             sortErr (FoundSortVariable "sort me!")
@@ -391,23 +391,30 @@ internalMaps =
             concreteKMapWithTwoItems
             (success [])
         , test
-            "Can match a concrete and symbolic map"
-            concreteKMapWithOneItem
+            "Can match a symbolic and concrete map"
             symbolicKMapWithOneItem
-            (success [("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])])
+            concreteKMapWithOneItem
+            (success [("B", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])])
         , test
-            "Can match a concrete and symbolic map with two elements"
-            concreteKMapWithTwoItems
+            "Can match a symbolic and concrete map with two elements"
             symbolicKMapWithTwoItems
+            concreteKMapWithTwoItems
             ( success
                 [ ("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])
                 , ("B", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value2")|])
                 ]
             )
         , test
-            "Can match {\"key\" |-> \"value\", ...REST} with {A |-> \"value\"}"
-            concreteKMapWithOneItemAndRest
+            "Can match {\"key\" |-> A, ...REST} with {\"key\" |-> B}"
+            concreteKeySymbolicValueKMapWithRest
             symbolicKMapWithOneItem
+            ( success
+                [("REST", kmapSort, emptyKMap), ("A", kmapElementSort, [trm| B:SortTestKMapItem{} |])]
+            )
+        , test
+            "Can match {\"key\" |-> A, ...REST} with {\"key\" |-> \"value\"}"
+            concreteKeySymbolicValueKMapWithRest
+            concreteKMapWithOneItem
             ( success
                 [("REST", kmapSort, emptyKMap), ("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])]
             )
@@ -450,7 +457,7 @@ internalMaps =
                     (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
             )
         , test
-            "Can match {\"f()\" |-> \"value\", ...REST} with {\"f()\" |-> B}"
+            "Can match {\"f()\" |-> \"value\", ...REST} with {\"f()\" |-> \"value\"}"
             functionKMapWithOneItemAndRest
             functionKMapWithOneItem
             ( success
@@ -461,11 +468,6 @@ internalMaps =
                         testKMapDefinition
                         []
                         Nothing
-                    )
-                ,
-                    ( "B"
-                    , SortApp "SortTestKMapItem" []
-                    , [trm| \dv{SortTestKMapItem{}}("value") |]
                     )
                 ]
             )

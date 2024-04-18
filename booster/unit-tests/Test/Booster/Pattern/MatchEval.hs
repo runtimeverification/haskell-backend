@@ -145,9 +145,9 @@ varsAndValues =
                 failed (DifferentSorts v d)
         , let v = var "X" someSort
               d = dv someSort ""
-           in test "dv matching a var (on RHS): indeterminate" d v $
-                MatchIndeterminate $
-                    NE.singleton (d, v)
+           in test "dv matching a var (on RHS): fail" d v $
+                MatchFailed $
+                    SubjectVariableMatch d (Variable someSort "X")
         , let d = dv someSort ""
               f = app f1 [d]
            in test "dv matching a function call (on RHS): indeterminate" d f $
@@ -219,7 +219,7 @@ kmapTerms =
             "Non-empty symbolic KMap ~= non-empty concrete KMap, same key: matches contained value"
             symbolicKMapWithOneItem -- "key" -> A
             concreteKMapWithOneItem -- "key" -> "value"
-            (success [("A", kmapElementSort, dv kmapElementSort "value")])
+            (success [("B", kmapElementSort, dv kmapElementSort "value")])
         , test
             "One key and rest variable ~= same key: Match rest with empty map"
             concreteKMapWithOneItemAndRest
@@ -260,10 +260,10 @@ kmapTerms =
                 concreteKMapWithTwoItems
                 (MatchIndeterminate $ NE.singleton (patMap, concreteKMapWithTwoItems))
         , test
-            "Keys disjoint and pattern keys are fully-concrete: fail"
+            "Pattern keys are fully-concrete, subject key function: indeterminate"
             concreteKMapWithOneItemAndRest
             functionKMapWithOneItem
-            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] functionKMapWithOneItem)
+            (MatchIndeterminate $ NE.singleton (concreteKMapWithOneItemAndRest, functionKMapWithOneItem))
         , let patMap =
                 kmap
                     [ (var "A" kmapKeySort, dv kmapElementSort "a")
