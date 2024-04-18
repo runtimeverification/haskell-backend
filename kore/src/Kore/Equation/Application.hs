@@ -23,13 +23,13 @@ import Control.Monad (
     (>=>),
  )
 import Control.Monad.Reader (asks)
-import Control.Monad.State (modify)
-import Data.Bifunctor
+import Data.Aeson qualified as JSON
+import Data.ByteString.Char8 qualified as BS
 import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Sequence ((|>))
+import Data.Maybe (fromJust)
 import Data.Set (
     Set,
  )
@@ -89,6 +89,7 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Log.DecidePredicateUnknown (
     OnDecidePredicateUnknown (..),
     srcLoc,
@@ -104,7 +105,6 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     Simplifier,
-    SimplifierTrace (..),
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
@@ -257,16 +257,37 @@ applyEquation ::
     Equation RewritingVariableName ->
     Pattern RewritingVariableName ->
     Simplifier (OrPattern RewritingVariableName)
-applyEquation _ term equation result = do
+applyEquation _ _term equation result = do
     let results = OrPattern.fromPattern result
     debugApplyEquation equation result
-    doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
-    when (isJust doTracing) emitEquationTrace
+    simplificationLogHandle <- liftSimplifier $ asks Simplifier.tracingEnabled
+    when
+        (isJust simplificationLogHandle)
+        (liftIO $ emitEquationTrace (fromJust simplificationLogHandle))
     pure results
   where
-    emitEquationTrace =
-        modify $
-            second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
+    -- emit the equation trace directly to the provided handle.
+    -- we intentionally omit the terms and only emit the unique id.
+    emitEquationTrace handle =
+        BS.hPutStr
+            handle
+            ( BS.toStrict . JSON.encode $
+                mkLogEntry (Attribute.uniqueId $ attributes equation)
+            )
+
+    mkLogEntry :: Attribute.UniqueId -> KoreRpcLog.LogEntry
+    mkLogEntry equationId =
+        KoreRpcLog.Simplification
+            { originalTerm = Nothing
+            , originalTermIndex = Nothing
+            , result =
+                KoreRpcLog.Success
+                    { rewrittenTerm = Nothing
+                    , substitution = Nothing
+                    , ruleId = fromMaybe "UNKNOWN" (Attribute.getUniqueId equationId)
+                    }
+            , origin = KoreRpcLog.KoreRpc
+            }
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 
