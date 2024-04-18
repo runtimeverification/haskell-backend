@@ -1221,6 +1221,7 @@ rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
             DisableMovingAverage
             Step.DisableAssumeInitialDefined
             False
+            Nothing
             serializedModule
             (StopLabels cutPointLs terminalLs)
             initial
