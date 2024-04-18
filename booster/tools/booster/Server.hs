@@ -123,8 +123,9 @@ main = do
         koreSolverOptions = translateSMTOpts smtOptions
 
     Booster.withLogFile simplificationLogFile $ \mLogFileHandle -> do
-        let logLevelToHandle = \case
-                Logger.LevelOther "SimplifyJson" -> fromMaybe IO.stderr mLogFileHandle
+        let simplificationLogHandle = fromMaybe IO.stderr mLogFileHandle
+            logLevelToHandle = \case
+                Logger.LevelOther "SimplifyJson" -> simplificationLogHandle
                 _ -> IO.stderr
 
         Booster.runHandleLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
@@ -189,9 +190,13 @@ main = do
 
                     mvarLogAction <- newMVar actualLogAction
                     let logAction = swappableLogger mvarLogAction
+                        koreSimplificationLogHandle =
+                            if Logger.LevelOther "SimplifyJson" `elem` logLevels
+                                then Just simplificationLogHandle
+                                else Nothing
 
                     kore@KoreServer{runSMT} <-
-                        mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                        mkKoreServer koreSimplificationLogHandle Log.LoggerEnv{logAction} clOPts koreSolverOptions
 
                     boosterState <-
                         liftIO $
@@ -368,8 +373,9 @@ translateSMTOpts = \case
     translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
     translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
 
-mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
-mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
+mkKoreServer ::
+    Maybe IO.Handle -> Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
+mkKoreServer simplificationLogHandle loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
     flip Log.runLoggerT logAction $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
             GlobalMain.deserializeDefinition
@@ -386,7 +392,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                         { serializedModules = Map.singleton (ModuleName mainModuleName) sd
                         , receivedModules = mempty
                         , loadedDefinition
-                        , simplificationLogHandle = Nothing -- FIXME pass handle when -l SimplifyJson is set
+                        , simplificationLogHandle = simplificationLogHandle
                         }
 
         pure $
