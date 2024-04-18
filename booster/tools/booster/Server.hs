@@ -123,8 +123,9 @@ main = do
         koreSolverOptions = translateSMTOpts smtOptions
 
     Booster.withLogFile simplificationLogFile $ \mLogFileHandle -> do
-        let logLevelToHandle = \case
-                Logger.LevelOther "SimplifyJson" -> fromMaybe IO.stderr mLogFileHandle
+        let simplificationLogHandle = fromMaybe IO.stderr mLogFileHandle
+            logLevelToHandle = \case
+                Logger.LevelOther "SimplifyJson" -> simplificationLogHandle
                 _ -> IO.stderr
 
         Booster.runHandleLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
@@ -150,6 +151,7 @@ main = do
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
+                            , Log.logFormat = if LevelOther "SimplifyJson" `elem` logLevels then Log.Json else Log.Standard
                             }
                     srvSettings = serverSettings port "*"
 
@@ -262,6 +264,7 @@ koreExtraLogs =
     Map.map (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry)) $
         Map.fromList
             [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
+            , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
             ,
                 ( LevelOther "RewriteKore"
                 , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
@@ -368,7 +371,8 @@ translateSMTOpts = \case
     translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
     translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
 
-mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
+mkKoreServer ::
+    Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
 mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
     flip Log.runLoggerT logAction $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
