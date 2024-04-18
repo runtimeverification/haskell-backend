@@ -147,6 +147,10 @@ respond serverState moduleName runSMT =
                 , logTiming
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
                 start <- liftIO $ getTime Monotonic
+                _st@ServerState
+                    { simplificationLogHandle
+                    } <-
+                    liftIO $ MVar.takeMVar serverState
                 case verifyIn serializedModule state of
                     Left Error{errorError, errorContext} ->
                         pure $
@@ -174,6 +178,7 @@ respond serverState moduleName runSMT =
                                             else DisableAssumeInitialDefined
                                         )
                                         tracingEnabled
+                                        simplificationLogHandle
                                         serializedModule
                                         (toStopLabels cutPointRules terminalRules)
                                         verifiedPattern
@@ -417,6 +422,10 @@ respond serverState moduleName runSMT =
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
+            _st@ServerState
+                { simplificationLogHandle
+                } <-
+                liftIO $ MVar.takeMVar serverState
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left Error{errorError, errorContext} ->
                     pure $
@@ -438,7 +447,7 @@ respond serverState moduleName runSMT =
                     (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
-                            . (evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule)
+                            . (evalInSimplifierContext simplificationLogHandle serializedModule)
                             . runExceptT
                             $ Claim.checkSimpleImplication
                                 leftPatt
@@ -504,6 +513,10 @@ respond serverState moduleName runSMT =
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
         Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
+            _st@ServerState
+                { simplificationLogHandle
+                } <-
+                liftIO $ MVar.takeMVar serverState
             case verifyIn serializedModule state of
                 Left Error{errorError, errorContext} ->
                     pure $
@@ -521,7 +534,7 @@ respond serverState moduleName runSMT =
                     (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
-                            . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
+                            . evalInSimplifierContext simplificationLogHandle serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
                     let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
@@ -744,9 +757,9 @@ respond serverState moduleName runSMT =
             ]
 
     evalInSimplifierContext ::
-        Bool -> Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
+        Maybe IO.Handle -> Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
     evalInSimplifierContext
-        doTracing
+        simplificationLogHandle
         Exec.SerializedModule
             { sortGraph
             , overloadGraph
@@ -754,11 +767,10 @@ respond serverState moduleName runSMT =
             , verifiedModule
             , equations
             }
-            | doTracing =
-                -- FIXME: we need to pass the log stream handle to evalSimplifierLogged here
+            | isJust simplificationLogHandle =
                 fmap (Seq.empty,)
                     . evalSimplifierLogged
-                        Nothing
+                        simplificationLogHandle
                         verifiedModule
                         sortGraph
                         overloadGraph

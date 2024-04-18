@@ -228,6 +228,7 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
+import System.IO qualified as IO
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -456,6 +457,8 @@ rpcExec ::
     Step.EnableAssumeInitialDefined ->
     -- | whether tracing is enabled
     Bool ->
+    -- | optional simplification trace output handle
+    Maybe IO.Handle ->
     -- | The main module
     SerializedModule ->
     -- | additional labels/rule names for stopping
@@ -469,6 +472,7 @@ rpcExec
     enableMA
     assumeInitialDefined
     tracingEnabled
+    simplificationTraceHandle
     SerializedModule
         { sortGraph
         , overloadGraph
@@ -495,8 +499,13 @@ rpcExec
       where
         simplifierRun
             | tracingEnabled =
-                -- FIXME: we need to pass the log stream handle to evalSimplifierLogged here
-                evalSimplifierLogged Nothing verifiedModule' sortGraph overloadGraph metadataTools equations
+                evalSimplifierLogged
+                    simplificationTraceHandle
+                    verifiedModule'
+                    sortGraph
+                    overloadGraph
+                    metadataTools
+                    equations
             | otherwise =
                 evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations
 
