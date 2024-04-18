@@ -2317,7 +2317,7 @@ env =
         , injSimplifier = Test.Kore.Rewrite.MockSymbols.injSimplifier
         , overloadSimplifier = Test.Kore.Rewrite.MockSymbols.overloadSimplifier
         , hookedSymbols = Map.empty
-        , tracingEnabled = False
+        , tracingEnabled = Nothing
         }
 
 generatorSetup :: ConsistentKore.Setup
