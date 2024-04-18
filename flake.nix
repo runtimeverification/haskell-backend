@@ -73,8 +73,6 @@
                 '';
                 postInstall = ''
                   ${drv.postInstall or ""}
-                  rm $out/bin/kore-check-functions
-                  rm $out/bin/kore-format
                 '';
               })).override {
                 # bit pathological, but ghc-compact is already included with the ghc compiler
@@ -237,10 +235,12 @@
             haskell.lib.justStaticExecutables haskell-backend.pkgSet.kore;
           hs-backend-booster = with pkgs;
             haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster;
+          hs-backend-booster-dev-tools = with pkgs;
+            haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster-dev-tools;
         in {
           kore-exec = withZ3 pkgs kore "kore-exec";
-          kore-match-disjunction = withZ3 pkgs kore "kore-match-disjunction";
-          kore-parser = withZ3 pkgs kore "kore-parser";
+          kore-match-disjunction = withZ3 pkgs hs-backend-booster-dev-tools "kore-match-disjunction";
+          kore-parser = withZ3 pkgs hs-backend-booster-dev-tools "kore-parser";
           kore-repl = withZ3 pkgs kore "kore-repl";
           kore-rpc = withZ3 pkgs kore "kore-rpc";
           kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";

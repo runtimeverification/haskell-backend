@@ -617,25 +617,6 @@ executable kore-rpc
   build-depends: optparse-applicative >=0.14
   build-depends: time >=1.9.3
 
-executable kore-format
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/format
-  build-depends: kore
-  build-depends: optparse-applicative >=0.14
-  build-depends: text >=1.2
-
-executable kore-parser
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/parser
-  build-depends: kore
-  build-depends: bytestring >=0.10
-  build-depends: containers >=0.5
-  build-depends: exceptions >=0.10
-
 executable kore-repl
   import: haskell
   import: exe
@@ -646,34 +627,6 @@ executable kore-repl
   build-depends: exceptions >=0.10
   build-depends: extra >= 1.7
   build-depends: filepath >=1.4
-  build-depends: optparse-applicative >=0.14
-
-executable kore-match-disjunction
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/match-disjunction
-  build-depends: kore
-  build-depends: clock >=0.8
-  build-depends: optparse-applicative >=0.14
-  build-depends: transformers >= 0.5
-
-executable kore-check-functions
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/check-functions
-  build-depends: kore
-  build-depends: clock >=0.8
-  build-depends: exceptions >=0.10
-
-executable kore-simplify
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/simplify
-  build-depends: kore
-  build-depends: clock >=0.8
   build-depends: optparse-applicative >=0.14
 
 test-suite kore-test
