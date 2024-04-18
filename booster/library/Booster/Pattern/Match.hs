@@ -17,7 +17,6 @@ module Booster.Pattern.Match (
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import Control.Monad.Trans.State
 import Data.Bifunctor (Bifunctor (first), bimap)
 import Data.ByteString (ByteString)
@@ -434,8 +433,6 @@ matchVar
                             else Injection termSort variableSort term2
                 else failWith $ DifferentSorts (Var var) term2
 
--- matching for lists. Only solves simple cases, returns indeterminate otherwise
-
 {- | pair up the argument lists and return the pairs in the first argument. If the lists
 are of equal length, return Nothing in second, else return the remaining
 terms in the longer list, tagged with their origin).
@@ -463,9 +460,6 @@ mkTailPairs ts1 ts2 =
     let (matchedTailReversed, remainderReversed) = mkPairs (reverse ts1) (reverse ts2)
      in (reverse matchedTailReversed, bimap reverse reverse <$> remainderReversed)
 
-abortWithIndeterminate :: Term -> Term -> MaybeT (StateT MatchState (Except MatchResult)) a
-abortWithIndeterminate t1 t2 = lift (addIndeterminate t1 t2) >> fail ""
-
 matchLists ::
     KListDefinition ->
     [Term] ->
@@ -481,14 +475,8 @@ matchLists
     rest2 =
         do
             let (matchedConcrete, remainderHeads) = mkPairs heads1 heads2
-
-            runMaybeT
-                ( matchListRests rest1 rest2 remainderHeads
-                )
-                >>= \case
-                    Just newProblems ->
-                        enqueueRegularProblems $ (Seq.fromList matchedConcrete) >< newProblems
-                    Nothing -> pure ()
+            rest <- matchListRests rest1 rest2 remainderHeads
+            enqueueRegularProblems $ (Seq.fromList matchedConcrete) >< rest
       where
         emptyList = KList def [] Nothing
 
@@ -498,17 +486,17 @@ matchLists
             Maybe (Term, [Term]) ->
             Maybe (Term, [Term]) ->
             Maybe (Either [Term] [Term]) ->
-            MaybeT (StateT MatchState (Except MatchResult)) (Seq (Term, Term))
+            StateT MatchState (Except MatchResult) (Seq (Term, Term))
         matchListRests Nothing Nothing = \case
             -- match [] with []
             Nothing -> pure mempty
             -- match [X, Y, ...] with []
-            Just (Left hs1) -> lift $ failWith $ DifferentValues (KList def hs1 Nothing) emptyList
+            Just (Left hs1) -> failWith $ DifferentValues (KList def hs1 Nothing) emptyList
             -- match [] with [X, Y, ...]
-            Just (Right hs2) -> lift $ failWith $ DifferentValues emptyList (KList def hs2 Nothing)
+            Just (Right hs2) -> failWith $ DifferentValues emptyList (KList def hs2 Nothing)
         matchListRests Nothing t2@Just{} = \headRemainders ->
             -- match [] with [...REST, X, Y, ...]
-            lift $ failWith $ uncurry DifferentValues $ case headRemainders of
+            failWith $ uncurry DifferentValues $ case headRemainders of
                 Nothing -> (emptyList, KList def [] t2)
                 Just (Left hs1) -> (KList def hs1 Nothing, KList def [] t2)
                 Just (Right hs2) -> (emptyList, KList def hs2 t2)
@@ -517,10 +505,10 @@ matchLists
                 -- match [...REST] with []
                 [] -> pure $ Seq.singleton (mid, emptyList)
                 -- match [...REST, X, Y, ...] with []
-                _ -> lift $ failWith $ DifferentValues (KList def [] t1) emptyList
+                _ -> failWith $ DifferentValues (KList def [] t1) emptyList
             Just (Left hs1) ->
                 -- match [X, Y, ..., ...REST, ...] with []
-                lift $ failWith $ DifferentValues (KList def hs1 t1) emptyList
+                failWith $ DifferentValues (KList def hs1 t1) emptyList
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X', Y', ...]
                 let (zippedBack, remainderBack) = mkTailPairs ts1 hs2
@@ -530,7 +518,7 @@ matchLists
                         Nothing -> pure $ Seq.fromList $ (mid, emptyList) : zippedBack
                         -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1, ..., X'n]
                         -- fail matching [...REST, X'1, ..., X'm] with []
-                        Just (Left ts1') -> lift $ failWith $ DifferentValues (KList def [] (Just (mid, ts1'))) emptyList
+                        Just (Left ts1') -> failWith $ DifferentValues (KList def [] (Just (mid, ts1'))) emptyList
                         -- match [...REST, X1, ..., Xn] with [X'1, ..., X'm, X'1, ..., X'n]
                         -- succeed matching [...REST] with [X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
                         Just (Right ts2') -> pure $ Seq.fromList $ (mid, noRemainderList ts2') : zippedBack
@@ -546,7 +534,7 @@ matchLists
                         -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [...REST', X'1, ..., X'n]
                         -- indeterminate matching [...REST, X'1, ..., X'm] with [...REST']
                         Just (Left ts1') ->
-                            abortWithIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, [])))
+                            addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, []))) >> pure mempty
                         -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'm, X'1, ..., X'n]
                         -- succeed matching [...REST] with [...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
                         Just (Right ts2') ->
@@ -554,7 +542,7 @@ matchLists
             Just (Left hs1) -> do
                 -- match [X1,...,Xk,...REST, ...] with [...REST', ...]
                 -- indeterminate
-                abortWithIndeterminate (KList def hs1 t1) (KList def [] t2)
+                addIndeterminate (KList def hs1 t1) (KList def [] t2) >> pure mempty
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X'1,...,X'k,...REST', ...]
                 let (zippedBack, remainderBack) = mkTailPairs ts1 ts2
@@ -566,7 +554,7 @@ matchLists
                         -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
                         -- indeterminate matching [...REST, X'1, ..., X'm] with [X'1,...,X'k,...REST']
                         Just (Left ts1') ->
-                            abortWithIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, [])))
+                            addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, []))) >> pure mempty
                         -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'm, X'1, ..., X'n]
                         -- succeed matching [...REST] with [X'1,...,X'k,...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
                         Just (Right ts2') ->
@@ -655,15 +643,11 @@ matchMaps
                     patExtra = patMap `Map.withoutKeys` Map.keysSet commonMap
                     subjExtra = subjMap `Map.withoutKeys` Map.keysSet commonMap
 
-                runMaybeT
-                    ( matchRemainderMaps
+                rest <-
+                    matchRemainderMaps
                         (toRemainderMap (Map.toList patExtra) patRest)
                         (toRemainderMap (Map.toList subjExtra) subjRest)
-                    )
-                    >>= \case
-                        Just newProblems ->
-                            enqueueRegularProblems $ (Seq.fromList $ Map.elems commonMap) >< newProblems
-                        Nothing -> pure ()
+                enqueueRegularProblems $ (Seq.fromList $ Map.elems commonMap) >< rest
       where
         checkDuplicateKeys assocs rest =
             let duplicates =
@@ -678,14 +662,14 @@ matchMaps
         -- where `k` is a constructorLike (made up of only domain values or constructors) or `OtherKey k`, where `k` is e.g. a function symbol or a variable.
         -- the key/value pairs are ordered so that the constructor-like keys come before all other keys and the "...REST" term.
         matchRemainderMaps ::
-            RemainderMap -> RemainderMap -> MaybeT (StateT MatchState (Except MatchResult)) (Seq (Term, Term))
+            RemainderMap -> RemainderMap -> StateT MatchState (Except MatchResult) (Seq (Term, Term))
         -- match {K -> V, ...} with {...} where K is constructor-like
         -- if `{...}` does not contain `OtherKeys`, fail because we already matched all concrete keys, so we know `K` does not appear in {...}
         -- otherwise, one of the other keys could potentially match `K`, if `{...}` contains some OtherKey `f()` which evaluates to `K`
         matchRemainderMaps pat@(ConstructorKey patKey _ _) subj
-            | not (containsOtherKeys subj) = lift $ failWith $ KeyNotFound patKey (fromRemainderMap def subj)
+            | not (containsOtherKeys subj) = failWith $ KeyNotFound patKey (fromRemainderMap def subj)
             | otherwise = do
-                abortWithIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj)
+                addIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj) >> pure mempty
         -- match {} with {}
         -- succeeds
         matchRemainderMaps (Rest EmptyMap) (Rest EmptyMap) = pure mempty
@@ -693,9 +677,8 @@ matchMaps
         -- fails as the size of the maps is different and there is no substitution `subst`, s.t.
         -- subst({}) = {...REST} or {K -> V, ...}
         matchRemainderMaps (Rest EmptyMap) subj =
-            lift $
-                failWith $
-                    DifferentSymbols (fromRemainderMap def (Rest EmptyMap)) (fromRemainderMap def subj)
+            failWith $
+                DifferentSymbols (fromRemainderMap def (Rest EmptyMap)) (fromRemainderMap def subj)
         -- match {K -> V} with {K' -> V'} where K' is constructor-like and K is not (i.e. a variable or function)
         -- we can proceed matching because each map only has one element, so the two key/value pairs must match
         matchRemainderMaps (SingleOtherKey patKey patVal) (SingleConstructorKey subjKey subjVal) =
@@ -707,16 +690,16 @@ matchMaps
         -- match {K -> V, ...} with {}
         -- fails, maps are different sizes
         matchRemainderMaps pat@(Rest OtherKey{}) subj@(Rest EmptyMap) =
-            lift $ failWith $ DifferentSymbols (fromRemainderMap def pat) (fromRemainderMap def subj)
+            failWith $ DifferentSymbols (fromRemainderMap def pat) (fromRemainderMap def subj)
         -- match {K -> V, ...} with {...REST} where {K -> V, ...} has no remainder and ...REST is a map variable
         -- fail because there is no substitution `sub` such that sub({K -> V, ...}) = {...REST}
         matchRemainderMaps (Rest pat@OtherKey{}) subj@(Rest (Remainder Var{}))
             | hasNoRemainder pat =
-                lift $ failWith $ DifferentSymbols (fromRemainderMap def (Rest pat)) (fromRemainderMap def subj)
+                failWith $ DifferentSymbols (fromRemainderMap def (Rest pat)) (fromRemainderMap def subj)
         -- match {K -> V, ...} with {...} where K is a function/variable
         -- all other cases are indeterminate
         matchRemainderMaps pat@(Rest OtherKey{}) subj = do
-            abortWithIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj)
+            addIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj) >> pure mempty
         -- match {...REST} with {...}
         -- succeeds as `...REST` is a variable of sort map or a function which evaluates to a map
         matchRemainderMaps (Rest (Remainder pat)) subj = pure $ Seq.singleton (pat, fromRemainderMap def subj)

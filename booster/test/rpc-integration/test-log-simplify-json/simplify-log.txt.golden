@@ -208,14 +208,14 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"d46d20cada4918b6353d2b07886a58111de1f0cd80f4393eb64ecf821d04b622"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"61fbef33b3611f1cc2aaf3b5e8ddec4a0f434c557278c38461c65c8722743497"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b66705a08da7a12e8140e4de1b5888f6b332b39ec36e54a4441ab1a16def501b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c829b421bba7b083e35c9cf0cd9ebc15bb2380b8025401acf60ec3d679de7001"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"98d88aa8eb04dc04768958fb8627af1028c7894adf2be11cc105ff638b76c4e4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c829b421bba7b083e35c9cf0cd9ebc15bb2380b8025401acf60ec3d679de7001"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"98d88aa8eb04dc04768958fb8627af1028c7894adf2be11cc105ff638b76c4e4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"620b23c16c462916f72b7abf028d1a34b472a11b122ab52fea2f7dc1cc6ac945"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
@@ -226,33 +226,33 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"162efb58b79b5853d86694144153bc224d533e5b60d08880b62c67f440d55c52"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"27c26f5def06a8068926bd340a0c6a6a6d56979f17411f21e9d5ba5333eb9376"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9bcf0d9be73dfb5391b1a3a67fa5ab0e07bd56d69aa1a6c2849804fa82d08a19"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"267c41a46d2c7ce6fb8a4d18c88bfe070102ea6ca91ea2103bb101b6e850ad11"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"267c41a46d2c7ce6fb8a4d18c88bfe070102ea6ca91ea2103bb101b6e850ad11"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"19b47b31db1453d4fddfb9510fc5033b113cc684561554ca9e5750259f3d8eb3"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"4297dc2f58fa6e37f2e3e2817af1e9be560b92fd4002e86bf136f4164c24ee8f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f1f5e11ea71efa554b6e083b525d1e379497df6207417f2faa312ea405fb0c31"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"374480ffbf56fec500232cfae2f41c86aadb96cf2d1ad219576f63042e03bed6"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"815d37e6d1b7f6102d0fe72b52e0cddbb30c461094a4982fda54974968fcab9c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f1b14721d323ceb98a2c4cde8b9d9766b0c8c4c57ab0bd430ae691e5954e4e6c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2950eb67f0784d5b49ece965b9a5505f050bf142589c26caa7de883f2de536cd"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b41c80afef44f5b6d0ddde002699e6e41a29af4e860720ffbb048c810f29be2f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"7ba978e809d42801547ac913de4a35c7bdd1147a77f21faaa1e1d05278c58d3d"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"daab89e05e8953a38ec0a45a299fbaf79cdf2fbe924e999661dcfb8895790ab4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"9e44f6e310dae9ef7dc3a5e8016e0955a6418068cd5e3a0820779b677427387d"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"fe440df77048846fa9c89606a2afc443bcac869c94cb92ffba7bfc05c2c30b7b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"62abbbe6b45858ff3b2301b127a5f71d37658767a1abbecad4d493ee29e9222b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"65ae730ab60f308eb72ca69429320f477fc62e8ad6b011ca5dd42a215eeb0c56"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"08471ec5b109d21d35a4828a0905fbbd5881689567ea0e88e1d01083e1d410de"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b2bb86f6a9281064113f4a9831b8fc7ccab23362d047f566261a5c08ce185699"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"25353789d310b8581c506e9817f304b639863ca3c6a6964ae59938cce346c9be"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"738b184853c75e0a8f4758234af55930d09f20492f16e5425ec099bda6a3f28c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"355ea67e322140ec8008a0ab56b8348e860e05a5c98fa2d821c0f81dc22a2222"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"4297dc2f58fa6e37f2e3e2817af1e9be560b92fd4002e86bf136f4164c24ee8f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f1f5e11ea71efa554b6e083b525d1e379497df6207417f2faa312ea405fb0c31"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"374480ffbf56fec500232cfae2f41c86aadb96cf2d1ad219576f63042e03bed6"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"815d37e6d1b7f6102d0fe72b52e0cddbb30c461094a4982fda54974968fcab9c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f1b14721d323ceb98a2c4cde8b9d9766b0c8c4c57ab0bd430ae691e5954e4e6c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2950eb67f0784d5b49ece965b9a5505f050bf142589c26caa7de883f2de536cd"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b41c80afef44f5b6d0ddde002699e6e41a29af4e860720ffbb048c810f29be2f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"7ba978e809d42801547ac913de4a35c7bdd1147a77f21faaa1e1d05278c58d3d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"daab89e05e8953a38ec0a45a299fbaf79cdf2fbe924e999661dcfb8895790ab4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9e44f6e310dae9ef7dc3a5e8016e0955a6418068cd5e3a0820779b677427387d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"fe440df77048846fa9c89606a2afc443bcac869c94cb92ffba7bfc05c2c30b7b"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"62abbbe6b45858ff3b2301b127a5f71d37658767a1abbecad4d493ee29e9222b"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"65ae730ab60f308eb72ca69429320f477fc62e8ad6b011ca5dd42a215eeb0c56"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"08471ec5b109d21d35a4828a0905fbbd5881689567ea0e88e1d01083e1d410de"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b2bb86f6a9281064113f4a9831b8fc7ccab23362d047f566261a5c08ce185699"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"25353789d310b8581c506e9817f304b639863ca3c6a6964ae59938cce346c9be"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"738b184853c75e0a8f4758234af55930d09f20492f16e5425ec099bda6a3f28c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"355ea67e322140ec8008a0ab56b8348e860e05a5c98fa2d821c0f81dc22a2222"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"3be8ea6547314b45d52a14040569c61fca97e09336b47ecbe7ae0926cf68738e"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"fe21c0729abfbb4c3fb7bc9a8c77364d200204e455fbf5a08ab15bd7b48d8543"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"faa4b56abd943bef72fb2d50078741c5e0556e716465c0c10c1ea56a8494360d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"fe21c0729abfbb4c3fb7bc9a8c77364d200204e455fbf5a08ab15bd7b48d8543"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"faa4b56abd943bef72fb2d50078741c5e0556e716465c0c10c1ea56a8494360d"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"4fd94d38730544b52ad496e0336d7845a3692175ea0b50aa604cbdb0a7614917"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2875db1c2b0d5100b4309cd6a3731daf008e0a5bc6c42da313d671d8b173443a"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2d1865de4a8fa8c8b67f5569ba19dd9f51bd616c119d5cf4dfd12da4d2a6712d"},"origin":"booster"}
@@ -265,39 +265,39 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c623b935c656d5e9de46a838ef6371b4a9483ca18e13885d12c62da88318f740"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"40add13f25ea5085aafffdbf6c25e39e6613f864a23d30c5ba6428ace0b99089"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"b125358716aa2e7b1a7d26e951a01bbdfb958ab4e2fd451948cca12763e6018c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"0455a0a22d340e5980585310d89452bb910f193c5378e020a99243782e495cf5"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0455a0a22d340e5980585310d89452bb910f193c5378e020a99243782e495cf5"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"191e44f8e923f6e0b8f9f4dcdc609e2725b52f682d8baa7404bfbe10b483de03"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"81424774822c8485e8ac94c828d2e16e9a19fd78c77bf538637c62d7ceedb536"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"265772c080fe4b73ef73a74dd6edd02b06046e8251ff06db55b3af5f526f180f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b5448f083578231c0b60e0cbc11d36618b31b7dda4e25f0720d88ccb665f78a4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"81424774822c8485e8ac94c828d2e16e9a19fd78c77bf538637c62d7ceedb536"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"265772c080fe4b73ef73a74dd6edd02b06046e8251ff06db55b3af5f526f180f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b5448f083578231c0b60e0cbc11d36618b31b7dda4e25f0720d88ccb665f78a4"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"863dc77378728a9cb741719fbc69604ed010a2a30935fa596c63416168894ec9"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"318f416f4eca4626c323ba8e1eb4652ced63ba1d1e9164e5825a2213400d3d8d"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"db0f261a25c6461645afd4d1f5d9473460e22556e93ecdb584914e41d63d6c2a"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"8d2bcb91a9e9aee878cdbf8061911d979f65e88cbbe0336f49a3ac1e7545fdf7"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"effe652ce8bdd2907cf74b8b7ad90145b7fb05ddaa12b8754e4ed5772a254f01"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"8d2bcb91a9e9aee878cdbf8061911d979f65e88cbbe0336f49a3ac1e7545fdf7"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"effe652ce8bdd2907cf74b8b7ad90145b7fb05ddaa12b8754e4ed5772a254f01"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"24448622063ce96940eff48ca7d97c82a9d02737829456813efcdefc9f7a166e"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"1bf5506088eafeb291fb90951066607a1eafe3aebf43d82e662449dd6af5b0c6"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f2f95888b87a8886ad5d53ce32f335b689e076771891b1ebf803c5ff6e98da37"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"74c7cb533d1d378662d69a67da9b1a446580e2aa06e0f25c27d88e68edadeab2"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"74c7cb533d1d378662d69a67da9b1a446580e2aa06e0f25c27d88e68edadeab2"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c4581eded1144cd93d6ee2e7fc18483c172b9dc1a6788e872a1b46b3a6143165"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"5db48ed9492f2b42d0d6bbfec9fda90ad0781de4ada9ef500e36859a8a30155f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"1ddff281af9653e7a9b727e3f44c3d5535be1ca234e6117acc817268b30f2d10"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"5db48ed9492f2b42d0d6bbfec9fda90ad0781de4ada9ef500e36859a8a30155f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"1ddff281af9653e7a9b727e3f44c3d5535be1ca234e6117acc817268b30f2d10"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"11098ddcf480284cb8533977955584c529ac45b9b931a0be4bbe5eb7857db7dc"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"d46d20cada4918b6353d2b07886a58111de1f0cd80f4393eb64ecf821d04b622"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"61fbef33b3611f1cc2aaf3b5e8ddec4a0f434c557278c38461c65c8722743497"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b66705a08da7a12e8140e4de1b5888f6b332b39ec36e54a4441ab1a16def501b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c829b421bba7b083e35c9cf0cd9ebc15bb2380b8025401acf60ec3d679de7001"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"98d88aa8eb04dc04768958fb8627af1028c7894adf2be11cc105ff638b76c4e4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c829b421bba7b083e35c9cf0cd9ebc15bb2380b8025401acf60ec3d679de7001"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"98d88aa8eb04dc04768958fb8627af1028c7894adf2be11cc105ff638b76c4e4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"620b23c16c462916f72b7abf028d1a34b472a11b122ab52fea2f7dc1cc6ac945"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
@@ -308,30 +308,30 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"162efb58b79b5853d86694144153bc224d533e5b60d08880b62c67f440d55c52"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"27c26f5def06a8068926bd340a0c6a6a6d56979f17411f21e9d5ba5333eb9376"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9bcf0d9be73dfb5391b1a3a67fa5ab0e07bd56d69aa1a6c2849804fa82d08a19"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"267c41a46d2c7ce6fb8a4d18c88bfe070102ea6ca91ea2103bb101b6e850ad11"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"267c41a46d2c7ce6fb8a4d18c88bfe070102ea6ca91ea2103bb101b6e850ad11"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"19b47b31db1453d4fddfb9510fc5033b113cc684561554ca9e5750259f3d8eb3"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"4297dc2f58fa6e37f2e3e2817af1e9be560b92fd4002e86bf136f4164c24ee8f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f1f5e11ea71efa554b6e083b525d1e379497df6207417f2faa312ea405fb0c31"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"374480ffbf56fec500232cfae2f41c86aadb96cf2d1ad219576f63042e03bed6"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"815d37e6d1b7f6102d0fe72b52e0cddbb30c461094a4982fda54974968fcab9c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f1b14721d323ceb98a2c4cde8b9d9766b0c8c4c57ab0bd430ae691e5954e4e6c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2950eb67f0784d5b49ece965b9a5505f050bf142589c26caa7de883f2de536cd"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b41c80afef44f5b6d0ddde002699e6e41a29af4e860720ffbb048c810f29be2f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"7ba978e809d42801547ac913de4a35c7bdd1147a77f21faaa1e1d05278c58d3d"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"daab89e05e8953a38ec0a45a299fbaf79cdf2fbe924e999661dcfb8895790ab4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"9e44f6e310dae9ef7dc3a5e8016e0955a6418068cd5e3a0820779b677427387d"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"fe440df77048846fa9c89606a2afc443bcac869c94cb92ffba7bfc05c2c30b7b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"62abbbe6b45858ff3b2301b127a5f71d37658767a1abbecad4d493ee29e9222b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"65ae730ab60f308eb72ca69429320f477fc62e8ad6b011ca5dd42a215eeb0c56"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"08471ec5b109d21d35a4828a0905fbbd5881689567ea0e88e1d01083e1d410de"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b2bb86f6a9281064113f4a9831b8fc7ccab23362d047f566261a5c08ce185699"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"25353789d310b8581c506e9817f304b639863ca3c6a6964ae59938cce346c9be"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"738b184853c75e0a8f4758234af55930d09f20492f16e5425ec099bda6a3f28c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"355ea67e322140ec8008a0ab56b8348e860e05a5c98fa2d821c0f81dc22a2222"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"4297dc2f58fa6e37f2e3e2817af1e9be560b92fd4002e86bf136f4164c24ee8f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f1f5e11ea71efa554b6e083b525d1e379497df6207417f2faa312ea405fb0c31"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"374480ffbf56fec500232cfae2f41c86aadb96cf2d1ad219576f63042e03bed6"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"815d37e6d1b7f6102d0fe72b52e0cddbb30c461094a4982fda54974968fcab9c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f1b14721d323ceb98a2c4cde8b9d9766b0c8c4c57ab0bd430ae691e5954e4e6c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2950eb67f0784d5b49ece965b9a5505f050bf142589c26caa7de883f2de536cd"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b41c80afef44f5b6d0ddde002699e6e41a29af4e860720ffbb048c810f29be2f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"7ba978e809d42801547ac913de4a35c7bdd1147a77f21faaa1e1d05278c58d3d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"daab89e05e8953a38ec0a45a299fbaf79cdf2fbe924e999661dcfb8895790ab4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9e44f6e310dae9ef7dc3a5e8016e0955a6418068cd5e3a0820779b677427387d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"fe440df77048846fa9c89606a2afc443bcac869c94cb92ffba7bfc05c2c30b7b"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"62abbbe6b45858ff3b2301b127a5f71d37658767a1abbecad4d493ee29e9222b"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"65ae730ab60f308eb72ca69429320f477fc62e8ad6b011ca5dd42a215eeb0c56"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"08471ec5b109d21d35a4828a0905fbbd5881689567ea0e88e1d01083e1d410de"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b2bb86f6a9281064113f4a9831b8fc7ccab23362d047f566261a5c08ce185699"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"25353789d310b8581c506e9817f304b639863ca3c6a6964ae59938cce346c9be"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"738b184853c75e0a8f4758234af55930d09f20492f16e5425ec099bda6a3f28c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"355ea67e322140ec8008a0ab56b8348e860e05a5c98fa2d821c0f81dc22a2222"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
@@ -340,16 +340,16 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"620b23c16c462916f72b7abf028d1a34b472a11b122ab52fea2f7dc1cc6ac945"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"620b23c16c462916f72b7abf028d1a34b472a11b122ab52fea2f7dc1cc6ac945"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"0334856978b25ce7279616854e899af4c2243f246cefa8c9440905b3ad49b0ae"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0334856978b25ce7279616854e899af4c2243f246cefa8c9440905b3ad49b0ae"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ea48360f6a66a60b7cfb1ecc882287374b74618ad5583706d84f312239f382f6"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"123bc063a8f913753686634bf629aa86fc085d4ea8c65ba27c748ffcd30aa9af"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"4a728226f7192f5b4b26f84aae1df1d37d334c6bc0439608ea4bff451b4157ee"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"162efb58b79b5853d86694144153bc224d533e5b60d08880b62c67f440d55c52"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"27c26f5def06a8068926bd340a0c6a6a6d56979f17411f21e9d5ba5333eb9376"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"9bcf0d9be73dfb5391b1a3a67fa5ab0e07bd56d69aa1a6c2849804fa82d08a19"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"27c26f5def06a8068926bd340a0c6a6a6d56979f17411f21e9d5ba5333eb9376"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9bcf0d9be73dfb5391b1a3a67fa5ab0e07bd56d69aa1a6c2849804fa82d08a19"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
@@ -376,14 +376,14 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"61fbef33b3611f1cc2aaf3b5e8ddec4a0f434c557278c38461c65c8722743497"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b66705a08da7a12e8140e4de1b5888f6b332b39ec36e54a4441ab1a16def501b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c829b421bba7b083e35c9cf0cd9ebc15bb2380b8025401acf60ec3d679de7001"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"98d88aa8eb04dc04768958fb8627af1028c7894adf2be11cc105ff638b76c4e4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c2682318552299808618ea1106c22cf9df82485521eaf5e58844a16e0d4550e4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c3155d0e719f555ddcccda87a3730c4f9b1f0f8983c06a9ed3bf6f38d76e488"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"5c6b604c292c79ebf12e6166c7b24cc50c97fe79accbafcf4deb134ebbd15304"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c829b421bba7b083e35c9cf0cd9ebc15bb2380b8025401acf60ec3d679de7001"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"98d88aa8eb04dc04768958fb8627af1028c7894adf2be11cc105ff638b76c4e4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2755e19832d75a9e04e3eee46c3d3e0df09771705e67959c36a59f845abbe8ab"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0f980ab3c900d849280b026226b2ef4d2387b42347c230766a1739551f25ef2a"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"620b23c16c462916f72b7abf028d1a34b472a11b122ab52fea2f7dc1cc6ac945"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"ee987109934ffef44a8c2d06ba652dd73c7dab1afe71ff7e17a82f4bb4f9f15e"},"origin":"booster"}
@@ -394,33 +394,33 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"162efb58b79b5853d86694144153bc224d533e5b60d08880b62c67f440d55c52"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"27c26f5def06a8068926bd340a0c6a6a6d56979f17411f21e9d5ba5333eb9376"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9bcf0d9be73dfb5391b1a3a67fa5ab0e07bd56d69aa1a6c2849804fa82d08a19"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"267c41a46d2c7ce6fb8a4d18c88bfe070102ea6ca91ea2103bb101b6e850ad11"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"be9f62d3b7cf9bd6abc5ddd748af23f8431294be453c424e9b886287441d7720"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c9b970b35c4b1b4cdebdbf8992fd38b91280bad6957ba98f28ee23b330a82e30"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f7b4d8dcebdc07b085de20c801c9ba3551e421879bc4c351c5dcbbd73c57f350"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"267c41a46d2c7ce6fb8a4d18c88bfe070102ea6ca91ea2103bb101b6e850ad11"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"19b47b31db1453d4fddfb9510fc5033b113cc684561554ca9e5750259f3d8eb3"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"4297dc2f58fa6e37f2e3e2817af1e9be560b92fd4002e86bf136f4164c24ee8f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f1f5e11ea71efa554b6e083b525d1e379497df6207417f2faa312ea405fb0c31"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"374480ffbf56fec500232cfae2f41c86aadb96cf2d1ad219576f63042e03bed6"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"815d37e6d1b7f6102d0fe72b52e0cddbb30c461094a4982fda54974968fcab9c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"f1b14721d323ceb98a2c4cde8b9d9766b0c8c4c57ab0bd430ae691e5954e4e6c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"2950eb67f0784d5b49ece965b9a5505f050bf142589c26caa7de883f2de536cd"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b41c80afef44f5b6d0ddde002699e6e41a29af4e860720ffbb048c810f29be2f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"7ba978e809d42801547ac913de4a35c7bdd1147a77f21faaa1e1d05278c58d3d"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"daab89e05e8953a38ec0a45a299fbaf79cdf2fbe924e999661dcfb8895790ab4"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"9e44f6e310dae9ef7dc3a5e8016e0955a6418068cd5e3a0820779b677427387d"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"fe440df77048846fa9c89606a2afc443bcac869c94cb92ffba7bfc05c2c30b7b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"62abbbe6b45858ff3b2301b127a5f71d37658767a1abbecad4d493ee29e9222b"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"65ae730ab60f308eb72ca69429320f477fc62e8ad6b011ca5dd42a215eeb0c56"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"08471ec5b109d21d35a4828a0905fbbd5881689567ea0e88e1d01083e1d410de"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b2bb86f6a9281064113f4a9831b8fc7ccab23362d047f566261a5c08ce185699"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"25353789d310b8581c506e9817f304b639863ca3c6a6964ae59938cce346c9be"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"738b184853c75e0a8f4758234af55930d09f20492f16e5425ec099bda6a3f28c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"355ea67e322140ec8008a0ab56b8348e860e05a5c98fa2d821c0f81dc22a2222"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"4297dc2f58fa6e37f2e3e2817af1e9be560b92fd4002e86bf136f4164c24ee8f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f1f5e11ea71efa554b6e083b525d1e379497df6207417f2faa312ea405fb0c31"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"374480ffbf56fec500232cfae2f41c86aadb96cf2d1ad219576f63042e03bed6"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"815d37e6d1b7f6102d0fe72b52e0cddbb30c461094a4982fda54974968fcab9c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f1b14721d323ceb98a2c4cde8b9d9766b0c8c4c57ab0bd430ae691e5954e4e6c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2950eb67f0784d5b49ece965b9a5505f050bf142589c26caa7de883f2de536cd"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b41c80afef44f5b6d0ddde002699e6e41a29af4e860720ffbb048c810f29be2f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"7ba978e809d42801547ac913de4a35c7bdd1147a77f21faaa1e1d05278c58d3d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"daab89e05e8953a38ec0a45a299fbaf79cdf2fbe924e999661dcfb8895790ab4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"9e44f6e310dae9ef7dc3a5e8016e0955a6418068cd5e3a0820779b677427387d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"fe440df77048846fa9c89606a2afc443bcac869c94cb92ffba7bfc05c2c30b7b"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"62abbbe6b45858ff3b2301b127a5f71d37658767a1abbecad4d493ee29e9222b"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"65ae730ab60f308eb72ca69429320f477fc62e8ad6b011ca5dd42a215eeb0c56"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"08471ec5b109d21d35a4828a0905fbbd5881689567ea0e88e1d01083e1d410de"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b2bb86f6a9281064113f4a9831b8fc7ccab23362d047f566261a5c08ce185699"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"25353789d310b8581c506e9817f304b639863ca3c6a6964ae59938cce346c9be"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"738b184853c75e0a8f4758234af55930d09f20492f16e5425ec099bda6a3f28c"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"355ea67e322140ec8008a0ab56b8348e860e05a5c98fa2d821c0f81dc22a2222"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"24893eaaf076b3250f200361ee8151f2fd7bcaa1a42d203808e19c6faddb3476"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"3be8ea6547314b45d52a14040569c61fca97e09336b47ecbe7ae0926cf68738e"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"fe21c0729abfbb4c3fb7bc9a8c77364d200204e455fbf5a08ab15bd7b48d8543"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"faa4b56abd943bef72fb2d50078741c5e0556e716465c0c10c1ea56a8494360d"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"fe21c0729abfbb4c3fb7bc9a8c77364d200204e455fbf5a08ab15bd7b48d8543"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"faa4b56abd943bef72fb2d50078741c5e0556e716465c0c10c1ea56a8494360d"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"4fd94d38730544b52ad496e0336d7845a3692175ea0b50aa604cbdb0a7614917"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2875db1c2b0d5100b4309cd6a3731daf008e0a5bc6c42da313d671d8b173443a"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"2d1865de4a8fa8c8b67f5569ba19dd9f51bd616c119d5cf4dfd12da4d2a6712d"},"origin":"booster"}
@@ -433,27 +433,27 @@
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c623b935c656d5e9de46a838ef6371b4a9483ca18e13885d12c62da88318f740"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"40add13f25ea5085aafffdbf6c25e39e6613f864a23d30c5ba6428ace0b99089"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"b125358716aa2e7b1a7d26e951a01bbdfb958ab4e2fd451948cca12763e6018c"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"0455a0a22d340e5980585310d89452bb910f193c5378e020a99243782e495cf5"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"0455a0a22d340e5980585310d89452bb910f193c5378e020a99243782e495cf5"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"191e44f8e923f6e0b8f9f4dcdc609e2725b52f682d8baa7404bfbe10b483de03"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"81424774822c8485e8ac94c828d2e16e9a19fd78c77bf538637c62d7ceedb536"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"265772c080fe4b73ef73a74dd6edd02b06046e8251ff06db55b3af5f526f180f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"b5448f083578231c0b60e0cbc11d36618b31b7dda4e25f0720d88ccb665f78a4"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"81424774822c8485e8ac94c828d2e16e9a19fd78c77bf538637c62d7ceedb536"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"265772c080fe4b73ef73a74dd6edd02b06046e8251ff06db55b3af5f526f180f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"b5448f083578231c0b60e0cbc11d36618b31b7dda4e25f0720d88ccb665f78a4"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"863dc77378728a9cb741719fbc69604ed010a2a30935fa596c63416168894ec9"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"318f416f4eca4626c323ba8e1eb4652ced63ba1d1e9164e5825a2213400d3d8d"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"db0f261a25c6461645afd4d1f5d9473460e22556e93ecdb584914e41d63d6c2a"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"8d2bcb91a9e9aee878cdbf8061911d979f65e88cbbe0336f49a3ac1e7545fdf7"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"effe652ce8bdd2907cf74b8b7ad90145b7fb05ddaa12b8754e4ed5772a254f01"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"261a689adc37551b9bd5babaa55fcf02ed2535dbe00f23a71f7c29821021d489"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"6c6c184c195061fbcf9826ce4c84104d6969184cf0822fb24ff18f5345fd04df"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"8d2bcb91a9e9aee878cdbf8061911d979f65e88cbbe0336f49a3ac1e7545fdf7"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"effe652ce8bdd2907cf74b8b7ad90145b7fb05ddaa12b8754e4ed5772a254f01"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"24448622063ce96940eff48ca7d97c82a9d02737829456813efcdefc9f7a166e"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"1bf5506088eafeb291fb90951066607a1eafe3aebf43d82e662449dd6af5b0c6"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"f2f95888b87a8886ad5d53ce32f335b689e076771891b1ebf803c5ff6e98da37"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"74c7cb533d1d378662d69a67da9b1a446580e2aa06e0f25c27d88e68edadeab2"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"74c7cb533d1d378662d69a67da9b1a446580e2aa06e0f25c27d88e68edadeab2"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"c4581eded1144cd93d6ee2e7fc18483c172b9dc1a6788e872a1b46b3a6143165"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"5db48ed9492f2b42d0d6bbfec9fda90ad0781de4ada9ef500e36859a8a30155f"},"origin":"booster"}
-{"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"1ddff281af9653e7a9b727e3f44c3d5535be1ca234e6117acc817268b30f2d10"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"5db48ed9492f2b42d0d6bbfec9fda90ad0781de4ada9ef500e36859a8a30155f"},"origin":"booster"}
+{"tag":"simplification","result":{"tag":"failure","reason":"Failed match","rule-id":"1ddff281af9653e7a9b727e3f44c3d5535be1ca234e6117acc817268b30f2d10"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"11098ddcf480284cb8533977955584c529ac45b9b931a0be4bbe5eb7857db7dc"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"RuleNotPreservingDefinedness","rule-id":"d46d20cada4918b6353d2b07886a58111de1f0cd80f4393eb64ecf821d04b622"},"origin":"booster"}
 {"tag":"simplification","result":{"tag":"failure","reason":"IndeterminateMatch","rule-id":"61fbef33b3611f1cc2aaf3b5e8ddec4a0f434c557278c38461c65c8722743497"},"origin":"booster"}
@@ -10340,3 +10340,8 @@
 {"tag":"simplification","result":{"tag":"success","rule-id":"de1eaf8a0d8befcd2e8b4c61e7b7e45620b17fc83302824560d8db59df5bb496"},"origin":"kore-rpc"}
 {"tag":"simplification","result":{"tag":"success","rule-id":"98ff096c2a9e5f442792964d2f4696945d38761c5a282074f1c4818ae838479e"},"origin":"kore-rpc"}
 {"tag":"simplification","result":{"tag":"success","rule-id":"24f1c49206508c64e029253c37c243d97ca8b3aaea2e4d938380c89870b81955"},"origin":"kore-rpc"}
+{"tag":"simplification","result":{"tag":"success","rule-id":"a8608e93d2fa2474f47dce0d5e8b028fefd181e673448e559be5b684e165b3cb"},"origin":"kore-rpc"}
+{"tag":"simplification","result":{"tag":"success","rule-id":"83662c54f738772e1837541c6290154db1341982222913735fd4d64d949971a2"},"origin":"kore-rpc"}
+{"tag":"simplification","result":{"tag":"success","rule-id":"9af5136ad1dc9c7d98cee4b5a9cbb7dfeb4b87eb628a101b036642234831868b"},"origin":"kore-rpc"}
+{"tag":"simplification","result":{"tag":"success","rule-id":"d49285d25a3f0b8144d69975db42f2c7d4e4b4cfbc018ec5b0986ee558982398"},"origin":"kore-rpc"}
+{"tag":"simplification","result":{"tag":"success","rule-id":"8f6003d99f66f4a143ae0957cf53d1572f61666b116fa2edf794c3b4140a8dd8"},"origin":"kore-rpc"}
