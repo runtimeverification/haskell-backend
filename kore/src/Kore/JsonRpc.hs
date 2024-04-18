@@ -145,12 +145,8 @@ respond serverState moduleName runSMT =
                 , logSuccessfulRewrites
                 , logSuccessfulSimplifications
                 , logTiming
-                } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+                } -> withMainModule (coerce _module) $ \serializedModule lemmas simplificationLogHandle -> do
                 start <- liftIO $ getTime Monotonic
-                _st@ServerState
-                    { simplificationLogHandle
-                    } <-
-                    liftIO $ MVar.takeMVar serverState
                 case verifyIn serializedModule state of
                     Left Error{errorError, errorContext} ->
                         pure $
@@ -420,12 +416,8 @@ respond serverState moduleName runSMT =
                     a ||| b = \v -> a v || b v
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+        Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas simplificationLogHandle -> do
             start <- liftIO $ getTime Monotonic
-            _st@ServerState
-                { simplificationLogHandle
-                } <-
-                liftIO $ MVar.takeMVar serverState
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left Error{errorError, errorContext} ->
                     pure $
@@ -511,12 +503,8 @@ respond serverState moduleName runSMT =
                                  in ImpliesResult jsonTerm False (Just jsonCond) logs
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
-        Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+        Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas simplificationLogHandle -> do
             start <- liftIO $ getTime Monotonic
-            _st@ServerState
-                { simplificationLogHandle
-                } <-
-                liftIO $ MVar.takeMVar serverState
             case verifyIn serializedModule state of
                 Left Error{errorError, errorContext} ->
                     pure $
@@ -666,7 +654,7 @@ respond serverState moduleName runSMT =
 
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
         GetModel GetModelRequest{state, _module} ->
-            withMainModule (coerce _module) $ \serializedModule lemmas ->
+            withMainModule (coerce _module) $ \serializedModule lemmas _ -> do
                 case verifyIn serializedModule state of
                     Left Error{errorError, errorContext} ->
                         pure $
@@ -718,11 +706,11 @@ respond serverState moduleName runSMT =
   where
     withMainModule module' act = do
         let mainModule = fromMaybe moduleName module'
-        ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
+        ServerState{serializedModules, simplificationLogHandle} <- liftIO $ MVar.readMVar serverState
         case Map.lookup mainModule serializedModules of
             Nothing -> pure $ Left $ backendError $ CouldNotFindModule $ coerce mainModule
             Just (SerializedDefinition{serializedModule, lemmas}) ->
-                act serializedModule lemmas
+                act serializedModule lemmas simplificationLogHandle
 
     verifierContext Exec.SerializedModule{verifiedModule} =
         PatternVerifier.verifiedModuleContext verifiedModule
