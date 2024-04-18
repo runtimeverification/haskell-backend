@@ -455,19 +455,16 @@ mkPairs ts1 ts2
     l1 = length ts1
     l2 = length ts2
 
-
 {- | pair up the tails of argument lists by first reversing the lists and pairing them up using `mkPairs` and
 then reversing the resulting paired up list as well as reversing any potential remainders.
 -}
 mkTailPairs :: [a] -> [a] -> ([(a, a)], Maybe (Either [a] [a]))
-mkTailPairs ts1 ts2 = 
+mkTailPairs ts1 ts2 =
     let (matchedTailReversed, remainderReversed) = mkPairs (reverse ts1) (reverse ts2)
-    in (reverse matchedTailReversed, bimap reverse reverse <$> remainderReversed)
-
+     in (reverse matchedTailReversed, bimap reverse reverse <$> remainderReversed)
 
 abortWithIndeterminate :: Term -> Term -> MaybeT (StateT MatchState (Except MatchResult)) a
 abortWithIndeterminate t1 t2 = lift (addIndeterminate t1 t2) >> fail ""
-
 
 matchLists ::
     KListDefinition ->
@@ -560,7 +557,7 @@ matchLists
                 abortWithIndeterminate (KList def hs1 t1) (KList def [] t2)
             Just (Right hs2) ->
                 -- match [...REST, ...] with [X'1,...,X'k,...REST', ...]
-                let (zippedBack, remainderBack) =  mkTailPairs ts1 ts2
+                let (zippedBack, remainderBack) = mkTailPairs ts1 ts2
                  in case remainderBack of
                         -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
                         -- succeed matching [...REST] with [X'1,...,X'k,...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
@@ -625,7 +622,6 @@ containsOtherKeys = \case
     Rest OtherKey{} -> True
     Rest _ -> False
 
-
 ------ Internalised Maps
 matchMaps ::
     KMapDefinition ->
@@ -640,34 +636,34 @@ matchMaps
     patRest
     subjKeyVals
     subjRest = do
-            st <- get
-            if not (Seq.null st.mQueue)
-                then -- delay matching 'KMap's until there are no regular
-                -- problems left, to obtain a maximal prior substitution
-                -- before matching map keys.
-                    enqueueMapProblem (KMap def patKeyVals patRest) (KMap def subjKeyVals subjRest)
-                else do
-                    let patternKeyVals = map (first (substituteInTerm st.mSubstitution)) patKeyVals
-                    -- check for duplicate keys
-                    checkDuplicateKeys patternKeyVals patRest
-                    checkDuplicateKeys subjKeyVals subjRest
+        st <- get
+        if not (Seq.null st.mQueue)
+            then -- delay matching 'KMap's until there are no regular
+            -- problems left, to obtain a maximal prior substitution
+            -- before matching map keys.
+                enqueueMapProblem (KMap def patKeyVals patRest) (KMap def subjKeyVals subjRest)
+            else do
+                let patternKeyVals = map (first (substituteInTerm st.mSubstitution)) patKeyVals
+                -- check for duplicate keys
+                checkDuplicateKeys patternKeyVals patRest
+                checkDuplicateKeys subjKeyVals subjRest
 
-                    let patMap = Map.fromList patternKeyVals
-                        subjMap = Map.fromList subjKeyVals
-                        -- handles syntactically identical keys in pattern and subject
-                        commonMap = Map.intersectionWith (,) patMap subjMap
-                        patExtra = patMap `Map.withoutKeys` Map.keysSet commonMap
-                        subjExtra = subjMap `Map.withoutKeys` Map.keysSet commonMap
+                let patMap = Map.fromList patternKeyVals
+                    subjMap = Map.fromList subjKeyVals
+                    -- handles syntactically identical keys in pattern and subject
+                    commonMap = Map.intersectionWith (,) patMap subjMap
+                    patExtra = patMap `Map.withoutKeys` Map.keysSet commonMap
+                    subjExtra = subjMap `Map.withoutKeys` Map.keysSet commonMap
 
-                    runMaybeT
-                        ( matchRemainderMaps
-                            (toRemainderMap (Map.toList patExtra) patRest)
-                            (toRemainderMap (Map.toList subjExtra) subjRest)
-                        )
-                        >>= \case
-                            Just newProblems ->
-                                enqueueRegularProblems $ (Seq.fromList $ Map.elems commonMap) >< newProblems
-                            Nothing -> pure ()
+                runMaybeT
+                    ( matchRemainderMaps
+                        (toRemainderMap (Map.toList patExtra) patRest)
+                        (toRemainderMap (Map.toList subjExtra) subjRest)
+                    )
+                    >>= \case
+                        Just newProblems ->
+                            enqueueRegularProblems $ (Seq.fromList $ Map.elems commonMap) >< newProblems
+                        Nothing -> pure ()
       where
         checkDuplicateKeys assocs rest =
             let duplicates =
@@ -677,7 +673,7 @@ matchMaps
                     (k, _) : _ -> failWith $ DuplicateKeys k $ KMap def assocs rest
 
         -- This function takes the remaining keys and a potential "...REST" term (usually a variable or a function) of the two maps being matched,
-        -- after the common keys have been identified. 
+        -- after the common keys have been identified.
         -- The remainder maps are encoded in the `RemainderMap` type, which is a list encoding two types of keys, either a `ConstructorKey k ...`,
         -- where `k` is a constructorLike (made up of only domain values or constructors) or `OtherKey k`, where `k` is e.g. a function symbol or a variable.
         -- the key/value pairs are ordered so that the constructor-like keys come before all other keys and the "...REST" term.
@@ -686,7 +682,7 @@ matchMaps
         -- match {K -> V, ...} with {...} where K is constructor-like
         -- if `{...}` does not contain `OtherKeys`, fail because we already matched all concrete keys, so we know `K` does not appear in {...}
         -- otherwise, one of the other keys could potentially match `K`, if `{...}` contains some OtherKey `f()` which evaluates to `K`
-        matchRemainderMaps pat@(ConstructorKey patKey _ _) subj 
+        matchRemainderMaps pat@(ConstructorKey patKey _ _) subj
             | not (containsOtherKeys subj) = lift $ failWith $ KeyNotFound patKey (fromRemainderMap def subj)
             | otherwise = do
                 abortWithIndeterminate (fromRemainderMap def pat) (fromRemainderMap def subj)
@@ -724,7 +720,6 @@ matchMaps
         -- match {...REST} with {...}
         -- succeeds as `...REST` is a variable of sort map or a function which evaluates to a map
         matchRemainderMaps (Rest (Remainder pat)) subj = pure $ Seq.singleton (pat, fromRemainderMap def subj)
-        
 {-# INLINE matchMaps #-}
 
 failWith :: FailReason -> StateT s (Except MatchResult) a
