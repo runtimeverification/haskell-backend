@@ -145,8 +145,8 @@ varsAndValues =
                 failed (DifferentSorts v d)
         , let v = var "X" someSort
               d = dv someSort ""
-              -- see https://github.com/runtimeverification/hs-backend-booster/issues/231
-           in test "dv matching a var (on RHS): indeterminate" d v $
+           in -- see https://github.com/runtimeverification/hs-backend-booster/issues/231
+              test "dv matching a var (on RHS): indeterminate" d v $
                 MatchIndeterminate $
                     NE.singleton (d, v)
         , let d = dv someSort ""
