@@ -210,15 +210,18 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
                                         ]
                                 | otherwise = Nothing
+                        -- NOTE: we do not include simplification logs into the response,
+                        -- as they are output at SimplifyJson CLI log level
                         pure . Right . Simplify $
                             SimplifyResult
                                 { state = koreRes.state
                                 , logs =
-                                    combineLogs
-                                        [ timing
-                                        , boosterRes.logs
-                                        , map RPCLog.logEntryEraseTerms <$> koreRes.logs
-                                        ]
+                                    postProcessLogs
+                                        <$> combineLogs
+                                            [ timing
+                                            , boosterRes.logs
+                                            , koreRes.logs
+                                            ]
                                 }
                     koreError ->
                         -- can only be an error
@@ -285,6 +288,9 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                  in Execute result'
             other -> other
 
+    postProcessLogs :: [RPCLog.LogEntry] -> [RPCLog.LogEntry]
+    postProcessLogs !logs = map RPCLog.logEntryEraseTerms . filter (not . isSimplificationLogEntry) $ logs
+
     executionLoop ::
         LogSettings ->
         KoreDefinition ->
@@ -317,7 +323,12 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         Left logsOnly -> do
                             -- state was simplified to \bottom, return vacuous
                             Log.logInfoNS "proxy" "Vacuous state after simplification"
-                            pure . Right . Execute $ makeVacuous logsOnly boosterResult
+                            pure . Right . Execute $
+                                makeVacuous
+                                    ( postProcessLogs
+                                        <$> logsOnly
+                                    )
+                                    boosterResult
                         Right (simplifiedBoosterState, boosterStateSimplificationLogs) -> do
                             let accumulatedLogs =
                                     combineLogs
@@ -331,7 +342,8 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                 ( currentDepth + boosterResult.depth
                                 , time + bTime
                                 , koreTime
-                                , accumulatedLogs
+                                , postProcessLogs
+                                    <$> accumulatedLogs
                                 )
                                 r{ExecuteRequest.state = execStateToKoreJson simplifiedBoosterState}
                 -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck, Branching],
@@ -346,7 +358,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         Left logsOnly -> do
                             -- state was simplified to \bottom, return vacuous
                             Log.logInfoNS "proxy" "Vacuous state after simplification"
-                            pure . Right . Execute $ makeVacuous logsOnly boosterResult
+                            pure . Right . Execute $ makeVacuous (postProcessLogs <$> logsOnly) boosterResult
                         Right (simplifiedBoosterState, boosterStateSimplificationLogs) -> do
                             -- attempt to do one step in the old backend
                             (kResult, kTime) <-
@@ -376,14 +388,15 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                                 [ rpcLogs
                                                 , boosterResult.logs
                                                 , boosterStateSimplificationLogs
-                                                , map RPCLog.logEntryEraseTerms <$> koreResult.logs
+                                                , koreResult.logs
                                                 , fallbackLog
                                                 ]
                                         loopState newLogs =
                                             ( currentDepth + boosterResult.depth + koreResult.depth
                                             , time + bTime + kTime
                                             , koreTime + kTime
-                                            , combineLogs $ accumulatedLogs : newLogs
+                                            , postProcessLogs
+                                                <$> combineLogs (accumulatedLogs : newLogs)
                                             )
                                         continueWith newLogs nextState =
                                             executionLoop
@@ -449,12 +462,13 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                                                 result
                                                                     { depth = currentDepth + boosterResult.depth + koreResult.depth
                                                                     , logs =
-                                                                        combineLogs
-                                                                            [ rpcLogs
-                                                                            , boosterResult.logs
-                                                                            , map RPCLog.logEntryEraseTerms <$> result.logs
-                                                                            , fallbackLog
-                                                                            ]
+                                                                        postProcessLogs
+                                                                            <$> combineLogs
+                                                                                [ rpcLogs
+                                                                                , boosterResult.logs
+                                                                                , map RPCLog.logEntryEraseTerms <$> result.logs
+                                                                                , fallbackLog
+                                                                                ]
                                                                     }
                                 -- can only be an error at this point
                                 res -> pure res
@@ -475,7 +489,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                 ( currentDepth + boosterResult.depth
                                 , time + bTime
                                 , koreTime
-                                , combineLogs $ rpcLogs : boosterResult.logs : newLogs
+                                , postProcessLogs <$> combineLogs (rpcLogs : boosterResult.logs : newLogs)
                                 )
                                 r{ExecuteRequest.state = nextState}
                         Right result -> do
@@ -484,7 +498,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                 Execute
                                     result
                                         { depth = currentDepth + boosterResult.depth
-                                        , logs = combineLogs [rpcLogs, result.logs]
+                                        , logs = postProcessLogs <$> combineLogs [rpcLogs, result.logs]
                                         }
             -- can only be an error at this point
             res -> pure res
@@ -493,6 +507,9 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
     -- If the state simplifies to bottom, only the logs are returned,
     -- otherwise the logs and the simplified state (after splitting it
     -- into term and predicates by an internal trivial execute call).
+    --
+    -- Only the timing logs will be returned (if requested by the top-level).
+    -- Simplification logs are only output to stderr/file at SimplifyJson level.
     simplifyExecuteState ::
         LogSettings ->
         Maybe Text ->
@@ -500,7 +517,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         ExecuteState ->
         m (Either (Maybe [RPCLog.LogEntry]) (ExecuteState, Maybe [RPCLog.LogEntry]))
     simplifyExecuteState
-        LogSettings{logSuccessfulSimplifications, logFailedSimplifications, logTiming}
+        LogSettings{logTiming}
         mbModule
         def
         s = do
@@ -551,8 +568,8 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 SimplifyRequest
                     { state = execStateToKoreJson state
                     , _module = mbModule
-                    , logSuccessfulSimplifications
-                    , logFailedSimplifications
+                    , logSuccessfulSimplifications = Nothing
+                    , logFailedSimplifications = Nothing
                     , logTiming
                     }
 
