@@ -26,8 +26,12 @@ import Booster.Pattern.Base
 import Booster.Pattern.Index (TermIndex)
 import Control.Applicative ((<|>))
 import Data.Maybe (fromMaybe)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Prettyprinter (Pretty (..))
+import Booster.Log (ToLogFormat (..))
+import GHC.TypeLits (KnownSymbol, symbolVal)
+import Data.Data (Proxy(..))
+import GHC.Base (coerce)
 
 {- | A Kore definition is constructed from a main module with its
    transitive imports.
@@ -105,6 +109,9 @@ instance Pretty SourceRef where
         Located l -> pretty l
         Labeled l -> pretty l
         UNKNOWN -> "UNKNOWN"
+
+instance KnownSymbol k => ToLogFormat (RewriteRule k) where
+    toTextualLog RewriteRule{attributes} = pack (symbolVal (Proxy :: Proxy k)) <> " " <> maybe "UNKNWON" coerce attributes.uniqueId
 
 -- | class of entities that have a location or ID to present to users
 class HasSourceRef a where

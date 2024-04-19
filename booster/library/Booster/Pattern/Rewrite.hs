@@ -24,7 +24,7 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Logger.CallStack
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Reader (ReaderT (..), ask)
+import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Hashable qualified as Hashable
 import Data.List (partition)
@@ -58,8 +58,10 @@ import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Flag (..), constructorName)
 import Data.Coerce (coerce)
+import Booster.Log (LoggerMIO (..), withContext, LogContext (..), logMessage, LogMessage, Logger)
+import GHC.TypeLits (KnownSymbol)
 
-newtype RewriteT io err a = RewriteT
+newtype RewriteT err io a = RewriteT
     {unRewriteT :: ReaderT RewriteConfig (StateT SimplifierCache (ExceptT err io)) a}
     deriving newtype (Functor, Applicative, Monad, MonadLogger, MonadIO, MonadLoggerIO)
 
@@ -68,7 +70,12 @@ data RewriteConfig = RewriteConfig
     , llvmApi :: Maybe LLVM.API
     , smtSolver :: Maybe SMT.SMTContext
     , doTracing :: Flag "CollectRewriteTraces"
+    , logger :: Logger LogMessage
     }
+
+instance MonadLoggerIO io => LoggerMIO (RewriteT err io) where
+    getLogger = RewriteT $ asks logger
+    withLogger modL (RewriteT m) = RewriteT $ withReaderT (\cfg@RewriteConfig{logger} -> cfg{logger = modL logger}) m
 
 castDoTracingFlag :: Flag "CollectRewriteTraces" -> Flag "CollectEquationTraces"
 castDoTracingFlag = coerce
@@ -80,23 +87,25 @@ pattern NoCollectRewriteTraces :: Flag "CollectRewriteTraces"
 pattern NoCollectRewriteTraces = Flag False
 
 runRewriteT ::
+    LoggerMIO io =>
     Flag "CollectRewriteTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
-    RewriteT io err a ->
+    RewriteT err io a ->
     io (Either err (a, SimplifierCache))
-runRewriteT doTracing definition llvmApi smtSolver cache =
+runRewriteT doTracing definition llvmApi smtSolver cache m = do
+    logger <- getLogger
     runExceptT
         . flip runStateT cache
-        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing}
-        . unRewriteT
+        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing, logger}
+        . unRewriteT $ m
 
-throw :: MonadLoggerIO io => err -> RewriteT io err a
+throw :: LoggerMIO io => err -> RewriteT err io a
 throw = RewriteT . lift . lift . throwE
 
-getDefinition :: MonadLoggerIO io => RewriteT io err KoreDefinition
+getDefinition :: LoggerMIO io => RewriteT err io KoreDefinition
 getDefinition = RewriteT $ definition <$> ask
 
 {- | Performs a rewrite step (using suitable rewrite rules from the
@@ -107,11 +116,11 @@ getDefinition = RewriteT $ definition <$> ask
   additional constraints.
 -}
 rewriteStep ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     [Text] ->
     [Text] ->
     Pattern ->
-    RewriteT io (RewriteFailed "Rewrite") (RewriteResult Pattern)
+    RewriteT (RewriteFailed "Rewrite") io (RewriteResult Pattern)
 rewriteStep cutLabels terminalLabels pat = do
     let termIdx = kCellTermIndex pat.term
     when (termIdx == None) $ throw (TermIndexIsNone pat.term)
@@ -129,10 +138,11 @@ rewriteStep cutLabels terminalLabels pat = do
     processGroups pat rules
   where
     processGroups ::
-        MonadLoggerIO io =>
+        LoggerMIO io =>
+        KnownSymbol k =>
         Pattern ->
         [[RewriteRule k]] ->
-        RewriteT io (RewriteFailed k) (RewriteResult Pattern)
+        RewriteT (RewriteFailed k) io (RewriteResult Pattern)
     processGroups pattr [] =
         pure $ RewriteStuck pattr
     processGroups pattr (rules : rest) = do
@@ -237,6 +247,9 @@ instance MonadLogger m => MonadLogger (RewriteRuleAppT m) where
 
 instance MonadLoggerIO m => MonadLoggerIO (RewriteRuleAppT m)
 
+instance LoggerMIO m => LoggerMIO (RewriteRuleAppT m)
+
+
 {- | Tries to apply one rewrite rule:
 
  * Unifies the LHS term with the pattern term
@@ -250,11 +263,12 @@ abort the entire rewrite).
 -}
 applyRule ::
     forall io k.
-    MonadLoggerIO io =>
+    KnownSymbol k =>
+    LoggerMIO io =>
     Pattern ->
     RewriteRule k ->
-    RewriteT io (RewriteFailed k) (RewriteRuleAppResult (RewriteRule k, Pattern))
-applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
+    RewriteT (RewriteFailed k) io (RewriteRuleAppResult (RewriteRule k, Pattern))
+applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
     subst <- case matchTerms Rewrite def rule.lhs pat.term of
@@ -262,7 +276,8 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
             failRewrite $ RewriteSortError rule pat.term sortError
         MatchFailed err@ArgLengthsDiffer{} ->
             failRewrite $ InternalMatchError $ renderText $ pretty err
-        MatchFailed _reason ->
+        MatchFailed _reason -> do
+            logMessage ("matching failed" :: Text)
             fail "Rule matching failed"
         MatchIndeterminate remainder ->
             failRewrite $ RuleApplicationUnclear rule pat.term remainder
@@ -294,7 +309,7 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     let prior = pat.constraints
         (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
     unless (null knownTrue) $
-        logOtherNS "booster" (LevelOther "Simplify") . renderText $
+        logOtherNS "booster" (LevelOther "Simplify") . renderOneLineText $
             vsep ("Known true side conditions (won't check):" : map pretty knownTrue)
 
     unclearRequires <-
@@ -368,9 +383,9 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
 
     checkConstraint ::
         (Predicate -> a) ->
-        RewriteRuleAppT (RewriteT io (RewriteFailed k)) (Maybe a) ->
+        RewriteRuleAppT (RewriteT (RewriteFailed k) io) (Maybe a) ->
         Predicate ->
-        RewriteRuleAppT (RewriteT io (RewriteFailed k)) (Maybe a)
+        RewriteRuleAppT (RewriteT (RewriteFailed k) io) (Maybe a)
     checkConstraint onUnclear onBottom p = do
         RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get
@@ -631,7 +646,7 @@ showPattern title pat = hang 4 $ vsep [title, pretty pat.term]
 -}
 performRewrite ::
     forall io.
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Flag "CollectRewriteTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->

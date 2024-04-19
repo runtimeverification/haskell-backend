@@ -44,6 +44,7 @@ import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
+import Booster.Log
 import Booster.LLVM as LLVM (API)
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (
@@ -71,7 +72,7 @@ import Booster.Syntax.Json.Internalise (
     internaliseTermOrPredicate,
     patternErrorToRpcError,
     pattern CheckSubsorts,
-    pattern DisallowAlias,
+    pattern DisallowAlias, logPatternError,
  )
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base hiding (ParsedModule)
@@ -88,7 +89,7 @@ import Kore.Syntax.Json.Types qualified as Syntax
 
 respond ::
     forall m.
-    MonadLoggerIO m =>
+    LoggerMIO m =>
     MVar ServerState ->
     Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
 respond stateVar =
@@ -97,14 +98,14 @@ respond stateVar =
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> do
+        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext (LogContext ("execute" :: Text)) $  do
             start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do
-                    Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
+                    void $ Booster.Log.withContext (LogContext ("internalise" :: Text)) $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -112,14 +113,10 @@ respond stateVar =
                                     [ patternErrorToRpcError patternError
                                     ]
                 Right (pat, substitution, unsupported) -> do
-                    unless (null unsupported) $ do
-                        Log.logWarnNS
-                            "booster"
-                            "Execute: ignoring unsupported predicate parts"
-                        Log.logOtherNS
-                            "booster"
-                            (Log.LevelOther "ErrorDetails")
-                            (Text.unlines $ map prettyPattern unsupported)
+                    unless (null unsupported) $ 
+                        withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
+                            logMessage ("ignoring unsupported predicate parts" :: Text)
+                        
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap RpcTypes.getNat req.maxDepth

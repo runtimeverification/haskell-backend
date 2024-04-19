@@ -48,6 +48,7 @@ import Booster.Definition.Base (HasSourceRef (sourceRef), RewriteRule (computedA
 import Booster.Definition.Ceil (ComputeCeilSummary (..), computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
+import Booster.Log qualified
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Prettyprinter (renderText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
@@ -211,7 +212,7 @@ main = do
 
                     let koreRespond, boosterRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
                         koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                        boosterRespond = Booster.respond boosterState
+                        boosterRespond = Booster.Log.runLogger . Booster.respond boosterState
 
                         proxyConfig =
                             ProxyConfig

@@ -36,6 +36,7 @@ import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
+import qualified Booster.Log as Log
 
 -- Includes all options from kore-rpc used by current clients. The
 -- parser in CLOptions uses compatible names and we use the same
@@ -81,16 +82,16 @@ defaultSMTOptions =
         , tactic = Nothing
         }
 
-initSolver :: Log.MonadLoggerIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
-initSolver def smtOptions = do
+initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
+initSolver def smtOptions = Log.withContext (Log.LogContext ("SMT" :: Text)) $ do
     ctxt <- mkContext smtOptions.transcript
     -- set timeout value before doing anything with the solver
     runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
-    logSMT "Checking definition prelude"
+    Log.logMessage ("Checking definition prelude" :: Text)
     let prelude = smtDeclarations def
     case prelude of
         Left err -> do
-            logSMT $ "Error translating definition to SMT: " <> err
+            Log.logMessage  $ "Error translating definition to SMT: " <> err
             throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
         Right{} -> pure ()
     check <-
@@ -99,14 +100,14 @@ initSolver def smtOptions = do
     case check of
         Sat -> pure ctxt
         other -> do
-            logSMT $ "Initial SMT definition check returned " <> pack (show other)
+            Log.logMessage  $ "Initial SMT definition check returned " <> pack (show other)
             closeContext ctxt
             throwSMT' $
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
-closeSolver :: Log.MonadLoggerIO io => SMT.SMTContext -> io ()
+closeSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
 closeSolver ctxt = do
-    logSMT "Closing SMT solver"
+    Log.logMessage ("Closing SMT solver" :: Text)
     closeContext ctxt
 
 {- |
@@ -123,17 +124,17 @@ Returns either 'Unsat' or 'Unknown' otherwise, depending on whether
 the solver could determine 'Unsat'.
 -}
 getModelFor ::
-    Log.MonadLoggerIO io =>
+    Log.LoggerMIO io =>
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
     io (Either SMT.Response (Map Variable Term))
 getModelFor ctxt ps subst
-    | null ps && Map.null subst = do
-        logSMT "No constraints or substitutions to check, returning Sat"
+    | null ps && Map.null subst = Log.withContext (Log.LogContext ("SMT" :: Text)) $ do
+        Log.logMessage ( "No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
     | otherwise = runSMT ctxt $ do
-        logSMT $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
+        Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
         let translated =
                 SMT.runTranslator $ do
                     let mkSMTEquation v t =
@@ -202,7 +203,7 @@ getModelFor ctxt ps subst
                             freeVarsMap
                 unless (Map.null untranslatableVars) $
                     let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
-                     in logSMT ("Untranslatable variables in model: " <> vars)
+                     in Log.logMessage  ("Untranslatable variables in model: " <> vars)
 
                 response <-
                     if Map.null freeVarsMap
@@ -258,7 +259,7 @@ themselves (together, without constraints in K).
 -}
 checkPredicates ::
     forall io.
-    Log.MonadLoggerIO io =>
+    Log.LoggerMIO io =>
     SMT.SMTContext ->
     Set Predicate ->
     Map Variable Term ->
@@ -266,11 +267,11 @@ checkPredicates ::
     io (Maybe Bool)
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure $ Just True -- or Nothing?
-    | Left errMsg <- translated = do
-        Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
+    | Left errMsg <- translated = Log.withContext (Log.LogContext ("SMT" :: Text)) $  do
+        Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = runSMT ctxt . runMaybeT $ do
-        logSMT $
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext (Log.LogContext ("SMT" :: Text)) $  runSMT ctxt . runMaybeT $ do
+        Log.logMessage $
             Text.unwords
                 [ "Checking"
                 , pack (show $ length psToCheck)
@@ -279,8 +280,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 , "assertions and a substitution of size"
                 , pack (show $ Map.size givenSubst)
                 ]
-        logSMT . Pretty.renderText $
-            vsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
+        Log.logMessage . Pretty.renderOneLineText $
+            hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
 
         smtRun_ Push
 
@@ -298,7 +299,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         consistent <- smtRun CheckSat
         when (consistent /= Sat) $ do
             void $ smtRun Pop
-            logSMT "Inconsistent ground truth, check returns Nothing"
+            Log.logMessage ("Inconsistent ground truth, check returns Nothing" :: Text)
             fail "returns nothing"
 
         -- save ground truth for 2nd check
@@ -314,7 +315,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         negative <- smtRun CheckSat
         void $ smtRun Pop
 
-        logSMT $
+        Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> pack (show (positive, negative))
 
@@ -348,6 +349,3 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         toCheck <-
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
-
-logSMT :: Log.MonadLoggerIO io => Text -> io ()
-logSMT = Log.logOtherNS "booster" (Log.LevelOther "SMT")
