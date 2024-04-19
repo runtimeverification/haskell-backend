@@ -110,20 +110,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 ImpliesM
                 ( Implies
                     impliesReq
-                        { ImpliesRequest.logSuccessfulSimplifications =
-                            Just $ Log.LevelOther "SimplifyJson" `elem` cfg.customLogLevels
-                        }
                 )
-        case koreResult of
-            Right (Implies koreRes) -> do
-                -- Kore may have produced simplification logs during rewriting. If so,
-                -- output them Kore at "SimplifyJson" level. Erase terms from the traces.
-                when (isJust koreRes.logs) $ do
-                    outputLogsAtLevel (Log.LevelOther "SimplifyJson")
-                        . map RPCLog.logEntryEraseTerms
-                        . fromJust
-                        $ koreRes.logs
-            _ -> pure ()
         pure koreResult
     Simplify simplifyReq ->
         liftIO (getTime Monotonic) >>= handleSimplify simplifyReq . Just
@@ -175,8 +162,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         Simplify
                             simplifyReq
                                 { SimplifyRequest.state = boosterRes.state
-                                , SimplifyRequest.logSuccessfulSimplifications =
-                                    Just $ Log.LevelOther "SimplifyJson" `elem` cfg.customLogLevels
                                 }
                 (koreResult, koreTime) <- Stats.timed $ kore koreReq
                 case koreResult of
@@ -194,13 +179,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             diffBy def boosterRes.state.term koreRes.state.term
                                  in Text.pack ("Kore simplification: Diff (< before - > after)\n" <> diff)
                         stop <- liftIO $ getTime Monotonic
-                        -- output simplification traces returned by Kore at "SimplifyJson" level, effectively
-                        -- appending them to Booster's traces. Erase terms from the traces.
-                        when (isJust koreRes.logs) $ do
-                            outputLogsAtLevel (Log.LevelOther "SimplifyJson")
-                                . map RPCLog.logEntryEraseTerms
-                                . fromJust
-                                $ koreRes.logs
                         let timing
                                 | Just start <- mbStart
                                 , fromMaybe False simplifyReq.logTiming =
@@ -369,8 +347,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                                 { state = execStateToKoreJson simplifiedBoosterState
                                                 , maxDepth = Just $ Depth 1
                                                 , assumeStateDefined = Just True
-                                                , ExecuteRequest.logSuccessfulSimplifications =
-                                                    Just $ Log.LevelOther "SimplifyJson" `elem` cfg.customLogLevels
                                                 }
                                         )
                             when (isJust statsVar) $ do
@@ -415,16 +391,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             | otherwise ->
                                                 Log.logOtherNS "proxy" (Log.LevelOther "Aborts") $
                                                     "kore confirms result " <> Text.pack (show bRes)
-
-                                    -- Kore may have produced simplification logs during rewriting. If so,
-                                    -- output them Kore at "SimplifyJson" level, effectively
-                                    -- appending them to Booster's traces. Erase terms from the traces.
-                                    when (isJust koreResult.logs) $ do
-                                        outputLogsAtLevel (Log.LevelOther "SimplifyJson")
-                                            . map RPCLog.logEntryEraseTerms
-                                            . filter isSimplificationLogEntry
-                                            . fromJust
-                                            $ koreResult.logs
 
                                     case koreResult.reason of
                                         DepthBound -> do
@@ -643,15 +609,6 @@ combineLogs :: [Maybe [RPCLog.LogEntry]] -> Maybe [RPCLog.LogEntry]
 combineLogs logSources
     | all isNothing logSources = Nothing
     | otherwise = Just $ concat $ catMaybes logSources
-
--- | Log a list of RPCLog items at a certain level
-outputLogsAtLevel :: Log.MonadLogger m => Log.LogLevel -> [RPCLog.LogEntry] -> m ()
-outputLogsAtLevel level = mapM_ (Log.logOtherNS "proxy" level . RPCLog.encodeLogEntryText)
-
-isSimplificationLogEntry :: RPCLog.LogEntry -> Bool
-isSimplificationLogEntry = \case
-    RPCLog.Simplification{} -> True
-    _ -> False
 
 makeVacuous :: Maybe [RPCLog.LogEntry] -> ExecuteResult -> ExecuteResult
 makeVacuous newLogs execState =
