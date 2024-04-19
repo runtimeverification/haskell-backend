@@ -266,7 +266,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
             other -> other
 
     postProcessLogs :: [RPCLog.LogEntry] -> [RPCLog.LogEntry]
-    postProcessLogs !logs = map RPCLog.logEntryEraseTerms . filter (not . isSimplificationLogEntry) $ logs
+    postProcessLogs !logs = map RPCLog.logEntryEraseTerms logs
 
     executionLoop ::
         LogSettings ->
