@@ -25,7 +25,7 @@ import Data.Bifunctor (second)
 import Data.Either (partitionEithers)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy (toStrict)
@@ -42,7 +42,6 @@ import Kore.Internal.TermLike (TermLike, VariableName)
 import Kore.JsonRpc qualified as Kore (ServerState)
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
-import Kore.JsonRpc.Types qualified as ImpliesRequest (ImpliesRequest (..))
 import Kore.JsonRpc.Types qualified as SimplifyRequest (SimplifyRequest (..))
 import Kore.JsonRpc.Types.Log qualified as RPCLog
 import Kore.Log qualified
