@@ -245,7 +245,7 @@ testEnv =
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier
         , hookedSymbols = mkHookedSymbols $ indexedModuleSyntax verifiedModule
-        , tracingEnabled = Nothing
+        , simplificationLogHandle = Nothing
         }
 
 simplify :: TermLike RewritingVariableName -> IO [Pattern RewritingVariableName]

@@ -1184,5 +1184,5 @@ testEnv =
                 [ mkHookedSymbols $ indexedModuleSyntax verifiedModule
                 , listHookedSymbols
                 ]
-        , tracingEnabled = Nothing
+        , simplificationLogHandle = Nothing
         }

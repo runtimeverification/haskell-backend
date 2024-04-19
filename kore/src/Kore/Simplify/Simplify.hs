@@ -151,7 +151,7 @@ data Env = Env
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
     , hookedSymbols :: !(Map Id Text)
-    , tracingEnabled :: Maybe IO.Handle
+    , simplificationLogHandle :: Maybe IO.Handle
     }
 
 data SimplifierTrace = SimplifierTrace

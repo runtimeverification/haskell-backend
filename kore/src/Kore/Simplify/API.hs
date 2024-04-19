@@ -92,7 +92,7 @@ mkSimplifierEnv ::
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
     SMT Env
-mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTools rawEquations =
+mkSimplifierEnv simplificationLogHandle verifiedModule sortGraph overloadGraph metadataTools rawEquations =
     runSimplifier earlyEnv initialize
   where
     !earlyEnv =
@@ -107,7 +107,7 @@ mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTo
             , injSimplifier
             , overloadSimplifier
             , hookedSymbols = Map.empty
-            , tracingEnabled
+            , simplificationLogHandle
             }
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
@@ -155,7 +155,7 @@ mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTo
                 , overloadSimplifier
                 , hookedSymbols
                 , axiomEquations
-                , tracingEnabled
+                , simplificationLogHandle
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.

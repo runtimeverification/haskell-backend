@@ -260,7 +260,7 @@ applyEquation ::
 applyEquation _ _term equation result = do
     let results = OrPattern.fromPattern result
     debugApplyEquation equation result
-    simplificationLogHandle <- liftSimplifier $ asks Simplifier.tracingEnabled
+    simplificationLogHandle <- liftSimplifier $ asks Simplifier.simplificationLogHandle
     when
         (isJust simplificationLogHandle)
         (liftIO $ emitEquationTrace (fromJust simplificationLogHandle))
