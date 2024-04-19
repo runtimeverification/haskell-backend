@@ -202,8 +202,8 @@ rewriteSuccess =
                          , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
                          )
 unifyNotMatch =
-    testCase "Stuck case when subject has variables" $ do
-        getsStuck $
+    testCase "Stuck case when subject has variables" $
+        getsStuck
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
 definednessUnclear =
     testCase "con4 rewrite to f2 might become undefined" $ do

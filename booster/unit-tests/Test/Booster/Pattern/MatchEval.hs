@@ -145,9 +145,10 @@ varsAndValues =
                 failed (DifferentSorts v d)
         , let v = var "X" someSort
               d = dv someSort ""
-           in test "dv matching a var (on RHS): fail" d v $
-                MatchFailed $
-                    SubjectVariableMatch d (Variable someSort "X")
+              -- see https://github.com/runtimeverification/hs-backend-booster/issues/231
+           in test "dv matching a var (on RHS): indeterminate" d v $
+                MatchIndeterminate $
+                    NE.singleton (d, v)
         , let d = dv someSort ""
               f = app f1 [d]
            in test "dv matching a function call (on RHS): indeterminate" d f $
