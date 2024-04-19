@@ -269,7 +269,7 @@ applyEquation _ _term equation result = do
     -- emit the equation trace directly to the provided handle.
     -- we intentionally omit the terms and only emit the unique id.
     emitEquationTrace handle =
-        BS.hPutStr
+        BS.hPutStrLn
             handle
             ( BS.toStrict . JSON.encode $
                 mkLogEntry (Attribute.uniqueId $ attributes equation)
