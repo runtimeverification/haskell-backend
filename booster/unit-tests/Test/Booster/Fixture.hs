@@ -53,6 +53,7 @@ testDefinition =
                 , ("f1", f1)
                 , ("f2", f2)
                 , ("f3", f3)
+                , ("g", g)
                 , ("Lbl'UndsEqlsEqls'K'Und'", eqK)
                 , ("kseq", kseq)
                 , ("dotk", dotk)
@@ -89,7 +90,7 @@ app s = SymbolApplication s []
 inj :: Sort -> Sort -> Term -> Term
 inj = Injection
 
-con1, con2, con3, con4, f1, f2, f3, eqK, kseq, dotk :: Symbol
+con1, con2, con3, con4, f1, f2, f3, g, eqK, kseq, dotk :: Symbol
 con1 = [symb| symbol con1{}(SomeSort{}) : SomeSort{} [constructor{}()] |]
 con2 = [symb| symbol con2{}(SomeSort{}) : SomeSort{} [constructor{}()] |]
 con3 = [symb| symbol con3{}(SomeSort{}, SomeSort{}) : SomeSort{} [constructor{}()] |]
@@ -97,6 +98,7 @@ con4 = [symb| symbol con4{}(SomeSort{}, SomeSort{}) : AnotherSort{} [constructor
 f1 = [symb| symbol f1{}(SomeSort{}) : SomeSort{} [function{}(), total{}()] |]
 f2 = [symb| symbol f2{}(SomeSort{}) : SomeSort{} [function{}()] |]
 f3 = [symb| symbol f3{}(SomeSort{}) : SortTestKMap{} [function{}()] |]
+g = [symb| symbol g{}() : SortTestKMapKey{} [function{}(), total{}()] |]
 eqK =
     Symbol
         { name = "Lbl'UndsEqlsEqls'K'Unds'"
@@ -106,7 +108,7 @@ eqK =
         , attributes =
             SymbolAttributes
                 { collectionMetadata = Nothing
-                , symbolType = TotalFunction
+                , symbolType = Function Total
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
@@ -222,7 +224,7 @@ functionKMapWithOneItemAndRest =
     KMap
         testKMapDefinition
         [
-            ( [trm| f1{}() |]
+            ( [trm| g{}() |]
             , [trm| \dv{SortTestKMapItem{}}("value") |]
             )
         ]
@@ -231,7 +233,7 @@ functionKMapWithOneItem =
     KMap
         testKMapDefinition
         [
-            ( [trm| f1{}() |]
+            ( [trm| g{}() |]
             , [trm| B:SortTestKMapItem{} |]
             )
         ]

@@ -70,7 +70,7 @@ mkSummary file def computeCeilsSummary =
                         concatMap Map.elems (Map.elems def.rewriteTheory)
         , partialSymbolsCount =
             length $
-                filter (\sym -> sym.attributes.symbolType == PartialFunction) $
+                filter (\sym -> sym.attributes.symbolType == Function Partial) $
                     Map.elems def.symbols
         , functionRuleCount =
             length $ concat $ concatMap Map.elems (Map.elems def.functionEquations)

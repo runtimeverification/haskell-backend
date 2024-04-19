@@ -18,6 +18,7 @@ module Booster.Definition.Attributes.Base (
     Constrained (..),
     ComputedAxiomAttributes (..),
     SymbolType (..),
+    FunctionType (..),
     SymbolAttributes (..),
     SMTType (..),
     SortAttributes (..),
@@ -155,11 +156,13 @@ data Concreteness
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
+data FunctionType = Partial | Total
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
+    deriving anyclass (NFData, Hashable)
+
 data SymbolType
-    = PartialFunction
-    | TotalFunction
+    = Function FunctionType
     | Constructor
-    | SortInjection
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
