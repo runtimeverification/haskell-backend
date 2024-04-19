@@ -738,15 +738,14 @@ enqueueRegularProblems ts =
  guarding against substitution loops.
 -}
 bindVariable :: MatchType -> Variable -> Term -> StateT MatchState (Except MatchResult) ()
-bindVariable matchType var term = do
+bindVariable matchType var term@(Term termAttrs _) = do
     State{mSubstitution = currentSubst} <- get
     case Map.lookup var currentSubst of
-        Just oldTerm
+        Just oldTerm@(Term oldTermAttrs _)
             | oldTerm == term -> pure () -- already bound
-            | DomainValue{} <- oldTerm
-            , DomainValue{} <- term
-            , matchType == Rewrite ->
-                enqueueRegularProblem oldTerm term
+            | termAttrs.isConstructorLike
+            , oldTermAttrs.isConstructorLike ->
+                failWith $ VariableConflict var oldTerm term
             | otherwise ->
                 -- the term in the binding could be _equivalent_
                 -- (not necessarily syntactically equal) to term'
