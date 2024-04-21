@@ -1,55 +1,41 @@
-# The Kore Language
-
-Kore is the "core" part of the K framework.
-
-## What is Kore all about?
-
-In short, we need a formal semantics of K.
-In K, users can define formal syntax and semantics of
-programming languages as K definitions, and automatically obtain
-parsers, interpreters, compilers, and various verification tools
-for their languages.
-Therefore K is a language-independent framework.
-
-Thanks to years of research in matching logic and reachability
-logic, we know that all K does can be nicely formalized as
-logic reasoning in matching logic.
-To give K a formal semantics, we only need to formally specify
-the underlying matching logic theories with which K does reasoning.
-In practice, these underlying theories are complex and often
-infinite, and it is tricky to specify infinite theories without
-a carefully designed formal specification language.
-And Kore is such a language.
+# Symbolic Execution Engine for the K Framework
 
 ## Structure of this project
 
-The [docs] directory contains a collection of documents
-that describe the mathematical foundation of Kore and a BNF grammar
-that defines the syntax of Kore language. See
-[/docs/introduction.md](https://github.com/runtimeverification/haskell-backend/blob/master/docs/introduction.md)
-for an overview of the components of Kore.
+This project implements the tools for symbolically executing programs in languages specified using the [K Framework]. The symbolic execution is performed at the level of `Kore` --- an intermediate representation produced by the K compiled from a language specification.
 
-The `kore` project is an implementation in Haskell of a Kore parser and symbolic execution engine,
-for use with the [K Framework] as a backend.
+The K framework is a term rewriting-based specification language, and therefore its symbolic execution backend implements a symbolic term rewriter. Such a rewriter is implemented by the `kore-rpc-booster` executable --- a JSON RPC-based server that implements the [KORE RPC protocol].
+
+The `kore-rpc` executable is a legacy version of the RPC-based rewriter that implements the same protocol. Finally, `kore-exec` and `kore-repl` are the deprecated non-RPC entry points.
+
+Note that this project is low-level and is not intended to be a user-facing tool. For the Python-based theorem prover based on the KORE RPC protocol, see the [pyk] package in the [K Framework] repository.
+
+### Kompiling a K definition and running the RPC server
+
+The `kore-rpc-booster` binary takes a `kore` file definition, parses and internalises it and then launches an RPC server, which executes requests agains this definition. It additionally accepts a path to a dynamic library compiled by the LLVM backend, which is used for simplification of bool sorted terms. In order to build the kore definition and the shared library out of a K definition, first call
+
+```
+kompile --llvm-kompile-type c my_defintion.k
+```
+
+and then launch the server via
+
+```
+kore-rpc-booster ./my_defintion-kompiled/definition.kore --module MY-DEFINITION --llvm-backend-library ./my_defintion-kompiled/interpreter
+```
 
 ## Building
 
-Besides [git], you will need [stack] or [cabal] to build `kore`.
+Besides [git], you will need [stack] or [cabal] to build the project.
 
 ```sh
-stack build kore
+stack build all
 # or
-cabal build kore
+cabal build all
 ```
 
 You may pass `--fast` to `stack build` or `-O0` to `cabal build` in order to
 disable compiler optimizations and make build faster at the cost of slower runtime.
-
-Using [make]:
-
-```sh
-make all # builds all binaries
-```
 
 ## Developing
 
@@ -68,19 +54,7 @@ You can install/have access to K by either:
   * using [kup]
   * using a pre-built binary (see the releases page in the K repository)
   * if you use Nix, see the section below
-  * using the `Dockerfile` to run the integration tests inside a container
   * or by just building K from source
-
-### Running integration tests with Docker
-
-Use `docker.sh` to run commands inside the container:
-
-``` sh
-./docker/build.sh  # run once when dependencies change
-./docker/run.sh make all  # build the backend
-./docker/run.sh make test  # run all tests
-./docker/run.sh make -C test/imp test  # run all tests in test/imp
-```
 
 ### Recommended dependencies
 
@@ -88,7 +62,7 @@ For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
 - [ghcup] or [Nix] for managing required Haskell tooling
-- [hlint] for compliance with project guidelines.
+- [hlint] and [fourmolu] for compliance with project guidelines.
 
 ### Running Haskell Language Server
 
@@ -100,10 +74,14 @@ set up your [Nix] environment to build the server.
 Prequisite: build the project with either Stack or Cabal.
 
 Instructions on integrating with VSCode:
-1. Install the [Haskell extension] 
+1. Install the [Haskell extension]
 2. Go to `Extension Settings` and pick `GHCup` in the `Manage HLS` dropdown
 3. (Optional) Manually set the GHCup executable path
 4. (Extra) Set `Formatting Provider` to `fourmolu` for correct formatting
+
+You may also need to install the [nix-env-selector](https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector) extension.
+
+The `nix-env-selector` extension may prompt for the workspace to be re-loaded. Once re-loaded, HLS should start working.
 
 ### Developing with Nix
 
@@ -178,6 +156,18 @@ nix run .#format Foo.hs
 We provide a development nix shell with a suitable development environment and
 a binary cache at [runtimeverification.cachix.org]. The development can be launched via `nix develop` and then calling `stack build/test/etc`.
 
+### Nix-direnv
+
+Using a version of direnv that works with nix (https://github.com/nix-community/nix-direnv) allows seamless loading and unloading of the nix shell, which adds all the required packages such as `cabal`, `hpack`, `fourmolu`, etc. Use the above link to install `nix-direnv`, making sure to hook direnv into whichever shell you are using (https://direnv.net/docs/hook.html). You can use the default nix shell (currently GHC version 9.6.4) by running
+
+```bash
+echo "use flake" > .envrc
+```
+
+Finally, run `direnv allow` inside the repo folder to load up the nix shell.
+
+Note that only `cabal` currently works within the nix shell and since it does not support the HPack `package.yaml` file format, any changes to this file will require running `hpack` before they are picked up by cabal.
+
 ### Upgrading dependencies
 
 When one of the package description files (`kore.cabal`, `kore-rpc-types.cabal`) changes, or when upgrading to a newer `stack` resolver, the dependencies need to be consolidated to avoid accidental breakage from incompatible up-stream updates. We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using.
@@ -216,6 +206,36 @@ integration-shell:me@somewhere:haskell-backend$ exit
 me@somewhere:haskell-backend$ 
 ```
 
+### Integration/Performance tests of downstream projects
+
+#### scripts/performance-tests-{kevm, kontrol, mx}.sh
+
+Call these scripts from the root of the repo to obtain performance numbers for the KEVM and Kontrol test suites. These are necessary for any new feature which is expected to modify the perfromance of the booster and the timings should be includedf in the PR.
+
+
+#### scripts/booster-analysis.sh
+
+This scipt can be used with any folder containing bug reports to build an anlysis of fallback/abort reasons in the booster. To obtain bug reports, first run `PYTEST_PARALLEL=8 scripts/performance-tests-kevm.sh --bug-report`, which will generate tarballs for all the tests and drop them into `scripts/bug-reports/`. Then call `scripts/booster-analysis.sh scripts/booster-analysis.sh scripts/bug-reports/kevm-v1.0.417-main`
+
+
+### Generating an integration test from a bug-report.tar.gz
+
+1) Rename `bug-report.tar.gz` to something more descriptive like `issue-123.tar.gz`
+2) Copy the tar file into `test/rpc-integration/`
+3) Run `./generateDirectoryTest.sh issue-123.tar.gz`. This will copy the definition files into `resources/` and rpc commands into `test-issue-123/`
+4) Run the test via `./runDirectoryTest test-issue-123`
+
+Note that it is also possible to run a test directly from a tarball with `runDirectoryTest.sh`, skipping the unpacking step. This is useful in automated workflows that involve running several tarballs.
+
+### Pretty printing KORE JSON
+
+There is a simple utility called pretty which can be used to pretty print a KORE JSON term from a bug report, which does not contain the original K definition:
+
+```
+cabal run pretty -- ../definition.kore <(jq '.result.state' XXX_response.json)
+```
+
+
             
 
 [docs]: https://github.com/runtimeverification/haskell-backend/tree/master/docs
@@ -229,6 +249,7 @@ me@somewhere:haskell-backend$
 [haskell-language-server]: https://github.com/haskell/haskell-language-server
 [language server]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
+[fourmolu]: https://github.com/fourmolu/fourmolu
 [runtimeverification.cachix.org]: https://runtimeverification.cachix.org/
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
@@ -236,3 +257,5 @@ me@somewhere:haskell-backend$
 [kup]: https://github.com/runtimeverification/k/releases/latest 
 [ghcup]: https://www.haskell.org/ghcup/
 [Haskell extension]: https://marketplace.visualstudio.com/items?itemName=haskell.haskell
+[KORE RPC protocol]: ./docs/2022-07-18-JSON-RPC-Server-API.md
+[pyk]: https://github.com/runtimeverification/k/tree/master/pyk
