@@ -10,7 +10,6 @@ module Kore.Log.InfoUserLog (
     infoUserLog,
 ) where
 
-import Data.Aeson qualified as JSON
 import Data.Text
 import Debug
 import Log
@@ -36,8 +35,6 @@ instance Pretty InfoUserLog where
 instance Entry InfoUserLog where
     entrySeverity _ = Info
     oneLineDoc (InfoUserLog userLog) = Pretty.pretty userLog
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     helpDoc _ = "user-specified log message"
 
 infoUserLog :: MonadLog log => Text -> log ()

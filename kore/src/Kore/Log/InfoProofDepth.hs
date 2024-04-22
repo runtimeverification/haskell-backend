@@ -12,7 +12,6 @@ module Kore.Log.InfoProofDepth (
     ProofDepth (..),
 ) where
 
-import Data.Aeson qualified as JSON
 import Data.Semigroup qualified as Semigroup
 import Log
 import Numeric.Natural (
@@ -58,8 +57,7 @@ instance Entry InfoProofDepth where
             , Pretty.colon
             , Pretty.pretty depth
             ]
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= entryTypeText (toEntry entry)]
+
     helpDoc _ = "log depth of proof graph"
 
 infoUnprovenDepth :: MonadLog log => ProofDepth -> log ()

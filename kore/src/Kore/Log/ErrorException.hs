@@ -20,7 +20,6 @@ import Control.Monad.Catch (
     fromException,
     throwM,
  )
-import Data.Aeson qualified as JSON
 import Log
 import Prelude.Kore
 import Pretty (
@@ -50,8 +49,6 @@ instance Pretty ErrorException where
 instance Entry ErrorException where
     entrySeverity _ = Error
     oneLineDoc _ = "ErrorException"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= entryTypeText (toEntry entry)]
     helpDoc _ = "log internal errors"
 
 errorException :: MonadLog log => SomeException -> log ()

@@ -14,7 +14,6 @@ import Control.Exception (
     Exception (..),
     throw,
  )
-import Data.Aeson qualified as JSON
 import GHC.Exception (
     prettyCallStackLines,
  )
@@ -64,8 +63,6 @@ instance Pretty ErrorRewriteLoop where
 
 instance Entry ErrorRewriteLoop where
     oneLineDoc ErrorRewriteLoop{rule} = pretty @SourceLocation $ from rule
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     entrySeverity _ = Error
 
 errorRewriteLoop ::

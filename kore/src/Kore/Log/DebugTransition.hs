@@ -12,7 +12,6 @@ module Kore.Log.DebugTransition (
     debugFinalTransition,
 ) where
 
-import Data.Aeson qualified as JSON
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
@@ -110,8 +109,6 @@ instance Entry DebugTransition where
     oneLineDoc
         (DebugBeforeTransition BeforeTransition{transition}) =
             "before " <> pretty transition
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
 
 debugBeforeTransition ::
     MonadLog log =>

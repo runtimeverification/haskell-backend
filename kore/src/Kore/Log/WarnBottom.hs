@@ -12,7 +12,6 @@ module Kore.Log.WarnBottom (
     warnConfigIsBottom,
 ) where
 
-import Data.Aeson qualified as JSON
 import Kore.Attribute.SourceLocation
 import Kore.Internal.Pattern (Pattern)
 import Kore.Rewrite.ClaimPattern
@@ -38,8 +37,6 @@ instance Pretty WarnClaimRHSIsBottom where
 instance Entry WarnClaimRHSIsBottom where
     entrySeverity _ = Warning
     helpDoc _ = "warn when the right-hand side of a claim is bottom"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     oneLineDoc WarnClaimRHSIsBottom{claim} = prettySourceLocation claim
 
 prettySourceLocation :: ClaimPattern -> Pretty.Doc ann
@@ -66,8 +63,6 @@ instance Pretty WarnConfigIsBottom where
 instance Entry WarnConfigIsBottom where
     entrySeverity _ = Warning
     helpDoc _ = "warn when the configuration is bottom"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     oneLineDoc _ = "A configuration has been simplified to bottom."
 
 warnConfigIsBottom ::

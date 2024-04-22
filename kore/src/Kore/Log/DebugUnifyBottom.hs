@@ -12,7 +12,6 @@ module Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
 ) where
 
-import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
  )
@@ -27,9 +26,7 @@ import Log (
     Entry (..),
     MonadLog (..),
     Severity (..),
-    entryTypeText,
     logEntry,
-    toEntry,
  )
 import Logic (
     MonadLogic,
@@ -62,8 +59,6 @@ instance Pretty DebugUnifyBottom where
 instance Entry DebugUnifyBottom where
     entrySeverity _ = Debug
     oneLineDoc _ = "DebugUnifyBottom"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= entryTypeText (toEntry entry)]
     helpDoc _ = "log failed unification"
 
 mkDebugUnifyBottom ::

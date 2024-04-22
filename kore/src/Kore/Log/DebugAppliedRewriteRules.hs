@@ -13,7 +13,6 @@ module Kore.Log.DebugAppliedRewriteRules (
     debugAppliedLabeledRewriteRule,
 ) where
 
-import Data.Aeson qualified as JSON
 import Data.Text (Text)
 import Kore.Attribute.Axiom (
     SourceLocation,
@@ -61,11 +60,8 @@ instance Pretty DebugAppliedRewriteRules where
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
-
     oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules} =
         Pretty.hsep $ pretty <$> appliedRewriteRules
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
 
 debugAppliedRewriteRules ::
     MonadLog log =>
@@ -110,8 +106,6 @@ instance Entry DebugAppliedLabeledRewriteRule where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rule with label"
     oneLineDoc DebugAppliedLabeledRewriteRule{sourceLocation} = pretty sourceLocation
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
 
 debugAppliedLabeledRewriteRule ::
     MonadLog log =>

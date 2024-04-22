@@ -28,7 +28,6 @@ import Control.Error (
     ExceptT,
     withExceptT,
  )
-import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
  )
@@ -60,7 +59,13 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Unparser (Unparse (..))
-import Log
+import Log (
+    Entry (..),
+    MonadLog,
+    Severity (..),
+    logEntry,
+    logWhile,
+ )
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
@@ -271,7 +276,6 @@ instance Entry DebugAttemptEquation where
             (srcLoc equation)
     oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
     oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
-
     oneLineJson = \case
         entry@DebugAttemptEquation{} -> JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
         DebugAttemptEquationResult equation (Right _) ->
@@ -363,8 +367,6 @@ instance Entry DebugApplyEquation where
                 _
             ) =
             pretty sourceLocation
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     helpDoc _ = "log equation application successes"
 
 {- | Log when an 'Equation' is actually applied.

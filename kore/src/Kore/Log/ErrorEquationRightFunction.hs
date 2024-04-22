@@ -14,7 +14,6 @@ import Control.Exception (
     Exception (..),
     throw,
  )
-import Data.Aeson qualified as JSON
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom (
@@ -26,7 +25,11 @@ import Kore.Equation.Equation (
 import Kore.Internal.TermLike (
     VariableName,
  )
-import Log
+import Log (
+    Entry (..),
+    Severity (Error),
+    SomeEntry (SomeEntry),
+ )
 import Prelude.Kore
 import Pretty (
     Pretty,
@@ -68,8 +71,6 @@ instance Entry ErrorEquationRightFunction where
                 Equation{attributes = Axiom{sourceLocation}}
             ) =
             pretty sourceLocation
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     helpDoc _ = "errors raised when right-hand side of equation is not a function pattern"
 
 instance SQL.Table ErrorEquationRightFunction

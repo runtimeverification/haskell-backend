@@ -12,7 +12,6 @@ module Kore.Log.WarnStuckClaimState (
     warnStuckClaimStateBottomLHS,
 ) where
 
-import Data.Aeson qualified as JSON
 import Kore.Attribute.SourceLocation
 import Kore.Reachability.SomeClaim
 import Log
@@ -76,8 +75,6 @@ instance Entry WarnStuckClaimState where
             , Pretty.colon
             , Pretty.pretty @SourceLocation $ from claim
             ]
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
 
     helpDoc _ = "distinguish the ways a proof can become stuck"
 

@@ -15,7 +15,6 @@ module Kore.Log.DebugUnification (
     whileDebugUnification,
 ) where
 
-import Data.Aeson qualified as JSON
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 import Kore.Unparser
@@ -42,8 +41,6 @@ instance Entry DebugUnification where
     oneLineDoc (DebugUnificationWhile _) = "DebugUnificationWhile"
     oneLineDoc (DebugUnificationSolved _) = "DebugUnificationSolved"
     oneLineDoc (DebugUnificationUnsolved _) = "DebugUnificationUnsolved"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
 
 -- | @WhileDebugUnification@ encloses the context of unification log entries.
 data WhileDebugUnification = WhileDebugUnification {term1, term2 :: TermLike VariableName}

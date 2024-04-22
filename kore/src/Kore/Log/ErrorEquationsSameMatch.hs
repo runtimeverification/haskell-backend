@@ -14,7 +14,6 @@ import Control.Exception (
     Exception (..),
     throw,
  )
-import Data.Aeson qualified as JSON
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom (
@@ -26,7 +25,11 @@ import Kore.Equation.Equation (
 import Kore.Internal.TermLike (
     VariableName,
  )
-import Log
+import Log (
+    Entry (..),
+    Severity (Error),
+    SomeEntry (SomeEntry),
+ )
 import Prelude.Kore
 import Pretty (
     Pretty,
@@ -80,8 +83,6 @@ instance Entry ErrorEquationsSameMatch where
                 , Pretty.comma
                 , pretty sourceLoc2
                 ]
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
 
 instance SQL.Table ErrorEquationsSameMatch
 

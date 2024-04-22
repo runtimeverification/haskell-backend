@@ -15,7 +15,6 @@ import Control.Monad.Catch (
     MonadThrow,
     throwM,
  )
-import Data.Aeson qualified as JSON
 import Log hiding (message)
 import Prelude.Kore
 import Pretty
@@ -35,8 +34,6 @@ instance Pretty ErrorParse where
 instance Entry ErrorParse where
     entrySeverity _ = Error
     oneLineDoc _ = "ErrorParse"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= entryTypeText (toEntry entry)]
 
 errorParse :: MonadThrow log => String -> log a
 errorParse message =

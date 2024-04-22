@@ -10,7 +10,6 @@ module Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
 ) where
 
-import Data.Aeson qualified as JSON
 import GHC.Generics as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol (
@@ -47,8 +46,6 @@ instance Entry WarnSymbolSMTRepresentation where
     entrySeverity _ = Warning
     oneLineDoc (WarnSymbolSMTRepresentation Symbol{symbolAttributes}) =
         Pretty.pretty (sourceLocation symbolAttributes)
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     helpDoc _ =
         "warn when a symbol cannot be translated for the SMT solver, despite being given an explicit translation"
 

@@ -28,7 +28,6 @@ import Pretty (
  )
 import Pretty qualified
 import SQL qualified
-import Data.Aeson qualified as JSON
 
 newtype ErrorBottomTotalFunction = ErrorBottomTotalFunction
     { term :: TermLike VariableName
@@ -56,8 +55,6 @@ instance Exception ErrorBottomTotalFunction where
 instance Entry ErrorBottomTotalFunction where
     entrySeverity _ = Error
     oneLineDoc _ = "ErrorBottomTotalFunction"
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
     helpDoc _ = "errors raised when a total function is undefined"
 
 instance SQL.Table ErrorBottomTotalFunction

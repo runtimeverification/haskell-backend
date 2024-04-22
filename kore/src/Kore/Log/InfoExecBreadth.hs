@@ -11,7 +11,6 @@ module Kore.Log.InfoExecBreadth (
     infoExecBreadth,
 ) where
 
-import Data.Aeson qualified as JSON
 import Log
 import Numeric.Natural
 import Prelude.Kore
@@ -40,8 +39,6 @@ instance Entry InfoExecBreadth where
     entrySeverity _ = Info
     oneLineDoc (InfoExecBreadth (ExecBreadth execBreadth)) =
         Pretty.pretty execBreadth
-    oneLineJson entry =
-        JSON.object ["entry" JSON..= entryTypeText (toEntry entry)]
     helpDoc _ = "log number of concurrent branches"
 
 infoExecBreadth :: MonadLog log => ExecBreadth -> log ()
