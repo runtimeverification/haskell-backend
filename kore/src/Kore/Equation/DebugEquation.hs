@@ -28,6 +28,7 @@ import Control.Error (
     ExceptT,
     withExceptT,
  )
+import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
  )
@@ -59,13 +60,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Unparser (Unparse (..))
-import Log (
-    Entry (..),
-    MonadLog,
-    Severity (..),
-    logEntry,
-    logWhile,
- )
+import Log
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
