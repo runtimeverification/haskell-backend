@@ -44,7 +44,7 @@ import Control.Monad.Logger.CallStack (
  )
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Reader (ReaderT (..), ask)
+import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State
 import Data.Aeson.Text (encodeToLazyText)
 import Data.ByteString.Char8 qualified as BS
@@ -75,15 +75,23 @@ import Booster.Pattern.Bool
 import Booster.Pattern.Index
 import Booster.Pattern.Match
 import Booster.Pattern.Util
-import Booster.Prettyprinter (renderDefault, renderText)
+import Booster.Prettyprinter (renderDefault, renderText, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Bound (..), Flag (..))
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
+import Booster.Log
+import Booster.LLVM (LlvmError(..))
+import GHC.TypeLits (KnownSymbol)
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
     -- ~ EquationConfig -> EquationState -> io (Either EquationFailure a, EquationState)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)
+
+instance MonadLoggerIO io => LoggerMIO (EquationT io) where
+    getLogger = EquationT $ asks logger
+    withLogger modL (EquationT m) = EquationT $ withReaderT (\cfg@EquationConfig{logger} -> cfg{logger = modL logger}) m
+
 
 throw :: MonadLoggerIO io => EquationFailure -> EquationT io a
 throw = EquationT . lift . throwE
@@ -142,7 +150,10 @@ data EquationConfig = EquationConfig
     , doTracing :: Flag "CollectEquationTraces"
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
+    , logger :: Logger LogMessage
     }
+
+
 
 pattern CollectEquationTraces :: Flag "CollectEquationTraces"
 pattern CollectEquationTraces = Flag True
@@ -381,7 +392,7 @@ data EquationPreference = PreferFunctions | PreferSimplifications
     deriving stock (Eq, Show)
 
 runEquationT ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -391,6 +402,7 @@ runEquationT ::
     io (Either EquationFailure a, SimplifierCache)
 runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
+    logger <- getLogger
     (res, endState) <-
         flip runStateT (startState sCache) $
             runExceptT $
@@ -403,6 +415,7 @@ runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
                         , doTracing
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
+                        , logger
                         }
     pure (res, endState.cache)
 
@@ -413,9 +426,10 @@ iterateEquations ::
     Term ->
     EquationT io Term
 iterateEquations direction preference startTerm = do
-    logOther (LevelOther "Simplify") $ "Evaluating " <> renderText (pretty startTerm)
-    result <- pushRecursion startTerm >>= checkCounter >> go startTerm <* popRecursion
-    logOther (LevelOther "Simplify") $ "Result: " <> renderText (pretty result)
+    -- logOther (LevelOther "Simplify") $ "Evaluating " <> renderText (pretty startTerm)
+    result@(Term attrs _) <- pushRecursion startTerm >>= checkCounter >> go startTerm <* popRecursion
+    when (startTerm /= result) $ withContext "success" $ withContext (LogContext $ TermCtxt attrs.hash) $ 
+        withContext "pretty" $ logMessage result 
     pure result
   where
     checkCounter counter = do
@@ -479,7 +493,7 @@ llvmSimplify term = do
 
 -- | Evaluate and simplify a term.
 evaluateTerm ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Flag "CollectEquationTraces" ->
     Direction ->
     KoreDefinition ->
@@ -503,7 +517,7 @@ evaluateTerm' direction = iterateEquations direction PreferFunctions
      Returns either the first failure or the new pattern if no failure was encountered
 -}
 evaluatePattern ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -645,24 +659,19 @@ applyHooksAndEquations pref term = do
         case term of
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
-                    logOther (LevelOther "Simplify") $
-                        "Calling hooked function "
-                            <> (Text.decodeUtf8 $ fromJust sym.attributes.hook)
-                            <> " for "
-                            <> renderText (pretty term)
-                    either (throw . InternalError) checkChanged
-                        . runExcept
-                        $ hook args
+                    withContext (LogContext $ "hook " <> maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook) $
+                        either (\e -> withContext "failure" (logMessage e) >> throw (InternalError e)) checkChanged
+                            . runExcept
+                            $ hook args
             _other -> pure Nothing
 
     -- for the (unlikely) case that a built-in reproduces itself, we
     -- cannot blindly set the changed flag when we have applied a hook
     checkChanged :: Maybe Term -> EquationT io (Maybe Term)
     checkChanged Nothing =
-        logOther (LevelOther "Simplify") "Hook returned no result" >> pure Nothing
-    checkChanged (Just t) = do
-        logOther (LevelOther "Simplify") . renderText $
-            "Hook returned " <> pretty t
+        withContext "failure" (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
+    checkChanged (Just t@(Term attrs _)) = do
+        withContext "success" $ withContext (LogContext $ TermCtxt attrs.hash) $ withContext "pretty" $ logMessage t
         unless (t == term) setChanged
         pure (Just t)
 
@@ -728,6 +737,7 @@ handleSimplificationEquation success continue _abort = \case
 
 applyEquations ::
     forall io tag.
+    KnownSymbol tag =>
     MonadLoggerIO io =>
     Theory (RewriteRule tag) ->
     ResultHandler io ->
@@ -796,20 +806,25 @@ emitEquationTrace t loc lbl uid res = do
 
 applyEquation ::
     forall io tag.
+    KnownSymbol tag =>
     MonadLoggerIO io =>
     Term ->
     RewriteRule tag ->
     EquationT io ApplyEquationResult
-applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
+applyEquation term rule = withContext (LogContext rule) $ fmap (either Failure Success) $ runExceptT $ do
     -- ensured by internalisation: no existentials in equations
-    unless (null rule.existentials) $
+    unless (null rule.existentials) $ do
+        withContext "failure" $
+            logMessage ("Equation with existential" :: Text)
         lift . throw . InternalError $
             "Equation with existentials: " <> Text.pack (show rule)
     -- immediately cancel if not preserving definedness
-    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $
+    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+        withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about definedness of rule due to:" <+> pretty rule.computedAttributes.notPreservesDefinednessReasons
         throwE RuleNotPreservingDefinedness
     -- immediately cancel if rule has concrete() flag and term has variables
-    when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $
+    when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
+        withContext "abort" $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
         throwE (MatchConstraintViolated Concrete "* (term has variables)")
     -- match lhs
     koreDef <- (.definition) <$> lift getConfig
@@ -833,8 +848,7 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
             knownPredicates <- (.predicates) <$> lift getState
             let (knownTrue, toCheck) = partition (`Set.member` knownPredicates) required
             unless (null knownTrue) $
-                logOtherNS "booster" (LevelOther "Simplify") . renderText $
-                    vsep ("Conditions known to be true: " : map pretty knownTrue)
+                logMessage $ renderOneLineText $ "Known true side conditions (won't check):" <+> pretty knownTrue
 
             unclearConditions' <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
 
@@ -851,7 +865,9 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
                         catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
                     lift $ pushConstraints $ Set.fromList ensuredConditions
                     pure $ substituteInTerm subst rule.rhs
-                unclearConditions -> throwE $ IndeterminateCondition unclearConditions
+                unclearConditions -> do
+                    withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about a condition(s) in rule:" <+> pretty unclearConditions
+                    throwE $ IndeterminateCondition unclearConditions
   where
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
@@ -860,7 +876,7 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
         (Predicate -> ApplyEquationFailure) ->
         Predicate ->
         ExceptT ApplyEquationFailure (EquationT io) (Maybe Predicate)
-    checkConstraint whenBottom (Predicate p) = do
+    checkConstraint whenBottom (Predicate p) = withContext "constraint" $ do
         logOther (LevelOther "Simplify") $
             "Recursive simplification of predicate: " <> pack (renderDefault (pretty p))
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
@@ -938,7 +954,7 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
     so we can detect simplification loops and avoid monad nesting.
 -}
 simplifyConstraint ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -946,11 +962,11 @@ simplifyConstraint ::
     SimplifierCache ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) =
+simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) = do
     runEquationT doTracing def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -970,20 +986,23 @@ simplifyConstraint' :: MonadLoggerIO io => Bool -> Term -> EquationT io Term
 -- evaluateTerm.
 simplifyConstraint' recurseIntoEvalBool = \case
     t@(Term TermAttributes{canBeEvaluated} _)
-        | isConcrete t && canBeEvaluated -> do
+        | isConcrete t && canBeEvaluated -> withTermContext t $ do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
-                Just api ->
+                Just api -> withContext "llvm" $
                     LLVM.simplifyBool api t >>= \case
-                        Left e ->
-                            throw $ UndefinedTerm t e
-                        Right res ->
-                            pure $
-                                if res
+                        Left (LlvmError e) -> do
+                            withContext "failure" $ logMessage $ Text.decodeUtf8 e
+                            throw $ UndefinedTerm t $ LlvmError e
+                        Right res -> do
+                            let result@(Term attrs _) = if res
                                     then TrueBool
                                     else FalseBool
+                            withContext "success" $ withContext (LogContext $ TermCtxt attrs.hash) $ do
+                                withContext "pretty" $ logMessage result
+                                pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
-        | otherwise ->
+        | otherwise -> withTermContext t $ 
             if recurseIntoEvalBool then evalBool t else pure t
   where
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term

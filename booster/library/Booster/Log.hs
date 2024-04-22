@@ -1,28 +1,34 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module Booster.Log where
 import Data.Functor.Contravariant
 import Data.Text(Text, pack)
-import Data.Aeson((.=), object, Value (String), ToJSON (toJSON))
 import Control.Monad.IO.Class
 
 
-import Booster.Pattern.Base(Term(..), TermAttributes(hash))
+import Booster.Pattern.Base(Term(..), TermAttributes(hash), Pattern (..), pattern AndTerm, Predicate(..))
 import Numeric (showHex)
 import Booster.Prettyprinter (renderOneLineText)
-import Prettyprinter (pretty)
-import Booster.Syntax.Json.Externalise (externaliseTerm)
-import Data.String (IsString)
+import Prettyprinter (pretty, Pretty)
 import Booster.Syntax.Json (KorePattern, prettyPattern)
 import qualified Data.Hashable
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Trans.Except (ExceptT (..))
-import Control.Monad.Trans.Reader (ReaderT (..), withReaderT, ask, withReader)
-import Control.Monad.Trans.State (StateT (..), get, put, evalStateT)
-import Control.Monad.Logger (MonadLoggerIO (askLoggerIO), MonadLogger, logWithoutLoc, LogLevel (..), logInfoN, defaultLoc, ToLogStr (toLogStr))
+import Control.Monad.Trans.Reader (ReaderT (..), withReaderT, ask)
+import Control.Monad.Trans.State (StateT (..))
+import Control.Monad.Logger (MonadLoggerIO (askLoggerIO), MonadLogger, LogLevel (..), defaultLoc, ToLogStr (toLogStr), NoLoggingT)
 import qualified Control.Monad.Trans.State.Strict as Strict
+import Data.List (intersperse, foldl')
+import Data.String (IsString)
+import GHC.Exts (IsString(..))
+import qualified Data.Text as Text
+import Data.Word (Word64)
+import Language.C (undefNode)
+import qualified Data.Set as Set
+import Data.Coerce (coerce)
 
 newtype Logger a = Logger (a -> IO ())
 
@@ -37,7 +43,9 @@ class ToLogFormat a where
 
 data LogContext = forall a. ToLogFormat a => LogContext a
 
-
+instance IsString LogContext where
+  fromString = LogContext . pack
+  
 
 data LogMessage where
   LogMessage :: ToLogFormat a => [LogContext] -> a -> LogMessage
@@ -62,11 +70,18 @@ instance LoggerMIO m => LoggerMIO (StateT s m) where
 instance LoggerMIO m => LoggerMIO (Strict.StateT s m) where
   withLogger modL (Strict.StateT m) = Strict.StateT $ \s -> withLogger modL $ m s
 
+instance MonadIO m => LoggerMIO (NoLoggingT m) where
+  getLogger = pure $ Logger $ \_ -> pure ()
+  withLogger _ = id
+
 
 logMessage :: (LoggerMIO m, ToLogFormat a) => a -> m ()
 logMessage a = getLogger >>= \case
   (Logger l) -> liftIO $ l $ LogMessage [] a
 
+
+logPretty :: (LoggerMIO m, Pretty a) => a -> m ()
+logPretty = logMessage . renderOneLineText . pretty
 
 withContext :: LoggerMIO m => LogContext -> m a -> m a
 withContext c = withLogger (\(Logger l) -> Logger $ l . (\(LogMessage ctxt m) -> LogMessage (c:ctxt) m))
@@ -76,7 +91,7 @@ withContext c = withLogger (\(Logger l) -> Logger $ l . (\(LogMessage ctxt m) ->
 newtype TermCtxt = TermCtxt Int
 
 instance ToLogFormat TermCtxt where
-  toTextualLog (TermCtxt hsh) = "term " <> (pack $ showHex hsh "")
+  toTextualLog (TermCtxt hsh) = "term " <> (showHashHex hsh)
   -- toJSONLog (TermCtxt hsh) = object [ "term" .= hsh ]
 
 instance ToLogFormat Term where
@@ -90,8 +105,12 @@ instance ToLogFormat Text where
 
 withTermContext :: LoggerMIO m => Term -> m a -> m a
 withTermContext t@(Term attrs _) m = withContext (LogContext $ TermCtxt attrs.hash) $ do
-  logMessage t
+  withContext "pretty" $ logMessage t
   m
+
+withPatternContext :: LoggerMIO m => Pattern -> m a -> m a
+withPatternContext Pattern{term , constraints} m = let t' = foldl' AndTerm term $ Set.toList $ Set.map coerce constraints in
+  withTermContext t' m
 
 
 instance ToLogFormat KorePattern where
@@ -101,14 +120,17 @@ instance ToLogFormat KorePattern where
 newtype KorePatternCtxt = KorePatternCtxt KorePattern
 
 
+showHashHex :: Int -> Text
+showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ pack $ showHex w64 ""
+
 instance ToLogFormat KorePatternCtxt where
-    toTextualLog (KorePatternCtxt t) = "kore term " <> (pack $ showHex (Data.Hashable.hash $ prettyPattern t) "")
- 
+    toTextualLog (KorePatternCtxt t) = "term " <> (showHashHex $ Data.Hashable.hash $ prettyPattern t)
+
 
 
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a
 withKorePatternContext t m = withContext (LogContext $ KorePatternCtxt t) $ do
-  logMessage t
+  withContext "pretty" $ logMessage t
   m
 
 
@@ -123,4 +145,6 @@ instance MonadLoggerIO m => LoggerMIO (LoggerT m) where
 runLogger :: MonadLoggerIO m => LoggerT m a -> m a
 runLogger (LoggerT m) = do
   l <- askLoggerIO
-  runReaderT m $ Logger $ \(LogMessage ctxts msg) -> l defaultLoc "" LevelInfo $ toLogStr $ (mconcat $ map (\(LogContext l) -> "[" <> toTextualLog l <> "]") ctxts) <> " " <> toTextualLog msg
+  runReaderT m $ Logger $ \(LogMessage ctxts msg) -> 
+    let logLevel = mconcat $ intersperse "][" $ map (\(LogContext lc) -> toTextualLog lc) ctxts in
+    l defaultLoc "" (LevelOther logLevel) $ toLogStr $ toTextualLog msg

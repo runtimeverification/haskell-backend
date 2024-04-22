@@ -34,6 +34,7 @@ import Data.Set qualified as Set
 import GHC.Generics qualified as GHC
 import Prettyprinter (Pretty (..))
 import Prettyprinter qualified as Pretty
+import Booster.Log
 
 data ComputeCeilSummary = ComputeCeilSummary
     { rule :: RewriteRule.RewriteRule "Rewrite"
@@ -73,7 +74,7 @@ instance Pretty ComputeCeilSummary where
                         ]
 
 computeCeilsDefinition ::
-    MonadLoggerIO io => Maybe LLVM.API -> KoreDefinition -> io (KoreDefinition, [ComputeCeilSummary])
+    LoggerMIO io => Maybe LLVM.API -> KoreDefinition -> io (KoreDefinition, [ComputeCeilSummary])
 computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
     (rewriteTheory', ceilSummaries) <-
         runWriterT $
@@ -87,7 +88,7 @@ computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
     pure (def{rewriteTheory = rewriteTheory'}, toList ceilSummaries)
 
 computeCeilRule ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     RewriteRule.RewriteRule "Rewrite" ->

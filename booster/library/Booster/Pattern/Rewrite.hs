@@ -27,7 +27,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Hashable qualified as Hashable
-import Data.List (partition)
+import Data.List (partition, intersperse)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
@@ -58,8 +58,9 @@ import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Flag (..), constructorName)
 import Data.Coerce (coerce)
-import Booster.Log (LoggerMIO (..), withContext, LogContext (..), logMessage, LogMessage, Logger)
+import Booster.Log (LoggerMIO (..), withContext, LogContext (..), logMessage, LogMessage, Logger, logPretty, withPatternContext)
 import GHC.TypeLits (KnownSymbol)
+import Booster.Syntax.Json.Internalise (InternalisedPredicates(substitution))
 
 newtype RewriteT err io a = RewriteT
     {unRewriteT :: ReaderT RewriteConfig (StateT SimplifierCache (ExceptT err io)) a}
@@ -247,7 +248,8 @@ instance MonadLogger m => MonadLogger (RewriteRuleAppT m) where
 
 instance MonadLoggerIO m => MonadLoggerIO (RewriteRuleAppT m)
 
-instance LoggerMIO m => LoggerMIO (RewriteRuleAppT m)
+instance LoggerMIO m => LoggerMIO (RewriteRuleAppT m) where
+    withLogger l (RewriteRuleAppT m) = RewriteRuleAppT $ withLogger l m
 
 
 {- | Tries to apply one rewrite rule:
@@ -271,17 +273,21 @@ applyRule ::
 applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
-    subst <- case matchTerms Rewrite def rule.lhs pat.term of
-        MatchFailed (SubsortingError sortError) ->
+    subst <- withContext "match" $ case matchTerms Rewrite def rule.lhs pat.term of
+        MatchFailed (SubsortingError sortError) -> do
+            withContext "abort" $ logPretty sortError
             failRewrite $ RewriteSortError rule pat.term sortError
-        MatchFailed err@ArgLengthsDiffer{} ->
+        MatchFailed err@ArgLengthsDiffer{} -> do
+            withContext "abort" $ logPretty err
             failRewrite $ InternalMatchError $ renderText $ pretty err
-        MatchFailed _reason -> do
-            logMessage ("matching failed" :: Text)
+        MatchFailed reason -> do
+            withContext "failure" $ logPretty reason
             fail "Rule matching failed"
-        MatchIndeterminate remainder ->
+        MatchIndeterminate remainder -> do
+            withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about match with rule. Remainder:" <+> pretty remainder
             failRewrite $ RuleApplicationUnclear rule pat.term remainder
-        MatchSuccess substitution ->
+        MatchSuccess substitution -> do
+            withContext "success" $ logMessage $ renderOneLineText $ "Substitution:" <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList substitution)
             pure substitution
 
     -- check it is a "matching" substitution (substitutes variables
@@ -293,12 +299,14 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
 
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
-    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $
+    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+        withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about definedness of rule due to:" <+> pretty rule.computedAttributes.notPreservesDefinednessReasons
         failRewrite $
             DefinednessUnclear
                 rule
                 pat
                 rule.computedAttributes.notPreservesDefinednessReasons
+                
 
     -- apply substitution to rule requires constraints and simplify (one by one
     -- in isolation). Stop if false, abort rewrite if indeterminate.
@@ -309,9 +317,8 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
     let prior = pat.constraints
         (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
     unless (null knownTrue) $
-        logOtherNS "booster" (LevelOther "Simplify") . renderOneLineText $
-            vsep ("Known true side conditions (won't check):" : map pretty knownTrue)
-
+        logMessage $ renderOneLineText $ "Known true side conditions (won't check):" <+> pretty knownTrue
+    
     unclearRequires <-
         catMaybes <$> mapM (checkConstraint id notAppliedIfBottom) toCheck
 
@@ -320,23 +327,26 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
 
     case mbSolver of
         Just solver -> do
-            checkAllRequires <- lift $ SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
+            checkAllRequires <- SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
 
             case checkAllRequires of
-                Nothing ->
+                Nothing -> do
                     -- unclear even with the prior
+                    withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about a condition(s) in rule:" <+> pretty unclearRequires
                     failRewrite $
                         RuleConditionUnclear rule . coerce $
                             foldl1 AndTerm $
                                 map coerce unclearRequires
-                Just False ->
+                Just False -> do
                     -- requires is actually false given the prior
+                    withContext "failure" $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                     RewriteRuleAppT $ pure NotApplied
                 Just True ->
                     -- can proceed
                     pure ()
         Nothing ->
-            unless (null unclearRequires) $
+            unless (null unclearRequires) $ do
+                withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
                 failRewrite $
                     RuleConditionUnclear rule (head unclearRequires)
 
@@ -352,7 +362,9 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
     -- check all new constraints together with the known side constraints
     whenJust mbSolver $ \solver ->
         (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-            Just False -> RewriteRuleAppT $ pure Trivial
+            Just False -> do
+                withContext "success" $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                RewriteRuleAppT $ pure Trivial
             _other -> pure ()
 
     -- existential variables may be present in rule.rhs and rule.ensures,
@@ -390,7 +402,7 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
         RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get
         (simplified, cache) <-
-            simplifyConstraint (castDoTracingFlag doTracing) definition llvmApi smtSolver oldCache p
+            withContext "constraint" $ simplifyConstraint (castDoTracingFlag doTracing) definition llvmApi smtSolver oldCache p
         -- update cache
         lift . RewriteT . lift . modify $ const cache
         -- TODO should we keep the traces? Or only on success?
@@ -694,7 +706,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     updateCache simplifierCache = modify $ \rss -> rss{simplifierCache}
 
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
-    simplifyP p = do
+    simplifyP p = withContext "simplify" $ do
         st <- get
         let cache = st.simplifierCache
             smt = st.smtSolver
@@ -799,7 +811,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     mLlvmLibrary
                     mSolver
                     simplifierCache
-                    (rewriteStep cutLabels terminalLabels pat')
+                    (withPatternContext pat' $ rewriteStep cutLabels terminalLabels pat')
                     >>= \case
                         Right (RewriteFinished mlbl uniqueId single, cache) -> do
                             whenJust mlbl $ \lbl ->
@@ -807,7 +819,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             updateCache cache
                             incrementCounter
                             doSteps False single
-                        Right (terminal@(RewriteTerminal lbl uniqueId single), _cache) -> do
+                        Right (terminal@(RewriteTerminal lbl uniqueId single), _cache) -> withPatternContext pat' $ do
                             emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                             logRewrite $
                                 "Terminal rule after " <> showCounter (counter + 1)
@@ -816,12 +828,12 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                         Right (branching@RewriteBranch{}, cache) -> do
                             logRewrite $ "Stopped due to branching after " <> showCounter counter
                             updateCache cache
-                            simplified <- simplifyResult pat' branching
+                            simplified <- withPatternContext pat' $ simplifyResult pat' branching
                             case simplified of
-                                RewriteStuck{} -> do
+                                RewriteStuck{} -> withPatternContext pat' $ do
                                     logRewrite "Rewrite stuck after pruning branches"
                                     pure simplified
-                                RewriteTrivial{} -> do
+                                RewriteTrivial{} -> withPatternContext pat' $ do
                                     logRewrite $ "Simplified to bottom after " <> showCounter counter
                                     pure simplified
                                 RewriteFinished mlbl uniqueId single -> do
@@ -830,11 +842,11 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                         emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                                     incrementCounter
                                     doSteps False single
-                                RewriteBranch pat'' branches -> do
+                                RewriteBranch pat'' branches -> withPatternContext pat' $ do
                                     emitRewriteTrace $ RewriteBranchingStep pat'' $ fmap (\(lbl, uid, _) -> (lbl, uid)) branches
                                     pure simplified
-                                _other -> error "simplifyResult: Unexpected return value"
-                        Right (cutPoint@(RewriteCutPoint lbl _ _ _), _) -> do
+                                _other -> withPatternContext pat' $ error "simplifyResult: Unexpected return value"
+                        Right (cutPoint@(RewriteCutPoint lbl _ _ _), _) -> withPatternContext pat' $  do
                             simplified <- simplifyResult pat' cutPoint
                             case simplified of
                                 RewriteCutPoint{} ->
@@ -852,10 +864,10 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             if wasSimplified
                                 then pure stuck
                                 else withSimplified pat' "Retrying with simplified pattern" (doSteps True)
-                        Right (trivial@RewriteTrivial{}, _) -> do
+                        Right (trivial@RewriteTrivial{}, _) -> withPatternContext pat' $ do
                             logRewrite $ "Simplified to bottom after " <> showCounter counter
                             pure trivial
-                        Right (aborted@RewriteAborted{}, _) -> do
+                        Right (aborted@RewriteAborted{}, _) -> withPatternContext pat' $ do
                             logRewrite $ "Aborted after " <> showCounter counter
                             simplifyResult pat' aborted
                         -- if unification was unclear and the pattern was
@@ -875,7 +887,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 else withSimplified pat' msg (pure . RewriteAborted failure)
       where
         withSimplified p msg cont = do
-            simplifyP p >>= \case
+            (withPatternContext p $ simplifyP p) >>= \case
                 Nothing -> do
                     logRewrite "Rewrite stuck after simplification."
                     pure $ RewriteStuck p

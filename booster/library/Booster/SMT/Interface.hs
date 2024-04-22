@@ -83,7 +83,7 @@ defaultSMTOptions =
         }
 
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
-initSolver def smtOptions = Log.withContext (Log.LogContext ("SMT" :: Text)) $ do
+initSolver def smtOptions = Log.withContext "smt" $ do
     ctxt <- mkContext smtOptions.transcript
     -- set timeout value before doing anything with the solver
     runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
@@ -106,7 +106,7 @@ initSolver def smtOptions = Log.withContext (Log.LogContext ("SMT" :: Text)) $ d
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
 closeSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
-closeSolver ctxt = do
+closeSolver ctxt = Log.withContext "smt" $ do
     Log.logMessage ("Closing SMT solver" :: Text)
     closeContext ctxt
 
@@ -130,7 +130,7 @@ getModelFor ::
     Map Variable Term -> -- supplied substitution
     io (Either SMT.Response (Map Variable Term))
 getModelFor ctxt ps subst
-    | null ps && Map.null subst = Log.withContext (Log.LogContext ("SMT" :: Text)) $ do
+    | null ps && Map.null subst = Log.withContext "smt" $ do
         Log.logMessage ( "No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
     | otherwise = runSMT ctxt $ do
@@ -267,10 +267,10 @@ checkPredicates ::
     io (Maybe Bool)
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure $ Just True -- or Nothing?
-    | Left errMsg <- translated = Log.withContext (Log.LogContext ("SMT" :: Text)) $  do
+    | Left errMsg <- translated = Log.withContext "smt" $  do
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext (Log.LogContext ("SMT" :: Text)) $  runSMT ctxt . runMaybeT $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $  runSMT ctxt . runMaybeT $ do
         Log.logMessage $
             Text.unwords
                 [ "Checking"

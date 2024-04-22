@@ -98,14 +98,14 @@ respond stateVar =
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext (LogContext ("execute" :: Text)) $  do
+        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "execute" $  do
             start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do
-                    void $ Booster.Log.withContext (LogContext ("internalise" :: Text)) $ logPatternError patternError
+                    void $ Booster.Log.withContext "internalise" $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
