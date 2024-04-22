@@ -47,12 +47,12 @@ git clone --depth 1 --branch $MX_VERSION https://github.com/runtimeverification/
 cd mx-backend
 
 if [[ $MX_VERSION == "master" ]]; then
-  MX_VERSION=$(git name-rev --tags --name-only $(git rev-parse HEAD))
+  MX_VERSION=$(git rev-parse --short HEAD)
 else
   MX_VERSION="${MX_VERSION//\//-}"
 fi
 
-git submodule update --init --recursive --depth 1 kmxwasm/k-src/mx-semantics/
+git submodule update --init --recursive --depth 1
 
 BUG_REPORT=''
 POSITIONAL_ARGS=()
@@ -78,17 +78,17 @@ done
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 
-feature_shell "poetry -C kmxwasm install && make -C kmxwasm kbuild-haskell"
+feature_shell "make kmxwasm && make build"
 
 
 mkdir -p $SCRIPT_DIR/logs
 
-feature_shell "make -C kmxwasm test-booster TEST_ARGS='$BUG_REPORT' && make -C kmxwasm test-integration TEST_ARGS='$BUG_REPORT' | tee $SCRIPT_DIR/logs/mx-$MX_VERSION-$FEATURE_BRANCH_NAME.log"
+feature_shell "(make -C kmxwasm test-booster TEST_ARGS='$BUG_REPORT' && make -C kmxwasm test-integration TEST_ARGS='$BUG_REPORT') | tee $SCRIPT_DIR/logs/mx-$MX_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "No zombie processes found"
 
 if [ -z "$BUG_REPORT" ]; then
 if [ ! -e "$SCRIPT_DIR/logs/mx-$MX_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-  master_shell "make -C kmxwasm test-booster && make -C kmxwasm test-integration | tee $SCRIPT_DIR/logs/mx-$MX_VERSION-master-$MASTER_COMMIT_SHORT.log"
+  master_shell "(make -C kmxwasm test-booster && make -C kmxwasm test-integration) | tee $SCRIPT_DIR/logs/mx-$MX_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "No zombie processes found"
 fi
 
