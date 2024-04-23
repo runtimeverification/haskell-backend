@@ -2,22 +2,19 @@
 module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
     import SAVE-PROOFS []
     import kore []
-    claim {} 
-    \implies{SortGeneratedTopCell{}}(
+    claim {} \implies{SortGeneratedTopCell{}}(
         \and{SortGeneratedTopCell{}}(
-             \top{SortGeneratedTopCell{}}(),
+            \top{SortGeneratedTopCell{}}(),
             Lbl'-LT-'generatedTop'-GT-'{}(
                 Lbl'-LT-'k'-GT-'{}(
                     kseq{}(
                         LblBB'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
-                             VarX:SortInt{}
+                            VarX:SortInt{}
                         ),
-                         dotk{}()
+                        dotk{}()
                     )
                 ),
-                Lbl'-LT-'generatedCounter'-GT-'{}(
-                     Var'Unds'Gen0:SortInt{}
-                )
+                Lbl'-LT-'generatedCounter'-GT-'{}(Var'Unds'Gen0:SortInt{})
             )
         ),
         weakAlwaysFinally{SortGeneratedTopCell{}}(
@@ -27,13 +24,13 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                     Lbl'-LT-'k'-GT-'{}(
                         kseq{}(
                             LblCC'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
-                                 VarX:SortInt{}
+                                VarX:SortInt{}
                             ),
-                             dotk{}()
+                            dotk{}()
                         )
                     ),
                     Lbl'-LT-'generatedCounter'-GT-'{}(
-                         Var'QuesUnds'Gen1:SortInt{}
+                        Var'QuesUnds'Gen1:SortInt{}
                     )
                 )
             )

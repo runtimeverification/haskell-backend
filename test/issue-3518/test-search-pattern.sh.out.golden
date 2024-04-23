@@ -1,32 +1,31 @@
 \and{SortGeneratedTopCell{}}(
     \and{SortGeneratedTopCell{}}(
         \equals{SortGeneratedCounterCell{}, SortGeneratedTopCell{}}(
-             Var'Unds'DotVar0:SortGeneratedCounterCell{},
-            Lbl'-LT-'generatedCounter'-GT-'{}(
-                 \dv{SortInt{}}("0")
-            )
+            Var'Unds'DotVar0:SortGeneratedCounterCell{},
+            Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))
         ),
         \equals{SortTenvCell{}, SortGeneratedTopCell{}}(
-             Var'Unds'DotVar1:SortTenvCell{},
-            Lbl'-LT-'tenv'-GT-'{}(
-                  Lbl'Stop'Map{}()
-            )
+            Var'Unds'DotVar1:SortTenvCell{},
+            Lbl'-LT-'tenv'-GT-'{}(/* InternalMap: */ Lbl'Stop'Map{}())
         )
     ),
     \equals{SortType{}, SortGeneratedTopCell{}}(
-         VarT:SortType{},
+        VarT:SortType{},
         Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
             Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-                 Var'Ques'Tx1:SortType{},
+                Var'Ques'Tx1:SortType{},
+                /* Created: Kore.Rewrite.RewriteStep.resetResultPattern */
                 Var'Ques'T3:SortType{}
             ),
             Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
                 Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-                     Var'Ques'T3:SortType{},
-                     Var'Ques'Te1:SortType{}
+                    Var'Ques'T3:SortType{},
+                    Var'Ques'Te1:SortType{}
                 ),
                 Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
+                    /* Created: Kore.Rewrite.RewriteStep.resetResultPattern */
                     Var'Ques'Tx1:SortType{},
+                    /* Created: Kore.Rewrite.RewriteStep.resetResultPattern */
                     Var'Ques'Te1:SortType{}
                 )
             )
