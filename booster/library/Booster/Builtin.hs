@@ -14,7 +14,7 @@ module Booster.Builtin (
 import Control.Monad
 import Control.Monad.Trans.Except
 import Data.ByteString.Char8 (ByteString)
-import Data.List (partition)
+import Data.List (findIndex, partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -50,6 +50,7 @@ builtinsMAP =
             [ "lookup" ~~> mapLookupHook
             , "lookupOrDefault" ~~> mapLookupOrDefaultHook
             , "in_keys" ~~> mapInKeysHook
+            , "update" ~~> mapUpdateHook
             ]
 
 mapLookupHook :: BuiltinFunction
@@ -109,6 +110,27 @@ mapInKeysHook args
         pure Nothing -- not an internalised map, maybe a function call
     | otherwise =
         throwE . renderText $ "MAP.in_keys: wrong arity " <> pretty (length args)
+
+mapUpdateHook :: BuiltinFunction
+mapUpdateHook args
+    | [KMap def pairs mbRest, key, newValue] <- args = do
+        case findIndex ((== key) . fst) pairs of
+            Just idx ->
+                -- key was found (syntactically), update pairs list
+                let newPairs = take idx pairs <> ((key, newValue) : drop (idx + 1) pairs)
+                 in pure $ Just $ KMap def newPairs mbRest
+            Nothing -- key could be in unevaluated or opaque part
+                | Just _ <- mbRest ->
+                    pure Nothing -- have opaque part, no result
+                | any ((\(Term a _) -> not a.isConstructorLike) . fst) pairs ->
+                    pure Nothing -- have unevaluated keys, no result
+                | otherwise -> -- key certain to be absent, no rest: add pair
+                    pure $ Just $ KMap def ((key, newValue) : pairs) Nothing
+    | [_other, _, _] <- args =
+        -- other `shouldHaveSort` "SortMap"
+        pure Nothing -- not an internalised map, maybe a function call
+    | otherwise =
+        throwE . renderText $ "MAP.update: wrong arity " <> pretty (length args)
 
 ------------------------------------------------------------
 -- KEQUAL hooks
