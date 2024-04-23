@@ -144,6 +144,7 @@ executables:
       - deepseq
       - exceptions
       - extra
+      - Glob
       - hs-backend-booster
       - json-rpc
       - kore

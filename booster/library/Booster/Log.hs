@@ -2,8 +2,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PatternSynonyms #-}
 
-module Booster.Log where
-import Data.Functor.Contravariant
+module Booster.Log(module Booster.Log) where
 import Data.Text(Text, pack)
 import Control.Monad.IO.Class
 
@@ -21,19 +20,21 @@ import Control.Monad.Trans.Reader (ReaderT (..), withReaderT, ask)
 import Control.Monad.Trans.State (StateT (..))
 import Control.Monad.Logger (MonadLoggerIO (askLoggerIO), MonadLogger, LogLevel (..), defaultLoc, ToLogStr (toLogStr), NoLoggingT)
 import qualified Control.Monad.Trans.State.Strict as Strict
-import Data.List (intersperse, foldl')
+import Data.List (intersperse, foldl', intercalate)
 import Data.String (IsString)
 import GHC.Exts (IsString(..))
 import qualified Data.Text as Text
 import Data.Word (Word64)
-import Language.C (undefNode)
 import qualified Data.Set as Set
 import Data.Coerce (coerce)
+import GHC.TypeLits (KnownSymbol, symbolVal)
+import Booster.Definition.Base (RewriteRule (..), sourceRef, SourceRef (..))
+import Booster.Definition.Attributes.Base
+import Data.Data (Proxy(..))
+import qualified Data.Text.Lazy as LazyText
+import Data.List.Extra (splitOn, takeEnd)
 
 newtype Logger a = Logger (a -> IO ())
-
-instance Contravariant Logger where
-  contramap f (Logger t) = Logger (t . f)
 
 
 class ToLogFormat a where
@@ -86,9 +87,10 @@ logPretty = logMessage . renderOneLineText . pretty
 withContext :: LoggerMIO m => LogContext -> m a -> m a
 withContext c = withLogger (\(Logger l) -> Logger $ l . (\(LogMessage ctxt m) -> LogMessage (c:ctxt) m))
 
-
-
 newtype TermCtxt = TermCtxt Int
+
+showHashHex :: Int -> Text
+showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ pack $ showHex w64 ""
 
 instance ToLogFormat TermCtxt where
   toTextualLog (TermCtxt hsh) = "term " <> (showHashHex hsh)
@@ -105,7 +107,7 @@ instance ToLogFormat Text where
 
 withTermContext :: LoggerMIO m => Term -> m a -> m a
 withTermContext t@(Term attrs _) m = withContext (LogContext $ TermCtxt attrs.hash) $ do
-  withContext "pretty" $ logMessage t
+  withContext "detail" $ logMessage t
   m
 
 withPatternContext :: LoggerMIO m => Pattern -> m a -> m a
@@ -119,18 +121,25 @@ instance ToLogFormat KorePattern where
 
 newtype KorePatternCtxt = KorePatternCtxt KorePattern
 
-
-showHashHex :: Int -> Text
-showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ pack $ showHex w64 ""
-
 instance ToLogFormat KorePatternCtxt where
     toTextualLog (KorePatternCtxt t) = "term " <> (showHashHex $ Data.Hashable.hash $ prettyPattern t)
 
 
+instance KnownSymbol k => ToLogFormat (RewriteRule k) where
+    toTextualLog RewriteRule{attributes} = LazyText.toStrict $ (LazyText.toLower $ LazyText.pack $ symbolVal (Proxy :: Proxy k)) <> " " <> maybe "UNKNOWN" (LazyText.take 7 . LazyText.fromStrict . coerce) attributes.uniqueId
+
 
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a
 withKorePatternContext t m = withContext (LogContext $ KorePatternCtxt t) $ do
-  withContext "pretty" $ logMessage t
+  withContext "detail" $ logMessage t
+  m
+
+
+withRuleContext :: KnownSymbol tag => LoggerMIO m => RewriteRule tag -> m a -> m a
+withRuleContext rule m = withContext (LogContext rule) $ do
+  withContext "detail" $ logPretty $ case sourceRef rule of
+    Located Location { file = FileSource f , position } -> Located Location { file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f) , position}
+    loc -> loc
   m
 
 

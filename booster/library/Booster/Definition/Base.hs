@@ -28,7 +28,6 @@ import Control.Applicative ((<|>))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Prettyprinter (Pretty (..))
-import Booster.Log (ToLogFormat (..))
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Data.Data (Proxy(..))
 import GHC.Base (coerce)
@@ -110,9 +109,6 @@ instance Pretty SourceRef where
         Located l -> pretty l
         Labeled l -> pretty l
         UNKNOWN -> "UNKNOWN"
-
-instance KnownSymbol k => ToLogFormat (RewriteRule k) where
-    toTextualLog RewriteRule{attributes} = LazyText.toStrict $ (LazyText.toLower $ LazyText.pack $ symbolVal (Proxy :: Proxy k)) <> " " <> maybe "UNKNOWN" (LazyText.take 7 . LazyText.fromStrict . coerce) attributes.uniqueId
 
 -- | class of entities that have a location or ID to present to users
 class HasSourceRef a where

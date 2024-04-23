@@ -26,6 +26,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
+import Data.Coerce (coerce)
 import Data.Hashable qualified as Hashable
 import Data.List (partition, intersperse)
 import Data.List.NonEmpty (NonEmpty (..), toList)
@@ -35,12 +36,14 @@ import Data.Maybe (catMaybes, fromMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines)
+import GHC.TypeLits (KnownSymbol)
 import Numeric.Natural
 import Prettyprinter
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.LLVM as LLVM (API)
+import Booster.Log (LoggerMIO (..), withContext, logMessage, LogMessage, Logger, logPretty, withPatternContext, withRuleContext)
 import Booster.Pattern.ApplyEquations (
     EquationFailure (..),
     EquationTrace,
@@ -53,14 +56,16 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
 import Booster.Pattern.Match
+    ( SortError,
+      Substitution,
+      FailReason(ArgLengthsDiffer, SubsortingError),
+      MatchType(Rewrite),
+      MatchResult(MatchSuccess, MatchFailed, MatchIndeterminate),
+      matchTerms )
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Flag (..), constructorName)
-import Data.Coerce (coerce)
-import Booster.Log (LoggerMIO (..), withContext, LogContext (..), logMessage, LogMessage, Logger, logPretty, withPatternContext)
-import GHC.TypeLits (KnownSymbol)
-import Booster.Syntax.Json.Internalise (InternalisedPredicates(substitution))
 
 newtype RewriteT err io a = RewriteT
     {unRewriteT :: ReaderT RewriteConfig (StateT SimplifierCache (ExceptT err io)) a}
@@ -270,7 +275,7 @@ applyRule ::
     Pattern ->
     RewriteRule k ->
     RewriteT (RewriteFailed k) io (RewriteRuleAppResult (RewriteRule k, Pattern))
-applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ runRewriteRuleAppT $ do
+applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
     subst <- withContext "match" $ case matchTerms Rewrite def rule.lhs pat.term of
@@ -300,7 +305,7 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about definedness of rule due to:" <+> pretty rule.computedAttributes.notPreservesDefinednessReasons
+        withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about definedness of rule due to:" <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
         failRewrite $
             DefinednessUnclear
                 rule
@@ -389,7 +394,8 @@ applyRule pat@Pattern{ceilConditions} rule = withContext (LogContext rule) $ run
                     <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
                 )
                 ceilConditions
-    return (rule, rewritten)
+    withContext "success" $ withPatternContext rewritten $
+        return (rule, rewritten)
   where
     failRewrite = lift . throw
 

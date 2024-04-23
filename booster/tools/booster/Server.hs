@@ -40,6 +40,7 @@ import System.Clock (
     getTime,
  )
 import System.Exit
+import System.FilePath.Glob qualified as Glob
 import System.IO qualified as IO
 
 import Booster.CLOptions
@@ -101,6 +102,8 @@ main = do
                     , port
                     , llvmLibraryFile
                     , logLevels
+                    , logContexts
+                    , notLogContexts
                     , smtOptions
                     , equationOptions
                     , eventlogEnabledUserEvents
@@ -116,9 +119,13 @@ main = do
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
+        globPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) logContexts
+        negGlobPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) notLogContexts
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
-            lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
+            lvl `elem` customLevels || case lvl of { LevelOther l -> 
+                not (any (flip Glob.match (Text.unpack l)) negGlobPatterns) &&
+                any (flip Glob.match (Text.unpack l)) globPatterns; _ -> False } || lvl >= logLevel && lvl <= LevelError 
         koreLogExtraLevels =
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
@@ -212,7 +219,7 @@ main = do
 
                     let koreRespond, boosterRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
                         koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                        boosterRespond = Booster.Log.runLogger . Booster.respond boosterState
+                        boosterRespond = Booster.Log.runLogger . Booster.Log.withContext "booster" . Booster.respond boosterState
 
                         proxyConfig =
                             ProxyConfig

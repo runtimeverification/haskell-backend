@@ -20,7 +20,6 @@ import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
-import Control.Monad.Logger.CallStack (MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
@@ -86,6 +85,7 @@ import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
 import Kore.Syntax.Json.Types qualified as Syntax
+import Booster.Pattern.Base (Sort(SortApp))
 
 respond ::
     forall m.
@@ -98,7 +98,7 @@ respond stateVar =
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "execute" $  do
+        RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "execute" $  do
             start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -150,7 +150,7 @@ respond stateVar =
                                         fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
                                 else Nothing
                     pure $ execResponse duration req result substitution unsupported
-        RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
+        RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext "add-module" $ runExceptT $ do
             -- block other request executions while modifying the server state
             state <- liftIO $ takeMVar stateVar
             let nameAsId = fromMaybe False nameAsId'
@@ -208,10 +208,10 @@ respond stateVar =
                                 (if nameAsId then Map.insert (getId newModule.name) _module else id) $
                                     Map.insert moduleHash _module state.addedModules
                             }
-                Log.logInfo $
+                Booster.Log.logMessage $
                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                 pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
-        RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> do
+        RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "simplify" $ do
             start <- liftIO $ getTime Monotonic
             let internalised =
                     runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -246,8 +246,7 @@ respond stateVar =
             result <- case internalised of
                 Left patternErrors -> do
                     forM_ patternErrors $ \patternError ->
-                        Log.logErrorNS "booster" $
-                            "Error internalising cterm: " <> pack (show patternError)
+                        void $ Booster.Log.withContext "internalise" $ logPatternError patternError
                     Log.logOtherNS
                         "booster"
                         (Log.LevelOther "ErrorDetails")
@@ -259,15 +258,10 @@ respond stateVar =
                                     map patternErrorToRpcError patternErrors
                 -- term and predicate (pattern)
                 Right (TermAndPredicates pat substitution unsupported) -> do
-                    Log.logInfoNS "booster" "Simplifying a pattern"
+                    -- Log.logInfoNS "booster" "Simplifying a pattern"
                     unless (null unsupported) $ do
-                        Log.logWarnNS
-                            "booster"
-                            "Simplify: ignoring unsupported predicates in input"
-                        Log.logOtherNS
-                            "booster"
-                            (Log.LevelOther "ErrorDetails")
-                            (Text.unlines $ map prettyPattern unsupported)
+                        withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
+                            logMessage ("ignoring unsupported predicate parts" :: Text)
                     -- apply the given substitution before doing anything else
                     let substPat =
                             Pattern
@@ -299,16 +293,10 @@ respond stateVar =
                     | otherwise -> do
                         Log.logInfoNS "booster" "Simplifying predicates"
                         unless (null ps.unsupported) $ do
-                            Log.logWarnNS
-                                "booster"
-                                "Simplify: ignoring unsupported predicates in input"
-                            Log.logOtherNS
-                                "booster"
-                                (Log.LevelOther "ErrorDetails")
-                                (Text.unlines $ map prettyPattern ps.unsupported)
-                        Log.logOtherNS "booster" (Log.LevelOther "Simplify") $ renderText (pretty ps)
+                            withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $
+                                logMessage ("ignoring unsupported predicate parts" :: Text)
                         let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
-                        ApplyEquations.simplifyConstraints
+                        withContext "constraint" $ ApplyEquations.simplifyConstraints
                             doTracing
                             def
                             mLlvmLibrary
@@ -338,7 +326,7 @@ respond stateVar =
                     RpcTypes.Simplify
                         RpcTypes.SimplifyResult{state, logs = mkTraces duration traceData}
             pure $ second (uncurry mkSimplifyResponse) (fmap (second (map ApplyEquations.eraseStates)) result)
-        RpcTypes.GetModel req -> withContext req._module $ \case
+        RpcTypes.GetModel req -> withModule req._module $ \case
             (_, _, Nothing) -> do
                 Log.logErrorNS "booster" "get-model request, not supported without SMT solver"
                 pure $ Left RpcError.notImplemented
@@ -467,13 +455,13 @@ respond stateVar =
         -- using "Method does not exist" error code
         _ -> pure $ Left RpcError.notImplemented
   where
-    withContext ::
+    withModule ::
         Maybe Text ->
         ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions) ->
           m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
         ) ->
         m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
-    withContext mbMainModule action = do
+    withModule mbMainModule action = do
         state <- liftIO $ readMVar stateVar
         let mainName = fromMaybe state.defaultMain mbMainModule
         case Map.lookup mainName state.definitions of
