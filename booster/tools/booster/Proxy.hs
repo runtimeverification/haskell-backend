@@ -69,6 +69,7 @@ data ProxyConfig = ProxyConfig
     , boosterState :: MVar.MVar Booster.ServerState
     , fallbackReasons :: [HaltReason]
     , simplifyAtEnd :: Bool
+    , simplifyBeforeFallback :: Bool
     , customLogLevels :: ![Log.LogLevel]
     }
 
@@ -353,7 +354,10 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
                     -- simplify Booster's state with Kore's simplifier
                     Log.logInfoNS "proxy" . Text.pack $ "Simplifying booster state and falling back to Kore "
-                    simplifyResult <- simplifyExecuteState logSettings r._module def boosterResult.state
+                    simplifyResult <-
+                        if cfg.simplifyBeforeFallback
+                            then simplifyExecuteState logSettings r._module def boosterResult.state
+                            else pure $ Right (boosterResult.state, Nothing)
                     case simplifyResult of
                         Left logsOnly -> do
                             -- state was simplified to \bottom, return vacuous
