@@ -293,8 +293,8 @@ instance Entry DebugAttemptEquation where
                     , "result" JSON..= resultInfo
                     ]
           where
-            failureDescription :: AttemptEquationError a -> Text
-            failureDescription _ = "" :: Text
+            failureDescription :: AttemptEquationError RewritingVariableName -> Text
+            failureDescription err = Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
