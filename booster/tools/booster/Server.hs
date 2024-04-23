@@ -24,7 +24,6 @@ import Control.Monad.Logger (
     runNoLoggingT,
  )
 import Control.Monad.Logger qualified as Logger
-import Data.Aeson.Text qualified as JSON
 import Data.ByteString qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
@@ -36,7 +35,6 @@ import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
-import Data.Text.Lazy qualified as LazyText
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -144,6 +142,15 @@ main = do
 
             monadLogger <- askLoggerIO
 
+            koreLogEntriesAsJsonSelector <-
+                case Map.lookup (Logger.LevelOther "SimplifyJson") logLevelToKoreLogEntryMap of
+                    Nothing -> do
+                        Logger.logWarnNS
+                            "proxy"
+                            "Could not find out which Kore log entries correspond to the SimplifyJson level"
+                        pure (const False)
+                    Just es -> pure (`elem` es)
+
             liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
                     koreLogOptions =
@@ -155,11 +162,7 @@ main = do
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType =
                                 LogSomeAction
-                                    ( `elem`
-                                        [ "DebugApplyEquation"
-                                        , "DebugAttemptEquation"
-                                        ]
-                                    )
+                                    koreLogEntriesAsJsonSelector
                                     (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
                                     ( LogAction $ \txt ->
                                         let bytes =
@@ -281,17 +284,22 @@ toSeverity LevelOther{} = Nothing
 
 koreExtraLogs :: Map.Map LogLevel Log.EntryTypes
 koreExtraLogs =
-    Map.map (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry)) $
-        Map.fromList
-            [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
-            , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
-            ,
-                ( LevelOther "RewriteKore"
-                , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
-                )
-            , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
-            , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
-            ]
+    Map.map
+        (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry))
+        logLevelToKoreLogEntryMap
+
+logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
+logLevelToKoreLogEntryMap =
+    Map.fromList
+        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
+        , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
+        ,
+            ( LevelOther "RewriteKore"
+            , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
+            )
+        , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
+        , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
+        ]
 
 data CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions
