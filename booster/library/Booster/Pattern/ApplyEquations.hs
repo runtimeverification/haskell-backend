@@ -41,6 +41,7 @@ import Control.Monad.Logger.CallStack (
     MonadLoggerIO,
     logOther,
     logOtherNS,
+    logWarnNS,
  )
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
@@ -360,7 +361,7 @@ popRecursion = do
     s <- getState
     if null s.recursionStack
         then do
-            withContext "failure" $
+            withContext "abort" $
                 logMessage ("Trying to pop an empty recursion stack" :: Text)
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
@@ -383,7 +384,7 @@ checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
-        withContext "failure" $
+        withContext "abort" $
             logMessage $
                 renderOneLineText $
                     "Equation loop:"
@@ -393,6 +394,7 @@ checkForLoop t = do
                                     reverse $
                                         t : take (i + 1) (toList termStack)
                             )
+        logWarnNS "booster" "Equation loop detected"
         throw (EquationLoop $ reverse $ t : take (i + 1) (toList termStack))
 
 data Direction = TopDown | BottomUp
@@ -444,7 +446,8 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            withContext "failure" $ logMessage ("Recursion limit exceeded." :: Text)
+            withContext "abort" $ logMessage ("Recursion limit exceeded" :: Text)
+            logWarnNS "booster" "Recursion limit exceeded"
             throw . TooManyRecursions . (.recursionStack) =<< getState
 
     go :: MonadLoggerIO io => Term -> EquationT io Term
@@ -454,10 +457,11 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                withContext "failure" $
-                    logMessage $
+                let msg =
                         renderOneLineText $
                             "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                withContext "abort" $ logMessage msg
+                logWarnNS "booster" msg
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -491,7 +495,8 @@ llvmSimplify term = do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
-                        withContext "llvm" $ withContext "failure" $ logMessage $ Text.decodeUtf8 e
+                        withContext "llvm" $ withContext "abort" $ logMessage $ Text.decodeUtf8 e
+                        logWarnNS "booster" $ "LLVM backend error detected: " <> Text.decodeUtf8 e
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> withContext "llvm" $ do
                         when (result /= t) $ do
@@ -682,7 +687,9 @@ applyHooksAndEquations pref term = do
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
                     withContext (LogContext $ "hook " <> maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook)
-                        $ either (\e -> withContext "failure" (logMessage e) >> throw (InternalError e)) checkChanged
+                        $ either
+                            (\e -> withContext "abort" (logMessage e) >> logWarnNS "booster" e >> throw (InternalError e))
+                            checkChanged
                             . runExcept
                         $ hook args
             _other -> pure Nothing
@@ -739,11 +746,11 @@ handleFunctionEquation :: MonadLoggerIO io => ResultHandler io
 handleFunctionEquation success continue abort = \case
     Success rewritten -> success rewritten
     Failure (FailedMatch _) -> continue
-    Failure IndeterminateMatch -> abort
+    Failure IndeterminateMatch{} -> abort
     Failure (IndeterminateCondition{}) -> abort
     Failure (ConditionFalse _) -> continue
     Failure (EnsuresFalse p) -> do
-        withContext "failure" $
+        withContext "abort" $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     Failure RuleNotPreservingDefinedness -> abort
@@ -753,7 +760,7 @@ handleSimplificationEquation :: MonadLoggerIO io => ResultHandler io
 handleSimplificationEquation success continue _abort = \case
     Success rewritten -> success rewritten
     Failure (FailedMatch _) -> continue
-    Failure IndeterminateMatch -> continue
+    Failure IndeterminateMatch{} -> continue
     Failure (IndeterminateCondition{}) -> continue
     Failure (ConditionFalse _) -> continue
     Failure (EnsuresFalse p) -> do
@@ -774,7 +781,7 @@ applyEquations ::
 applyEquations theory handler term = do
     let index = termTopIndex term
     when (index == None) $ do
-        withContext "failure" $ logMessage ("Index is 'None'" :: Text)
+        withContext "abort" $ logMessage ("Index is 'None'" :: Text)
         throw (IndexIsNone term)
     let idxEquations, anyEquations :: Map Priority [RewriteRule tag]
         idxEquations = fromMaybe Map.empty $ Map.lookup index theory
@@ -805,7 +812,13 @@ applyEquations theory handler term = do
     processEquations (eq : rest) = do
         res <- applyEquation term eq
         emitEquationTrace term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
-        handler (\t -> setChanged >> pure t) (processEquations rest) (pure term) res
+        handler
+            (\t -> setChanged >> pure t)
+            (processEquations rest)
+            ( withContext "abort" $
+                logMessage ("Aborting simplification/function evaluation" :: Text) >> pure term
+            )
+            res
 
 {- | Trace application or failure to apply an equation
      * log into stderr
@@ -843,13 +856,13 @@ applyEquation ::
 applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $ runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $ do
-        withContext "failure" $
+        withContext "abort" $
             logMessage ("Equation with existentials" :: Text)
         lift . throw . InternalError $
             "Equation with existentials: " <> Text.pack (show rule)
     -- immediately cancel if not preserving definedness
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext "abort" $
+        withContext "failure" $
             logMessage $
                 renderOneLineText $
                     "Uncertain about definedness of rule due to:"
@@ -857,7 +870,7 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
         throwE RuleNotPreservingDefinedness
     -- immediately cancel if rule has concrete() flag and term has variables
     when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
-        withContext "abort" $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
+        withContext "failure" $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
         throwE (MatchConstraintViolated Concrete "* (term has variables)")
     -- match lhs
     koreDef <- (.definition) <$> lift getConfig
@@ -867,7 +880,7 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             throwE $ FailedMatch failReason
         MatchIndeterminate remainder -> do
             withContext "match" $
-                withContext "abort" $
+                withContext "failure" $
                     logMessage $
                         renderOneLineText $
                             "Uncertain about match with rule. Remainder:" <+> pretty remainder
@@ -916,7 +929,7 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
                     lift $ pushConstraints $ Set.fromList ensuredConditions
                     pure $ substituteInTerm subst rule.rhs
                 unclearConditions -> do
-                    withContext "abort" $
+                    withContext "failure" $
                         logMessage $
                             renderOneLineText $
                                 "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
@@ -945,7 +958,7 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             lift $ simplifyConstraint' True p `catch_` fallBackToUnsimplifiedOrBottom
         case simplified of
             FalseBool -> do
-                withContext "abort" $ logMessage ("Simplified to #Bottom." :: Text)
+                withContext "failure" $ logMessage ("Simplified to #Bottom." :: Text)
                 throwE . whenBottom $ coerce p
             TrueBool -> pure Nothing
             other -> pure . Just $ coerce other
@@ -975,7 +988,7 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
         ExceptT ApplyEquationFailure (EquationT io) ()
     mkCheck (varName, _) constrained (Term attributes _)
         | not test = do
-            withContext "abort" $
+            withContext "failure" $
                 logMessage $
                     renderOneLineText $
                         hsep
@@ -1054,7 +1067,8 @@ simplifyConstraint' recurseIntoEvalBool = \case
                     withContext "llvm" $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
-                                withContext "failure" $ logMessage $ Text.decodeUtf8 e
+                                withContext "abort" $ logMessage $ Text.decodeUtf8 e
+                                logWarnNS "booster" $ "LLVM backend error detected: " <> Text.decodeUtf8 e
                                 throw $ UndefinedTerm t $ LlvmError e
                             Right res -> do
                                 let result =

@@ -64,7 +64,7 @@ import Prettyprinter qualified as Pretty
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Attributes.Base qualified as Internal
 import Booster.Definition.Base (KoreDefinition (..), emptyKoreDefinition)
-import Booster.Log (LoggerMIO, ToLogFormat (..), logMessage, withKorePatternContext)
+import Booster.Log (LoggerMIO, logMessage, withKorePatternContext)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Util (freeVariables, sortOfTerm, substituteInSort)

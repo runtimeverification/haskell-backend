@@ -25,12 +25,8 @@ import Booster.Definition.Attributes.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Index (TermIndex)
 import Control.Applicative ((<|>))
-import Data.Data (Proxy (..))
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack)
-import Data.Text.Lazy qualified as LazyText
-import GHC.Base (coerce)
-import GHC.TypeLits (KnownSymbol, symbolVal)
+import Data.Text (Text)
 import Prettyprinter (Pretty (..))
 
 {- | A Kore definition is constructed from a main module with its

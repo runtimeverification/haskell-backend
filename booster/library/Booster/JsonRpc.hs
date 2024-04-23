@@ -109,9 +109,12 @@ respond stateVar =
                                     [ patternErrorToRpcError patternError
                                     ]
                 Right (pat, substitution, unsupported) -> do
-                    unless (null unsupported) $
+                    unless (null unsupported) $ do
                         withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
                             logMessage ("ignoring unsupported predicate parts" :: Text)
+                        Log.logWarnNS
+                            "booster"
+                            "Execute: ignoring unsupported predicate parts"
 
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
@@ -254,10 +257,12 @@ respond stateVar =
                                     map patternErrorToRpcError patternErrors
                 -- term and predicate (pattern)
                 Right (TermAndPredicates pat substitution unsupported) -> do
-                    -- Log.logInfoNS "booster" "Simplifying a pattern"
                     unless (null unsupported) $ do
-                        withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
+                        withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $ do
                             logMessage ("ignoring unsupported predicate parts" :: Text)
+                        Log.logWarnNS
+                            "booster"
+                            "Simplify: ignoring unsupported predicate parts"
                     -- apply the given substitution before doing anything else
                     let substPat =
                             Pattern
@@ -289,8 +294,12 @@ respond stateVar =
                     | otherwise -> do
                         Log.logInfoNS "booster" "Simplifying predicates"
                         unless (null ps.unsupported) $ do
-                            withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $
+                            withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
+                                Log.logWarnNS
+                                    "booster"
+                                    "Simplify: ignoring unsupported predicate parts"
+                        -- apply the given substitution before doing anything else
                         let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
                         withContext "constraint" $
                             ApplyEquations.simplifyConstraints

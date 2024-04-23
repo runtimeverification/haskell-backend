@@ -15,7 +15,6 @@ module Booster.SMT.Interface (
 
 import Control.Exception (Exception, throw)
 import Control.Monad
-import Control.Monad.Logger qualified as Log
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import Data.ByteString.Char8 qualified as BS
@@ -27,7 +26,7 @@ import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
-import Prettyprinter (Pretty, hsep, pretty, vsep)
+import Prettyprinter (Pretty, hsep, pretty)
 
 import Booster.Definition.Base
 import Booster.Log qualified as Log
