@@ -1,50 +1,32 @@
-/* Spa */
 \and{SortGeneratedTopCell{}}(
-    /* Spa */
     \and{SortGeneratedTopCell{}}(
-        /* Spa */
         \equals{SortGeneratedCounterCell{}, SortGeneratedTopCell{}}(
-            /* T Fn D Sfa */ Var'Unds'DotVar0:SortGeneratedCounterCell{},
-            /* T Fn D Sfa Cl */
+             Var'Unds'DotVar0:SortGeneratedCounterCell{},
             Lbl'-LT-'generatedCounter'-GT-'{}(
-                /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                 \dv{SortInt{}}("0")
             )
         ),
-        /* Spa */
         \equals{SortTenvCell{}, SortGeneratedTopCell{}}(
-            /* T Fn D Sfa */ Var'Unds'DotVar1:SortTenvCell{},
-            /* T Fn D Sfa Cl */
+             Var'Unds'DotVar1:SortTenvCell{},
             Lbl'-LT-'tenv'-GT-'{}(
-                /* T Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
+                  Lbl'Stop'Map{}()
             )
         )
     ),
-    /* Spa */
     \equals{SortType{}, SortGeneratedTopCell{}}(
-        /* T Fn D Sfa */ VarT:SortType{},
-        /* T Fn D Sfa */
+         VarT:SortType{},
         Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-            /* T Fn D Sfa */
             Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-                /* T Fn D Sfa */ Var'Ques'Tx1:SortType{},
-                /* Created: Kore.Rewrite.RewriteStep.resetResultPattern */
-                /* T Fn D Sfa */
+                 Var'Ques'Tx1:SortType{},
                 Var'Ques'T3:SortType{}
             ),
-            /* T Fn D Sfa */
             Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-                /* T Fn D Sfa */
                 Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-                    /* T Fn D Sfa */ Var'Ques'T3:SortType{},
-                    /* T Fn D Sfa */ Var'Ques'Te1:SortType{}
+                     Var'Ques'T3:SortType{},
+                     Var'Ques'Te1:SortType{}
                 ),
-                /* T Fn D Sfa */
                 Lbl'Unds'-'-GT-UndsUnds'LAMBDA'Unds'Type'Unds'Type'Unds'Type{}(
-                    /* Created: Kore.Rewrite.RewriteStep.resetResultPattern */
-                    /* T Fn D Sfa */
                     Var'Ques'Tx1:SortType{},
-                    /* Created: Kore.Rewrite.RewriteStep.resetResultPattern */
-                    /* T Fn D Sfa */
                     Var'Ques'Te1:SortType{}
                 )
             )
