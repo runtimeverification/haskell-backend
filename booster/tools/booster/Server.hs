@@ -155,6 +155,11 @@ main = do
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType =
                                 LogSomeAction
+                                    ( `elem`
+                                        [ "DebugApplyEquation"
+                                        , "DebugAttemptEquation"
+                                        ]
+                                    )
                                     (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
                                     ( LogAction $ \txt ->
                                         let bytes =
@@ -170,13 +175,7 @@ main = do
                             }
                     srvSettings = serverSettings port "*"
 
-                let entryFilter entry =
-                        entry
-                            `elem` [ "DebugApplyEquation"
-                                   , "DebugAttemptEquation"
-                                   ]
-
-                withLogger1 reportDirectory koreLogOptions entryFilter $ \actualLogAction -> do
+                withLogger1 reportDirectory koreLogOptions $ \actualLogAction -> do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                     definitionsWithCeilSummaries <-
                         liftIO $

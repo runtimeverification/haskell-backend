@@ -110,11 +110,10 @@ withLogger reportDirectory koreLogOptions = runContT $ do
 withLogger1 ::
     FilePath ->
     KoreLogOptions ->
-    (Text -> Bool) ->
     (LogAction IO SomeEntry -> IO a) ->
     IO a
-withLogger1 reportDirectory koreLogOptions entryFilter = runContT $ do
-    mainLogger <- ContT $ withMainLogger1 reportDirectory koreLogOptions entryFilter
+withLogger1 reportDirectory koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLogger1 reportDirectory koreLogOptions
     let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger exeName debugSolverOptions
     traceLogger <- ContT $ withRewriteTraceLogger koreLogOptions
@@ -133,7 +132,7 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
     userLogAction <-
         case logType koreLogOptions of
-            LogSomeAction _ a -> pure a
+            LogSomeAction _ a _ -> pure a
             LogStdErr -> pure Colog.logTextStderr
             LogFileText logFile -> do
                 lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile
@@ -149,18 +148,15 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
 withMainLogger1 ::
     FilePath ->
     KoreLogOptions ->
-    (Text -> Bool) ->
     (LogAction IO SomeEntry -> IO a) ->
     IO a
-withMainLogger1 _reportDirectory koreLogOptions entryFilter = runContT $ do
+withMainLogger1 _reportDirectory koreLogOptions = runContT $ do
     let KoreLogOptions{exeName} = koreLogOptions
-    -- bugReportLogFile = reportDirectory </> getExeName exeName <.> "log"
-    -- bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
-    (prettyLogAction, jsonLogAction) <-
+    (entryFilter, prettyLogAction, jsonLogAction) <-
         case logType koreLogOptions of
-            LogSomeAction a b -> pure (a, b)
-            LogStdErr -> pure (Colog.logTextStderr, Colog.logTextStderr)
-            LogFileText _logFile -> pure (Colog.logTextStderr, Colog.logTextStderr) -- Not sure what to put here
+            LogSomeAction f a b -> pure (f, a, b)
+            LogStdErr -> pure (const False, Colog.logTextStderr, Colog.logTextStderr)
+            LogFileText _logFile -> pure (const False, Colog.logTextStderr, Colog.logTextStderr) -- Not sure what to put here
     let KoreLogOptions{logFormat} = koreLogOptions
         logAction =
             makeKoreLogger1

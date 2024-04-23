@@ -97,7 +97,6 @@ import Pretty qualified
 import System.Clock (
     TimeSpec,
  )
-import System.IO qualified as IO
 import Text.Megaparsec qualified as Parser
 import Text.Megaparsec.Char qualified as Parser
 import Type.Reflection (
@@ -166,7 +165,11 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | LogSomeAction (forall m. MonadIO m => LogAction m Text) (forall m. MonadIO m => LogAction m Text)
+    | -- | Log using the two specified log actions
+      LogSomeAction
+        (Text -> Bool)
+        (forall m. MonadIO m => LogAction m Text)
+        (forall m. MonadIO m => LogAction m Text)
 
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
