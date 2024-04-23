@@ -132,7 +132,7 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
     userLogAction <-
         case logType koreLogOptions of
-            LogSomeAction _ a _ -> pure a
+            LogSomeAction (LogSomeActionData _ a _) -> pure a
             LogStdErr -> pure Colog.logTextStderr
             LogFileText logFile -> do
                 lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile
@@ -152,9 +152,14 @@ withMainLogger1 ::
     IO a
 withMainLogger1 _reportDirectory koreLogOptions = runContT $ do
     let KoreLogOptions{exeName} = koreLogOptions
-    (entryFilter, prettyLogAction, jsonLogAction) <-
+    (entryFilter, standardLogAction, jsonLogAction) <-
         case logType koreLogOptions of
-            LogSomeAction f a b -> pure (f, a, b)
+            LogSomeAction ldata ->
+                pure
+                    ( entrySelector ldata
+                    , standardLogAction ldata
+                    , jsonLogAction ldata
+                    )
             LogStdErr -> pure (const False, Colog.logTextStderr, Colog.logTextStderr)
             LogFileText _logFile -> pure (const False, Colog.logTextStderr, Colog.logTextStderr) -- Not sure what to put here
     let KoreLogOptions{logFormat} = koreLogOptions
@@ -163,7 +168,7 @@ withMainLogger1 _reportDirectory koreLogOptions = runContT $ do
                 exeName
                 logFormat
                 entryFilter
-                prettyLogAction
+                standardLogAction
                 jsonLogAction
                 & koreLogFilters koreLogOptions
                 & koreLogTransformer koreLogOptions

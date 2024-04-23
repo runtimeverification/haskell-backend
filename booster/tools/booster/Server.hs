@@ -72,6 +72,7 @@ import Kore.Log (
     ExeName (..),
     KoreLogType (..),
     LogAction (LogAction),
+    LogSomeActionData (..),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     swappableLogger,
@@ -161,19 +162,23 @@ main = do
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType =
-                                LogSomeAction
-                                    koreLogEntriesAsJsonSelector
-                                    (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
-                                    ( LogAction $ \txt ->
-                                        let bytes =
-                                                Text.encodeUtf8 $
-                                                    if simplificationLogHandle == IO.stderr
-                                                        then "[SimplifyJson] " <> txt <> "\n"
-                                                        else txt <> "\n"
-                                         in liftIO $ do
-                                                BS.hPutStr simplificationLogHandle bytes
-                                                IO.hFlush simplificationLogHandle
-                                    )
+                                LogSomeAction $
+                                    LogSomeActionData
+                                        { entrySelector = koreLogEntriesAsJsonSelector
+                                        , standardLogAction =
+                                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
+                                        , jsonLogAction =
+                                            ( LogAction $ \txt ->
+                                                let bytes =
+                                                        Text.encodeUtf8 $
+                                                            if simplificationLogHandle == IO.stderr
+                                                                then "[SimplifyJson] " <> txt <> "\n"
+                                                                else txt <> "\n"
+                                                 in liftIO $ do
+                                                        BS.hPutStr simplificationLogHandle bytes
+                                                        IO.hFlush simplificationLogHandle
+                                            )
+                                        }
                             , Log.logFormat = Log.Standard
                             }
                     srvSettings = serverSettings port "*"

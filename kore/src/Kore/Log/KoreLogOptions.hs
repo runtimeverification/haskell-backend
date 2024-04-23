@@ -7,6 +7,7 @@ License     : BSD-3-Clause
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
+    LogSomeActionData (..),
     KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
@@ -166,10 +167,16 @@ data KoreLogType
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
     | -- | Log using the two specified log actions
-      LogSomeAction
-        (Text -> Bool)
-        (forall m. MonadIO m => LogAction m Text)
-        (forall m. MonadIO m => LogAction m Text)
+      LogSomeAction LogSomeActionData
+
+{- | Log some entries as standard, and other as json, using the correspondingly named log actions.
+  Items are logged as Json (using the 'jsonLogAction' log action), if 'entrySelector' returns 'True' for the name of their type constructor.
+-}
+data LogSomeActionData = LogSomeActionData
+    { entrySelector :: (Text -> Bool)
+    , jsonLogAction :: (forall m. MonadIO m => LogAction m Text)
+    , standardLogAction :: (forall m. MonadIO m => LogAction m Text)
+    }
 
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
