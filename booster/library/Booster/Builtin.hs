@@ -13,7 +13,7 @@ module Booster.Builtin (
 
 import Control.Monad
 import Control.Monad.Trans.Except
-import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 (ByteString, pack)
 import Data.List (findIndex, partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -34,15 +34,36 @@ hooks =
     Map.unions
         [ builtinsKEQUAL
         , builtinsMAP
+        , builtinsLIST
         ]
 
 ------------------------------------------------------------
 (~~>) :: ByteString -> BuiltinFunction -> (ByteString, BuiltinFunction)
 (~~>) = (,)
 
+
+------------------------------------------------------------
+-- LIST hooks
+builtinsLIST :: Map ByteString BuiltinFunction
+builtinsLIST =
+    Map.mapKeys ("LIST." <>) $
+        Map.fromList
+            [ "size" ~~> listSizeHook
+            ]
+
+listSizeHook :: BuiltinFunction
+listSizeHook = \case
+    [KList _ heads Nothing] ->
+        pure $ Just $ DomainValue SortInt $ pack (show (length heads))
+    [KList _ _ (Just _)] ->
+        pure Nothing -- tail of list not determined
+    [_other] ->
+        pure Nothing -- not an internal list, maybe unevaluated function call
+    moreArgs ->
+        throwE . renderText $ "LIST.size: wrong arity " <> pretty (length moreArgs)
+
 ------------------------------------------------------------
 -- MAP hooks
--- only lookups and in_keys are implemented
 builtinsMAP :: Map ByteString BuiltinFunction
 builtinsMAP =
     Map.mapKeys ("MAP." <>) $
