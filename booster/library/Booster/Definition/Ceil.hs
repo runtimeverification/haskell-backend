@@ -14,6 +14,7 @@ import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 
 import Booster.LLVM as LLVM (API, simplifyBool)
+import Booster.Log
 import Booster.Pattern.Bool
 import Booster.Pattern.Util (isConcrete, sortOfTerm)
 import Booster.Util (Flag (..))
@@ -34,7 +35,6 @@ import Data.Set qualified as Set
 import GHC.Generics qualified as GHC
 import Prettyprinter (Pretty (..))
 import Prettyprinter qualified as Pretty
-import Booster.Log
 
 data ComputeCeilSummary = ComputeCeilSummary
     { rule :: RewriteRule.RewriteRule "Rewrite"

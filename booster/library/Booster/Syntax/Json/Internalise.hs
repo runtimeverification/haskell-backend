@@ -64,6 +64,7 @@ import Prettyprinter qualified as Pretty
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Attributes.Base qualified as Internal
 import Booster.Definition.Base (KoreDefinition (..), emptyKoreDefinition)
+import Booster.Log (LoggerMIO, ToLogFormat (..), logMessage, withKorePatternContext)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Util (freeVariables, sortOfTerm, substituteInSort)
@@ -74,7 +75,6 @@ import Booster.Syntax.ParsedKore.Parser (parsePattern)
 import Booster.Util (Flag (..))
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.Syntax.Json.Types qualified as Syntax
-import Booster.Log (ToLogFormat (..), withKorePatternContext, logMessage, LoggerMIO)
 
 pattern IsQQ, IsNotQQ :: Flag "qq"
 pattern IsQQ = Flag True
@@ -691,17 +691,20 @@ logPatternError = \case
     NoTermFound p -> withKorePatternContext p $ logMessage ("Pattern must contain at least one term" :: Text)
     PatternSortError p sortErr -> withKorePatternContext p $ logMessage $ pack $ show sortErr
     InconsistentPattern p -> withKorePatternContext p $ logMessage ("Inconsistent pattern" :: Text)
-    TermExpected p -> withKorePatternContext p $ logMessage ("Expected a term but found a predicate"  :: Text)
+    TermExpected p -> withKorePatternContext p $ logMessage ("Expected a term but found a predicate" :: Text)
     PredicateExpected p -> withKorePatternContext p $ logMessage ("Expected a predicate but found a term" :: Text)
     UnknownSymbol sym p -> withKorePatternContext p $ logMessage $ "Unknown symbol '" <> Syntax.getId sym <> "'"
     MacroOrAliasSymbolNotAllowed sym p -> withKorePatternContext p $ logMessage $ "Symbol '" <> Syntax.getId sym <> "' is a macro/alias"
     SubstitutionNotAllowed -> logMessage ("Substitution predicates are not allowed here" :: Text)
-    IncorrectSymbolArity p s expected got -> withKorePatternContext p $ logMessage $ "Inconsistent pattern. Symbol '"
-                <> Syntax.getId s
-                <> "' expected "
-                <> (pack $ show expected)
-                <> " arguments but got "
-                <> (pack $ show got)
+    IncorrectSymbolArity p s expected got ->
+        withKorePatternContext p $
+            logMessage $
+                "Inconsistent pattern. Symbol '"
+                    <> Syntax.getId s
+                    <> "' expected "
+                    <> (pack $ show expected)
+                    <> " arguments but got "
+                    <> (pack $ show got)
 
 data SortError
     = UnknownSort Syntax.Sort

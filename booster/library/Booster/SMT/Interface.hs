@@ -30,13 +30,13 @@ import Data.Text as Text (Text, pack, unlines, unwords)
 import Prettyprinter (Pretty, hsep, pretty, vsep)
 
 import Booster.Definition.Base
+import Booster.Log qualified as Log
 import Booster.Pattern.Base
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
-import qualified Booster.Log as Log
 
 -- Includes all options from kore-rpc used by current clients. The
 -- parser in CLOptions uses compatible names and we use the same
@@ -91,7 +91,7 @@ initSolver def smtOptions = Log.withContext "smt" $ do
     let prelude = smtDeclarations def
     case prelude of
         Left err -> do
-            Log.logMessage  $ "Error translating definition to SMT: " <> err
+            Log.logMessage $ "Error translating definition to SMT: " <> err
             throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
         Right{} -> pure ()
     check <-
@@ -100,7 +100,7 @@ initSolver def smtOptions = Log.withContext "smt" $ do
     case check of
         Sat -> pure ctxt
         other -> do
-            Log.logMessage  $ "Initial SMT definition check returned " <> pack (show other)
+            Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
             closeContext ctxt
             throwSMT' $
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
@@ -131,7 +131,7 @@ getModelFor ::
     io (Either SMT.Response (Map Variable Term))
 getModelFor ctxt ps subst
     | null ps && Map.null subst = Log.withContext "smt" $ do
-        Log.logMessage ( "No constraints or substitutions to check, returning Sat" :: Text)
+        Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
     | otherwise = runSMT ctxt $ do
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
@@ -203,7 +203,7 @@ getModelFor ctxt ps subst
                             freeVarsMap
                 unless (Map.null untranslatableVars) $
                     let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
-                     in Log.logMessage  ("Untranslatable variables in model: " <> vars)
+                     in Log.logMessage ("Untranslatable variables in model: " <> vars)
 
                 response <-
                     if Map.null freeVarsMap
@@ -267,10 +267,10 @@ checkPredicates ::
     io (Maybe Bool)
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure $ Just True -- or Nothing?
-    | Left errMsg <- translated = Log.withContext "smt" $  do
+    | Left errMsg <- translated = Log.withContext "smt" $ do
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $  runSMT ctxt . runMaybeT $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runMaybeT $ do
         Log.logMessage $
             Text.unwords
                 [ "Checking"

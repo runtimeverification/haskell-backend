@@ -43,14 +43,10 @@ import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
-import Booster.Log
 import Booster.LLVM as LLVM (API)
+import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (
-    Pattern (..),
-    Term,
-    Variable,
- )
+import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Rewrite (
     RewriteFailed (..),
@@ -69,9 +65,10 @@ import Booster.Syntax.Json.Internalise (
     TermOrPredicates (..),
     internalisePattern,
     internaliseTermOrPredicate,
+    logPatternError,
     patternErrorToRpcError,
     pattern CheckSubsorts,
-    pattern DisallowAlias, logPatternError,
+    pattern DisallowAlias,
  )
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base hiding (ParsedModule)
@@ -85,7 +82,6 @@ import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
 import Kore.Syntax.Json.Types qualified as Syntax
-import Booster.Pattern.Base (Sort(SortApp))
 
 respond ::
     forall m.
@@ -98,7 +94,7 @@ respond stateVar =
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-        RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "execute" $  do
+        RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "execute" $ do
             start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -113,10 +109,10 @@ respond stateVar =
                                     [ patternErrorToRpcError patternError
                                     ]
                 Right (pat, substitution, unsupported) -> do
-                    unless (null unsupported) $ 
+                    unless (null unsupported) $
                         withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
                             logMessage ("ignoring unsupported predicate parts" :: Text)
-                        
+
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap RpcTypes.getNat req.maxDepth
@@ -296,27 +292,28 @@ respond stateVar =
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
                         let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
-                        withContext "constraint" $ ApplyEquations.simplifyConstraints
-                            doTracing
-                            def
-                            mLlvmLibrary
-                            solver
-                            mempty
-                            predicates
-                            >>= \case
-                                (Right newPreds, _) -> do
-                                    let predicateSort =
-                                            fromMaybe (error "not a predicate") $
-                                                sortOfJson req.state.term
-                                        result =
-                                            map (externalisePredicate predicateSort) newPreds
-                                                <> map (externaliseCeil predicateSort) (Set.toList ps.ceilPredicates)
-                                                <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList ps.substitution)
-                                                <> ps.unsupported
+                        withContext "constraint" $
+                            ApplyEquations.simplifyConstraints
+                                doTracing
+                                def
+                                mLlvmLibrary
+                                solver
+                                mempty
+                                predicates
+                                >>= \case
+                                    (Right newPreds, _) -> do
+                                        let predicateSort =
+                                                fromMaybe (error "not a predicate") $
+                                                    sortOfJson req.state.term
+                                            result =
+                                                map (externalisePredicate predicateSort) newPreds
+                                                    <> map (externaliseCeil predicateSort) (Set.toList ps.ceilPredicates)
+                                                    <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList ps.substitution)
+                                                    <> ps.unsupported
 
-                                    pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, [])
-                                (Left something, _) ->
-                                    pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty something
+                                        pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, [])
+                                    (Left something, _) ->
+                                        pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty something
             whenJust solver SMT.closeSolver
             stop <- liftIO $ getTime Monotonic
 

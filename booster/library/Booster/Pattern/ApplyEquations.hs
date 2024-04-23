@@ -51,7 +51,7 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
 import Data.Foldable (toList, traverse_)
-import Data.List (partition, intersperse)
+import Data.List (intersperse, partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
@@ -70,7 +70,9 @@ import Booster.Builtin as Builtin
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.GlobalState qualified as GlobalState
+import Booster.LLVM (LlvmError (..))
 import Booster.LLVM qualified as LLVM
+import Booster.Log
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index
@@ -80,8 +82,6 @@ import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Bound (..), Flag (..))
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
-import Booster.Log
-import Booster.LLVM (LlvmError(..))
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
@@ -91,7 +91,6 @@ newtype EquationT io a
 instance MonadLoggerIO io => LoggerMIO (EquationT io) where
     getLogger = EquationT $ asks logger
     withLogger modL (EquationT m) = EquationT $ withReaderT (\cfg@EquationConfig{logger} -> cfg{logger = modL logger}) m
-
 
 throw :: MonadLoggerIO io => EquationFailure -> EquationT io a
 throw = EquationT . lift . throwE
@@ -152,8 +151,6 @@ data EquationConfig = EquationConfig
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
     }
-
-
 
 pattern CollectEquationTraces :: Flag "CollectEquationTraces"
 pattern CollectEquationTraces = Flag True
@@ -387,7 +384,15 @@ checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
         withContext "failure" $
-            logMessage $ renderOneLineText $ "Equation loop:" <+> hsep (intersperse "," $ map (\(Term attrs _) -> "term" <+> pretty (showHashHex attrs.hash)) $ reverse $ t : take (i + 1) (toList termStack))
+            logMessage $
+                renderOneLineText $
+                    "Equation loop:"
+                        <+> hsep
+                            ( intersperse "," $
+                                map (\(Term attrs _) -> "term" <+> pretty (showHashHex attrs.hash)) $
+                                    reverse $
+                                        t : take (i + 1) (toList termStack)
+                            )
         throw (EquationLoop $ reverse $ t : take (i + 1) (toList termStack))
 
 data Direction = TopDown | BottomUp
@@ -449,7 +454,10 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                withContext "failure" $ logMessage $ renderOneLineText $  "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                withContext "failure" $
+                    logMessage $
+                        renderOneLineText $
+                            "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -488,8 +496,10 @@ llvmSimplify term = do
                     Right result -> withContext "llvm" $ do
                         when (result /= t) $ do
                             setChanged
-                            withContext "success" $ withTermContext result $
-                                emitEquationTrace t Nothing (Just "LLVM") Nothing $ Success result
+                            withContext "success" $
+                                withTermContext result $
+                                    emitEquationTrace t Nothing (Just "LLVM") Nothing $
+                                        Success result
                         toCache LLVM t result
                         pure result
         | otherwise = do
@@ -638,9 +648,11 @@ cached cacheTag cb t@(Term attributes _)
             Just cachedTerm -> do
                 when (t /= cachedTerm) $ do
                     setChanged
-                    withContext "success" $ withContext "cached" $ withTermContext cachedTerm $
-                        emitEquationTrace t Nothing (Just ("Cache" <> Text.pack (show cacheTag))) Nothing $
-                            Success cachedTerm
+                    withContext "success" $
+                        withContext "cached" $
+                            withTermContext cachedTerm $
+                                emitEquationTrace t Nothing (Just ("Cache" <> Text.pack (show cacheTag))) Nothing $
+                                    Success cachedTerm
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
@@ -669,10 +681,10 @@ applyHooksAndEquations pref term = do
         case term of
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
-                    withContext (LogContext $ "hook " <> maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook) $
-                        either (\e -> withContext "failure" (logMessage e) >> throw (InternalError e)) checkChanged
+                    withContext (LogContext $ "hook " <> maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook)
+                        $ either (\e -> withContext "failure" (logMessage e) >> throw (InternalError e)) checkChanged
                             . runExcept
-                            $ hook args
+                        $ hook args
             _other -> pure Nothing
 
     -- for the (unlikely) case that a built-in reproduces itself, we
@@ -837,7 +849,11 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             "Equation with existentials: " <> Text.pack (show rule)
     -- immediately cancel if not preserving definedness
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about definedness of rule due to:" <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+        withContext "abort" $
+            logMessage $
+                renderOneLineText $
+                    "Uncertain about definedness of rule due to:"
+                        <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
         throwE RuleNotPreservingDefinedness
     -- immediately cancel if rule has concrete() flag and term has variables
     when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
@@ -850,7 +866,11 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             withContext "match" $ withContext "failure" $ logPretty failReason
             throwE $ FailedMatch failReason
         MatchIndeterminate remainder -> do
-            withContext "match" $ withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about match with rule. Remainder:" <+> pretty remainder
+            withContext "match" $
+                withContext "abort" $
+                    logMessage $
+                        renderOneLineText $
+                            "Uncertain about match with rule. Remainder:" <+> pretty remainder
             throwE IndeterminateMatch
         MatchSuccess subst -> do
             -- cancel if condition
@@ -859,7 +879,12 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             -- is violated
             withContext "match" $ checkConcreteness rule.attributes.concreteness subst
 
-            withContext "match" $ withContext "success" $ logMessage $ renderOneLineText $ "Substitution:" <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
+            withContext "match" $
+                withContext "success" $
+                    logMessage $
+                        renderOneLineText $
+                            "Substitution:"
+                                <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
 
             -- check required conditions, using substitution
             let required =
@@ -871,7 +896,9 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             knownPredicates <- (.predicates) <$> lift getState
             let (knownTrue, toCheck) = partition (`Set.member` knownPredicates) required
             unless (null knownTrue) $
-                logMessage $ renderOneLineText $ "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
+                logMessage $
+                    renderOneLineText $
+                        "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
 
             unclearConditions' <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
 
@@ -889,7 +916,10 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
                     lift $ pushConstraints $ Set.fromList ensuredConditions
                     pure $ substituteInTerm subst rule.rhs
                 unclearConditions -> do
-                    withContext "abort" $ logMessage $ renderOneLineText $ "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
+                    withContext "abort" $
+                        logMessage $
+                            renderOneLineText $
+                                "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
                     throwE $ IndeterminateCondition unclearConditions
   where
     -- Simplify given predicate in a nested EquationT execution.
@@ -945,10 +975,13 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
         ExceptT ApplyEquationFailure (EquationT io) ()
     mkCheck (varName, _) constrained (Term attributes _)
         | not test = do
-            withContext "abort" $ logMessage $ renderOneLineText $ hsep 
-                [ "Concreteness constraint violated: "
-                    , pretty $ show constrained <> " variable " <> show varName
-                    ]
+            withContext "abort" $
+                logMessage $
+                    renderOneLineText $
+                        hsep
+                            [ "Concreteness constraint violated: "
+                            , pretty $ show constrained <> " variable " <> show varName
+                            ]
             throwE $ MatchConstraintViolated constrained varName
         | otherwise = pure ()
       where
@@ -1017,20 +1050,24 @@ simplifyConstraint' recurseIntoEvalBool = \case
         | isConcrete t && canBeEvaluated -> withTermContext t $ do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
-                Just api -> withContext "llvm" $
-                    LLVM.simplifyBool api t >>= \case
-                        Left (LlvmError e) -> do
-                            withContext "failure" $ logMessage $ Text.decodeUtf8 e
-                            throw $ UndefinedTerm t $ LlvmError e
-                        Right res -> do
-                            let result = if res
-                                    then TrueBool
-                                    else FalseBool
-                            withContext "success" $ withTermContext result $
-                                pure result
+                Just api ->
+                    withContext "llvm" $
+                        LLVM.simplifyBool api t >>= \case
+                            Left (LlvmError e) -> do
+                                withContext "failure" $ logMessage $ Text.decodeUtf8 e
+                                throw $ UndefinedTerm t $ LlvmError e
+                            Right res -> do
+                                let result =
+                                        if res
+                                            then TrueBool
+                                            else FalseBool
+                                withContext "success" $
+                                    withTermContext result $
+                                        pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
-        | otherwise -> withTermContext t $ 
-            if recurseIntoEvalBool then evalBool t else pure t
+        | otherwise ->
+            withTermContext t $
+                if recurseIntoEvalBool then evalBool t else pure t
   where
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do

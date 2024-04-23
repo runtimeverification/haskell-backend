@@ -49,8 +49,8 @@ import Booster.Definition.Base (HasSourceRef (sourceRef), RewriteRule (computedA
 import Booster.Definition.Ceil (ComputeCeilSummary (..), computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
-import Booster.Log qualified
 import Booster.LLVM.Internal (mkAPI, withDLib)
+import Booster.Log qualified
 import Booster.Prettyprinter (renderText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
@@ -123,9 +123,13 @@ main = do
         negGlobPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) notLogContexts
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
-            lvl `elem` customLevels || case lvl of { LevelOther l -> 
-                not (any (flip Glob.match (Text.unpack l)) negGlobPatterns) &&
-                any (flip Glob.match (Text.unpack l)) globPatterns; _ -> False } || lvl >= logLevel && lvl <= LevelError 
+            lvl `elem` customLevels
+                || case lvl of
+                    LevelOther l ->
+                        not (any (flip Glob.match (Text.unpack l)) negGlobPatterns)
+                            && any (flip Glob.match (Text.unpack l)) globPatterns
+                    _ -> False
+                || lvl >= logLevel && lvl <= LevelError
         koreLogExtraLevels =
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions

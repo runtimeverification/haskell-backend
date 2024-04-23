@@ -25,7 +25,7 @@ import Control.Monad.Logger
 import Control.Monad.Trans.Reader
 import Data.ByteString.Builder qualified as BS
 import Data.ByteString.Char8 qualified as BS
-import Data.Text (pack, Text)
+import Data.Text (Text, pack)
 import SMTLIB.Backends qualified as Backend
 import SMTLIB.Backends.Process qualified as Backend
 import System.IO (
@@ -38,9 +38,9 @@ import System.IO (
     openFile,
  )
 
+import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
-import Booster.Log (LoggerMIO, logMessage, LoggerMIO (..))
 import Control.Monad.Trans.Class (lift)
 
 data SMTContext = SMTContext
@@ -97,7 +97,6 @@ closeContext ctxt = do
 
 newtype SMT m a = SMT (ReaderT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
-
 
 runSMT :: SMTContext -> SMT io a -> io a
 runSMT ctxt (SMT action) =
