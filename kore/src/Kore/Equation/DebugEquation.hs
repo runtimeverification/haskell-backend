@@ -278,23 +278,28 @@ instance Entry DebugAttemptEquation where
                 , "rule-id"
                     JSON..= fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
                 ]
-        entry@(DebugAttemptEquationResult equation result) ->
+        _entry@(DebugAttemptEquationResult equation result) ->
             let resultInfo = case result of
-                    Right _ -> JSON.object ["tag" JSON..= ("success" :: Text)]
+                    Right _ ->
+                        JSON.object
+                            [ "tag" JSON..= ("success" :: Text)
+                            , "rule-id" JSON..= ruleIdText
+                            ]
                     Left failure ->
                         JSON.object
                             [ "tag" JSON..= ("failure" :: Text)
+                            , "rule-id" JSON..= ruleIdText
                             , "reason" JSON..= failureDescription failure
                             ]
              in JSON.object
-                    [ "tag" JSON..= entryTypeText (toEntry entry)
-                    , "rule-id"
-                        JSON..= fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+                    [ "tag" JSON..= ("simplification" :: Text)
                     , "result" JSON..= resultInfo
                     ]
           where
             failureDescription :: AttemptEquationError RewritingVariableName -> Text
             failureDescription err = Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+
+            ruleIdText = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::

@@ -35,6 +35,8 @@ import Control.Monad.Cont (
     runContT,
  )
 import Data.Aeson qualified as JSON
+import Data.Aeson.Key qualified as JSON
+import Data.Aeson.KeyMap qualified as JSON
 import Data.Aeson.Text qualified as JSON
 import Data.Functor.Contravariant (
     contramap,
@@ -320,12 +322,12 @@ makeKoreLogger1 exeName koreLogFormat entryFilter prettyLogAction jsonLogAction 
   where
     renderJson :: SomeEntry -> Text
     renderJson (SomeEntry _context actualEntry) =
-        LazyText.toStrict . JSON.encodeToLazyText $
-            JSON.object
-                -- NOTE, context is available here as well
-                [ "entry" JSON..= oneLineJson actualEntry
-                , "origin" JSON..= KoreRpc
-                ]
+        LazyText.toStrict . JSON.encodeToLazyText . addOriginField $ oneLineJson actualEntry
+      where
+        addOriginField :: JSON.Value -> JSON.Value
+        addOriginField = \case
+            (JSON.Object xs) -> JSON.Object $ JSON.insert (JSON.fromText "origin") (JSON.toJSON KoreRpc) xs
+            xs -> xs
 
     render :: SomeEntry -> Text
     render entry =
