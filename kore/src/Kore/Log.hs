@@ -8,6 +8,7 @@ module Kore.Log (
     koreLogFilters,
     koreLogTransformer,
     withLogger,
+    withLogger1,
     emptyLogger,
     stderrLogger,
     swappableLogger,
@@ -33,6 +34,7 @@ import Control.Monad.Cont (
     ContT (..),
     runContT,
  )
+import Data.Aeson qualified as JSON
 import Data.Aeson.Text qualified as JSON
 import Data.Functor.Contravariant (
     contramap,
@@ -40,6 +42,8 @@ import Data.Functor.Contravariant (
 import Data.Text (
     Text,
  )
+import Data.Text.Lazy qualified as LazyText
+import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
 import Kore.Log.DebugRewriteTrace (
     rewriteTraceLogger,
  )
@@ -98,6 +102,24 @@ withLogger reportDirectory koreLogOptions = runContT $ do
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
     return $ mainLogger <> smtSolverLogger <> traceLogger <> logSQLite
 
+{- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
+ the CPS style because some outputters require cleanup (e.g. files).
+-}
+withLogger1 ::
+    FilePath ->
+    KoreLogOptions ->
+    (Text -> Bool) ->
+    (LogAction IO SomeEntry -> IO a) ->
+    IO a
+withLogger1 reportDirectory koreLogOptions entryFilter = runContT $ do
+    mainLogger <- ContT $ withMainLogger1 reportDirectory koreLogOptions entryFilter
+    let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
+    smtSolverLogger <- ContT $ withSmtSolverLogger exeName debugSolverOptions
+    traceLogger <- ContT $ withRewriteTraceLogger koreLogOptions
+    let KoreLogOptions{logSQLiteOptions} = koreLogOptions
+    logSQLite <- ContT $ withLogSQLite logSQLiteOptions
+    return $ mainLogger <> smtSolverLogger <> traceLogger <> logSQLite
+
 withMainLogger ::
     FilePath ->
     KoreLogOptions ->
@@ -109,7 +131,7 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
     userLogAction <-
         case logType koreLogOptions of
-            LogSomeAction a -> pure a
+            LogSomeAction _ a -> pure a
             LogStdErr -> pure Colog.logTextStderr
             LogFileText logFile -> do
                 lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile
@@ -118,6 +140,33 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
         logAction =
             userLogAction <> bugReportLogAction
                 & makeKoreLogger exeName startTime timestampsSwitch logFormat
+                & koreLogFilters koreLogOptions
+                & koreLogTransformer koreLogOptions
+    pure logAction
+
+withMainLogger1 ::
+    FilePath ->
+    KoreLogOptions ->
+    (Text -> Bool) ->
+    (LogAction IO SomeEntry -> IO a) ->
+    IO a
+withMainLogger1 _reportDirectory koreLogOptions entryFilter = runContT $ do
+    let KoreLogOptions{exeName} = koreLogOptions
+    -- bugReportLogFile = reportDirectory </> getExeName exeName <.> "log"
+    -- bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
+    (prettyLogAction, jsonLogAction) <-
+        case logType koreLogOptions of
+            LogSomeAction a b -> pure (a, b)
+            LogStdErr -> pure (Colog.logTextStderr, Colog.logTextStderr)
+            LogFileText _logFile -> pure (Colog.logTextStderr, Colog.logTextStderr) -- Not sure what to put here
+    let KoreLogOptions{logFormat} = koreLogOptions
+        logAction =
+            makeKoreLogger1
+                exeName
+                logFormat
+                entryFilter
+                prettyLogAction
+                jsonLogAction
                 & koreLogFilters koreLogOptions
                 & koreLogTransformer koreLogOptions
     pure logAction
@@ -246,6 +295,86 @@ runKoreLogThreadSafe reportDirectory options loggerT =
         let swapLogAction = swappableLogger mvarLogAction
         runLoggerT loggerT swapLogAction
 
+{- | The logger that redirects some of the items to a file
+TODO: needs better description
+-}
+makeKoreLogger1 ::
+    forall io.
+    MonadIO io =>
+    ExeName ->
+    KoreLogFormat ->
+    (Text -> Bool) ->
+    LogAction io Text ->
+    LogAction io Text ->
+    LogAction io SomeEntry
+makeKoreLogger1 exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
+    let actionForJsonLogs =
+            jsonLogAction
+                & Colog.cmap renderJson
+                & Colog.cfilter (entryFilter . entryTypeText)
+        actionForPrettyLogs =
+            prettyLogAction
+                & Colog.cmap render
+                & Colog.cfilter (not . entryFilter . entryTypeText)
+     in actionForJsonLogs <> actionForPrettyLogs
+  where
+    renderJson :: SomeEntry -> Text
+    renderJson (SomeEntry _context actualEntry) =
+        LazyText.toStrict . JSON.encodeToLazyText $
+            JSON.object
+                -- NOTE, context is available here as well
+                [ "entry" JSON..= oneLineJson actualEntry
+                , "origin" JSON..= KoreRpc
+                ]
+
+    render :: SomeEntry -> Text
+    render entry =
+        prettyActualEntry entry
+            & Pretty.layoutPretty Pretty.defaultLayoutOptions
+            & Pretty.renderText
+
+    exeName' = Pretty.pretty exeName <> Pretty.colon
+    prettyActualEntry entry@(SomeEntry entryContext actualEntry)
+        | OneLine <- koreLogFormat =
+            Pretty.hsep [header, oneLineDoc actualEntry]
+        | otherwise =
+            (Pretty.vsep . concat)
+                [ [header]
+                , indent <$> [longDoc actualEntry]
+                , context'
+                ]
+      where
+        header =
+            (Pretty.hsep . catMaybes)
+                [ Just exeName'
+                , Just severity'
+                , Just (Pretty.parens $ type' entry)
+                ]
+                <> Pretty.colon
+        severity' = prettySeverity (entrySeverity actualEntry)
+        type' e =
+            Pretty.pretty $
+                lookupTextFromTypeWithError $
+                    typeOfSomeEntry e
+        context' =
+            (entry : entryContext)
+                & reverse
+                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
+                & prettyContext
+        prettyContext =
+            \case
+                [] -> []
+                xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
+
+        mkContext =
+            \case
+                [] -> []
+                [(doc, typeName)] ->
+                    [Pretty.hsep [Pretty.parens typeName, doc]]
+                (doc, typeName) : xs -> (Pretty.hsep [Pretty.parens typeName, doc]) : (indent <$> (mkContext xs))
+
+    indent = Pretty.indent 4
+
 {- | The default Kore logger.
 
 Creates a kore logger which:
@@ -283,8 +412,6 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
     prettyActualEntry timestamp entry@(SomeEntry entryContext actualEntry)
         | OneLine <- koreLogFormat =
             Pretty.hsep [header, oneLineDoc actualEntry]
-        | Json <- koreLogFormat =
-            Pretty.hsep [header, Pretty.pretty . JSON.encodeToLazyText $ oneLineJson actualEntry]
         | otherwise =
             (Pretty.vsep . concat)
                 [ [header]

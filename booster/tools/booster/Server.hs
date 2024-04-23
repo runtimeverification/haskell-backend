@@ -24,6 +24,8 @@ import Control.Monad.Logger (
     runNoLoggingT,
  )
 import Control.Monad.Logger qualified as Logger
+import Data.Aeson.Text qualified as JSON
+import Data.ByteString qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -33,7 +35,8 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text (decodeUtf8)
+import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Data.Text.Lazy qualified as LazyText
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -69,12 +72,12 @@ import Kore.JsonRpc.Types (API, HaltReason (..), ReqOrRes (Req, Res))
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.Log (
     ExeName (..),
-    KoreLogType (LogSomeAction),
+    KoreLogType (..),
     LogAction (LogAction),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     swappableLogger,
-    withLogger,
+    withLogger1,
  )
 import Kore.Log qualified as Log
 import Kore.Log.DebugSolver qualified as Log
@@ -150,12 +153,30 @@ main = do
                             , Log.timestampsSwitch = TimestampsDisable
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                            , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
-                            , Log.logFormat = if LevelOther "SimplifyJson" `elem` logLevels then Log.Json else Log.Standard
+                            , Log.logType =
+                                LogSomeAction
+                                    (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
+                                    ( LogAction $ \txt ->
+                                        let bytes =
+                                                Text.encodeUtf8 $
+                                                    if simplificationLogHandle == IO.stderr
+                                                        then "[SimplifyJson] " <> txt <> "\n"
+                                                        else txt <> "\n"
+                                         in liftIO $ do
+                                                BS.hPutStr simplificationLogHandle bytes
+                                                IO.hFlush simplificationLogHandle
+                                    )
+                            , Log.logFormat = Log.Standard
                             }
                     srvSettings = serverSettings port "*"
 
-                withLogger reportDirectory koreLogOptions $ \actualLogAction -> do
+                let entryFilter entry =
+                        entry
+                            `elem` [ "DebugApplyEquation"
+                                   , "DebugAttemptEquation"
+                                   ]
+
+                withLogger1 reportDirectory koreLogOptions entryFilter $ \actualLogAction -> do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                     definitionsWithCeilSummaries <-
                         liftIO $

@@ -97,6 +97,7 @@ import Pretty qualified
 import System.Clock (
     TimeSpec,
  )
+import System.IO qualified as IO
 import Text.Megaparsec qualified as Parser
 import Text.Megaparsec.Char qualified as Parser
 import Type.Reflection (
@@ -165,7 +166,7 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | LogSomeAction (forall m. MonadIO m => LogAction m Text)
+    | LogSomeAction (forall m. MonadIO m => LogAction m Text) (forall m. MonadIO m => LogAction m Text)
 
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
@@ -176,12 +177,11 @@ instance Show KoreLogType where
     show = \case
         LogStdErr -> "LogStdErr"
         LogFileText fp -> "LogFileText " <> show fp
-        LogSomeAction _ -> "LogSomeAction _"
+        LogSomeAction{} -> "LogSomeAction _"
 
 data KoreLogFormat
     = Standard
     | OneLine
-    | Json
     deriving stock (Eq, Show)
 
 instance Default KoreLogType where
@@ -205,7 +205,6 @@ parseKoreLogFormat = option formatReader info
     formatReader = Options.maybeReader $ \case
         "standard" -> Just Standard
         "oneline" -> Just OneLine
-        "json" -> Just Json
         _ -> Nothing
     info =
         mempty
@@ -213,7 +212,8 @@ parseKoreLogFormat = option formatReader info
             <> Options.help "Log format: standard, oneline, json"
             <> Options.value def
 
-type EntryTypes = Set SomeTypeRep
+type EntryType = SomeTypeRep
+type EntryTypes = Set EntryType
 
 -- | Enable or disable timestamps
 data TimestampsSwitch = TimestampsEnable | TimestampsDisable
@@ -670,11 +670,10 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
-        koreLogTypeFlag (LogSomeAction _) = []
+        koreLogTypeFlag (LogSomeAction{}) = []
 
         koreLogFormatFlag Standard = []
         koreLogFormatFlag OneLine = ["--log-format=oneline"]
-        koreLogFormatFlag Json = ["--log-format=json"]
 
         timestampsSwitchFlag TimestampsEnable = ["--enable-log-timestamps"]
         timestampsSwitchFlag TimestampsDisable = ["--disable-log-timestamps"]

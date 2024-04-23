@@ -162,13 +162,16 @@ main = do
                     , Log.timestampsSwitch = TimestampsDisable
                     , Log.debugSolverOptions =
                         Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                    , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
+                    , Log.logType =
+                        LogSomeAction
+                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
+                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
                     , Log.logFormat = if Log.LevelOther "SimplifyJson" `elem` logLevels then Log.Json else Log.Standard
                     }
             srvSettings = serverSettings port "*"
 
         liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \reportDirectory ->
-            withLogger reportDirectory koreLogOptions $ \actualLogAction -> do
+            withLogger reportDirectory koreLogOptions (const False) $ \actualLogAction -> do
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
                 kore@KoreServer{runSMT} <-
