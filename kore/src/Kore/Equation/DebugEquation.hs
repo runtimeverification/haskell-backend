@@ -52,7 +52,6 @@ import Kore.Internal.TermLike (
     SomeVariableName,
     TermLike,
  )
-import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Rewrite.Axiom.MatcherData (
     MatchResult,
  )
@@ -271,33 +270,31 @@ instance Entry DebugAttemptEquation where
             (srcLoc equation)
     oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
     oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
+
     oneLineJson = \case
-        entry@DebugAttemptEquation{} -> JSON.object ["entry" JSON..= Log.entryTypeText (Log.toEntry entry)]
-        DebugAttemptEquationResult equation (Right _) ->
-            JSON.toJSON $
-                KoreRpcLog.Simplification
-                    { originalTerm = Nothing
-                    , originalTermIndex = Nothing
-                    , result =
-                        KoreRpcLog.Success
-                            { rewrittenTerm = Nothing
-                            , substitution = Nothing
-                            , ruleId = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
-                            }
-                    , origin = KoreRpcLog.KoreRpc
-                    }
-        DebugAttemptEquationResult equation (Left failureReason) ->
-            JSON.toJSON $
-                KoreRpcLog.Simplification
-                    { originalTerm = Nothing
-                    , originalTermIndex = Nothing
-                    , result =
-                        KoreRpcLog.Failure
-                            { reason = (Pretty.renderText . Pretty.layoutOneLine) (pretty failureReason)
-                            , _ruleId = Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation
-                            }
-                    , origin = KoreRpcLog.KoreRpc
-                    }
+        entry@(DebugAttemptEquation equation _) ->
+            JSON.object
+                [ "tag" JSON..= entryTypeText (toEntry entry)
+                , "rule-id"
+                    JSON..= fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+                ]
+        entry@(DebugAttemptEquationResult equation result) ->
+            let resultInfo = case result of
+                    Right _ -> JSON.object ["tag" JSON..= ("success" :: Text)]
+                    Left failure ->
+                        JSON.object
+                            [ "tag" JSON..= ("failure" :: Text)
+                            , "reason" JSON..= failureDescription failure
+                            ]
+             in JSON.object
+                    [ "tag" JSON..= entryTypeText (toEntry entry)
+                    , "rule-id"
+                        JSON..= fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+                    , "result" JSON..= resultInfo
+                    ]
+          where
+            failureDescription :: AttemptEquationError a -> Text
+            failureDescription _ = "" :: Text
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
