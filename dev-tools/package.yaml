@@ -176,6 +176,7 @@ executables:
     dependencies:
       - aeson
       - base
+      - bytestring
       - clock
       - conduit-extra
       - containers
