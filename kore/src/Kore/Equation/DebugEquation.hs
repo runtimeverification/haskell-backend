@@ -32,6 +32,7 @@ import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
  )
+import Data.Text qualified as Text
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -297,7 +298,10 @@ instance Entry DebugAttemptEquation where
                     ]
           where
             failureDescription :: AttemptEquationError RewritingVariableName -> Text
-            failureDescription err = Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+            failureDescription err = shortenText . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+
+            shortenText :: Text -> Text
+            shortenText msg = Text.take 200 msg <> ("...truncated" :: Text)
 
             ruleIdText = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
 
