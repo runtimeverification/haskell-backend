@@ -7,61 +7,55 @@
                         \equals{SortGeneratedCounterCell{}, SortGeneratedTopCell{}}(
                             Var'Unds'DotVar0:SortGeneratedCounterCell{},
                             Lbl'-LT-'generatedCounter'-GT-'{}(
-                                 \dv{SortInt{}}("0")
+                                \dv{SortInt{}}("0")
                             )
                         ),
                         \equals{SortThreadCellMap{}, SortGeneratedTopCell{}}(
                             Var'Unds'DotVar2:SortThreadCellMap{},
-                             Lbl'Stop'ThreadCellMap{}()
+                            /* InternalMap: */ Lbl'Stop'ThreadCellMap{}()
                         )
                     ),
                     \equals{SortIdCell{}, SortGeneratedTopCell{}}(
-                         Var'Unds'Gen0:SortIdCell{},
-                        Lbl'-LT-'id'-GT-'{}(
-                             \dv{SortInt{}}("0")
-                        )
+                        Var'Unds'Gen0:SortIdCell{},
+                        Lbl'-LT-'id'-GT-'{}(\dv{SortInt{}}("0"))
                     )
                 ),
                 \equals{SortEnvCell{}, SortGeneratedTopCell{}}(
-                     Var'Unds'Gen1:SortEnvCell{},
-                    Lbl'-LT-'env'-GT-'{}(
-                          Lbl'Stop'Map{}()
-                    )
+                    Var'Unds'Gen1:SortEnvCell{},
+                    Lbl'-LT-'env'-GT-'{}(/* InternalMap: */ Lbl'Stop'Map{}())
                 )
             ),
             \equals{SortStoreCell{}, SortGeneratedTopCell{}}(
-                 Var'Unds'Gen2:SortStoreCell{},
-                Lbl'-LT-'store'-GT-'{}(
-                      Lbl'Stop'Map{}()
-                )
+                Var'Unds'Gen2:SortStoreCell{},
+                Lbl'-LT-'store'-GT-'{}(/* InternalMap: */ Lbl'Stop'Map{}())
             )
         ),
         \equals{SortInputCell{}, SortGeneratedTopCell{}}(
-             Var'Unds'Gen3:SortInputCell{},
+            Var'Unds'Gen3:SortInputCell{},
             Lbl'-LT-'input'-GT-'{}(
-                 Lbl'Unds'List'Unds'{}(
+                /* InternalList: */ Lbl'Unds'List'Unds'{}(
                     LblListItem{}(
-                         inj{SortStream{}, SortKItem{}}(
+                        /* Inj: */ inj{SortStream{}, SortKItem{}}(
                             Lbl'Hash'buffer'LParUndsRParUnds'K-IO'Unds'Stream'Unds'K{}(
                                 kseq{}(
-                                     inj{SortString{}, SortKItem{}}(
+                                    /* Inj: */ inj{SortString{}, SortKItem{}}(
                                         \dv{SortString{}}("")
                                     ),
-                                     dotk{}()
+                                    dotk{}()
                                 )
                             )
                         )
                     ),
                 Lbl'Unds'List'Unds'{}(
                     LblListItem{}(
-                         inj{SortString{}, SortKItem{}}(
-                             \dv{SortString{}}("off")
+                        /* Inj: */ inj{SortString{}, SortKItem{}}(
+                            \dv{SortString{}}("off")
                         )
                     ),
                     LblListItem{}(
-                         inj{SortStream{}, SortKItem{}}(
+                        /* Inj: */ inj{SortStream{}, SortKItem{}}(
                             Lbl'Hash'istream'LParUndsRParUnds'K-IO'Unds'Stream'Unds'Int{}(
-                                 \dv{SortInt{}}("0")
+                                \dv{SortInt{}}("0")
                             )
                         )
                     )
@@ -70,30 +64,30 @@
         )
     ),
     \equals{SortOutputCell{}, SortGeneratedTopCell{}}(
-         Var'Unds'Gen4:SortOutputCell{},
+        Var'Unds'Gen4:SortOutputCell{},
         Lbl'-LT-'output'-GT-'{}(
-             Lbl'Unds'List'Unds'{}(
+            /* InternalList: */ Lbl'Unds'List'Unds'{}(
                 LblListItem{}(
-                     inj{SortStream{}, SortKItem{}}(
+                    /* Inj: */ inj{SortStream{}, SortKItem{}}(
                         Lbl'Hash'ostream'LParUndsRParUnds'K-IO'Unds'Stream'Unds'Int{}(
-                             \dv{SortInt{}}("1")
+                            \dv{SortInt{}}("1")
                         )
                     )
                 ),
             Lbl'Unds'List'Unds'{}(
                 LblListItem{}(
-                     inj{SortString{}, SortKItem{}}(
-                         \dv{SortString{}}("off")
+                    /* Inj: */ inj{SortString{}, SortKItem{}}(
+                        \dv{SortString{}}("off")
                     )
                 ),
                 LblListItem{}(
-                     inj{SortStream{}, SortKItem{}}(
+                    /* Inj: */ inj{SortStream{}, SortKItem{}}(
                         Lbl'Hash'buffer'LParUndsRParUnds'K-IO'Unds'Stream'Unds'K{}(
                             kseq{}(
-                                 inj{SortString{}, SortKItem{}}(
-                                     \dv{SortString{}}("60")
+                                /* Inj: */ inj{SortString{}, SortKItem{}}(
+                                    \dv{SortString{}}("60")
                                 ),
-                                 dotk{}()
+                                dotk{}()
                             )
                         )
                     )
