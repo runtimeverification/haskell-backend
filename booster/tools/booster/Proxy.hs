@@ -104,13 +104,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                 Map.lookup m bState.definitions
                     handleExecute logSettings def start execReq
     Implies impliesReq -> do
-        koreResult <-
-            loggedKore
-                ImpliesM
-                ( Implies
-                    impliesReq
-                )
-        pure koreResult
+            loggedKore ImpliesM (Implies impliesReq)
     Simplify simplifyReq ->
         liftIO (getTime Monotonic) >>= handleSimplify simplifyReq . Just
     AddModule _ -> do
