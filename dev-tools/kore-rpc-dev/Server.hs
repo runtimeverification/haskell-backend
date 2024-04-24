@@ -66,7 +66,7 @@ import Kore.Log (
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     swappableLogger,
-    withLogger1,
+    withLogger,
  )
 import Kore.Log qualified
 import Kore.Log qualified as Log
@@ -191,8 +191,8 @@ main = do
                     }
             srvSettings = serverSettings port "*"
 
-        liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \reportDirectory ->
-            withLogger1 reportDirectory koreLogOptions $ \actualLogAction -> do
+        liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
+            withLogger koreLogOptions $ \actualLogAction -> do
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
                 kore@KoreServer{runSMT} <-

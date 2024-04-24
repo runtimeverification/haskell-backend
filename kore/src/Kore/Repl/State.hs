@@ -526,7 +526,7 @@ liftSimplifierWithLogger mLogger simplifier = do
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Log.koreLogFilters koreLogOptions $
-                Log.makeKoreLogger
+                Log.makeKoreLoggerLegacy
                     exeName
                     startTime
                     timestampsSwitch

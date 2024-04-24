@@ -76,7 +76,7 @@ import Kore.Log (
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     swappableLogger,
-    withLogger1,
+    withLogger,
  )
 import Kore.Log qualified as Log
 import Kore.Log.DebugSolver qualified as Log
@@ -152,7 +152,7 @@ main = do
                         pure (const False)
                     Just es -> pure (`elem` es)
 
-            liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
+            liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
                     koreLogOptions =
                         (defaultKoreLogOptions (ExeName "") startTime)
@@ -183,7 +183,7 @@ main = do
                             }
                     srvSettings = serverSettings port "*"
 
-                withLogger1 reportDirectory koreLogOptions $ \actualLogAction -> do
+                withLogger koreLogOptions $ \actualLogAction -> do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                     definitionsWithCeilSummaries <-
                         liftIO $

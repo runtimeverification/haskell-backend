@@ -8,11 +8,12 @@ module Kore.Log (
     koreLogFilters,
     koreLogTransformer,
     withLogger,
-    withLogger1,
+    withLoggerLegacy,
     emptyLogger,
     stderrLogger,
     swappableLogger,
     makeKoreLogger,
+    makeKoreLoggerLegacy,
     Colog.logTextStderr,
     Colog.logTextHandle,
     runKoreLog,
@@ -90,13 +91,13 @@ data WithTimestamp = WithTimestamp SomeEntry TimeSpec
 {- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
  the CPS style because some outputters require cleanup (e.g. files).
 -}
-withLogger ::
+withLoggerLegacy ::
     FilePath ->
     KoreLogOptions ->
     (LogAction IO SomeEntry -> IO a) ->
     IO a
-withLogger reportDirectory koreLogOptions = runContT $ do
-    mainLogger <- ContT $ withMainLogger reportDirectory koreLogOptions
+withLoggerLegacy reportDirectory koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLoggerLegacy reportDirectory koreLogOptions
     let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger exeName debugSolverOptions
     traceLogger <- ContT $ withRewriteTraceLogger koreLogOptions
@@ -104,29 +105,27 @@ withLogger reportDirectory koreLogOptions = runContT $ do
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
     return $ mainLogger <> smtSolverLogger <> traceLogger <> logSQLite
 
-{- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
- the CPS style because some outputters require cleanup (e.g. files).
+{- | Like 'withLoggerLegacy', but modified for the needs for 'kore-rpc-booster':
+  * optional JSON logging
+  * no bug report
+  * no SQL logging
 -}
-withLogger1 ::
-    FilePath ->
+withLogger ::
     KoreLogOptions ->
     (LogAction IO SomeEntry -> IO a) ->
     IO a
-withLogger1 reportDirectory koreLogOptions = runContT $ do
-    mainLogger <- ContT $ withMainLogger1 reportDirectory koreLogOptions
+withLogger koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLogger koreLogOptions
     let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
     smtSolverLogger <- ContT $ withSmtSolverLogger exeName debugSolverOptions
-    traceLogger <- ContT $ withRewriteTraceLogger koreLogOptions
-    let KoreLogOptions{logSQLiteOptions} = koreLogOptions
-    logSQLite <- ContT $ withLogSQLite logSQLiteOptions
-    return $ mainLogger <> smtSolverLogger <> traceLogger <> logSQLite
+    return $ mainLogger <> smtSolverLogger
 
-withMainLogger ::
+withMainLoggerLegacy ::
     FilePath ->
     KoreLogOptions ->
     (LogAction IO SomeEntry -> IO a) ->
     IO a
-withMainLogger reportDirectory koreLogOptions = runContT $ do
+withMainLoggerLegacy reportDirectory koreLogOptions = runContT $ do
     let KoreLogOptions{exeName, startTime} = koreLogOptions
         bugReportLogFile = reportDirectory </> getExeName exeName <.> "log"
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
@@ -140,17 +139,16 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
         KoreLogOptions{logFormat} = koreLogOptions
         logAction =
             userLogAction <> bugReportLogAction
-                & makeKoreLogger exeName startTime timestampsSwitch logFormat
+                & makeKoreLoggerLegacy exeName startTime timestampsSwitch logFormat
                 & koreLogFilters koreLogOptions
                 & koreLogTransformer koreLogOptions
     pure logAction
 
-withMainLogger1 ::
-    FilePath ->
+withMainLogger ::
     KoreLogOptions ->
     (LogAction IO SomeEntry -> IO a) ->
     IO a
-withMainLogger1 _reportDirectory koreLogOptions = runContT $ do
+withMainLogger koreLogOptions = runContT $ do
     let KoreLogOptions{exeName} = koreLogOptions
     (entryFilter, standardLogAction, jsonLogAction) <-
         case logType koreLogOptions of
@@ -161,10 +159,12 @@ withMainLogger1 _reportDirectory koreLogOptions = runContT $ do
                     , jsonLogAction ldata
                     )
             LogStdErr -> pure (const False, Colog.logTextStderr, Colog.logTextStderr)
-            LogFileText _logFile -> pure (const False, Colog.logTextStderr, Colog.logTextStderr) -- Not sure what to put here
+            LogFileText logFile -> do
+                action <- lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile
+                pure (const False, action, action)
     let KoreLogOptions{logFormat} = koreLogOptions
         logAction =
-            makeKoreLogger1
+            makeKoreLogger
                 exeName
                 logFormat
                 entryFilter
@@ -288,20 +288,94 @@ filterSeverity level entry =
 -- | Run a 'LoggerT' with the given options.
 runKoreLog :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
 runKoreLog reportDirectory options loggerT =
-    withLogger reportDirectory options $ runLoggerT loggerT
+    withLoggerLegacy reportDirectory options $ runLoggerT loggerT
 
 -- | Run a 'LoggerT' with the given options, using `swappableLogger` to make it thread safe.
 runKoreLogThreadSafe :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
 runKoreLogThreadSafe reportDirectory options loggerT =
-    withLogger reportDirectory options $ \actualLogAction -> do
+    withLoggerLegacy reportDirectory options $ \actualLogAction -> do
         mvarLogAction <- newMVar actualLogAction
         let swapLogAction = swappableLogger mvarLogAction
         runLoggerT loggerT swapLogAction
 
-{- | The logger that redirects some of the items to a file
-TODO: needs better description
+{- | The default Kore logger used by the legacy backend.
+
+Creates a kore logger which:
+  * adds timestamps
+  * formats messages: "<exe-name>: [<timestamp>] <severity> (<entry-type>): <message>"
 -}
-makeKoreLogger1 ::
+makeKoreLoggerLegacy ::
+    forall io.
+    MonadIO io =>
+    ExeName ->
+    TimeSpec ->
+    TimestampsSwitch ->
+    KoreLogFormat ->
+    LogAction io Text ->
+    LogAction io SomeEntry
+makeKoreLoggerLegacy exeName startTime timestampSwitch koreLogFormat logActionText =
+    logActionText
+        & contramap render
+        & Colog.cmapM withTimestamp
+  where
+    render :: WithTimestamp -> Text
+    render (WithTimestamp entry entryTime) =
+        prettyActualEntry timestamp entry
+            & Pretty.layoutPretty Pretty.defaultLayoutOptions
+            & Pretty.renderText
+      where
+        timestamp =
+            case timestampSwitch of
+                TimestampsDisable -> Nothing
+                TimestampsEnable ->
+                    Just . Pretty.brackets . Pretty.pretty $
+                        toMicroSecs (diffTimeSpec startTime entryTime)
+        toMicroSecs = (`div` 1000) . toNanoSecs
+    exeName' = Pretty.pretty exeName <> Pretty.colon
+    prettyActualEntry timestamp entry@(SomeEntry entryContext actualEntry)
+        | OneLine <- koreLogFormat =
+            Pretty.hsep [header, oneLineDoc actualEntry]
+        | otherwise =
+            (Pretty.vsep . concat)
+                [ [header]
+                , indent <$> [longDoc actualEntry]
+                , context'
+                ]
+      where
+        header =
+            (Pretty.hsep . catMaybes)
+                [ Just exeName'
+                , timestamp
+                , Just severity'
+                , Just (Pretty.parens $ type' entry)
+                ]
+                <> Pretty.colon
+        severity' = prettySeverity (entrySeverity actualEntry)
+        type' e =
+            Pretty.pretty $
+                lookupTextFromTypeWithError $
+                    typeOfSomeEntry e
+        context' =
+            (entry : entryContext)
+                & reverse
+                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
+                & prettyContext
+        prettyContext =
+            \case
+                [] -> []
+                xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
+
+        mkContext =
+            \case
+                [] -> []
+                [(doc, typeName)] ->
+                    [Pretty.hsep [Pretty.parens typeName, doc]]
+                (doc, typeName) : xs -> (Pretty.hsep [Pretty.parens typeName, doc]) : (indent <$> (mkContext xs))
+
+    indent = Pretty.indent 4
+
+-- | The logger used by 'kore-rpc-booster' and 'kore-rpc-dev'
+makeKoreLogger ::
     forall io.
     MonadIO io =>
     ExeName ->
@@ -310,7 +384,7 @@ makeKoreLogger1 ::
     LogAction io Text ->
     LogAction io Text ->
     LogAction io SomeEntry
-makeKoreLogger1 exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
+makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
     let actionForJsonLogs =
             jsonLogAction
                 & Colog.cmap renderJson
@@ -378,82 +452,6 @@ makeKoreLogger1 exeName koreLogFormat entryFilter prettyLogAction jsonLogAction 
 
     indent = Pretty.indent 4
 
-{- | The default Kore logger.
-
-Creates a kore logger which:
-  * adds timestamps
-  * formats messages: "<exe-name>: [<timestamp>] <severity> (<entry-type>): <message>"
--}
-makeKoreLogger ::
-    forall io.
-    MonadIO io =>
-    ExeName ->
-    TimeSpec ->
-    TimestampsSwitch ->
-    KoreLogFormat ->
-    LogAction io Text ->
-    LogAction io SomeEntry
-makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
-    logActionText
-        & contramap render
-        & Colog.cmapM withTimestamp
-  where
-    render :: WithTimestamp -> Text
-    render (WithTimestamp entry entryTime) =
-        prettyActualEntry timestamp entry
-            & Pretty.layoutPretty Pretty.defaultLayoutOptions
-            & Pretty.renderText
-      where
-        timestamp =
-            case timestampSwitch of
-                TimestampsDisable -> Nothing
-                TimestampsEnable ->
-                    Just . Pretty.brackets . Pretty.pretty $
-                        toMicroSecs (diffTimeSpec startTime entryTime)
-        toMicroSecs = (`div` 1000) . toNanoSecs
-    exeName' = Pretty.pretty exeName <> Pretty.colon
-    prettyActualEntry timestamp entry@(SomeEntry entryContext actualEntry)
-        | OneLine <- koreLogFormat =
-            Pretty.hsep [header, oneLineDoc actualEntry]
-        | otherwise =
-            (Pretty.vsep . concat)
-                [ [header]
-                , indent <$> [longDoc actualEntry]
-                , context'
-                ]
-      where
-        header =
-            (Pretty.hsep . catMaybes)
-                [ Just exeName'
-                , timestamp
-                , Just severity'
-                , Just (Pretty.parens $ type' entry)
-                ]
-                <> Pretty.colon
-        severity' = prettySeverity (entrySeverity actualEntry)
-        type' e =
-            Pretty.pretty $
-                lookupTextFromTypeWithError $
-                    typeOfSomeEntry e
-        context' =
-            (entry : entryContext)
-                & reverse
-                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
-                & prettyContext
-        prettyContext =
-            \case
-                [] -> []
-                xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
-
-        mkContext =
-            \case
-                [] -> []
-                [(doc, typeName)] ->
-                    [Pretty.hsep [Pretty.parens typeName, doc]]
-                (doc, typeName) : xs -> (Pretty.hsep [Pretty.parens typeName, doc]) : (indent <$> (mkContext xs))
-
-    indent = Pretty.indent 4
-
 -- | Adds the current timestamp to a log entry.
 withTimestamp :: MonadIO io => SomeEntry -> io WithTimestamp
 withTimestamp msg = liftIO $ do
@@ -471,7 +469,7 @@ stderrLogger ::
     KoreLogFormat ->
     LogAction io SomeEntry
 stderrLogger exeName startTime timestampsSwitch logFormat =
-    makeKoreLogger exeName startTime timestampsSwitch logFormat Colog.logTextStderr
+    makeKoreLoggerLegacy exeName startTime timestampsSwitch logFormat Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
