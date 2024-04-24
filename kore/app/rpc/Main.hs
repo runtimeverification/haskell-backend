@@ -145,12 +145,11 @@ mainWithOptions
             =<< withBugReport
                 Main.exeName
                 bugReportOption
-                ( \tmpDir ->
+                ( \_tmpDir ->
                     koreRpcServerRun localOptions
                         & handleJust isInterrupt handleInterrupt
                         & handle handleSomeException
                         & runKoreLogThreadSafe
-                            tmpDir
                             koreLogOptions
                 )
       where

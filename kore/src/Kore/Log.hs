@@ -18,6 +18,7 @@ module Kore.Log (
     Colog.logTextHandle,
     runKoreLog,
     runKoreLogThreadSafe,
+    runKoreLogThreadSafeLegacy,
     module Log,
     module KoreLogOptions,
 ) where
@@ -291,9 +292,17 @@ runKoreLog reportDirectory options loggerT =
     withLoggerLegacy reportDirectory options $ runLoggerT loggerT
 
 -- | Run a 'LoggerT' with the given options, using `swappableLogger` to make it thread safe.
-runKoreLogThreadSafe :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
-runKoreLogThreadSafe reportDirectory options loggerT =
+runKoreLogThreadSafeLegacy :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLogThreadSafeLegacy reportDirectory options loggerT =
     withLoggerLegacy reportDirectory options $ \actualLogAction -> do
+        mvarLogAction <- newMVar actualLogAction
+        let swapLogAction = swappableLogger mvarLogAction
+        runLoggerT loggerT swapLogAction
+
+-- | Run a 'LoggerT' with the given options, using `swappableLogger` to make it thread safe.
+runKoreLogThreadSafe :: KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLogThreadSafe options loggerT =
+    withLogger options $ \actualLogAction -> do
         mvarLogAction <- newMVar actualLogAction
         let swapLogAction = swappableLogger mvarLogAction
         runLoggerT loggerT swapLogAction
@@ -391,7 +400,7 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
                 & Colog.cfilter (entryFilter . entryTypeText)
         actionForPrettyLogs =
             prettyLogAction
-                & Colog.cmap render
+                & Colog.cmap renderOneLineContext
                 & Colog.cfilter (not . entryFilter . entryTypeText)
      in actionForJsonLogs <> actionForPrettyLogs
   where
@@ -404,6 +413,16 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
             (JSON.Object xs) -> JSON.Object $ JSON.insert (JSON.fromText "origin") (JSON.toJSON KoreRpc) xs
             xs -> xs
 
+    renderOneLineContext :: SomeEntry -> Text
+    renderOneLineContext entry@(SomeEntry context actualEntry) =
+        let cs =
+                context
+                    & reverse
+                    & map (Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
+            leaf = oneLineDoc entry
+         in Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . mconcat $
+                ("[kore]" : (cs <> [leaf]))
+
     render :: SomeEntry -> Text
     render entry =
         prettyActualEntry entry
@@ -413,7 +432,7 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
     exeName' = Pretty.pretty exeName <> Pretty.colon
     prettyActualEntry entry@(SomeEntry entryContext actualEntry)
         | OneLine <- koreLogFormat =
-            Pretty.hsep [header, oneLineDoc actualEntry]
+            mconcat (shortHeader : (oneLineContext <> [oneLineDoc entry]))
         | otherwise =
             (Pretty.vsep . concat)
                 [ [header]
@@ -421,6 +440,8 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
                 , context'
                 ]
       where
+        shortHeader = "[kore]"
+
         header =
             (Pretty.hsep . catMaybes)
                 [ Just exeName'
@@ -442,6 +463,11 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
             \case
                 [] -> []
                 xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
+
+        oneLineContext =
+            entryContext
+                & reverse
+                & map (\(SomeEntry _ e) -> oneLineContextDoc e)
 
         mkContext =
             \case

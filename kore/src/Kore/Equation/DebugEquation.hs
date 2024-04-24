@@ -32,7 +32,6 @@ import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
  )
-
 import Data.Text qualified as Text
 import Debug
 import GHC.Generics qualified as GHC
@@ -255,6 +254,25 @@ instance Pretty DebugAttemptEquation where
     pretty (DebugAttemptEquationResult _ (Right _)) =
         "equation is applicable"
 
+isSimplification :: Equation a -> Bool
+isSimplification (Equation{attributes}) =
+    case Attribute.simplification attributes of
+        Attribute.IsSimplification{} -> True
+        Attribute.NotSimplification -> False
+
+failureDescription :: AttemptEquationError RewritingVariableName -> Text
+failureDescription err = shortenText . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+
+shortenText :: Text -> Text
+shortenText msg = Text.take 500 msg <> ("...truncated" :: Text)
+
+shortenHash :: Text -> Text
+shortenHash msg = Text.take 8 msg
+
+ruleIdText :: Equation a -> Text
+ruleIdText equation =
+    fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
     contextDoc (DebugAttemptEquation equation _) =
@@ -264,47 +282,56 @@ instance Entry DebugAttemptEquation where
             , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
             ]
     contextDoc _ = Nothing
+
     helpDoc _ = "log equation application attempts"
+
+    oneLineContextDoc = \case
+        _entry@(DebugAttemptEquation equation _) ->
+            let equationKindTxt = if isSimplification equation then "simplification" else "function"
+             in Pretty.hsep
+                    [ equationKindTxt
+                    , Pretty.pretty (shortenHash $ ruleIdText equation)
+                    ]
+        (DebugAttemptEquationResult _ result) -> case result of
+            Right{} -> "success"
+            Left failure -> Pretty.hsep ["failure", Pretty.pretty $ failureDescription failure]
+
     oneLineDoc (DebugAttemptEquation equation _) =
         maybe
             mempty
-            (\loc -> Pretty.hsep ["applying equation at", pretty loc])
+            ( \loc ->
+                Pretty.hsep
+                    ["applying equation", Pretty.pretty (shortenHash (ruleIdText equation)), "at", pretty loc]
+            )
             (srcLoc equation)
-    oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
-    oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
+    oneLineDoc (DebugAttemptEquationResult _ result) = case result of
+        Right{} -> Pretty.brackets "success"
+        Left failure -> Pretty.hsep [Pretty.brackets "failure", Pretty.pretty $ failureDescription failure]
 
     oneLineJson = \case
         entry@(DebugAttemptEquation equation _) ->
             JSON.object
                 [ "tag" JSON..= entryTypeText (toEntry entry)
                 , "rule-id"
-                    JSON..= fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+                    JSON..= ruleIdText equation
                 ]
         _entry@(DebugAttemptEquationResult equation result) ->
             let resultInfo = case result of
                     Right _ ->
                         JSON.object
                             [ "tag" JSON..= ("success" :: Text)
-                            , "rule-id" JSON..= ruleIdText
+                            , "rule-id" JSON..= ruleIdText equation
                             ]
                     Left failure ->
                         JSON.object
                             [ "tag" JSON..= ("failure" :: Text)
-                            , "rule-id" JSON..= ruleIdText
+                            , "rule-id" JSON..= ruleIdText equation
                             , "reason" JSON..= failureDescription failure
                             ]
              in JSON.object
                     [ "tag" JSON..= ("simplification" :: Text)
                     , "result" JSON..= resultInfo
                     ]
-          where
-            failureDescription :: AttemptEquationError RewritingVariableName -> Text
-            failureDescription err = shortenText . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
-
-            shortenText :: Text -> Text
-            shortenText msg = Text.take 500 msg <> ("...truncated" :: Text)
-
-            ruleIdText = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
