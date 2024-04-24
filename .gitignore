@@ -55,8 +55,8 @@ hie.yaml
 *~
 dev-tools/*.cabal
 booster/*.cabal
-/booster/scripts/logs
-/booster/scripts/bug-reports
+/scripts/logs
+/scripts/bug-reports
 /booster/test/rpc-integration/resources/*.dylib
 /booster/test/*/definition/*kompiled/
 
