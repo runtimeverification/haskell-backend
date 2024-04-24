@@ -54,7 +54,6 @@ import Kore.Internal.Symbol (
     function,
     hook,
     injective,
-    klabel,
     smthook,
     sortInjection,
     symbolKywd,
@@ -732,32 +731,28 @@ concatString x y = mkApplySymbol concatStringSymbol [x, y]
 littleEndianBytesSymbol :: Internal.Symbol
 littleEndianBytesSymbol =
     builtinSymbol "littleEndianBytes" endiannessSort []
-        & klabel "littleEndianBytes"
-        & symbolKywd
+        & symbolKywd "littleEndianBytes"
 littleEndianBytes :: InternalVariable variable => TermLike variable
 littleEndianBytes =
     mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
 bigEndianBytesSymbol :: Internal.Symbol
 bigEndianBytesSymbol =
     builtinSymbol "bigEndianBytes" endiannessSort []
-        & klabel "bigEndianBytes"
-        & symbolKywd
+        & symbolKywd "bigEndianBytes"
 bigEndianBytes :: InternalVariable variable => TermLike variable
 bigEndianBytes =
     mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
 signedBytesSymbol :: Internal.Symbol
 signedBytesSymbol =
     builtinSymbol "signedBytes" signednessSort []
-        & klabel "signedBytes"
-        & symbolKywd
+        & symbolKywd "signedBytes"
 signedBytes :: InternalVariable variable => TermLike variable
 signedBytes =
     mkSignedness (Signedness.Signed signedBytesSymbol)
 unsignedBytesSymbol :: Internal.Symbol
 unsignedBytesSymbol =
     builtinSymbol "unsignedBytes" signednessSort []
-        & klabel "unsignedBytes"
-        & symbolKywd
+        & symbolKywd "unsignedBytes"
 unsignedBytes :: InternalVariable variable => TermLike variable
 unsignedBytes =
     mkSignedness (Signedness.Unsigned unsignedBytesSymbol)

@@ -9,6 +9,7 @@ Portability : POSIX
 -}
 module Kore.IndexedModule.Resolvers (
     getSortAttributes,
+    unsafeGetSortAttributes,
     getSymbolAttributes,
     resolveSort,
     resolveAlias,
@@ -109,15 +110,22 @@ getHeadApplicationSorts m patternHead =
         assertRight $ symbolOrAliasSorts sortParameters sentence
 
 getSortAttributes ::
+    IndexedModuleSyntax patternType declAtts ->
+    Sort ->
+    Either String Attribute.Sort
+getSortAttributes m (SortActualSort (SortActual sortId _)) =
+    case resolveSort m sortId of
+        Right (atts, _) -> Right atts
+        Left _ -> Left $ noSort sortId
+getSortAttributes _ _ = Left "Can't lookup attributes for sort variables"
+
+unsafeGetSortAttributes ::
     HasCallStack =>
     IndexedModuleSyntax patternType declAtts ->
     Sort ->
     Attribute.Sort
-getSortAttributes m (SortActualSort (SortActual sortId _)) =
-    case resolveSort m sortId of
-        Right (atts, _) -> atts
-        Left _ -> error $ noSort sortId
-getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
+unsafeGetSortAttributes m s = either error id (getSortAttributes m s)
+
 getSymbolAttributes ::
     HasCallStack =>
     IndexedModuleSyntax patternType declAtts ->

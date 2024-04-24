@@ -90,13 +90,13 @@ declareSMTLemmas tools lemmas = do
         Nothing -> pure ()
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
-        Just Unknown -> do
+        Just Unknown{} -> do
             SMT.localTimeOut quadrupleTimeOut $
                 SMT.checkUsing checkSatTactic >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
                     Just Unsat -> errorInconsistentDefinitions
-                    Just Unknown -> errorPossiblyInconsistentDefinitions
+                    Just Unknown{} -> errorPossiblyInconsistentDefinitions
   where
     checkSatTactic :: SExpr
     checkSatTactic = List [Atom "check-sat"]

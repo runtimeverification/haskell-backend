@@ -1,0 +1,7 @@
+echo "kompiling compute-ceil.k"
+kompile --backend haskell compute-ceil.k
+cp compute-ceil-kompiled/definition.kore compute-ceil.kore
+rm -r compute-ceil-kompiled
+kompile --llvm-kompile-type c -o compute-ceil-library compute-ceil.k
+cp compute-ceil-library/interpreter.* ./compute-ceil.dylib
+rm -r compute-ceil-library

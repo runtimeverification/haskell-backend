@@ -37,8 +37,6 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
     },
     "log-successful-rewrites": true,
     "log-failed-rewrites": true,
-    "log-successful-simplifications": true,
-    "log-failed-simplifications": true
     "log-timing": true
   }
 }
@@ -50,6 +48,18 @@ If `assume-state-defined` is set to `true`, the all sub-terms of `state` will be
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
+#### Deprecated parameters
+
+The request parameters for simplification logs are deprecated. The servers will not return simplification logs in future.
+
+```json
+{
+  "params": {
+    "log-successful-simplifications": true,
+    "log-failed-simplifications": true
+  }
+}
+```
 
 ### Error Response:
 
@@ -83,14 +93,16 @@ If the verification of the `state` pattern fails, the following error is returne
   "jsonrpc": "2.0",
   "id": 1,
   "error": {
-    "data": {
-      "context": [
-          "symbol or alias \'Lbl\'-LT-\'generatedTop\'-GT-\'\' (<unknown location>)","symbol or alias \'Lbl\'-LT-\'k\'-GT-\'\' (<unknown location>)","symbol or alias \'kseq\' (<unknown location>)","symbol or alias \'inj\' (<unknown location>)","symbol or alias \'Lbl\'UndsUndsUnds\'TESTFOO-SYNTAX\'Unds\'Stmt\'Unds\'Stmt\'Unds\'Stmt\' (<unknown location>)"
-      ],
-      "error": "Head \'Lbl\'UndsUndsUnds\'TESTFOO-SYNTAX\'Unds\'Stmt\'Unds\'Stmt\'Unds\'Stmt\' not defined."
-    },
+    "data": [
+      {
+        "context": [
+            "symbol or alias \'Lbl\'-LT-\'generatedTop\'-GT-\'\' (<unknown location>)","symbol or alias \'Lbl\'-LT-\'k\'-GT-\'\' (<unknown location>)","symbol or alias \'kseq\' (<unknown location>)","symbol or alias \'inj\' (<unknown location>)","symbol or alias \'Lbl\'UndsUndsUnds\'TESTFOO-SYNTAX\'Unds\'Stmt\'Unds\'Stmt\'Unds\'Stmt\' (<unknown location>)"
+        ],
+        "error": "Head \'Lbl\'UndsUndsUnds\'TESTFOO-SYNTAX\'Unds\'Stmt\'Unds\'Stmt\'Unds\'Stmt\' not defined."
+      }
+    ],
     "code": 2,
-    "message": "Could not verify KORE pattern"
+    "message": "Could not verify pattern"
   }
 }
 ```
@@ -261,46 +273,16 @@ An additional `next-states` field contains all following states of the branch po
   Rationale: The branching information must be provided, assuming the client will re-execute on each branch.
 
 #### Optional Logging
+
 If any logging is enabled, the optional `logs` field will be returned containing an array of objects of the following structure:
 
 ```json
 {
-  "tag": "simplification",
-  "origin": "kore-rpc",
-  "original-term": {"format": "KORE", "version": 1, "term": {}},
-  "original-term-index": [0,0,1,0,2]
-  "result": {
-    "tag": "success",
-    "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
-    "rewritten-term": {"format": "KORE", "version": 1, "term": {}},
-    "substitution": {"format": "KORE", "version": 1, "term": {}}
-  }
-}
-
-{
-  "tag": "simplification",
-  "origin": "kore-rpc",
-  "original-term": {"format": "KORE", "version": 1, "term": {}},
-  "original-term-index": [0,0,1,0,2]
-  "result": {
-    "tag": "failure",
-    "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
-    "reason": "..."
-  }
-}
-```
-
-where `original-term`, `original-term-index`, `substitution` and `rewritten-term` are optional and `origin` is one of `kore-rpc`, `booster` or `llvm`. The order of the trace messages in the `logs` array is the order the backend attempted and applied the rules and should allow for visualisation/reconstruction of the steps the backend took. The `original-term-index` is referencing the JSON KORE format and is 0 indexed. The above traces will be emitted when `log-successful-simplifications` and `log-failed-simplifications` are set to true respectively. Not all backends may support both message types. When `log-successful-rewrites` or `log-failed-rewrites` is sent, the following will be logged respectively:
-
-```json
-{
   "tag": "rewrite",
   "origin": "kore-rpc",
   "result": {
     "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
-    "rewritten-term": {"format": "KORE", "version": 1, "term": {}},
-    "substitution": {"format": "KORE", "version": 1, "term": {}}
   }
 }
 
@@ -314,7 +296,8 @@ where `original-term`, `original-term-index`, `substitution` and `rewritten-term
   }
 }
 ```
-where `rewritten-term` is optional and `origin` is one of `kore-rpc`, `booster` or `llvm`.
+
+where `origin` is one of `kore-rpc`, `booster` or `llvm`. The order of the trace messages in the `logs` array is the order the backend attempted and applied the rules and should allow for visualisation/reconstruction of the steps the backend took. The `original-term-index` is referencing the JSON KORE format and is 0 indexed. The above traces will be emitted when `log-successful-rewrites` and `log-failed-rewrites` are set to true respectively. Not all backends may support both message types.
 
 When `log-timing` is set to `true`, the response to `execute`, `simplify` and `implies` requests will contain information about the wall-clock time spent in different components (`kore-rpc`, `booster`, `proxy`) or overall (without qualifying `component`) while processing the request.
 
@@ -715,7 +698,7 @@ This error wraps an error message from the internal implication check routine, i
 ```json
 {
   "jsonrpc":"2.0",
-  "id":1
+  "id":1,
   "error": {
     "code": 4,
     "message": "Implication check error",
@@ -742,9 +725,12 @@ Error returned when the SMT solver crashes or is unable to discharge a goal.
     "code": 5,
     "message": "Smt solver error",
     "data": {
-      "format": "KORE",
-      "version": 1,
-      "term": {}
+      "term": {
+        "format": "KORE",
+        "version": 1,
+        "term": {}
+      },
+      "error": "(incomplete (theory arithmetic))",
     }
   }
 }

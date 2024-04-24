@@ -240,7 +240,7 @@ translatePredicateWith tools sideCondition translateTerm predicate =
                     | builtinSort == Builtin.Int.sort -> pure SMT.tInt
                 _ -> translateSort tools variableSort & maybeToTranslator
         Attribute.Sort{hook = Hook{getHook}} =
-            sortAttributes tools variableSort
+            unsafeSortAttributes tools variableSort
 
 {- | Attempt to translate an arbitrary ML pattern for the solver.
  It should only be used in the 'Predicate' translator or in
@@ -270,7 +270,7 @@ translatePattern tools sideCondition translateTerm sort pat =
             _ -> empty
   where
     Attribute.Sort{hook = Hook{getHook}} =
-        sortAttributes tools sort
+        unsafeSortAttributes tools sort
 
     translateInt :: TermLike variable -> Translator variable monad SExpr
     translateInt pat'
@@ -541,6 +541,8 @@ backTranslateWith
                 pure $ TermLike.mkApplySymbol koreSym args
             | otherwise =
                 throwError "backTranslate.List-case: implement me!"
+        backTranslate String{} =
+            throwError "backTranslate.String-case: implement me!"
 
         -- FIXME unable to recover non-standard sort names (case where Int < OtherSort)
         simpleSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
@@ -592,3 +594,4 @@ backTranslateWith
             simpleSort "SortBool"
         backTranslateSort (List _) =
             error "reverse the translateSort function" -- FIXME
+        backTranslateSort String{} = error "invalid sort"

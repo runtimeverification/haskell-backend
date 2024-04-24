@@ -1,0 +1,319 @@
+Modules: 5
+  - BASIC-K
+  - INJ
+  - K
+  - KSEQ
+  - SUBSORTS
+Sorts: 20
+  - SortA1
+  - SortA2
+  - SortA3
+  - SortB1
+  - SortBool
+  - SortC1
+  - SortC2
+  - SortGeneratedCounterCell
+  - SortGeneratedCounterCellOpt
+  - SortGeneratedTopCell
+  - SortGeneratedTopCellFragment
+  - SortInt
+  - SortK
+  - SortKCell
+  - SortKCellOpt
+  - SortKConfigVar
+  - SortKItem
+  - SortList
+  - SortMap
+  - SortSet
+Symbols: 105
+  - Lbl<generatedCounter>
+  - Lbl<generatedTop>
+  - Lbl<generatedTop>-fragment
+  - Lbl<k>
+  - Lbl.List
+  - Lbl.Map
+  - Lbl.Set
+  - Lbl_-Map__MAP_Map_Map_Map
+  - Lbl_List_
+  - Lbl_Map_
+  - Lbl_Set_
+  - Lbl_andBool_
+  - Lbl_andThenBool_
+  - Lbl_impliesBool_
+  - Lbl_in_keys(_)_MAP_Bool_KItem_Map
+  - Lbl_in__LIST_Bool_KItem_List
+  - Lbl_orBool_
+  - Lbl_orElseBool_
+  - Lbl_xorBool_
+  - Lbl_<=Map__MAP_Bool_Map_Map
+  - Lbl_<=Set__SET_Bool_Set_Set
+  - Lbl_==Bool_
+  - Lbl_=/=Bool_
+  - Lbl_[_<-_]_LIST_List_List_Int_KItem
+  - Lbl_[_<-undef]
+  - Lbl_[_]orDefault__MAP_KItem_Map_KItem_KItem
+  - Lbl_|->_
+  - Lbl_|Set__SET_Set_Set_Set
+  - LblA1()_SUBSORTS-A_A1
+  - LblA2()_SUBSORTS-A_A2
+  - LblA3()_SUBSORTS-A_A3
+  - LblC1()_SUBSORTS-C_C1
+  - LblC2()_SUBSORTS-C_C2
+  - LblList:get
+  - LblList:range
+  - LblListItem
+  - LblMap:lookup
+  - LblMap:update
+  - LblSet:difference
+  - LblSet:in
+  - LblSetItem
+  - Lblchoice(_)_MAP_KItem_Map
+  - Lblchoice(_)_SET_KItem_Set
+  - LblfillList(_,_,_,_)_LIST_List_List_Int_Int_KItem
+  - LblgetGeneratedCounterCell
+  - LblinitGeneratedCounterCell
+  - LblinitGeneratedTopCell
+  - LblinitKCell
+  - LblintersectSet(_,_)_SET_Set_Set_Set
+  - LblisA1
+  - LblisA2
+  - LblisA3
+  - LblisB1
+  - LblisBool
+  - LblisC1
+  - LblisC2
+  - LblisGeneratedCounterCell
+  - LblisGeneratedCounterCellOpt
+  - LblisGeneratedTopCell
+  - LblisGeneratedTopCellFragment
+  - LblisInt
+  - LblisK
+  - LblisKCell
+  - LblisKCellOpt
+  - LblisKConfigVar
+  - LblisKItem
+  - LblisList
+  - LblisMap
+  - LblisSet
+  - Lblkeys(_)_MAP_Set_Map
+  - Lblkeys_list(_)_MAP_List_Map
+  - LblmakeList(_,_)_LIST_List_Int_KItem
+  - LblnoGeneratedCounterCell
+  - LblnoKCell
+  - LblnotBool_
+  - Lblproject:A1
+  - Lblproject:A2
+  - Lblproject:A3
+  - Lblproject:B1
+  - Lblproject:Bool
+  - Lblproject:C1
+  - Lblproject:C2
+  - Lblproject:GeneratedCounterCell
+  - Lblproject:GeneratedCounterCellOpt
+  - Lblproject:GeneratedTopCell
+  - Lblproject:GeneratedTopCellFragment
+  - Lblproject:Int
+  - Lblproject:K
+  - Lblproject:KCell
+  - Lblproject:KCellOpt
+  - Lblproject:KItem
+  - Lblproject:List
+  - Lblproject:Map
+  - Lblproject:Set
+  - LblremoveAll(_,_)_MAP_Map_Map_Set
+  - Lblsize(_)_LIST_Int_List
+  - Lblsize(_)_MAP_Int_Map
+  - Lblsize(_)_SET_Int_Set
+  - LblupdateList(_,_,_)_LIST_List_List_Int_List
+  - LblupdateMap(_,_)_MAP_Map_Map_Map
+  - Lblvalues(_)_MAP_List_Map
+  - append
+  - dotk
+  - inj
+  - kseq
+Partial function symbols: 36
+Axioms: 0
+Axioms preserving definedness: 0
+Axioms containing AC symbols: 0
+Subsorts:
+- SortA1: 2
+  - SortA1
+  - SortC1
+- SortA2: 3
+  - SortA1
+  - SortA2
+  - SortC1
+- SortA3: 2
+  - SortA3
+  - SortBool
+- SortB1: 4
+  - SortA1
+  - SortA2
+  - SortB1
+  - SortC1
+- SortBool: SortBool
+- SortC1: SortC1
+- SortC2: 4
+  - SortA1
+  - SortA2
+  - SortC1
+  - SortC2
+- SortGeneratedCounterCell: SortGeneratedCounterCell
+- SortGeneratedCounterCellOpt: 2
+  - SortGeneratedCounterCell
+  - SortGeneratedCounterCellOpt
+- SortGeneratedTopCell: SortGeneratedTopCell
+- SortGeneratedTopCellFragment: SortGeneratedTopCellFragment
+- SortInt: SortInt
+- SortK: SortK
+- SortKCell: SortKCell
+- SortKCellOpt: 2
+  - SortKCell
+  - SortKCellOpt
+- SortKConfigVar: SortKConfigVar
+- SortKItem: 19
+  - SortA1
+  - SortA2
+  - SortA3
+  - SortB1
+  - SortBool
+  - SortC1
+  - SortC2
+  - SortGeneratedCounterCell
+  - SortGeneratedCounterCellOpt
+  - SortGeneratedTopCell
+  - SortGeneratedTopCellFragment
+  - SortInt
+  - SortKCell
+  - SortKCellOpt
+  - SortKConfigVar
+  - SortKItem
+  - SortList
+  - SortMap
+  - SortSet
+- SortList: SortList
+- SortMap: SortMap
+- SortSet: SortSet
+Rewrite rules by term index:
+Function equations by term index:
+- Lbl_=/=Bool_: /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (932, 8)
+- Lbl_andBool_: 4
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (905, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (904, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (906, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (903, 8)
+- Lbl_andThenBool_: 4
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (910, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (909, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (911, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (908, 8)
+- Lbl_impliesBool_: 4
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (930, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (929, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (928, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (927, 8)
+- Lbl_orBool_: 4
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (920, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (918, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (919, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (917, 8)
+- Lbl_orElseBool_: 4
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (925, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (923, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (924, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (922, 8)
+- Lbl_xorBool_: 3
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (915, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (914, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (913, 8)
+- Lbl_|Set__SET_Set_Set_Set: /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (531, 8)
+- LblgetGeneratedCounterCell: UNKNOWN
+- LblinitGeneratedCounterCell: UNKNOWN
+- LblinitGeneratedTopCell: UNKNOWN
+- LblinitKCell: UNKNOWN
+- LblisA1: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisA2: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisA3: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisB1: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBool: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisC1: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisC2: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedCounterCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedCounterCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedTopCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedTopCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisK: UNKNOWN
+- LblisKCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKConfigVar: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKItem: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisList: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMap: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSet: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblnotBool_: 2
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (901, 8)
+  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (900, 8)
+- Lblproject:A1: UNKNOWN
+- Lblproject:A2: UNKNOWN
+- Lblproject:A3: UNKNOWN
+- Lblproject:B1: UNKNOWN
+- Lblproject:Bool: UNKNOWN
+- Lblproject:C1: UNKNOWN
+- Lblproject:C2: UNKNOWN
+- Lblproject:GeneratedCounterCell: UNKNOWN
+- Lblproject:GeneratedCounterCellOpt: UNKNOWN
+- Lblproject:GeneratedTopCell: UNKNOWN
+- Lblproject:GeneratedTopCellFragment: UNKNOWN
+- Lblproject:Int: UNKNOWN
+- Lblproject:K: UNKNOWN
+- Lblproject:KCell: UNKNOWN
+- Lblproject:KCellOpt: UNKNOWN
+- Lblproject:KItem: UNKNOWN
+- Lblproject:List: UNKNOWN
+- Lblproject:Map: UNKNOWN
+- Lblproject:Set: UNKNOWN
+- append: 2
+  - UNKNOWN
+  - UNKNOWN
+Simplifications by term index:
+Ceils:
+- Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))

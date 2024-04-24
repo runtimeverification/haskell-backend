@@ -68,6 +68,7 @@ import Text.Megaparsec.Char.Lexer qualified as Lexer
 -- | S-expressions, the basic format for SMT-LIB 2.
 data SExpr
     = Atom !Text
+    | String !Text
     | List ![SExpr]
     deriving stock (GHC.Generic, Eq, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -175,6 +176,7 @@ buildSExpr :: SExpr -> Builder
 buildSExpr =
     \case
         Atom x -> Text.Builder.fromText x
+        String x -> Text.Builder.singleton '"' <> Text.Builder.fromText x <> Text.Builder.singleton '"'
         List es ->
             Text.Builder.singleton '('
                 <> foldMap (\e -> buildSExpr e <> Text.Builder.singleton ' ') es
@@ -198,6 +200,10 @@ sendSExpr h = sendSExprWorker
     sendSExprWorker =
         \case
             Atom atom -> Text.hPutStr h atom
+            String txt -> do
+                hPutChar h '"'
+                Text.hPutStr h txt
+                hPutChar h ')'
             List atoms -> do
                 hPutChar h '('
                 mapM_ sendListElement atoms
@@ -218,17 +224,21 @@ skipLineComment = Lexer.skipLineComment ";"
 
 -- | Basic S-expression parser.
 parseSExpr :: Parser SExpr
-parseSExpr = parseAtom <|> parseList
+parseSExpr = parseAtom <|> parseString <|> parseList
   where
     parseAtom :: Parser SExpr
     parseAtom = lexeme (Atom <$> Parser.takeWhile1P Nothing notSpecial)
+
+    parseString :: Parser SExpr
+    parseString =
+        String <$> (dblQuot *> Parser.takeWhile1P Nothing (/= '"') <* dblQuot)
 
     parseList :: Parser SExpr
     parseList =
         List <$> (lparen *> Parser.many parseSExpr <* rparen)
 
     special :: Char -> Bool
-    special c = isSpace c || c == '(' || c == ')' || c == ';'
+    special c = isSpace c || c == '(' || c == ')' || c == ';' || c == '"'
 
     notSpecial :: Char -> Bool
     notSpecial = not . special
@@ -238,6 +248,9 @@ parseSExpr = parseAtom <|> parseList
 
     rparen :: Parser Char
     rparen = lexeme (Parser.char ')')
+
+    dblQuot :: Parser Char
+    dblQuot = lexeme (Parser.char '"')
 
     lexeme :: Parser a -> Parser a
     lexeme = Lexer.lexeme parseSExprSpace
@@ -264,4 +277,5 @@ buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr
 
 mapSExpr :: (Text -> Text) -> SExpr -> SExpr
 mapSExpr f (Atom text) = Atom (f text)
+mapSExpr _ (String text) = String text
 mapSExpr f (List sExprs) = List (mapSExpr f <$> sExprs)

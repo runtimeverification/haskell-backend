@@ -85,7 +85,7 @@ lookupSymbolUnit tools builtinSort =
         , symbolSorts
         }
   where
-    unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
+    unit = Attribute.unit (MetadataTools.unsafeSortAttributes tools builtinSort)
     symbolOrAlias =
         Attribute.Sort.getUnit unit
             & fromMaybe missingUnitAttribute
@@ -121,7 +121,7 @@ lookupSymbolElement tools builtinSort =
         , symbolSorts
         }
   where
-    element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
+    element = Attribute.element (MetadataTools.unsafeSortAttributes tools builtinSort)
     symbolOrAlias =
         Attribute.Sort.getElement element
             & fromMaybe missingElementAttribute
@@ -157,7 +157,7 @@ lookupSymbolConcat tools builtinSort =
         , symbolSorts
         }
   where
-    concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
+    concat' = Attribute.concat (MetadataTools.unsafeSortAttributes tools builtinSort)
     symbolOrAlias =
         Attribute.Sort.getConcat concat'
             & fromMaybe missingConcatAttribute

@@ -1,6 +1,8 @@
 packages:
   kore
   kore-rpc-types
+  booster
+  dev-tools
 
 package *
   ghc-options: -fhide-source-paths -haddock
