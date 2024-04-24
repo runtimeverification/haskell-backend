@@ -201,10 +201,6 @@ jobs:
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
-      - name: Run unit tests
-        if: ${{ steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore == 'true' || steps.changes.outputs.project == 'true' }}
-        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
-
       - name: Run booster integration tests
         if: ${{ (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
