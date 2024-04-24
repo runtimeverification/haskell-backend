@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE InstanceSigs #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -41,7 +40,6 @@ import System.IO (
 import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
-import Control.Monad.Trans.Class (lift)
 
 data SMTContext = SMTContext
     { solver :: Backend.Solver

@@ -27,6 +27,7 @@ import Booster.GlobalState
 import Booster.JsonRpc (ServerState (..), handleSmtError, respond)
 import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
+import Booster.Log (runLogger)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
@@ -123,7 +124,7 @@ runServer port definitions defaultMain mLlvmLibrary mLogFileHandle mSMTOptions (
         runHandleLoggingT logLevelToHandle . Log.filterLogger levelFilter $
             jsonRpcServer
                 srvSettings
-                (const $ respond stateVar)
+                (const $ runLogger . respond stateVar)
                 [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
     levelFilter _source lvl =
