@@ -7,6 +7,7 @@ License     : BSD-3-Clause
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
+    LogSomeActionData (..),
     KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
@@ -165,7 +166,17 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | LogSomeAction (forall m. MonadIO m => LogAction m Text)
+    | -- | Log using the two specified log actions
+      LogSomeAction LogSomeActionData
+
+{- | Log some entries as standard, and other as json, using the correspondingly named log actions.
+  Items are logged as Json (using the 'jsonLogAction' log action), if 'entrySelector' returns 'True' for the name of their type constructor.
+-}
+data LogSomeActionData = LogSomeActionData
+    { entrySelector :: (Text -> Bool)
+    , jsonLogAction :: (forall m. MonadIO m => LogAction m Text)
+    , standardLogAction :: (forall m. MonadIO m => LogAction m Text)
+    }
 
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
@@ -176,7 +187,7 @@ instance Show KoreLogType where
     show = \case
         LogStdErr -> "LogStdErr"
         LogFileText fp -> "LogFileText " <> show fp
-        LogSomeAction _ -> "LogSomeAction _"
+        LogSomeAction{} -> "LogSomeAction _"
 
 data KoreLogFormat
     = Standard
@@ -208,10 +219,11 @@ parseKoreLogFormat = option formatReader info
     info =
         mempty
             <> Options.long "log-format"
-            <> Options.help "Log format: standard, oneline"
+            <> Options.help "Log format: standard, oneline, json"
             <> Options.value def
 
-type EntryTypes = Set SomeTypeRep
+type EntryType = SomeTypeRep
+type EntryTypes = Set EntryType
 
 -- | Enable or disable timestamps
 data TimestampsSwitch = TimestampsEnable | TimestampsDisable
@@ -668,7 +680,7 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
-        koreLogTypeFlag (LogSomeAction _) = []
+        koreLogTypeFlag (LogSomeAction{}) = []
 
         koreLogFormatFlag Standard = []
         koreLogFormatFlag OneLine = ["--log-format=oneline"]

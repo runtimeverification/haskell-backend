@@ -24,6 +24,7 @@ import Control.Monad.Logger (
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Logger qualified as Logger
 import Data.Aeson.Types (Value (..))
+import Data.ByteString qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -32,7 +33,7 @@ import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text (decodeUtf8)
+import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
 import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
@@ -41,6 +42,7 @@ import System.Clock (
  )
 import System.Exit
 import System.IO (hPutStrLn, stderr)
+import System.IO qualified as IO
 
 import Booster.CLOptions
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
@@ -154,6 +156,15 @@ main = do
 
         monadLogger <- askLoggerIO
 
+        koreLogEntriesAsJsonSelector <-
+            case Map.lookup (Logger.LevelOther "SimplifyJson") logLevelToKoreLogEntryMap of
+                Nothing -> do
+                    Logger.logWarnNS
+                        "proxy"
+                        "Could not find out which Kore log entries correspond to the SimplifyJson level"
+                    pure (const False)
+                Just es -> pure (`elem` es)
+
         let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
             koreLogOptions =
                 (defaultKoreLogOptions (ExeName "") startTime)
@@ -162,16 +173,30 @@ main = do
                     , Log.timestampsSwitch = TimestampsDisable
                     , Log.debugSolverOptions =
                         Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                    , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
+                    , Log.logType =
+                        LogSomeAction $
+                            Log.LogSomeActionData
+                                { entrySelector = koreLogEntriesAsJsonSelector
+                                , standardLogAction =
+                                    (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
+                                , jsonLogAction =
+                                    ( LogAction $ \txt ->
+                                        let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
+                                         in liftIO $ do
+                                                BS.hPutStr IO.stderr bytes
+                                                IO.hFlush IO.stderr
+                                    )
+                                }
+                    , Log.logFormat = Log.Standard
                     }
             srvSettings = serverSettings port "*"
 
-        liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \reportDirectory ->
-            withLogger reportDirectory koreLogOptions $ \actualLogAction -> do
+        liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
+            withLogger koreLogOptions $ \actualLogAction -> do
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
-
-                kore@KoreServer{runSMT} <- mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                kore@KoreServer{runSMT} <-
+                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
                 runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
 
                 let koreRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
@@ -205,13 +230,22 @@ toSeverity LevelOther{} = Nothing
 
 koreExtraLogs :: Map.Map LogLevel Log.EntryTypes
 koreExtraLogs =
-    Map.map (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry)) $
-        Map.fromList
-            [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
-            , (LevelOther "RewriteKore", ["DebugAttemptedRewriteRules", "DebugAppliedRewriteRules"])
-            , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
-            , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
-            ]
+    Map.map
+        (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry))
+        logLevelToKoreLogEntryMap
+
+logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
+logLevelToKoreLogEntryMap =
+    Map.fromList
+        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
+        , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
+        ,
+            ( LevelOther "RewriteKore"
+            , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
+            )
+        , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
+        , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
+        ]
 
 newtype CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions
@@ -253,7 +287,8 @@ translateSMTOpts = \case
     translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
     translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
 
-mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSMT.KoreSolverOptions -> IO KoreServer
+mkKoreServer ::
+    Log.LoggerEnv IO -> CLOptions -> KoreSMT.KoreSolverOptions -> IO KoreServer
 mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
     flip Log.runLoggerT logAction $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
