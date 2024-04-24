@@ -112,6 +112,7 @@ main = do
                     , boosterSMT
                     , fallbackReasons
                     , simplifyAtEnd
+                    , simplifyBeforeFallback
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -220,6 +221,7 @@ main = do
                                 , boosterState
                                 , fallbackReasons
                                 , simplifyAtEnd
+                                , simplifyBeforeFallback
                                 , customLogLevels = customLevels
                                 }
                         server =
@@ -286,6 +288,8 @@ data ProxyOptions = ProxyOptions
     -- ^ halt reasons to re-execute (fallback) to double-check the result
     , simplifyAtEnd :: Bool
     -- ^ whether to run a post-exec simplification
+    , simplifyBeforeFallback :: Bool
+    -- ^ whether to run a simplification before fall-back execute requests
     }
 
 parserInfoModifiers :: InfoMod options
@@ -333,6 +337,12 @@ clProxyOptionsParser =
                 False
                 ( long "no-post-exec-simplify"
                     <> help "disable post-exec simplification"
+                )
+            <*> flag
+                True
+                False
+                ( long "no-fallback-simplify"
+                    <> help "disable simplification before fallback requests"
                 )
 
     reasonReader :: String -> Either String HaltReason
