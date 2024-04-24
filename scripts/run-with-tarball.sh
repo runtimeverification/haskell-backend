@@ -14,7 +14,7 @@ set -exo pipefail
 tarball=${1?"Tarball argument missing"}
 shift
 
-tarname=$(basename $tarball)
+tarname=$(basename "$tarball")
 
 booster=${BOOSTER:-$(realpath $(dirname $0)/..)}
 server=${SERVER:-$booster/.build/kore/bin/kore-rpc-booster}
@@ -49,7 +49,7 @@ trap 'rm -rf "$TEMPD"'  EXIT
 
 if [ -z "$DEFINITION" ]; then
     # unpack definition file from tarball, into $TEMPD dir
-    tar xf $tarball -O definition.kore > $TEMPD/definition.kore
+    tar xf "$tarball" -O definition.kore > $TEMPD/definition.kore
     kore=$TEMPD/definition.kore
 else
     kore=$DEFINITION
@@ -66,7 +66,7 @@ MODULE=$(grep -o -e "^module [A-Z0-9-]*" $kore | tail -1 | sed -e "s/module //")
 
 # build llvm backend unless provided
 if [ -z "${LLVM_LIB}" ]; then
-    tar xf $tarball -O llvm_definition/definition.kore > $TEMPD/llvm-definition.kore
+    tar xf "$tarball" -O llvm_definition/definition.kore > $TEMPD/llvm-definition.kore
 
     LLVM_DEFINITION_SHA=$(sha1sum $TEMPD/llvm-definition.kore | awk '{ print $1 }')
 
@@ -135,7 +135,7 @@ server_port=$($LSOF -a -p${server_pid} -sTCP:LISTEN -iTCP | grep ${server_pid} |
 echo "Server listening on port ${server_port}"
 
 
-echo "Running requests from $tarball against the server: $client run-tarball $tarball --keep-going -p ${server_port} -h 127.0.0.1"
-$client run-tarball $tarball --keep-going -p ${server_port} -h 127.0.0.1
+echo "Running requests from $tarball against the server: $client run-tarball '$tarball' --keep-going -p ${server_port} -h 127.0.0.1"
+$client run-tarball "$tarball" --keep-going -p ${server_port} -h 127.0.0.1
 
-echo "Done with $tarball"
+echo "Done with '$tarball'"
