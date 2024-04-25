@@ -368,6 +368,7 @@ library
     Kore.Log.ErrorRewritesInstantiation
     Kore.Log.ErrorVerify
     Kore.Log.DebugAttemptUnification
+    Kore.Log.DebugContext
     Kore.Log.JsonRpc
     Kore.Log.InfoExecBreadth
     Kore.Log.InfoExecDepth
