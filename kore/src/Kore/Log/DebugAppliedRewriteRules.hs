@@ -104,7 +104,7 @@ instance Pretty DebugAppliedLabeledRewriteRule where
 instance Entry DebugAppliedLabeledRewriteRule where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rule with label"
-    oneLineDoc (DebugAppliedLabeledRewriteRule{}) = "success"
+    oneLineDoc (DebugAppliedLabeledRewriteRule{}) = "[success]"
 
 debugAppliedLabeledRewriteRule ::
     MonadLog log =>
