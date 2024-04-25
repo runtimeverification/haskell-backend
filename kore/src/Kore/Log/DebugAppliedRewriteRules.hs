@@ -60,8 +60,7 @@ instance Pretty DebugAppliedRewriteRules where
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
-    oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules} =
-        Pretty.hsep $ pretty <$> appliedRewriteRules
+    oneLineDoc (DebugAppliedRewriteRules{}) = "success"
 
 debugAppliedRewriteRules ::
     MonadLog log =>
@@ -105,7 +104,7 @@ instance Pretty DebugAppliedLabeledRewriteRule where
 instance Entry DebugAppliedLabeledRewriteRule where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rule with label"
-    oneLineDoc DebugAppliedLabeledRewriteRule{sourceLocation} = pretty sourceLocation
+    oneLineDoc (DebugAppliedLabeledRewriteRule{}) = "success"
 
 debugAppliedLabeledRewriteRule ::
     MonadLog log =>
