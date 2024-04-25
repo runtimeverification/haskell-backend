@@ -418,10 +418,12 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
         let cs =
                 context
                     & reverse
-                    & map (Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
+                    & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
             leaf = oneLineDoc entry
-         in Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . mconcat $
-                ("[kore]" : (cs <> [leaf]))
+         in Pretty.renderText
+                . Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
+                . mconcat
+                $ ("[kore]" : (cs <> [leaf]))
 
     render :: SomeEntry -> Text
     render entry =
@@ -467,7 +469,7 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
         oneLineContext =
             entryContext
                 & reverse
-                & map (\(SomeEntry _ e) -> oneLineContextDoc e)
+                & concatMap (\(SomeEntry _ e) -> oneLineContextDoc e)
 
         mkContext =
             \case

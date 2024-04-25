@@ -33,6 +33,7 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Data.Word (Word64)
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -61,6 +62,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Unparser (Unparse (..))
 import Log
+import Numeric (showHex)
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
@@ -261,17 +263,21 @@ isSimplification (Equation{attributes}) =
         Attribute.NotSimplification -> False
 
 failureDescription :: AttemptEquationError RewritingVariableName -> Text
-failureDescription err = shortenText . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+failureDescription err = shorten . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+  where
+    shorten :: Text -> Text
+    shorten msg = Text.take 500 msg <> ("...truncated" :: Text)
 
-shortenText :: Text -> Text
-shortenText msg = Text.take 500 msg <> ("...truncated" :: Text)
-
-shortenHash :: Text -> Text
-shortenHash msg = Text.take 8 msg
+showHashHex :: Int -> Text
+showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ Text.pack $ showHex w64 ""
 
 ruleIdText :: Equation a -> Text
 ruleIdText equation =
-    fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+    shortenRuleId $
+        fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+  where
+    shortenRuleId :: Text -> Text
+    shortenRuleId msg = Text.take 8 msg
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
@@ -286,22 +292,25 @@ instance Entry DebugAttemptEquation where
     helpDoc _ = "log equation application attempts"
 
     oneLineContextDoc = \case
-        _entry@(DebugAttemptEquation equation _) ->
+        _entry@(DebugAttemptEquation equation term) ->
             let equationKindTxt = if isSimplification equation then "simplification" else "function"
-             in Pretty.hsep
-                    [ equationKindTxt
-                    , Pretty.pretty (shortenHash $ ruleIdText equation)
-                    ]
+             in [ Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term]
+                , Pretty.hsep . map Pretty.pretty $ [equationKindTxt, ruleIdText equation]
+                ]
         (DebugAttemptEquationResult _ result) -> case result of
-            Right{} -> "success"
-            Left failure -> Pretty.hsep ["failure", Pretty.pretty $ failureDescription failure]
+            Right{} -> ["success"]
+            Left failure -> ["failure", Pretty.pretty $ failureDescription failure]
 
-    oneLineDoc (DebugAttemptEquation equation _) =
+    oneLineDoc (DebugAttemptEquation equation term) =
         maybe
             mempty
             ( \loc ->
-                Pretty.hsep
-                    ["applying equation", Pretty.pretty (shortenHash (ruleIdText equation)), "at", pretty loc]
+                Pretty.hsep . concat $
+                    [ ["[detail]"]
+                    , ["applying equation", Pretty.pretty (ruleIdText equation)]
+                    , ["at", pretty loc]
+                    , ["to term", Pretty.pretty . showHashHex $ hash term, unparse term]
+                    ]
             )
             (srcLoc equation)
     oneLineDoc (DebugAttemptEquationResult _ result) = case result of
