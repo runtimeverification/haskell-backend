@@ -394,13 +394,16 @@ makeKoreLogger ::
     LogAction io Text ->
     LogAction io SomeEntry
 makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
-    let actionForJsonLogs =
+    let renderPretty = case koreLogFormat of
+            OneLine -> renderOneLineContext
+            _ -> render
+        actionForJsonLogs =
             jsonLogAction
                 & Colog.cmap renderJson
                 & Colog.cfilter (entryFilter . entryTypeText)
         actionForPrettyLogs =
             prettyLogAction
-                & Colog.cmap renderOneLineContext
+                & Colog.cmap renderPretty
                 & Colog.cfilter (not . entryFilter . entryTypeText)
      in actionForJsonLogs <> actionForPrettyLogs
   where
