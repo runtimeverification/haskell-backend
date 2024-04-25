@@ -417,10 +417,9 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
             xs -> xs
 
     renderOneLineContext :: SomeEntry -> Text
-    renderOneLineContext entry@(SomeEntry context actualEntry) =
+    renderOneLineContext entry@(SomeEntry context _actualEntry) =
         let cs =
                 context
-                    & reverse
                     & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
             leaf = oneLineDoc entry
          in Pretty.renderText
