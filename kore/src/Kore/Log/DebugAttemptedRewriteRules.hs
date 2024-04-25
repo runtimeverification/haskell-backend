@@ -79,22 +79,16 @@ instance Entry DebugAttemptedRewriteRules where
                 ["rewrite", shortRuleIdTxt ruleId, fromMaybe "" label]
             ]
 
-    oneLineDoc (DebugAttemptedRewriteRules{configuration, label, ruleId, attemptedRewriteRule}) =
-        let x =
-                map
-                    (Pretty.brackets . Pretty.hsep)
-                    [ ["detail"]
-                    , ["term", Pretty.pretty . showHashHex $ hash configuration]
-                    , ["rewrite", Pretty.pretty (shortRuleIdTxt ruleId), Pretty.pretty (fromMaybe "" label)]
-                    ]
-            y =
+    oneLineDoc entry@(DebugAttemptedRewriteRules{configuration, label, ruleId, attemptedRewriteRule}) =
+        let context = map Pretty.brackets (oneLineContextDoc entry <> ["detail"])
+            logMsg =
                 ( Pretty.hsep . concat $
                     [ ["attempting to apply rewrite rule", Pretty.pretty (shortRuleIdTxt ruleId), Pretty.pretty label]
                     , ["at", Pretty.pretty attemptedRewriteRule]
                     , ["to term", Pretty.pretty . showHashHex $ hash configuration, Pretty.group $ unparse configuration]
                     ]
                 )
-         in mconcat x <> y
+         in mconcat context <> logMsg
 
 whileDebugAttemptRewriteRule ::
     MonadLog log =>
