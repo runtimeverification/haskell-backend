@@ -114,6 +114,7 @@ unifyRules ::
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
     From rule Label =>
+    From rule UniqueId =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -148,6 +149,7 @@ unifyRule ::
     UnifyingRule rule =>
     From rule SourceLocation =>
     From rule Label =>
+    From rule UniqueId =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -179,7 +181,7 @@ unifyRule sideCondition initial rule = do
             (unification <> requires')
     debugAppliedLabeledRewriteRule initial maybeLabel location
     ruleMarker "Success"
-    return (rule `Conditional.withCondition` unification')
+        ruleId = from rule
   where
     location = from @_ @SourceLocation rule
 

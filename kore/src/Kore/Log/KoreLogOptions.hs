@@ -540,7 +540,7 @@ selectDebugAttemptRewrite options entry
     | otherwise = False
   where
     getLabel = do
-        DebugAttemptedRewriteRules _ ruleLabel _ <- fromEntry entry
+        DebugAttemptedRewriteRules _ _ ruleLabel _ <- fromEntry entry
         ruleLabel
 
 newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions (HashSet Text)

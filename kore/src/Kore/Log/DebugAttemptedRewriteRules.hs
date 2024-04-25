@@ -12,8 +12,11 @@ module Kore.Log.DebugAttemptedRewriteRules (
 ) where
 
 import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Word (Word64)
 import Kore.Attribute.Axiom (
     SourceLocation,
+    UniqueId (..),
  )
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.Pattern (
@@ -27,6 +30,7 @@ import Kore.Internal.Variable (
 import Kore.Rewrite.RewritingVariable
 import Kore.Unparser
 import Log
+import Numeric (showHex)
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -35,6 +39,7 @@ import Pretty qualified
 
 data DebugAttemptedRewriteRules = DebugAttemptedRewriteRules
     { configuration :: !(Pattern VariableName)
+    , ruleId :: !UniqueId
     , label :: !(Maybe Text)
     , attemptedRewriteRule :: !SourceLocation
     }
@@ -52,6 +57,15 @@ instance Pretty DebugAttemptedRewriteRules where
             , "On configuration:"
             , Pretty.indent 2 . unparse $ configuration
             ]
+
+showHashHex :: Int -> Text
+showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ Text.pack $ showHex w64 ""
+
+shortenRuleId :: Text -> Text
+shortenRuleId msg = Text.take 8 msg
+
+shortRuleIdTxt :: UniqueId -> Text
+shortRuleIdTxt = shortenRuleId . fromMaybe "UNKNWON" . getUniqueId
 
 instance Entry DebugAttemptedRewriteRules where
     entrySeverity _ = Debug
