@@ -28,9 +28,12 @@ import Control.Error (
     ExceptT,
     withExceptT,
  )
+import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
  )
+
+import Data.Text qualified as Text
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -58,13 +61,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Unparser (Unparse (..))
-import Log (
-    Entry (..),
-    MonadLog,
-    Severity (..),
-    logEntry,
-    logWhile,
- )
+import Log
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
@@ -275,6 +272,39 @@ instance Entry DebugAttemptEquation where
             (srcLoc equation)
     oneLineDoc (DebugAttemptEquationResult _ (Left _)) = "equation is not applicable"
     oneLineDoc (DebugAttemptEquationResult _ (Right _)) = "equation is applicable"
+
+    oneLineJson = \case
+        entry@(DebugAttemptEquation equation _) ->
+            JSON.object
+                [ "tag" JSON..= entryTypeText (toEntry entry)
+                , "rule-id"
+                    JSON..= fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+                ]
+        _entry@(DebugAttemptEquationResult equation result) ->
+            let resultInfo = case result of
+                    Right _ ->
+                        JSON.object
+                            [ "tag" JSON..= ("success" :: Text)
+                            , "rule-id" JSON..= ruleIdText
+                            ]
+                    Left failure ->
+                        JSON.object
+                            [ "tag" JSON..= ("failure" :: Text)
+                            , "rule-id" JSON..= ruleIdText
+                            , "reason" JSON..= failureDescription failure
+                            ]
+             in JSON.object
+                    [ "tag" JSON..= ("simplification" :: Text)
+                    , "result" JSON..= resultInfo
+                    ]
+          where
+            failureDescription :: AttemptEquationError RewritingVariableName -> Text
+            failureDescription err = shortenText . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
+
+            shortenText :: Text -> Text
+            shortenText msg = Text.take 500 msg <> ("...truncated" :: Text)
+
+            ruleIdText = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::

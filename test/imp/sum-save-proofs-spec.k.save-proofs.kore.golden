@@ -2,98 +2,56 @@
 module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
     import IMP []
     import kore []
-    claim {} /* Spa */
-    \implies{SortGeneratedTopCell{}}(
-        /* Spa */
+    claim {} \implies{SortGeneratedTopCell{}}(
         \and{SortGeneratedTopCell{}}(
-            /* Spa */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
-                /* T Fn D Sfa Cl */ \dv{SortBool{}}("true"),
-                /* T Fn D Spa */
+                \dv{SortBool{}}("true"),
                 Lbl'Unds-GT-Eqls'Int'Unds'{}(
-                    /* T Fn D Sfa */ VarN:SortInt{},
-                    /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                    VarN:SortInt{},
+                    \dv{SortInt{}}("0")
                 )
             ),
-            /* T Fn D Spa */
             Lbl'-LT-'generatedTop'-GT-'{}(
-                /* T Fn D Spa */
                 Lbl'-LT-'T'-GT-'{}(
-                    /* T Fn D Spa */
                     Lbl'-LT-'k'-GT-'{}(
-                        /* T Fn D Spa */
                         kseq{}(
-                            /* T Fn D Sfa Cli */
                             /* Inj: */ inj{SortStmt{}, SortKItem{}}(
-                                /* T Fn D Sfa Cl */
                                 Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'BExp'Unds'Block{}(
-                                    /* T Fn D Sfa Cl */
                                     Lbl'BangUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'BExp{}(
-                                        /* T Fn D Sfa Cl */
                                         Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'AExp'Unds'AExp{}(
-                                            /* T Fn D Sfa Cli */
                                             /* Inj: */ inj{SortId{}, SortAExp{}}(
-                                                /* T Fn D Sfa Cl */
-                                                \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                "n")
+                                                \dv{SortId{}}("n")
                                             ),
-                                            /* T Fn D Sfa Cli */
                                             /* Inj: */ inj{SortInt{}, SortAExp{}}(
-                                                /* T Fn D Sfa Cl */
                                                 \dv{SortInt{}}("0")
                                             )
                                         )
                                     ),
-                                    /* T Fn D Sfa Cl */
                                     Lbl'LBraUndsRBraUnds'IMP-SYNTAX'Unds'Block'Unds'Stmt{}(
-                                        /* T Fn D Sfa Cl */
                                         Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(
-                                            /* T Fn D Sfa Cl */
                                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
-                                                /* T Fn D Sfa Cl */
-                                                \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                "sum"),
-                                                /* T Fn D Sfa Cl */
+                                                \dv{SortId{}}("sum"),
                                                 Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(
-                                                    /* T Fn D Sfa Cl */
                                                     Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(
-                                                        /* T Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortId{}, SortAExp{}}(
-                                                            /* T Fn D Sfa Cl */
-                                                            \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                            "sum")
+                                                            \dv{SortId{}}("sum")
                                                         ),
-                                                        /* T Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortId{}, SortAExp{}}(
-                                                            /* T Fn D Sfa Cl */
-                                                            \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                            "n")
+                                                            \dv{SortId{}}("n")
                                                         )
                                                     ),
-                                                    /* T Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortId{}, SortAExp{}}(
-                                                        /* T Fn D Sfa Cl */
-                                                        \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                        "n")
+                                                        \dv{SortId{}}("n")
                                                     )
                                                 )
                                             ),
-                                            /* T Fn D Sfa Cl */
                                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
-                                                /* T Fn D Sfa Cl */
-                                                \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                "n"),
-                                                /* T Fn D Sfa Cl */
+                                                \dv{SortId{}}("n"),
                                                 Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(
-                                                    /* T Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortId{}, SortAExp{}}(
-                                                        /* T Fn D Sfa Cl */
-                                                        \dv{SortId{}}(/* T Fn D Sfa Cl */
-                                                        "n")
+                                                        \dv{SortId{}}("n")
                                                     ),
-                                                    /* T Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortInt{}, SortAExp{}}(
-                                                        /* T Fn D Sfa Cl */
                                                         \dv{SortInt{}}("-1")
                                                     )
                                                 )
@@ -102,91 +60,62 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                     )
                                 )
                             ),
-                            /* T Fn D Sfa */ Var'Unds'DotVar2:SortK{}
+                            Var'Unds'DotVar2:SortK{}
                         )
                     ),
-                    /* T Fn D Spa */
                     Lbl'-LT-'state'-GT-'{}(
-                        /* T Fn D Spa */
                         /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Inj: */ inj{SortId{}, SortKItem{}}(
                                     \dv{SortId{}}("n")
                                 ),
-                                /* T Fn D Spa */
                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* T Fn D Sfa */ VarN:SortInt{}
+                                    VarN:SortInt{}
                                 )
                             ),
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Inj: */ inj{SortId{}, SortKItem{}}(
                                     \dv{SortId{}}("sum")
                                 ),
-                                /* T Fn D Spa */
                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* T Fn D Sfa */ VarS:SortInt{}
+                                    VarS:SortInt{}
                                 )
                             )
                         )
                     )
                 ),
-                /* T Fn D Spa */
-                Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* T Fn D Sfa */ Var'Unds'Gen0:SortInt{}
-                )
+                Lbl'-LT-'generatedCounter'-GT-'{}(Var'Unds'Gen0:SortInt{})
             )
         ),
-        /* Spa */
         weakAlwaysFinally{SortGeneratedTopCell{}}(
-            /* Spa */
             \exists{SortGeneratedTopCell{}}(
                 Var'QuesUnds'Gen1:SortInt{},
-                /* Fn Spa */
                 Lbl'-LT-'generatedTop'-GT-'{}(
-                    /* Fn Spa */
                     Lbl'-LT-'T'-GT-'{}(
-                        /* T Fn D Spa */
-                        Lbl'-LT-'k'-GT-'{}(
-                            /* T Fn D Sfa */ Var'Unds'DotVar2:SortK{}
-                        ),
-                        /* Fn Spa */
+                        Lbl'-LT-'k'-GT-'{}(Var'Unds'DotVar2:SortK{}),
                         Lbl'-LT-'state'-GT-'{}(
-                            /* Fn Spa */
                             Lbl'Unds'Map'Unds'{}(
-                                /* T Fn D Spa */
                                 Lbl'UndsPipe'-'-GT-Unds'{}(
-                                    /* T Fn D Sfa Cli */
                                     /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                        /* T Fn D Sfa Cl */
-                                        \dv{SortId{}}(/* T Fn D Sfa Cl */ "n")
+                                        \dv{SortId{}}("n")
                                     ),
-                                    /* T Fn D Sfa Cli */
                                     /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                        /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                                        \dv{SortInt{}}("0")
                                     )
                                 ),
-                                /* T Fn D Spa */
                                 Lbl'UndsPipe'-'-GT-Unds'{}(
-                                    /* T Fn D Sfa Cli */
                                     /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                        /* T Fn D Sfa Cl */
-                                        \dv{SortId{}}(/* T Fn D Sfa Cl */ "sum")
+                                        \dv{SortId{}}("sum")
                                     ),
-                                    /* T Fn D Spa */
                                     /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                        /* T Fn D Spa */
                                         Lbl'UndsPlus'Int'Unds'{}(
-                                            /* T Fn D Sfa */ VarS:SortInt{},
-                                            /* T Fn D Spa */
+                                            VarS:SortInt{},
                                             Lbl'UndsStar'Int'Unds'{}(
-                                                /* T Fn D Spa */
                                                 Lbl'UndsPlus'Int'Unds'{}(
-                                                    /* T Fn D Sfa */
                                                     VarN:SortInt{},
-                                                    /* T Fn D Sfa Cl */
                                                     \dv{SortInt{}}("1")
                                                 ),
-                                                /* T Fn D Sfa */ VarN:SortInt{}
+                                                VarN:SortInt{}
                                             )
                                         )
                                     )
@@ -194,9 +123,8 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                             )
                         )
                     ),
-                    /* T Fn D Spa */
                     Lbl'-LT-'generatedCounter'-GT-'{}(
-                        /* T Fn D Sfa */ Var'QuesUnds'Gen1:SortInt{}
+                        Var'QuesUnds'Gen1:SortInt{}
                     )
                 )
             )
