@@ -129,7 +129,7 @@ handleOutput stderrLogger mFileLogger loc src level msg =
         Log.LevelOther "SimplifyJson" ->
             case mFileLogger of
                 Nothing -> stderrLogger $ "[SimplifyJson] " <> msg <> "\n"
-                Just fileLogger -> fileLogger msg
+                Just fileLogger -> fileLogger $ msg <> "\n"
         _ -> stderrLogger $ Log.defaultLogStr loc src level msg
 
 newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
