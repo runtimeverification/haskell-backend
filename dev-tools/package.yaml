@@ -61,6 +61,8 @@ executables:
     - containers
     - conduit-extra
     - deepseq
+    - fast-logger
+    - Glob
     - hs-backend-booster
     - optparse-applicative
     - text

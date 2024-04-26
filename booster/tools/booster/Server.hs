@@ -141,7 +141,6 @@ main = do
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
     Booster.withFastLogger mTimeCache simplificationLogFile $ \fastLogger -> do
-        
         let logLevelToHandle = \case
                 Logger.LevelOther "SimplifyJson" -> case fastLogger of
                     Left fastLoggerStdErr -> fastLoggerStdErr
@@ -284,9 +283,11 @@ main = do
                                 ]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
-                                (case fastLogger of
+                                ( case fastLogger of
                                     Left (_, stderrLogger) -> stderrLogger
-                                    Right ((_, stderrLogger), _) -> stderrLogger) "[Info#proxy] Server shutting down\n"
+                                    Right ((_, stderrLogger), _) -> stderrLogger
+                                )
+                                    "[Info#proxy] Server shutting down\n"
                             whenJust statsVar Stats.showStats
                             exitSuccess
                     handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger

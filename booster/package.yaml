@@ -73,6 +73,7 @@ library:
   - directory
   - exceptions
   - extra
+  - fast-logger
   - filepath
   - ghc-trace-events
   - gitrev
@@ -144,6 +145,7 @@ executables:
       - deepseq
       - exceptions
       - extra
+      - fast-logger
       - Glob
       - hs-backend-booster
       - json-rpc

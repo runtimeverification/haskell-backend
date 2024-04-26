@@ -9,7 +9,6 @@ module Booster.Util (
     Bound (..),
     constructorName,
     runFastLoggerLoggingT,
-    withLogFile,
     withFastLogger,
 ) where
 
@@ -25,9 +24,17 @@ import Data.Map qualified as Map
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
 import System.Directory (removeFile)
-import System.IO qualified as IO
 import System.IO.Error (isDoesNotExistError)
-import System.Log.FastLogger (LogType, FastLogger, LogType' (..), newFastLogger, defaultBufSize, newTimedFastLogger, toLogStr, LogStr)
+import System.Log.FastLogger (
+    FastLogger,
+    LogStr,
+    LogType,
+    LogType' (..),
+    defaultBufSize,
+    newFastLogger,
+    newTimedFastLogger,
+    toLogStr,
+ )
 import System.Log.FastLogger.Types (FormattedTime)
 
 newtype Flag (name :: k) = Flag Bool
@@ -120,15 +127,13 @@ handleOutput levelToFastLogger loc src level msg =
     case level of
         Log.LevelOther "SimplifyJson" ->
             case levelToFastLogger level of
-                (LogStderr{}, logger) ->  logger $ "[SimplifyJson] " <> msg <> "\n"
+                (LogStderr{}, logger) -> logger $ "[SimplifyJson] " <> msg <> "\n"
                 (_, logger) -> logger msg
-        _ ->  (snd $ levelToFastLogger level) $ Log.defaultLogStr loc src level msg
-
+        _ -> (snd $ levelToFastLogger level) $ Log.defaultLogStr loc src level msg
 
 -- | Run a logging computation, redirecting various levels to the handles specified by the first arguments
 runFastLoggerLoggingT :: (Log.LogLevel -> (LogType, FastLogger)) -> Log.LoggingT m a -> m a
 runFastLoggerLoggingT = flip Log.runLoggingT . handleOutput
-
 
 newFastLoggerMayeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
 newFastLoggerMayeWithTime = \case
@@ -137,25 +142,21 @@ newFastLoggerMayeWithTime = \case
         (logger, cleanup) <- newTimedFastLogger formattedTime typ
         pure (\msg -> logger (\time -> toLogStr time <> " " <> msg), cleanup)
 
-withFastLogger :: Maybe (IO FormattedTime) -> Maybe FilePath -> (Either (LogType, FastLogger) ((LogType, FastLogger), (LogType, FastLogger)) -> IO a) -> IO a
-withFastLogger mFormattedTime Nothing log' = let typStderr = LogStderr defaultBufSize in bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(logger, _) -> log' $ Left (typStderr, logger)
-withFastLogger mFormattedTime (Just fp) log' = 
+withFastLogger ::
+    Maybe (IO FormattedTime) ->
+    Maybe FilePath ->
+    (Either (LogType, FastLogger) ((LogType, FastLogger), (LogType, FastLogger)) -> IO a) ->
+    IO a
+withFastLogger mFormattedTime Nothing log' =
+    let typStderr = LogStderr defaultBufSize
+     in bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(logger, _) -> log' $ Left (typStderr, logger)
+withFastLogger mFormattedTime (Just fp) log' =
     let typStderr = LogStderr defaultBufSize
         typFile = LogFileNoRotate fp defaultBufSize
-    in 
-    bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(loggerStderr, _) -> 
-        bracket (newFastLogger typFile) snd $  \(loggerFile, _) -> 
-            log' $ Right ((typStderr, loggerStderr), (typFile, loggerFile))
-
-
--- \| Run an action with an optional log file handle opened for appending
-withLogFile :: Maybe String -> (Maybe IO.Handle -> IO b) -> IO b
-withLogFile logFile continuation = case logFile of
-    Nothing -> continuation Nothing
-    Just fname -> do
-        removeFileIfExists fname
-        IO.withFile fname IO.AppendMode $ \handle -> do
-            continuation (Just handle)
+     in bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(loggerStderr, _) -> do
+            removeFileIfExists fp
+            bracket (newFastLogger typFile) snd $ \(loggerFile, _) ->
+                log' $ Right ((typStderr, loggerStderr), (typFile, loggerFile))
   where
     removeFileIfExists :: FilePath -> IO ()
     removeFileIfExists fileName = removeFile fileName `catch` handleExists
