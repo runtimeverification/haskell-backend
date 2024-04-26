@@ -86,6 +86,7 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Syntax.Variable (VariableName)
 import Log
+import Numeric.Natural
 import Options.Applicative (
     Parser,
     option,
@@ -171,9 +172,12 @@ data KoreLogType
 
 -- | Log actions forwarded from 'booster/Server.hs'
 data LogBoosterActionData = LogBoosterActionData
-    { entrySelector :: (Text -> Bool)
-    , jsonLogAction :: (forall m. MonadIO m => LogAction m Text)
-    , standardLogAction :: (forall m. MonadIO m => LogAction m Text)
+    { messageFilter :: (Text -> Bool)
+    -- ^ which messages to log
+    , messageLogActionIndex :: (Text -> Natural)
+    -- ^ which log action to use to log a particular message. Must be in range [0..length logActions - 1]
+    , logActions :: (forall m. MonadIO m => [LogAction m Text])
+    -- ^ actual log actions
     }
 
 instance Eq KoreLogType where
