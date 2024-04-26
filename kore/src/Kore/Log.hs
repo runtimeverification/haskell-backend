@@ -7,7 +7,6 @@ License     : BSD-3-Clause
 module Kore.Log (
     koreLogFilters,
     koreLogTransformer,
-    withLogger,
     withLoggerLegacy,
     emptyLogger,
     stderrLogger,
@@ -20,6 +19,7 @@ module Kore.Log (
     runKoreLogThreadSafeLegacy,
     WithTimestamp (..),
     withTimestamp,
+    withSmtSolverLogger,
     module Log,
     module KoreLogOptions,
 ) where
@@ -108,21 +108,6 @@ withLoggerLegacy reportDirectory koreLogOptions = runContT $ do
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
     return $ mainLogger <> smtSolverLogger <> traceLogger <> logSQLite
 
-{- | Like 'withLoggerLegacy', but modified for the needs for 'kore-rpc-booster':
-  * optional JSON logging
-  * no bug report
-  * no SQL logging
--}
-withLogger ::
-    KoreLogOptions ->
-    (LogAction IO SomeEntry -> IO a) ->
-    IO a
-withLogger koreLogOptions = runContT $ do
-    mainLogger <- ContT $ withMainLogger koreLogOptions
-    let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
-    smtSolverLogger <- ContT $ withSmtSolverLogger exeName debugSolverOptions
-    return $ mainLogger <> smtSolverLogger
-
 withMainLoggerLegacy ::
     FilePath ->
     KoreLogOptions ->
@@ -146,47 +131,6 @@ withMainLoggerLegacy reportDirectory koreLogOptions = runContT $ do
                 & koreLogFilters koreLogOptions
                 & koreLogTransformer koreLogOptions
     pure logAction
-
-withMainLogger ::
-    KoreLogOptions ->
-    (LogAction IO SomeEntry -> IO a) ->
-    IO a
-withMainLogger koreLogOptions = runContT $ do
-    let KoreLogOptions{exeName} = koreLogOptions
-    pure
-        . koreLogTransformer koreLogOptions
-        . koreLogFilters koreLogOptions
-        $ case logType koreLogOptions of
-            LogBooster LogBoosterActionData{messageLogActionIndex, logActions} ->
-                let actionForPrettyLogs =
-                        someEntryLogAction
-                            (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
-                            ((== 0) . messageLogActionIndex)
-                    actionForJsonLogs =
-                        someEntryLogAction
-                            (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
-                            ((== 1) . messageLogActionIndex)
-                 in case logActions of
-                        [] -> error "no log actions passed"
-                        [standardPrettyLogAction] ->
-                            actionForPrettyLogs standardPrettyLogAction
-                        [standardPrettyLogAction, jsonLogAction] ->
-                            actionForPrettyLogs standardPrettyLogAction
-                                <> actionForJsonLogs jsonLogAction
-                        es -> error $ "too many log actions passed" <> show (length es)
-            ltype -> error ("Unexpected log type " <> show ltype)
-
-someEntryLogAction ::
-    MonadIO m =>
-    (WithTimestamp -> Text) ->
-    (Text -> Bool) ->
-    LogAction m Text ->
-    LogAction m SomeEntry
-someEntryLogAction renderer selector textLogAction =
-    textLogAction
-        & contramap renderer
-        & Colog.cmapM withTimestamp
-        & Colog.cfilter (selector . entryTypeText)
 
 {- | Checks if the user supplied path for logging exists. If it doesn't, or if the file
     already exists, will return a default logging location at ./[exe-name]-[prefix]-[timestamp].log
@@ -339,44 +283,6 @@ makeKoreLoggerLegacy exeName startTime timestampSwitch _koreLogFormat logActionT
     logActionText
         & contramap (renderStandardPretty exeName startTime timestampSwitch)
         & Colog.cmapM withTimestamp
-
--- | The logger used by 'kore-rpc-booster' and 'kore-rpc-dev'
-makeKoreLogger ::
-    forall io.
-    MonadIO io =>
-    ExeName ->
-    KoreLogFormat ->
-    (Text -> Natural) ->
-    [LogAction io Text] ->
-    LogAction io SomeEntry
-makeKoreLogger exeName _koreLogFormat messageLogActionIndex = \case
-    [] -> error "no log actions passed"
-    [standardPrettyLogAction] ->
-        standardPrettyLogAction
-            & contramap (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
-            & Colog.cmapM withTimestamp
-    [standardPrettyLogAction, jsonLogAction] ->
-        let actionForPrettyLogs =
-                standardPrettyLogAction
-                    & contramap (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
-                    & Colog.cmapM withTimestamp
-                    & Colog.cfilter ((== 0) . messageLogActionIndex . entryTypeText)
-            actionForJsonLogs =
-                jsonLogAction
-                    & Colog.cmap (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
-                    & Colog.cmapM withTimestamp
-                    & Colog.cfilter ((== 1) . messageLogActionIndex . entryTypeText)
-         in actionForPrettyLogs <> actionForJsonLogs
-    es -> error $ "too many log actions passed" <> show (length es)
-
-renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
-renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _context actualEntry) _entryTime) =
-    LazyText.toStrict . JSON.encodeToLazyText . addOriginField $ oneLineJson actualEntry
-  where
-    addOriginField :: JSON.Value -> JSON.Value
-    addOriginField = \case
-        (JSON.Object xs) -> JSON.Object $ JSON.insert (JSON.fromText "origin") (JSON.toJSON KoreRpc) xs
-        xs -> xs
 
 renderStandardPretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =

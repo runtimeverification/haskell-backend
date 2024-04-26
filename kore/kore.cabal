@@ -344,6 +344,7 @@ library
     Kore.Internal.Variable
     Kore.JsonRpc
     Kore.Log
+    Kore.Log.BoosterAdaptor
     Kore.Log.DebugAppliedRewriteRules
     Kore.Log.DebugAttemptedRewriteRules
     Kore.Log.DebugBeginClaim
