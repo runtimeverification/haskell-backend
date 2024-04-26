@@ -8,12 +8,13 @@ module Booster.Util (
     Flag (..),
     Bound (..),
     constructorName,
-    runHandleLoggingT,
+    runFastLoggerLoggingT,
     withLogFile,
+    withFastLogger,
 ) where
 
 import Control.DeepSeq (NFData (..))
-import Control.Exception (catch, throwIO)
+import Control.Exception (bracket, catch, throwIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
@@ -26,6 +27,8 @@ import Language.Haskell.TH.Syntax (Lift)
 import System.Directory (removeFile)
 import System.IO qualified as IO
 import System.IO.Error (isDoesNotExistError)
+import System.Log.FastLogger (LogType, FastLogger, LogType' (..), newFastLogger, defaultBufSize, newTimedFastLogger, toLogStr, LogStr)
+import System.Log.FastLogger.Types (FormattedTime)
 
 newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -107,24 +110,43 @@ decodeLabel' orig =
 -------------------------------------------------------------------
 -- logging helpers, some are adapted from monad-logger-aeson
 handleOutput ::
-    (Log.LogLevel -> IO.Handle) ->
+    (Log.LogLevel -> (LogType, FastLogger)) ->
     Log.Loc ->
     Log.LogSource ->
     Log.LogLevel ->
     Log.LogStr ->
     IO ()
-handleOutput levelToHandle loc src level msg =
-    let bytes = case level of
-            Log.LevelOther "SimplifyJson" ->
-                if levelToHandle level == IO.stderr
-                    then "[SimplifyJson] " <> Log.fromLogStr msg <> "\n"
-                    else Log.fromLogStr msg <> "\n"
-            _ -> Log.fromLogStr $ Log.defaultLogStr loc src level msg
-     in BS.hPutStr (levelToHandle level) bytes
+handleOutput levelToFastLogger loc src level msg =
+    case level of
+        Log.LevelOther "SimplifyJson" ->
+            case levelToFastLogger level of
+                (LogStderr{}, logger) ->  logger $ "[SimplifyJson] " <> msg <> "\n"
+                (_, logger) -> logger msg
+        _ ->  (snd $ levelToFastLogger level) $ Log.defaultLogStr loc src level msg
+
 
 -- | Run a logging computation, redirecting various levels to the handles specified by the first arguments
-runHandleLoggingT :: (Log.LogLevel -> IO.Handle) -> Log.LoggingT m a -> m a
-runHandleLoggingT = flip Log.runLoggingT . handleOutput
+runFastLoggerLoggingT :: (Log.LogLevel -> (LogType, FastLogger)) -> Log.LoggingT m a -> m a
+runFastLoggerLoggingT = flip Log.runLoggingT . handleOutput
+
+
+newFastLoggerMayeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
+newFastLoggerMayeWithTime = \case
+    Nothing -> newFastLogger
+    Just formattedTime -> \typ -> do
+        (logger, cleanup) <- newTimedFastLogger formattedTime typ
+        pure (\msg -> logger (\time -> toLogStr time <> " " <> msg), cleanup)
+
+withFastLogger :: Maybe (IO FormattedTime) -> Maybe FilePath -> (Either (LogType, FastLogger) ((LogType, FastLogger), (LogType, FastLogger)) -> IO a) -> IO a
+withFastLogger mFormattedTime Nothing log' = let typStderr = LogStderr defaultBufSize in bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(logger, _) -> log' $ Left (typStderr, logger)
+withFastLogger mFormattedTime (Just fp) log' = 
+    let typStderr = LogStderr defaultBufSize
+        typFile = LogFileNoRotate fp defaultBufSize
+    in 
+    bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(loggerStderr, _) -> 
+        bracket (newFastLogger typFile) snd $  \(loggerFile, _) -> 
+            log' $ Right ((typStderr, loggerStderr), (typFile, loggerFile))
+
 
 -- \| Run an action with an optional log file handle opened for appending
 withLogFile :: Maybe String -> (Maybe IO.Handle -> IO b) -> IO b

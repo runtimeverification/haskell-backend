@@ -42,7 +42,7 @@ import System.Clock (
  )
 import System.Exit
 import System.FilePath.Glob qualified as Glob
-import System.IO qualified as IO
+import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Attributes.Base (ComputedAxiomAttributes (notPreservesDefinednessReasons))
@@ -104,6 +104,7 @@ main = do
                     , port
                     , llvmLibraryFile
                     , logLevels
+                    , logTimeStamps
                     , logContexts
                     , notLogContexts
                     , smtOptions
@@ -137,13 +138,19 @@ main = do
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
-    Booster.withLogFile simplificationLogFile $ \mLogFileHandle -> do
-        let simplificationLogHandle = fromMaybe IO.stderr mLogFileHandle
-            logLevelToHandle = \case
-                Logger.LevelOther "SimplifyJson" -> simplificationLogHandle
-                _ -> IO.stderr
+    mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-        Booster.runHandleLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
+    Booster.withFastLogger mTimeCache simplificationLogFile $ \fastLogger -> do
+        
+        let logLevelToHandle = \case
+                Logger.LevelOther "SimplifyJson" -> case fastLogger of
+                    Left fastLoggerStdErr -> fastLoggerStdErr
+                    Right (_fastLoggerStdErr, fastLoggerFile) -> fastLoggerFile
+                _ -> case fastLogger of
+                    Left fastLoggerStdErr -> fastLoggerStdErr
+                    Right (fastLoggerStdErr, _fastLoggerFile) -> fastLoggerStdErr
+
+        Booster.runFastLoggerLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
@@ -277,7 +284,9 @@ main = do
                                 ]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
-                                IO.hPutStrLn IO.stderr "[Info#proxy] Server shutting down"
+                                (case fastLogger of
+                                    Left (_, stderrLogger) -> stderrLogger
+                                    Right ((_, stderrLogger), _) -> stderrLogger) "[Info#proxy] Server shutting down\n"
                             whenJust statsVar Stats.showStats
                             exitSuccess
                     handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger

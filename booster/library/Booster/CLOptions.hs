@@ -30,6 +30,7 @@ data CLOptions = CLOptions
     , llvmLibraryFile :: Maybe FilePath
     , port :: Int
     , logLevels :: [LogLevel]
+    , logTimeStamps :: Bool
     , logContexts :: [String]
     , notLogContexts :: [String]
     , simplificationLogFile :: Maybe FilePath
@@ -80,6 +81,7 @@ clOptionsParser =
                         )
                 )
             )
+        <*> switch (long "log-timestamps" <> help "Add timestamps to logs")
         <*> many
             ( option
                 str
