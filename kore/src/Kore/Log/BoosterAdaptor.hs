@@ -1,0 +1,156 @@
+{-# LANGUAGE RecordWildCards #-}
+
+{- |
+Copyright   : (c) Runtime Verification, 2018-2021
+License     : BSD-3-Clause
+-}
+module Kore.Log.BoosterAdaptor (
+    renderStandardPretty,
+    renderJson,
+    koreSomeEntryLogAction,
+    withLogger,
+) where
+
+import Colog qualified
+import Control.Monad.Cont (
+    ContT (..),
+    runContT,
+ )
+import Data.Aeson qualified as JSON
+import Data.Aeson.Key qualified as JSON
+import Data.Aeson.KeyMap qualified as JSON
+import Data.Aeson.Text qualified as JSON
+import Data.Functor.Contravariant (
+    contramap,
+ )
+import Data.Text (
+    Text,
+ )
+import Data.Text.Lazy qualified as LazyText
+import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
+import Kore.Log (WithTimestamp (..), withTimestamp)
+import Kore.Log qualified as Log
+import Kore.Log.KoreLogOptions as KoreLogOptions
+import Kore.Log.Registry (
+    lookupTextFromTypeWithError,
+    typeOfSomeEntry,
+ )
+import Log
+import Prelude.Kore
+import Pretty qualified
+import System.Clock (
+    TimeSpec (..),
+    diffTimeSpec,
+    toNanoSecs,
+ )
+
+withLogger ::
+    KoreLogOptions ->
+    (LogAction IO SomeEntry -> IO a) ->
+    IO a
+withLogger koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLogger koreLogOptions
+    let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
+    -- smtSolverLogger <- ContT $ Log.withSmtSolverLogger exeName debugSolverOptions
+    -- return $ mainLogger <> smtSolverLogger
+    return $ mainLogger
+
+withMainLogger ::
+    KoreLogOptions ->
+    (LogAction IO SomeEntry -> IO a) ->
+    IO a
+withMainLogger koreLogOptions = runContT $ do
+    let KoreLogOptions{exeName} = koreLogOptions
+    pure $ case logType koreLogOptions of
+        LogBooster LogBoosterActionData{messageLogActionIndex, logActions} ->
+            let actionForPrettyLogs =
+                    koreSomeEntryLogAction
+                        (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
+                        ((== 0) . messageLogActionIndex)
+                actionForJsonLogs =
+                    koreSomeEntryLogAction
+                        (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
+                        ((== 1) . messageLogActionIndex)
+             in case logActions of
+                    [] -> error "no log actions passed"
+                    [standardPrettyLogAction] ->
+                        actionForPrettyLogs standardPrettyLogAction
+                    [standardPrettyLogAction, jsonLogAction] ->
+                        actionForPrettyLogs standardPrettyLogAction
+                            <> actionForJsonLogs jsonLogAction
+                    es -> error $ "too many log actions passed" <> show (length es)
+        ltype -> error ("Unexpected log type " <> show ltype)
+
+koreSomeEntryLogAction ::
+    MonadIO m =>
+    (WithTimestamp -> Text) ->
+    (Text -> Bool) ->
+    LogAction m Text ->
+    LogAction m SomeEntry
+koreSomeEntryLogAction renderer selector textLogAction =
+    textLogAction
+        & contramap renderer
+        & Colog.cmapM withTimestamp
+        & Colog.cfilter (selector . entryTypeText)
+
+renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
+renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _context actualEntry) _entryTime) =
+    LazyText.toStrict . JSON.encodeToLazyText . addOriginField $ oneLineJson actualEntry
+  where
+    addOriginField :: JSON.Value -> JSON.Value
+    addOriginField = \case
+        (JSON.Object xs) -> JSON.Object $ JSON.insert (JSON.fromText "origin") (JSON.toJSON KoreRpc) xs
+        xs -> xs
+
+renderStandardPretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
+renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =
+    prettyActualEntry
+        & Pretty.layoutPretty Pretty.defaultLayoutOptions
+        & Pretty.renderText
+  where
+    timestamp =
+        case timestampSwitch of
+            TimestampsDisable -> Nothing
+            TimestampsEnable ->
+                Just . Pretty.brackets . Pretty.pretty $
+                    toMicroSecs (diffTimeSpec startTime entryTime)
+    toMicroSecs = (`div` 1000) . toNanoSecs
+    exeName' = Pretty.pretty exeName <> Pretty.colon
+    prettyActualEntry =
+        Pretty.vsep . concat $
+            [ [header]
+            , indent <$> [longDoc actualEntry]
+            , context'
+            ]
+      where
+        header =
+            (Pretty.hsep . catMaybes)
+                [ Just exeName'
+                , timestamp
+                , Just severity'
+                , Just (Pretty.parens $ type' entry)
+                ]
+                <> Pretty.colon
+        severity' = prettySeverity (entrySeverity actualEntry)
+        type' e =
+            Pretty.pretty $
+                lookupTextFromTypeWithError $
+                    typeOfSomeEntry e
+        context' =
+            (entry : entryContext)
+                & reverse
+                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
+                & prettyContext
+        prettyContext =
+            \case
+                [] -> []
+                xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
+
+        mkContext =
+            \case
+                [] -> []
+                [(doc, typeName)] ->
+                    [Pretty.hsep [Pretty.parens typeName, doc]]
+                (doc, typeName) : xs -> (Pretty.hsep [Pretty.parens typeName, doc]) : (indent <$> (mkContext xs))
+
+    indent = Pretty.indent 4
