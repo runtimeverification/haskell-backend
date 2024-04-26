@@ -224,7 +224,7 @@ retryWithScaledTimeout q = do
     retryOnceWithScaledTimeout :: MonadSMT m => m a -> Integer -> m a
     retryOnceWithScaledTimeout action scale =
         -- reinit with scaled timeout to override the original timeout
-        SMT.localTimeOut (scaleTimeOut scale) $ SMT.reinit >> action
+        SMT.reinit >> SMT.localTimeOut (scaleTimeOut scale) action
 
     scaleTimeOut :: Integer -> SMT.TimeOut -> SMT.TimeOut
     scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
