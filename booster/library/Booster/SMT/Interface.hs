@@ -36,6 +36,7 @@ import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
+import Control.Monad.Logger qualified as Log
 
 -- Includes all options from kore-rpc used by current clients. The
 -- parser in CLOptions uses compatible names and we use the same
@@ -267,6 +268,7 @@ checkPredicates ::
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure $ Just True -- or Nothing?
     | Left errMsg <- translated = Log.withContext "smt" $ do
+        Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runMaybeT $ do

@@ -5,9 +5,6 @@
 
 module Booster.Log (module Booster.Log) where
 
-import Control.Monad.IO.Class
-import Data.Text (Text, pack)
-
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base (RewriteRule (..), SourceRef (..), sourceRef)
 import Booster.Pattern.Base (
@@ -19,6 +16,7 @@ import Booster.Pattern.Base (
  )
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, prettyPattern)
+import Control.Monad.IO.Class
 import Control.Monad.Logger (
     LogLevel (..),
     MonadLogger,
@@ -40,6 +38,7 @@ import Data.List (foldl', intercalate, intersperse)
 import Data.List.Extra (splitOn, takeEnd)
 import Data.Set qualified as Set
 import Data.String (IsString)
+import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LazyText
 import Data.Word (Word64)

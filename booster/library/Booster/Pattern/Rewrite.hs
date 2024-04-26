@@ -36,7 +36,6 @@ import Data.Maybe (catMaybes, fromMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines)
-import GHC.TypeLits (KnownSymbol)
 import Numeric.Natural
 import Prettyprinter
 
@@ -77,8 +76,10 @@ import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Flag (..), constructorName)
 
-newtype RewriteT err io a = RewriteT
-    {unRewriteT :: ReaderT RewriteConfig (StateT SimplifierCache (ExceptT err io)) a}
+newtype RewriteT io a = RewriteT
+    { unRewriteT ::
+        ReaderT RewriteConfig (StateT SimplifierCache (ExceptT (RewriteFailed "Rewrite") io)) a
+    }
     deriving newtype (Functor, Applicative, Monad, MonadLogger, MonadIO, MonadLoggerIO)
 
 data RewriteConfig = RewriteConfig
@@ -89,7 +90,7 @@ data RewriteConfig = RewriteConfig
     , logger :: Logger LogMessage
     }
 
-instance MonadLoggerIO io => LoggerMIO (RewriteT err io) where
+instance MonadLoggerIO io => LoggerMIO (RewriteT io) where
     getLogger = RewriteT $ asks logger
     withLogger modL (RewriteT m) = RewriteT $ withReaderT (\cfg@RewriteConfig{logger} -> cfg{logger = modL logger}) m
 
@@ -109,8 +110,8 @@ runRewriteT ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
-    RewriteT err io a ->
-    io (Either err (a, SimplifierCache))
+    RewriteT io a ->
+    io (Either (RewriteFailed "Rewrite") (a, SimplifierCache))
 runRewriteT doTracing definition llvmApi smtSolver cache m = do
     logger <- getLogger
     runExceptT
@@ -119,10 +120,10 @@ runRewriteT doTracing definition llvmApi smtSolver cache m = do
         . unRewriteT
         $ m
 
-throw :: LoggerMIO io => err -> RewriteT err io a
+throw :: LoggerMIO io => RewriteFailed "Rewrite" -> RewriteT io a
 throw = RewriteT . lift . lift . throwE
 
-getDefinition :: LoggerMIO io => RewriteT err io KoreDefinition
+getDefinition :: LoggerMIO io => RewriteT io KoreDefinition
 getDefinition = RewriteT $ definition <$> ask
 
 {- | Performs a rewrite step (using suitable rewrite rules from the
@@ -137,7 +138,7 @@ rewriteStep ::
     [Text] ->
     [Text] ->
     Pattern ->
-    RewriteT (RewriteFailed "Rewrite") io (RewriteResult Pattern)
+    RewriteT io (RewriteResult Pattern)
 rewriteStep cutLabels terminalLabels pat = do
     let termIdx = kCellTermIndex pat.term
     when (termIdx == None) $ throw (TermIndexIsNone pat.term)
@@ -156,10 +157,9 @@ rewriteStep cutLabels terminalLabels pat = do
   where
     processGroups ::
         LoggerMIO io =>
-        KnownSymbol k =>
         Pattern ->
-        [[RewriteRule k]] ->
-        RewriteT (RewriteFailed k) io (RewriteResult Pattern)
+        [[RewriteRule "Rewrite"]] ->
+        RewriteT io (RewriteResult Pattern)
     processGroups pattr [] =
         pure $ RewriteStuck pattr
     processGroups pattr (rules : rest) = do
@@ -279,12 +279,11 @@ exception is thrown which indicates the exact reason why (this will
 abort the entire rewrite).
 -}
 applyRule ::
-    forall io k.
-    KnownSymbol k =>
+    forall io.
     LoggerMIO io =>
     Pattern ->
-    RewriteRule k ->
-    RewriteT (RewriteFailed k) io (RewriteRuleAppResult (RewriteRule k, Pattern))
+    RewriteRule "Rewrite" ->
+    RewriteT io (RewriteRuleAppResult (RewriteRule "Rewrite", Pattern))
 applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
@@ -430,9 +429,9 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
 
     checkConstraint ::
         (Predicate -> a) ->
-        RewriteRuleAppT (RewriteT (RewriteFailed k) io) (Maybe a) ->
+        RewriteRuleAppT (RewriteT io) (Maybe a) ->
         Predicate ->
-        RewriteRuleAppT (RewriteT (RewriteFailed k) io) (Maybe a)
+        RewriteRuleAppT (RewriteT io) (Maybe a)
     checkConstraint onUnclear onBottom p = do
         RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get

@@ -438,7 +438,6 @@ iterateEquations ::
     Term ->
     EquationT io Term
 iterateEquations direction preference startTerm = do
-    -- logOther (LevelOther "Simplify") $ "Evaluating " <> renderText (pretty startTerm)
     result <- pushRecursion startTerm >>= checkCounter >> go startTerm <* popRecursion
     when (startTerm /= result) $ withContext "success" $ withTermContext result $ pure ()
     pure result
