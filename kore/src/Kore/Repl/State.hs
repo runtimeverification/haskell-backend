@@ -526,7 +526,7 @@ liftSimplifierWithLogger mLogger simplifier = do
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Log.koreLogFilters koreLogOptions $
-                Log.makeKoreLogger
+                Log.makeKoreLoggerLegacy
                     exeName
                     startTime
                     timestampsSwitch
@@ -544,7 +544,7 @@ liftSimplifierWithLogger mLogger simplifier = do
         t Simplifier (Log.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
-            Log.LogSomeAction a -> pure (a, Nothing)
+            Log.LogSomeAction logSomeActionData -> pure (Log.standardLogAction logSomeActionData, Nothing)
             Log.LogStdErr -> pure (Log.logTextStderr, Nothing)
             Log.LogFileText file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode

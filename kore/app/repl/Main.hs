@@ -26,7 +26,7 @@ import Kore.Log (
     logEntry,
     runLoggerT,
     swappableLogger,
-    withLogger,
+    withLoggerLegacy,
  )
 import Kore.Log.ErrorException (
     errorException,
@@ -230,7 +230,7 @@ mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
 mainWithOptions LocalOptions{execOptions} = do
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tempDirectory ->
-            withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
+            withLoggerLegacy tempDirectory koreLogOptions $ \actualLogAction -> do
                 mvarLogAction <- newMVar actualLogAction
                 let swapLogAction = swappableLogger mvarLogAction
                 flip runLoggerT swapLogAction $

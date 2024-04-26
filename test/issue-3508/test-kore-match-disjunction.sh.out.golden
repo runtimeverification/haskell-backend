@@ -1,96 +1,61 @@
-/* Spa */
 \and{SortGeneratedTopCell{}}(
-    /* Spa */
     \and{SortGeneratedTopCell{}}(
-        /* Spa */
         \and{SortGeneratedTopCell{}}(
-            /* Spa */
             \and{SortGeneratedTopCell{}}(
-                /* Spa */
                 \and{SortGeneratedTopCell{}}(
-                    /* Spa */
                     \and{SortGeneratedTopCell{}}(
-                        /* Spa */
                         \equals{SortGeneratedCounterCell{}, SortGeneratedTopCell{}}(
-                            /* T Fn D Sfa */
                             Var'Unds'DotVar0:SortGeneratedCounterCell{},
-                            /* T Fn D Sfa Cl */
                             Lbl'-LT-'generatedCounter'-GT-'{}(
-                                /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                                \dv{SortInt{}}("0")
                             )
                         ),
-                        /* Spa */
                         \equals{SortThreadCellMap{}, SortGeneratedTopCell{}}(
-                            /* T Fn D Sfa */
                             Var'Unds'DotVar2:SortThreadCellMap{},
-                            /* T Fn D Sfa Cl */
                             /* InternalMap: */ Lbl'Stop'ThreadCellMap{}()
                         )
                     ),
-                    /* Spa */
                     \equals{SortIdCell{}, SortGeneratedTopCell{}}(
-                        /* T Fn D Sfa */ Var'Unds'Gen0:SortIdCell{},
-                        /* T Fn D Sfa Cl */
-                        Lbl'-LT-'id'-GT-'{}(
-                            /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
-                        )
+                        Var'Unds'Gen0:SortIdCell{},
+                        Lbl'-LT-'id'-GT-'{}(\dv{SortInt{}}("0"))
                     )
                 ),
-                /* Spa */
                 \equals{SortEnvCell{}, SortGeneratedTopCell{}}(
-                    /* T Fn D Sfa */ Var'Unds'Gen1:SortEnvCell{},
-                    /* T Fn D Sfa Cl */
-                    Lbl'-LT-'env'-GT-'{}(
-                        /* T Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
-                    )
+                    Var'Unds'Gen1:SortEnvCell{},
+                    Lbl'-LT-'env'-GT-'{}(/* InternalMap: */ Lbl'Stop'Map{}())
                 )
             ),
-            /* Spa */
             \equals{SortStoreCell{}, SortGeneratedTopCell{}}(
-                /* T Fn D Sfa */ Var'Unds'Gen2:SortStoreCell{},
-                /* T Fn D Sfa Cl */
-                Lbl'-LT-'store'-GT-'{}(
-                    /* T Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
-                )
+                Var'Unds'Gen2:SortStoreCell{},
+                Lbl'-LT-'store'-GT-'{}(/* InternalMap: */ Lbl'Stop'Map{}())
             )
         ),
-        /* Spa */
         \equals{SortInputCell{}, SortGeneratedTopCell{}}(
-            /* T Fn D Sfa */ Var'Unds'Gen3:SortInputCell{},
-            /* T Fn D Sfa Cl */
+            Var'Unds'Gen3:SortInputCell{},
             Lbl'-LT-'input'-GT-'{}(
-                /* T Fn D Sfa Cl */
                 /* InternalList: */ Lbl'Unds'List'Unds'{}(
                     LblListItem{}(
-                        /* T Fn D Sfa Cli */
                         /* Inj: */ inj{SortStream{}, SortKItem{}}(
-                            /* T Fn D Sfa Cl */
                             Lbl'Hash'buffer'LParUndsRParUnds'K-IO'Unds'Stream'Unds'K{}(
-                                /* T Fn D Sfa Cl */
                                 kseq{}(
-                                    /* T Fn D Sfa Cli */
                                     /* Inj: */ inj{SortString{}, SortKItem{}}(
-                                        /* T Fn D Sfa Cl */
                                         \dv{SortString{}}("")
                                     ),
-                                    /* T Fn D Sfa Cl */ dotk{}()
+                                    dotk{}()
                                 )
                             )
                         )
                     ),
                 Lbl'Unds'List'Unds'{}(
                     LblListItem{}(
-                        /* T Fn D Sfa Cli */
                         /* Inj: */ inj{SortString{}, SortKItem{}}(
-                            /* T Fn D Sfa Cl */ \dv{SortString{}}("off")
+                            \dv{SortString{}}("off")
                         )
                     ),
                     LblListItem{}(
-                        /* T Fn D Sfa Cli */
                         /* Inj: */ inj{SortStream{}, SortKItem{}}(
-                            /* T Fn D Sfa Cl */
                             Lbl'Hash'istream'LParUndsRParUnds'K-IO'Unds'Stream'Unds'Int{}(
-                                /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                                \dv{SortInt{}}("0")
                             )
                         )
                     )
@@ -98,41 +63,31 @@
             )
         )
     ),
-    /* Spa */
     \equals{SortOutputCell{}, SortGeneratedTopCell{}}(
-        /* T Fn D Sfa */ Var'Unds'Gen4:SortOutputCell{},
-        /* T Fn D Sfa Cl */
+        Var'Unds'Gen4:SortOutputCell{},
         Lbl'-LT-'output'-GT-'{}(
-            /* T Fn D Sfa Cl */
             /* InternalList: */ Lbl'Unds'List'Unds'{}(
                 LblListItem{}(
-                    /* T Fn D Sfa Cli */
                     /* Inj: */ inj{SortStream{}, SortKItem{}}(
-                        /* T Fn D Sfa Cl */
                         Lbl'Hash'ostream'LParUndsRParUnds'K-IO'Unds'Stream'Unds'Int{}(
-                            /* T Fn D Sfa Cl */ \dv{SortInt{}}("1")
+                            \dv{SortInt{}}("1")
                         )
                     )
                 ),
             Lbl'Unds'List'Unds'{}(
                 LblListItem{}(
-                    /* T Fn D Sfa Cli */
                     /* Inj: */ inj{SortString{}, SortKItem{}}(
-                        /* T Fn D Sfa Cl */ \dv{SortString{}}("off")
+                        \dv{SortString{}}("off")
                     )
                 ),
                 LblListItem{}(
-                    /* T Fn D Sfa Cli */
                     /* Inj: */ inj{SortStream{}, SortKItem{}}(
-                        /* T Fn D Sfa Cl */
                         Lbl'Hash'buffer'LParUndsRParUnds'K-IO'Unds'Stream'Unds'K{}(
-                            /* T Fn D Sfa Cl */
                             kseq{}(
-                                /* T Fn D Sfa Cli */
                                 /* Inj: */ inj{SortString{}, SortKItem{}}(
-                                    /* T Fn D Sfa Cl */ \dv{SortString{}}("60")
+                                    \dv{SortString{}}("60")
                                 ),
-                                /* T Fn D Sfa Cl */ dotk{}()
+                                dotk{}()
                             )
                         )
                     )
