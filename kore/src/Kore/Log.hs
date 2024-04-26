@@ -12,13 +12,14 @@ module Kore.Log (
     emptyLogger,
     stderrLogger,
     swappableLogger,
-    makeKoreLogger,
     makeKoreLoggerLegacy,
     Colog.logTextStderr,
     Colog.logTextHandle,
     runKoreLog,
     runKoreLogThreadSafe,
     runKoreLogThreadSafeLegacy,
+    WithTimestamp (..),
+    withTimestamp,
     module Log,
     module KoreLogOptions,
 ) where
@@ -152,18 +153,40 @@ withMainLogger ::
     IO a
 withMainLogger koreLogOptions = runContT $ do
     let KoreLogOptions{exeName} = koreLogOptions
-        KoreLogOptions{logFormat} = koreLogOptions
-    case logType koreLogOptions of
-        LogBooster LogBoosterActionData{messageFilter, messageLogActionIndex, logActions} ->
-            pure $
-                makeKoreLogger
-                    exeName
-                    logFormat
-                    messageLogActionIndex
-                    logActions
-                    & koreLogFilters koreLogOptions
-                    & koreLogTransformer koreLogOptions
-        ltype -> error ("Unexpected log type " <> show ltype)
+    pure
+        . koreLogTransformer koreLogOptions
+        . koreLogFilters koreLogOptions
+        $ case logType koreLogOptions of
+            LogBooster LogBoosterActionData{messageLogActionIndex, logActions} ->
+                let actionForPrettyLogs =
+                        someEntryLogAction
+                            (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
+                            ((== 0) . messageLogActionIndex)
+                    actionForJsonLogs =
+                        someEntryLogAction
+                            (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
+                            ((== 1) . messageLogActionIndex)
+                 in case logActions of
+                        [] -> error "no log actions passed"
+                        [standardPrettyLogAction] ->
+                            actionForPrettyLogs standardPrettyLogAction
+                        [standardPrettyLogAction, jsonLogAction] ->
+                            actionForPrettyLogs standardPrettyLogAction
+                                <> actionForJsonLogs jsonLogAction
+                        es -> error $ "too many log actions passed" <> show (length es)
+            ltype -> error ("Unexpected log type " <> show ltype)
+
+someEntryLogAction ::
+    MonadIO m =>
+    (WithTimestamp -> Text) ->
+    (Text -> Bool) ->
+    LogAction m Text ->
+    LogAction m SomeEntry
+someEntryLogAction renderer selector textLogAction =
+    textLogAction
+        & contramap renderer
+        & Colog.cmapM withTimestamp
+        & Colog.cfilter (selector . entryTypeText)
 
 {- | Checks if the user supplied path for logging exists. If it doesn't, or if the file
     already exists, will return a default logging location at ./[exe-name]-[prefix]-[timestamp].log
@@ -340,13 +363,14 @@ makeKoreLogger exeName _koreLogFormat messageLogActionIndex = \case
                     & Colog.cfilter ((== 0) . messageLogActionIndex . entryTypeText)
             actionForJsonLogs =
                 jsonLogAction
-                    & Colog.cmap renderJson
+                    & Colog.cmap (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
+                    & Colog.cmapM withTimestamp
                     & Colog.cfilter ((== 1) . messageLogActionIndex . entryTypeText)
          in actionForPrettyLogs <> actionForJsonLogs
     es -> error $ "too many log actions passed" <> show (length es)
 
-renderJson :: SomeEntry -> Text
-renderJson (SomeEntry _context actualEntry) =
+renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
+renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _context actualEntry) _entryTime) =
     LazyText.toStrict . JSON.encodeToLazyText . addOriginField $ oneLineJson actualEntry
   where
     addOriginField :: JSON.Value -> JSON.Value
