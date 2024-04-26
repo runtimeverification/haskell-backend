@@ -135,8 +135,8 @@ handleOutput levelToFastLogger loc src level msg =
 runFastLoggerLoggingT :: (Log.LogLevel -> (LogType, FastLogger)) -> Log.LoggingT m a -> m a
 runFastLoggerLoggingT = flip Log.runLoggingT . handleOutput
 
-newFastLoggerMayeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
-newFastLoggerMayeWithTime = \case
+newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
+newFastLoggerMaybeWithTime = \case
     Nothing -> newFastLogger
     Just formattedTime -> \typ -> do
         (logger, cleanup) <- newTimedFastLogger formattedTime typ
@@ -149,11 +149,11 @@ withFastLogger ::
     IO a
 withFastLogger mFormattedTime Nothing log' =
     let typStderr = LogStderr defaultBufSize
-     in bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(logger, _) -> log' $ Left (typStderr, logger)
+     in bracket (newFastLoggerMaybeWithTime mFormattedTime typStderr) snd $ \(logger, _) -> log' $ Left (typStderr, logger)
 withFastLogger mFormattedTime (Just fp) log' =
     let typStderr = LogStderr defaultBufSize
         typFile = LogFileNoRotate fp defaultBufSize
-     in bracket (newFastLoggerMayeWithTime mFormattedTime typStderr) snd $ \(loggerStderr, _) -> do
+     in bracket (newFastLoggerMaybeWithTime mFormattedTime typStderr) snd $ \(loggerStderr, _) -> do
             removeFileIfExists fp
             bracket (newFastLogger typFile) snd $ \(loggerFile, _) ->
                 log' $ Right ((typStderr, loggerStderr), (typFile, loggerFile))
