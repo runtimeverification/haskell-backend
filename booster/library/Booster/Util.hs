@@ -118,7 +118,7 @@ decodeLabel' orig =
 -- logging helpers, some are adapted from monad-logger-aeson
 handleOutput ::
     FastLogger ->
-    Maybe FastLogger -> 
+    Maybe FastLogger ->
     Log.Loc ->
     Log.LogSource ->
     Log.LogLevel ->

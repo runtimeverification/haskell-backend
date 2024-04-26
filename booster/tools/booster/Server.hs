@@ -56,6 +56,7 @@ import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
+import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
 import Data.Limit (Limit (..))
 import GlobalMain qualified
@@ -90,7 +91,6 @@ import Proxy (KoreServer (..), ProxyConfig (..))
 import Proxy qualified
 import SMT qualified as KoreSMT
 import Stats qualified
-import Booster.Util (handleOutput)
 
 main :: IO ()
 main = do
@@ -141,7 +141,6 @@ main = do
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
     Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
-
         flip runLoggingT (handleOutput stderrLogger mFileLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
@@ -180,7 +179,7 @@ main = do
                                         , standardLogAction =
                                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
                                         , jsonLogAction =
-                                            ( LogAction $ \txt -> liftIO $ 
+                                            ( LogAction $ \txt -> liftIO $
                                                 case mFileLogger of
                                                     Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
                                                     Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
