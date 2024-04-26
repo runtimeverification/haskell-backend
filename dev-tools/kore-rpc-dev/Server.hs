@@ -61,8 +61,9 @@ import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types
 import Kore.Log (
     ExeName (..),
-    KoreLogType (LogSomeAction),
+    KoreLogType (..),
     LogAction (LogAction),
+    LogBoosterActionData (..),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     swappableLogger,
@@ -174,8 +175,8 @@ main = do
                     , Log.debugSolverOptions =
                         Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                     , Log.logType =
-                        LogSomeAction $
-                            Log.LogSomeActionData
+                        LogBooster $
+                            Log.LogBoosterActionData
                                 { entrySelector = koreLogEntriesAsJsonSelector
                                 , standardLogAction =
                                     (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)

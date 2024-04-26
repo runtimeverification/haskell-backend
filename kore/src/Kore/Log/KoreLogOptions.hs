@@ -7,7 +7,7 @@ License     : BSD-3-Clause
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
-    LogSomeActionData (..),
+    LogBoosterActionData (..),
     KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
@@ -166,13 +166,11 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | -- | Log using the two specified log actions
-      LogSomeAction LogSomeActionData
+    | -- | Log actions forwarded from Booster
+      LogBooster LogBoosterActionData
 
-{- | Log some entries as standard, and other as json, using the correspondingly named log actions.
-  Items are logged as Json (using the 'jsonLogAction' log action), if 'entrySelector' returns 'True' for the name of their type constructor.
--}
-data LogSomeActionData = LogSomeActionData
+-- | Log actions forwarded from 'booster/Server.hs'
+data LogBoosterActionData = LogBoosterActionData
     { entrySelector :: (Text -> Bool)
     , jsonLogAction :: (forall m. MonadIO m => LogAction m Text)
     , standardLogAction :: (forall m. MonadIO m => LogAction m Text)
@@ -187,7 +185,7 @@ instance Show KoreLogType where
     show = \case
         LogStdErr -> "LogStdErr"
         LogFileText fp -> "LogFileText " <> show fp
-        LogSomeAction{} -> "LogSomeAction _"
+        LogBooster{} -> "LogBooster"
 
 data KoreLogFormat
     = Standard
@@ -680,7 +678,7 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
-        koreLogTypeFlag (LogSomeAction{}) = []
+        koreLogTypeFlag (LogBooster{}) = []
 
         koreLogFormatFlag Standard = []
         koreLogFormatFlag OneLine = ["--log-format=oneline"]
