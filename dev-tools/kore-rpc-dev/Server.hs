@@ -164,9 +164,24 @@ main = do
                         Logger.logWarnNS
                             "proxy"
                             "Could not find out which Kore log entries correspond to the SimplifyJson level"
-                        pure (const False)
-                    Just koreSimplificationLogEntries -> pure (`elem` koreSimplificationLogEntries)
-                else pure (const False)
+                        pure (const 0)
+                    Just koreSimplificationLogEntries -> pure (\x -> if x `elem` koreSimplificationLogEntries
+                                                                      then 1
+                                                                      else 0)
+                else pure (const 0)
+
+        let koreLogActions :: forall m. MonadIO m => [LogAction m Text]
+            koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
+              where
+                koreStandardPrettyLogAction = LogAction $ \txt ->
+                  liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
+                koreJsonLogAction = LogAction $ \txt ->
+                  let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
+                   in liftIO $ do
+                          BS.hPutStr IO.stderr bytes
+                          IO.hFlush IO.stderr
+
+
 
         let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
             koreLogOptions =
@@ -179,16 +194,9 @@ main = do
                     , Log.logType =
                         LogBooster $
                             Log.LogBoosterActionData
-                                { entrySelector = koreLogEntriesAsJsonSelector
-                                , standardLogAction =
-                                    (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
-                                , jsonLogAction =
-                                    ( LogAction $ \txt ->
-                                        let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
-                                         in liftIO $ do
-                                                BS.hPutStr IO.stderr bytes
-                                                IO.hFlush IO.stderr
-                                    )
+                                { messageFilter = const True
+                                , messageLogActionIndex = koreLogEntriesAsJsonSelector
+                                , logActions = koreLogActions
                                 }
                     , Log.logFormat = Log.Standard
                     }

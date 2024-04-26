@@ -33,6 +33,7 @@ import Data.List.Extra (splitOn)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
 import Options.Applicative
@@ -151,9 +152,26 @@ main = do
                             Logger.logWarnNS
                                 "proxy"
                                 "Could not find out which Kore log entries correspond to the SimplifyJson level"
-                            pure (const False)
-                        Just koreSimplificationLogEntries -> pure (`elem` koreSimplificationLogEntries)
-                    else pure (const False)
+                            pure (const 0)
+                        Just koreSimplificationLogEntries ->
+                            pure
+                                ( \x ->
+                                    if x `elem` koreSimplificationLogEntries
+                                        then 1
+                                        else 0
+                                )
+                    else pure (const 0)
+
+            let koreLogActions :: forall m. MonadIO m => [LogAction m Text]
+                koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
+                  where
+                    koreStandardPrettyLogAction = LogAction $ \txt ->
+                        liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
+                    koreJsonLogAction = LogAction $ \txt ->
+                        let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
+                         in liftIO $ do
+                                BS.hPutStr simplificationLogHandle bytes
+                                IO.hFlush simplificationLogHandle
 
             liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
@@ -166,21 +184,10 @@ main = do
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType =
                                 LogBooster $
-                                    LogBoosterActionData
-                                        { entrySelector = koreLogEntriesAsJsonSelector
-                                        , standardLogAction =
-                                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
-                                        , jsonLogAction =
-                                            ( LogAction $ \txt ->
-                                                let bytes =
-                                                        Text.encodeUtf8 $
-                                                            if simplificationLogHandle == IO.stderr
-                                                                then "[SimplifyJson] " <> txt <> "\n"
-                                                                else txt <> "\n"
-                                                 in liftIO $ do
-                                                        BS.hPutStr simplificationLogHandle bytes
-                                                        IO.hFlush simplificationLogHandle
-                                            )
+                                    Log.LogBoosterActionData
+                                        { messageFilter = const True
+                                        , messageLogActionIndex = koreLogEntriesAsJsonSelector
+                                        , logActions = koreLogActions
                                         }
                             , Log.logFormat = Log.Standard
                             }
