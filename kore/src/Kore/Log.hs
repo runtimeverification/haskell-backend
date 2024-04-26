@@ -67,7 +67,7 @@ import Prelude.Kore
 import Pretty qualified
 import System.Clock (
     Clock (Monotonic),
-    TimeSpec,
+    TimeSpec (..),
     diffTimeSpec,
     getTime,
     toNanoSecs,
@@ -322,66 +322,10 @@ makeKoreLoggerLegacy ::
     KoreLogFormat ->
     LogAction io Text ->
     LogAction io SomeEntry
-makeKoreLoggerLegacy exeName startTime timestampSwitch koreLogFormat logActionText =
+makeKoreLoggerLegacy exeName startTime timestampSwitch _koreLogFormat logActionText =
     logActionText
-        & contramap render
+        & contramap (renderStandardPretty exeName startTime timestampSwitch)
         & Colog.cmapM withTimestamp
-  where
-    render :: WithTimestamp -> Text
-    render (WithTimestamp entry entryTime) =
-        prettyActualEntry timestamp entry
-            & Pretty.layoutPretty Pretty.defaultLayoutOptions
-            & Pretty.renderText
-      where
-        timestamp =
-            case timestampSwitch of
-                TimestampsDisable -> Nothing
-                TimestampsEnable ->
-                    Just . Pretty.brackets . Pretty.pretty $
-                        toMicroSecs (diffTimeSpec startTime entryTime)
-        toMicroSecs = (`div` 1000) . toNanoSecs
-    exeName' = Pretty.pretty exeName <> Pretty.colon
-    prettyActualEntry timestamp entry@(SomeEntry entryContext actualEntry)
-        | OneLine <- koreLogFormat =
-            Pretty.hsep [header, oneLineDoc actualEntry]
-        | otherwise =
-            (Pretty.vsep . concat)
-                [ [header]
-                , indent <$> [longDoc actualEntry]
-                , context'
-                ]
-      where
-        header =
-            (Pretty.hsep . catMaybes)
-                [ Just exeName'
-                , timestamp
-                , Just severity'
-                , Just (Pretty.parens $ type' entry)
-                ]
-                <> Pretty.colon
-        severity' = prettySeverity (entrySeverity actualEntry)
-        type' e =
-            Pretty.pretty $
-                lookupTextFromTypeWithError $
-                    typeOfSomeEntry e
-        context' =
-            (entry : entryContext)
-                & reverse
-                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
-                & prettyContext
-        prettyContext =
-            \case
-                [] -> []
-                xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
-
-        mkContext =
-            \case
-                [] -> []
-                [(doc, typeName)] ->
-                    [Pretty.hsep [Pretty.parens typeName, doc]]
-                (doc, typeName) : xs -> (Pretty.hsep [Pretty.parens typeName, doc]) : (indent <$> (mkContext xs))
-
-    indent = Pretty.indent 4
 
 -- | The logger used by 'kore-rpc-booster' and 'kore-rpc-dev'
 makeKoreLogger ::
@@ -393,20 +337,20 @@ makeKoreLogger ::
     LogAction io Text ->
     LogAction io Text ->
     LogAction io SomeEntry
-makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
-    let renderPretty = case koreLogFormat of
-            OneLine -> renderOneLineContext
-            _ -> render
-        actionForJsonLogs =
+makeKoreLogger exeName _koreLogFormat entryFilter prettyLogAction jsonLogAction =
+    let actionForJsonLogs =
             jsonLogAction
                 & Colog.cmap renderJson
                 & Colog.cfilter (entryFilter . entryTypeText)
         actionForPrettyLogs =
             prettyLogAction
-                & Colog.cmap renderPretty
+                & Colog.cmap renderStandardPrettyNoTimestamp
+                & Colog.cmapM withTimestamp
                 & Colog.cfilter (not . entryFilter . entryTypeText)
      in actionForJsonLogs <> actionForPrettyLogs
   where
+    renderStandardPrettyNoTimestamp = renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable
+
     renderJson :: SomeEntry -> Text
     renderJson (SomeEntry _context actualEntry) =
         LazyText.toStrict . JSON.encodeToLazyText . addOriginField $ oneLineJson actualEntry
@@ -416,39 +360,33 @@ makeKoreLogger exeName koreLogFormat entryFilter prettyLogAction jsonLogAction =
             (JSON.Object xs) -> JSON.Object $ JSON.insert (JSON.fromText "origin") (JSON.toJSON KoreRpc) xs
             xs -> xs
 
-    renderOneLineContext :: SomeEntry -> Text
-    renderOneLineContext entry@(SomeEntry context _actualEntry) =
-        let cs =
-                context
-                    & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
-            leaf = oneLineDoc entry
-         in Pretty.renderText
-                . Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
-                . mconcat
-                $ ("[kore]" : (cs <> [leaf]))
-
-    render :: SomeEntry -> Text
-    render entry =
-        prettyActualEntry entry
-            & Pretty.layoutPretty Pretty.defaultLayoutOptions
-            & Pretty.renderText
-
+renderStandardPretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
+renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =
+    prettyActualEntry
+        & Pretty.layoutPretty Pretty.defaultLayoutOptions
+        & Pretty.renderText
+  where
+    timestamp =
+        case timestampSwitch of
+            TimestampsDisable -> Nothing
+            TimestampsEnable ->
+                Just . Pretty.brackets . Pretty.pretty $
+                    toMicroSecs (diffTimeSpec startTime entryTime)
+    toMicroSecs = (`div` 1000) . toNanoSecs
     exeName' = Pretty.pretty exeName <> Pretty.colon
-    prettyActualEntry entry@(SomeEntry entryContext actualEntry)
-        | OneLine <- koreLogFormat =
-            mconcat (shortHeader : (oneLineContext <> [oneLineDoc entry]))
-        | otherwise =
-            (Pretty.vsep . concat)
-                [ [header]
-                , indent <$> [longDoc actualEntry]
-                , context'
-                ]
+    prettyActualEntry =
+        Pretty.vsep . concat $
+            [ [header]
+            , indent <$> [longDoc actualEntry]
+            , context'
+            ]
       where
         shortHeader = "[kore]"
 
         header =
             (Pretty.hsep . catMaybes)
                 [ Just exeName'
+                , timestamp
                 , Just severity'
                 , Just (Pretty.parens $ type' entry)
                 ]
