@@ -74,7 +74,7 @@ import Kore.Log (
     ExeName (..),
     KoreLogType (..),
     LogAction (LogAction),
-    LogSomeActionData (..),
+    LogBoosterActionData (..),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     swappableLogger,
@@ -175,8 +175,8 @@ main = do
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType =
-                                LogSomeAction $
-                                    LogSomeActionData
+                                LogBooster $
+                                    LogBoosterActionData
                                         { entrySelector = koreLogEntriesAsJsonSelector
                                         , standardLogAction =
                                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
