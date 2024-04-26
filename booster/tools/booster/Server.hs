@@ -145,13 +145,15 @@ main = do
             monadLogger <- askLoggerIO
 
             koreLogEntriesAsJsonSelector <-
-                case Map.lookup (Logger.LevelOther "SimplifyJson") logLevelToKoreLogEntryMap of
-                    Nothing -> do
-                        Logger.logWarnNS
-                            "proxy"
-                            "Could not find out which Kore log entries correspond to the SimplifyJson level"
-                        pure (const False)
-                    Just es -> pure (`elem` es)
+                if Logger.LevelOther "SimplifyJson" `elem` customLevels
+                    then case Map.lookup (Logger.LevelOther "SimplifyJson") logLevelToKoreLogEntryMap of
+                        Nothing -> do
+                            Logger.logWarnNS
+                                "proxy"
+                                "Could not find out which Kore log entries correspond to the SimplifyJson level"
+                            pure (const False)
+                        Just koreSimplificationLogEntries -> pure (`elem` koreSimplificationLogEntries)
+                    else pure (const False)
 
             liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
