@@ -266,7 +266,9 @@ failureDescription :: AttemptEquationError RewritingVariableName -> Text
 failureDescription err = shorten . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty $ err
   where
     shorten :: Text -> Text
-    shorten msg = Text.take 500 msg <> ("...truncated" :: Text)
+    shorten msg =
+        let cutoff = 500
+         in if Text.length msg > cutoff then Text.take 500 msg <> ("...truncated" :: Text) else msg
 
 showHashHex :: Int -> Text
 showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ Text.pack $ showHex w64 ""
