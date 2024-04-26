@@ -9,6 +9,11 @@ module Kore.Log.BoosterAdaptor (
     renderJson,
     koreSomeEntryLogAction,
     withLogger,
+    WithTimestamp (..),
+    swappableLogger,
+    withTimestamp,
+    module KoreLogOptions,
+    module Log,
 ) where
 
 import Colog qualified
@@ -28,7 +33,7 @@ import Data.Text (
  )
 import Data.Text.Lazy qualified as LazyText
 import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
-import Kore.Log (WithTimestamp (..), withTimestamp)
+import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)
 import Kore.Log qualified as Log
 import Kore.Log.KoreLogOptions as KoreLogOptions
 import Kore.Log.Registry (
@@ -51,9 +56,8 @@ withLogger ::
 withLogger koreLogOptions = runContT $ do
     mainLogger <- ContT $ withMainLogger koreLogOptions
     let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
-    -- smtSolverLogger <- ContT $ Log.withSmtSolverLogger exeName debugSolverOptions
-    -- return $ mainLogger <> smtSolverLogger
-    return $ mainLogger
+    smtSolverLogger <- ContT $ Log.withSmtSolverLogger exeName debugSolverOptions
+    return $ mainLogger <> smtSolverLogger
 
 withMainLogger ::
     KoreLogOptions ->
@@ -61,25 +65,28 @@ withMainLogger ::
     IO a
 withMainLogger koreLogOptions = runContT $ do
     let KoreLogOptions{exeName} = koreLogOptions
-    pure $ case logType koreLogOptions of
-        LogBooster LogBoosterActionData{messageLogActionIndex, logActions} ->
-            let actionForPrettyLogs =
-                    koreSomeEntryLogAction
-                        (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
-                        ((== 0) . messageLogActionIndex)
-                actionForJsonLogs =
-                    koreSomeEntryLogAction
-                        (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
-                        ((== 1) . messageLogActionIndex)
-             in case logActions of
-                    [] -> error "no log actions passed"
-                    [standardPrettyLogAction] ->
-                        actionForPrettyLogs standardPrettyLogAction
-                    [standardPrettyLogAction, jsonLogAction] ->
-                        actionForPrettyLogs standardPrettyLogAction
-                            <> actionForJsonLogs jsonLogAction
-                    es -> error $ "too many log actions passed" <> show (length es)
-        ltype -> error ("Unexpected log type " <> show ltype)
+    pure
+        . Log.koreLogTransformer koreLogOptions
+        . Log.koreLogFilters koreLogOptions
+        $ case logType koreLogOptions of
+            LogBooster LogBoosterActionData{messageLogActionIndex, logActions} ->
+                let actionForPrettyLogs =
+                        koreSomeEntryLogAction
+                            (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
+                            ((== 0) . messageLogActionIndex)
+                    actionForJsonLogs =
+                        koreSomeEntryLogAction
+                            (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
+                            ((== 1) . messageLogActionIndex)
+                 in case logActions of
+                        [] -> error "no log actions passed"
+                        [standardPrettyLogAction] ->
+                            actionForPrettyLogs standardPrettyLogAction
+                        [standardPrettyLogAction, jsonLogAction] ->
+                            actionForPrettyLogs standardPrettyLogAction
+                                <> actionForJsonLogs jsonLogAction
+                        es -> error $ "too many log actions passed" <> show (length es)
+            ltype -> error ("Unexpected log type " <> show ltype)
 
 koreSomeEntryLogAction ::
     MonadIO m =>

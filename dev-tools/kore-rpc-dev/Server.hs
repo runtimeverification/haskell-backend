@@ -59,18 +59,18 @@ import Kore.JsonRpc qualified as Kore
 import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types
-import Kore.Log (
+import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
-    LogAction (LogAction),
+    LogAction (..),
     LogBoosterActionData (..),
-    TimestampsSwitch (TimestampsDisable),
+    TimestampsSwitch (..),
     defaultKoreLogOptions,
     swappableLogger,
     withLogger,
  )
-import Kore.Log qualified
-import Kore.Log qualified as Log
+
+import Kore.Log.BoosterAdaptor qualified as Log
 import Kore.Log.DebugSolver qualified as Log
 import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
@@ -87,7 +87,7 @@ data KoreServer = KoreServer
         [SentenceAxiom (TermLike VariableName)] ->
         KoreSMT.SMT a ->
         IO a
-    , loggerEnv :: Kore.Log.LoggerEnv IO
+    , loggerEnv :: Log.LoggerEnv IO
     }
 
 respond ::
@@ -165,23 +165,25 @@ main = do
                             "proxy"
                             "Could not find out which Kore log entries correspond to the SimplifyJson level"
                         pure (const 0)
-                    Just koreSimplificationLogEntries -> pure (\x -> if x `elem` koreSimplificationLogEntries
-                                                                      then 1
-                                                                      else 0)
+                    Just koreSimplificationLogEntries ->
+                        pure
+                            ( \x ->
+                                if x `elem` koreSimplificationLogEntries
+                                    then 1
+                                    else 0
+                            )
                 else pure (const 0)
 
         let koreLogActions :: forall m. MonadIO m => [LogAction m Text]
             koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
               where
                 koreStandardPrettyLogAction = LogAction $ \txt ->
-                  liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
+                    liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
                 koreJsonLogAction = LogAction $ \txt ->
-                  let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
-                   in liftIO $ do
-                          BS.hPutStr IO.stderr bytes
-                          IO.hFlush IO.stderr
-
-
+                    let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
+                     in liftIO $ do
+                            BS.hPutStr IO.stderr bytes
+                            IO.hFlush IO.stderr
 
         let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
             koreLogOptions =

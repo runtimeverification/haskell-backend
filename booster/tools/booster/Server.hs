@@ -69,7 +69,7 @@ import Kore.JsonRpc.Error hiding (Aborted, error)
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types (API, HaltReason (..), ReqOrRes (Req, Res))
 import Kore.JsonRpc.Types.Depth (Depth (..))
-import Kore.Log (
+import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
     LogAction (LogAction),
@@ -79,7 +79,7 @@ import Kore.Log (
     swappableLogger,
     withLogger,
  )
-import Kore.Log qualified as Log
+import Kore.Log.BoosterAdaptor qualified as Log
 import Kore.Log.DebugSolver qualified as Log
 import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
