@@ -24,7 +24,6 @@ import Control.Monad.Logger (
     runNoLoggingT,
  )
 import Control.Monad.Logger qualified as Logger
-import Data.ByteString qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -34,7 +33,7 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding qualified as Text (decodeUtf8)
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -91,6 +90,7 @@ import Proxy (KoreServer (..), ProxyConfig (..))
 import Proxy qualified
 import SMT qualified as KoreSMT
 import Stats qualified
+import Booster.Util (handleOutput)
 
 main :: IO ()
 main = do
@@ -140,16 +140,9 @@ main = do
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-    Booster.withFastLogger mTimeCache simplificationLogFile $ \fastLogger -> do
-        let logLevelToHandle = \case
-                Logger.LevelOther "SimplifyJson" -> case fastLogger of
-                    Left fastLoggerStdErr -> fastLoggerStdErr
-                    Right (_fastLoggerStdErr, fastLoggerFile) -> fastLoggerFile
-                _ -> case fastLogger of
-                    Left fastLoggerStdErr -> fastLoggerStdErr
-                    Right (fastLoggerStdErr, _fastLoggerFile) -> fastLoggerStdErr
+    Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
 
-        Booster.runFastLoggerLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
+        flip runLoggingT (handleOutput stderrLogger mFileLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
@@ -187,15 +180,10 @@ main = do
                                         , standardLogAction =
                                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
                                         , jsonLogAction =
-                                            ( LogAction $ \txt ->
-                                                let bytes =
-                                                        Text.encodeUtf8 $
-                                                            if simplificationLogHandle == IO.stderr
-                                                                then "[SimplifyJson] " <> txt <> "\n"
-                                                                else txt <> "\n"
-                                                 in liftIO $ do
-                                                        BS.hPutStr simplificationLogHandle bytes
-                                                        IO.hFlush simplificationLogHandle
+                                            ( LogAction $ \txt -> liftIO $ 
+                                                case mFileLogger of
+                                                    Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
+                                                    Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
                                             )
                                         }
                             , Log.logFormat = Log.Standard
@@ -283,11 +271,7 @@ main = do
                                 ]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
-                                ( case fastLogger of
-                                    Left (_, stderrLogger) -> stderrLogger
-                                    Right ((_, stderrLogger), _) -> stderrLogger
-                                )
-                                    "[Info#proxy] Server shutting down\n"
+                                stderrLogger "[Info#proxy] Server shutting down\n"
                             whenJust statsVar Stats.showStats
                             exitSuccess
                     handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger

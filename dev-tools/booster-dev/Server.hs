@@ -4,7 +4,7 @@ License     : BSD-3-Clause
 -}
 module Main (main) where
 
-import Booster.Util (runFastLoggerLoggingT, withFastLogger)
+import Booster.Util (handleOutput, withFastLogger)
 import Control.Concurrent (newMVar)
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
@@ -121,14 +121,7 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
     do
         mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-        withFastLogger mTimeCache simplificationLogFile $ \fastLogger -> do
-            let logLevelToHandle = \case
-                    Log.LevelOther "SimplifyJson" -> case fastLogger of
-                        Left fastLoggerStdErr -> fastLoggerStdErr
-                        Right (_fastLoggerStdErr, fastLoggerFile) -> fastLoggerFile
-                    _ -> case fastLogger of
-                        Left fastLoggerStdErr -> fastLoggerStdErr
-                        Right (fastLoggerStdErr, _fastLoggerFile) -> fastLoggerStdErr
+        withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
             stateVar <-
                 newMVar
                     ServerState
@@ -138,7 +131,7 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
                         , mSMTOptions
                         , addedModules = mempty
                         }
-            runFastLoggerLoggingT logLevelToHandle . Log.filterLogger levelFilter $
+            flip Log.runLoggingT (handleOutput stderrLogger mFileLogger) . Log.filterLogger levelFilter $
                 jsonRpcServer
                     srvSettings
                     (const $ runLogger . respond stateVar)
