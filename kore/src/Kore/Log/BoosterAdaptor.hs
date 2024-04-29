@@ -67,7 +67,7 @@ withMainLogger koreLogOptions = runContT $ do
         . Log.koreLogTransformer koreLogOptions
         . Log.koreLogFilters koreLogOptions
         $ case logType koreLogOptions of
-            LogBooster LogBoosterActionData{logActions} -> mconcat logActions
+            LogProxy LogProxyActionData{logActions} -> mconcat logActions
             ltype -> error ("Unexpected log type " <> show ltype)
 
 koreSomeEntryLogAction ::
