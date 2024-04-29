@@ -36,18 +36,12 @@ import Control.Monad.Cont (
     ContT (..),
     runContT,
  )
-import Data.Aeson qualified as JSON
-import Data.Aeson.Key qualified as JSON
-import Data.Aeson.KeyMap qualified as JSON
-import Data.Aeson.Text qualified as JSON
 import Data.Functor.Contravariant (
     contramap,
  )
 import Data.Text (
     Text,
  )
-import Data.Text.Lazy qualified as LazyText
-import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
 import Kore.Log.DebugRewriteTrace (
     rewriteTraceLogger,
  )
@@ -63,7 +57,6 @@ import Kore.Log.Registry (
  )
 import Kore.Log.SQLite
 import Log
-import Numeric.Natural
 import Prelude.Kore
 import Pretty qualified
 import System.Clock (
@@ -118,7 +111,7 @@ withMainLoggerLegacy reportDirectory koreLogOptions = runContT $ do
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
     userLogAction <-
         case logType koreLogOptions of
-            LogBooster (LogBoosterActionData{logActions}) -> pure (mconcat logActions)
+            LogBooster _ -> pure Colog.logTextStderr
             LogStdErr -> pure Colog.logTextStderr
             LogFileText logFile -> do
                 lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile

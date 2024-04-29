@@ -38,6 +38,7 @@ import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
     Clock (..),
+    TimeSpec (..),
     getTime,
  )
 import System.Exit
@@ -62,14 +63,16 @@ import Kore.JsonRpc.Types
 import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
-    LogAction (..),
+    LogAction (LogAction),
     LogBoosterActionData (..),
-    TimestampsSwitch (..),
+    TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
+    koreSomeEntryLogAction,
+    renderJson,
+    renderStandardPretty,
     swappableLogger,
     withLogger,
  )
-
 import Kore.Log.BoosterAdaptor qualified as Log
 import Kore.Log.DebugSolver qualified as Log
 import Kore.Log.Registry qualified as Log
@@ -155,35 +158,35 @@ main = do
             putStrLn $ "Tracing " <> show t
             enableCustomUserEvent t
 
+        -- TODO this should we controlled by a CLI option, see booster/tools/booster/Server.hs
+        let simplificationLogHandle = IO.stderr
+
         monadLogger <- askLoggerIO
 
-        koreLogEntriesAsJsonSelector <-
-            if Logger.LevelOther "SimplifyJson" `elem` customLevels
-                then case Map.lookup (Logger.LevelOther "SimplifyJson") logLevelToKoreLogEntryMap of
-                    Nothing -> do
-                        Logger.logWarnNS
-                            "proxy"
-                            "Could not find out which Kore log entries correspond to the SimplifyJson level"
-                        pure (const 0)
-                    Just koreSimplificationLogEntries ->
-                        pure
-                            ( \x ->
-                                if x `elem` koreSimplificationLogEntries
-                                    then 1
-                                    else 0
-                            )
-                else pure (const 0)
-
-        let koreLogActions :: forall m. MonadIO m => [LogAction m Text]
+        let koreLogActions ::
+                forall m.
+                MonadIO m =>
+                [LogAction m Log.SomeEntry]
             koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
               where
-                koreStandardPrettyLogAction = LogAction $ \txt ->
-                    liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
-                koreJsonLogAction = LogAction $ \txt ->
-                    let bytes = Text.encodeUtf8 $ "[SimplifyJson] " <> txt <> "\n"
-                     in liftIO $ do
-                            BS.hPutStr IO.stderr bytes
-                            IO.hFlush IO.stderr
+                koreStandardPrettyLogAction =
+                    koreSomeEntryLogAction
+                        (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
+                        (not . (`elem` ["DebugAttemptEquation"]))
+                        (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
+
+                koreJsonLogAction =
+                    koreSomeEntryLogAction
+                        (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
+                        (`elem` ["DebugAttemptEquation"])
+                        ( LogAction $ \txt ->
+                            let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
+                             in liftIO $ do
+                                    BS.hPutStr simplificationLogHandle bytes
+                                    IO.hFlush simplificationLogHandle
+                        )
+                  where
+                    prefix = if simplificationLogHandle == IO.stderr then ("[SimplifyJson] " <>) else id
 
         let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
             koreLogOptions =
@@ -197,7 +200,6 @@ main = do
                         LogBooster $
                             Log.LogBoosterActionData
                                 { messageFilter = const True
-                                , messageLogActionIndex = koreLogEntriesAsJsonSelector
                                 , logActions = koreLogActions
                                 }
                     , Log.logFormat = Log.Standard

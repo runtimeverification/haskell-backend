@@ -174,9 +174,7 @@ data KoreLogType
 data LogBoosterActionData = LogBoosterActionData
     { messageFilter :: (Text -> Bool)
     -- ^ which messages to log
-    , messageLogActionIndex :: (Text -> Natural)
-    -- ^ which log action to use to log a particular message. Must be in range [0..length logActions - 1]
-    , logActions :: (forall m. MonadIO m => [LogAction m Text])
+    , logActions :: (forall m. MonadIO m => [LogAction m SomeEntry])
     -- ^ actual log actions
     }
 

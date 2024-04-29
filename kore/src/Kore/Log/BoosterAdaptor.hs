@@ -10,10 +10,9 @@ module Kore.Log.BoosterAdaptor (
     koreSomeEntryLogAction,
     withLogger,
     WithTimestamp (..),
-    swappableLogger,
-    withTimestamp,
     module KoreLogOptions,
     module Log,
+    ExeName (..),
 ) where
 
 import Colog qualified
@@ -64,28 +63,11 @@ withMainLogger ::
     (LogAction IO SomeEntry -> IO a) ->
     IO a
 withMainLogger koreLogOptions = runContT $ do
-    let KoreLogOptions{exeName} = koreLogOptions
     pure
         . Log.koreLogTransformer koreLogOptions
         . Log.koreLogFilters koreLogOptions
         $ case logType koreLogOptions of
-            LogBooster LogBoosterActionData{messageLogActionIndex, logActions} ->
-                let actionForPrettyLogs =
-                        koreSomeEntryLogAction
-                            (renderStandardPretty exeName (TimeSpec 0 0) TimestampsDisable)
-                            ((== 0) . messageLogActionIndex)
-                    actionForJsonLogs =
-                        koreSomeEntryLogAction
-                            (renderJson exeName (TimeSpec 0 0) TimestampsDisable)
-                            ((== 1) . messageLogActionIndex)
-                 in case logActions of
-                        [] -> error "no log actions passed"
-                        [standardPrettyLogAction] ->
-                            actionForPrettyLogs standardPrettyLogAction
-                        [standardPrettyLogAction, jsonLogAction] ->
-                            actionForPrettyLogs standardPrettyLogAction
-                                <> actionForJsonLogs jsonLogAction
-                        es -> error $ "too many log actions passed" <> show (length es)
+            LogBooster LogBoosterActionData{logActions} -> mconcat logActions
             ltype -> error ("Unexpected log type " <> show ltype)
 
 koreSomeEntryLogAction ::
