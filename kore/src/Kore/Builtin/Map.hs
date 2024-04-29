@@ -490,7 +490,7 @@ builtinFunctions key
     | key == Map.elementKey = Just $ Builtin.functionEvaluator evalElement
     | key == Map.unitKey = Just $ Builtin.functionEvaluator evalUnit
     | key == Map.updateKey = Just $ Builtin.functionEvaluator evalUpdate
-    | key == Map.updateAllKey = Just $ Builtin.notImplemented
+    | key == Map.updateAllKey = Just Builtin.notImplemented
     | key == Map.in_keysKey = Just $ Builtin.functionEvaluator evalInKeys
     | key == Map.keysKey = Just $ Builtin.functionEvaluator evalKeys
     | key == Map.keys_listKey = Just $ Builtin.functionEvaluator evalKeysList

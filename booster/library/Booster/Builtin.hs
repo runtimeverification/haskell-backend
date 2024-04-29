@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -246,8 +245,8 @@ mapUpdateAllHook :: BuiltinFunction
 mapUpdateAllHook [KMap def1 _ _, KMap def2 _ _]
     | def1 /= def2 =
         throwE $
-            "MAP.updateAll: incompatible maps " <>
-                Text.pack (show (def1.mapSortName, def2.mapSortName))
+            "MAP.updateAll: incompatible maps "
+                <> Text.pack (show (def1.mapSortName, def2.mapSortName))
 mapUpdateAllHook [original, KMap _ [] Nothing] =
     -- updates map is empty, result is original map
     pure $ Just original
@@ -260,15 +259,19 @@ mapUpdateAllHook [KMap _ _ (Just _), _updates] =
 mapUpdateAllHook [KMap def pairs1 Nothing, KMap _ pairs2 mbRest2]
     -- performing the update requires all keys to be fully evaluated
     -- (constructor-like) or syntactically equal.
-    | Set.null origKeys = -- all keys in the original map were updated (syntactically)
+    | Set.null origKeys -- all keys in the original map were updated (syntactically)
+        =
         pure $ Just $ KMap def updated mbRest2
     | Set.null updateKeys
-    , Nothing <- mbRest2 = -- all update keys were (syntactically) present
+    , Nothing <- mbRest2 -- all update keys were (syntactically) present
+        =
         pure $ Just $ KMap def updated Nothing
     | all isConstructorLike_ (updateKeys <> origKeys)
-    , Nothing <- mbRest2 = -- all untouched or added keys are fully evaluated
+    , Nothing <- mbRest2 -- all untouched or added keys are fully evaluated
+        =
         pure $ Just $ KMap def updated Nothing
-    | otherwise = -- uncertain whether all keys updated, leave unevaluated
+    | otherwise -- uncertain whether all keys updated, leave unevaluated
+        =
         pure Nothing
   where
     orig = Map.fromList pairs1
@@ -277,9 +280,9 @@ mapUpdateAllHook [KMap def pairs1 Nothing, KMap _ pairs2 mbRest2]
     origKeys = Set.difference (Map.keysSet orig) (Map.keysSet update)
     updateKeys = Set.difference (Map.keysSet update) (Map.keysSet orig)
 mapUpdateAllHook [_, _] =
-        pure Nothing -- at least one argument not an internalised map, leave unevaluated
+    pure Nothing -- at least one argument not an internalised map, leave unevaluated
 mapUpdateAllHook args =
-        throwE . renderText $ "MAP.update: wrong arity " <> pretty (length args)
+    throwE . renderText $ "MAP.update: wrong arity " <> pretty (length args)
 
 mapRemoveHook :: BuiltinFunction
 mapRemoveHook args
