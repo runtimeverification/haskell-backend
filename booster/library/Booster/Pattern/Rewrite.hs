@@ -269,13 +269,6 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
         MatchSuccess substitution ->
             pure substitution
 
-    -- check it is a "matching" substitution (substitutes variables
-    -- from the subject term only). Fail the entire rewrite if not.
-    unless (Map.keysSet subst == freeVariables rule.lhs) $ do
-        let violatingItems = Map.restrictKeys subst (Map.keysSet subst `Set.difference` freeVariables rule.lhs)
-        failRewrite $
-            IsNotMatch rule pat.term violatingItems
-
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $
@@ -398,8 +391,6 @@ data RewriteFailed k
       RuleConditionUnclear (RewriteRule k) Predicate
     | -- | A rewrite rule does not preserve definedness
       DefinednessUnclear (RewriteRule k) Pattern [NotPreservesDefinednessReason]
-    | -- | A matching produced a non-match substitution
-      IsNotMatch (RewriteRule k) Term Substitution
     | -- | A sort error was detected during m,atching
       RewriteSortError (RewriteRule k) Term SortError
     | -- | An error was detected during matching
@@ -434,15 +425,6 @@ instance Pretty (RewriteFailed k) where
             , "because of:"
             ]
                 ++ map pretty reasons
-    pretty (IsNotMatch rule term subst) =
-        hsep
-            [ "Produced a non-match:"
-            , pretty $ Map.toList subst
-            , "when matching rule"
-            , ruleLabelOrLoc rule
-            , "with term"
-            , pretty term
-            ]
     pretty (RewriteSortError rule term sortError) =
         hsep
             [ "Sort error while unifying"

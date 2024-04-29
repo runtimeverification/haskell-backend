@@ -147,6 +147,7 @@ emptyKMap
     , concreteKMapWithOneItem
     , concreteKMapWithTwoItems
     , concreteKMapWithOneItemAndRest
+    , concreteKeySymbolicValueKMapWithRest
     , symbolicKMapWithOneItem
     , symbolicKMapWithTwoItems
     , concreteAndSymbolicKMapWithTwoItems
@@ -172,6 +173,15 @@ concreteKMapWithOneItemAndRest =
             )
         ]
         (Just [trm| REST:SortTestKMap{}|])
+concreteKeySymbolicValueKMapWithRest =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| A:SortTestKMapItem{} |]
+            )
+        ]
+        (Just [trm| REST:SortTestKMap{}|])
 concreteKMapWithTwoItems =
     KMap
         testKMapDefinition
@@ -190,7 +200,7 @@ symbolicKMapWithOneItem =
         testKMapDefinition
         [
             ( [trm| \dv{SortTestKMapKey{}}("key") |]
-            , [trm| A:SortTestKMapItem{} |]
+            , [trm| B:SortTestKMapItem{} |]
             )
         ]
         Nothing
@@ -234,7 +244,7 @@ functionKMapWithOneItem =
         testKMapDefinition
         [
             ( [trm| g{}() |]
-            , [trm| B:SortTestKMapItem{} |]
+            , [trm| \dv{SortTestKMapItem{}}("value") |]
             )
         ]
         Nothing
