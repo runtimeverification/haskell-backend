@@ -29,6 +29,7 @@ module Booster.Pattern.ApplyEquations (
     simplifyConstraint,
     simplifyConstraints,
     SimplifierCache,
+    logWarn,
 ) where
 
 import Control.Applicative (Alternative (..))
@@ -380,6 +381,10 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
     select LLVM = (.llvm)
     select Equations = (.equations)
 
+logWarn :: MonadLogger m => Text -> m ()
+logWarn msg =
+    logWarnNS "booster" $ msg <> " For more details, enable context logging '--log-context \"*abort\"'"
+
 checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
@@ -394,7 +399,7 @@ checkForLoop t = do
                                     reverse $
                                         t : take (i + 1) (toList termStack)
                             )
-        logWarnNS "booster" "Equation loop detected"
+        logWarn "Equation loop detected."
         throw (EquationLoop $ reverse $ t : take (i + 1) (toList termStack))
 
 data Direction = TopDown | BottomUp
@@ -445,8 +450,10 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            withContext "abort" $ logMessage ("Recursion limit exceeded" :: Text)
-            logWarnNS "booster" "Recursion limit exceeded"
+            let msg =
+                    "Recursion limit exceeded. The limit can be increased by restarting the server with '--equation-max-recursion N'."
+            withContext "abort" $ logMessage msg
+            logWarn msg
             throw . TooManyRecursions . (.recursionStack) =<< getState
 
     go :: MonadLoggerIO io => Term -> EquationT io Term
@@ -460,7 +467,7 @@ iterateEquations direction preference startTerm = do
                         renderOneLineText $
                             "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
                 withContext "abort" $ logMessage msg
-                logWarnNS "booster" msg
+                logWarn msg
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -495,7 +502,7 @@ llvmSimplify term = do
                 >>= \case
                     Left (LlvmError e) -> do
                         withContext "llvm" $ withContext "abort" $ logMessage $ Text.decodeUtf8 e
-                        logWarnNS "booster" $ "LLVM backend error detected: " <> Text.decodeUtf8 e
+                        logWarn $ "LLVM backend error detected: " <> Text.decodeUtf8 e <> "."
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> withContext "llvm" $ do
                         when (result /= t) $ do
@@ -687,7 +694,7 @@ applyHooksAndEquations pref term = do
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
                     withContext (LogContext $ "hook " <> maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook)
                         $ either
-                            (\e -> withContext "abort" (logMessage e) >> logWarnNS "booster" e >> throw (InternalError e))
+                            (\e -> withContext "abort" (logMessage e) >> logWarn e >> throw (InternalError e))
                             checkChanged
                             . runExcept
                         $ hook args
@@ -1067,7 +1074,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
                                 withContext "abort" $ logMessage $ Text.decodeUtf8 e
-                                logWarnNS "booster" $ "LLVM backend error detected: " <> Text.decodeUtf8 e
+                                logWarn $ "LLVM backend error detected: " <> Text.decodeUtf8 e <> "."
                                 throw $ UndefinedTerm t $ LlvmError e
                             Right res -> do
                                 let result =

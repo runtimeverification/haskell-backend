@@ -68,7 +68,6 @@ import Booster.Pattern.Match (
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
     MatchType (Rewrite),
     SortError,
-    Substitution,
     matchTerms,
  )
 import Booster.Pattern.Util
@@ -745,7 +744,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                 -- of the constraints, so we cannot use partial results
                 -- and have to return the original on errors.
                 Left r@(TooManyIterations n start result) -> do
-                    logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
+                    ApplyEquations.logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
                     logOtherNS
                         "booster"
                         (LevelOther "ErrorDetails")
