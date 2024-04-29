@@ -75,7 +75,6 @@ import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
     LogAction (LogAction),
-    LogProxyActionData (..),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
@@ -170,12 +169,14 @@ main = do
                         koreSomeEntryLogAction
                             (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
                             (not . logAsJson)
+                            (const True)
                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
 
                     koreJsonLogAction =
                         koreSomeEntryLogAction
                             (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
                             logAsJson
+                            (const True)
                             ( LogAction $ \txt ->
                                 let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
                                  in liftIO $ do
@@ -194,12 +195,7 @@ main = do
                             , Log.timestampsSwitch = TimestampsDisable
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                            , Log.logType =
-                                LogProxy $
-                                    Log.LogProxyActionData
-                                        { messageFilter = const True
-                                        , logActions = koreLogActions
-                                        }
+                            , Log.logType = LogProxy (mconcat koreLogActions)
                             , Log.logFormat = Log.Standard
                             }
                     srvSettings = serverSettings port "*"
