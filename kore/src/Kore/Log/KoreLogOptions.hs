@@ -7,7 +7,7 @@ License     : BSD-3-Clause
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
-    LogBoosterActionData (..),
+    LogProxyActionData (..),
     KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
@@ -86,7 +86,6 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Syntax.Variable (VariableName)
 import Log
-import Numeric.Natural
 import Options.Applicative (
     Parser,
     option,
@@ -167,11 +166,11 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | -- | Log actions forwarded from Booster
-      LogBooster LogBoosterActionData
+    | -- | Log actions forwarded from proxy servers (e.g. kore-rpc-booster, kore-rpc-dev)
+      LogProxy LogProxyActionData
 
 -- | Log actions forwarded from 'booster/Server.hs'
-data LogBoosterActionData = LogBoosterActionData
+data LogProxyActionData = LogProxyActionData
     { messageFilter :: (Text -> Bool)
     -- ^ which messages to log
     , logActions :: (forall m. MonadIO m => [LogAction m SomeEntry])
@@ -187,7 +186,7 @@ instance Show KoreLogType where
     show = \case
         LogStdErr -> "LogStdErr"
         LogFileText fp -> "LogFileText " <> show fp
-        LogBooster{} -> "LogBooster"
+        LogProxy{} -> "LogProxy"
 
 data KoreLogFormat
     = Standard
@@ -680,7 +679,7 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
-        koreLogTypeFlag (LogBooster{}) = []
+        koreLogTypeFlag (LogProxy{}) = []
 
         koreLogFormatFlag Standard = []
         koreLogFormatFlag OneLine = ["--log-format=oneline"]

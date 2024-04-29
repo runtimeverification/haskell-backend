@@ -112,7 +112,7 @@ withMainLoggerLegacy reportDirectory koreLogOptions = runContT $ do
     bugReportLogAction <- ContT $ Colog.withLogTextFile bugReportLogFile
     userLogAction <-
         case logType koreLogOptions of
-            LogBooster _ -> pure Colog.logTextStderr
+            LogProxy{} -> pure Colog.logTextStderr
             LogStdErr -> pure Colog.logTextStderr
             LogFileText logFile -> do
                 lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile
