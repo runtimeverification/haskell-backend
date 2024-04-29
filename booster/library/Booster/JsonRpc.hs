@@ -797,11 +797,6 @@ mkLogRewriteTrace
                                             { reason = "Uncertain about definedness of rule because of: " <> pack (show undefReasons)
                                             , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
                                             }
-                                    IsNotMatch r _ _ ->
-                                        Failure
-                                            { reason = "Produced a non-match"
-                                            , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
-                                            }
                                     RewriteSortError r _ _ ->
                                         Failure
                                             { reason = "Sort error while unifying"
