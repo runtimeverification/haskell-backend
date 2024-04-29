@@ -24,7 +24,7 @@ import Control.Monad.Logger
 import Control.Monad.Trans.Reader
 import Data.ByteString.Builder qualified as BS
 import Data.ByteString.Char8 qualified as BS
-import Data.Text (pack)
+import Data.Text (Text, pack)
 import SMTLIB.Backends qualified as Backend
 import SMTLIB.Backends.Process qualified as Backend
 import System.IO (
@@ -37,6 +37,7 @@ import System.IO (
     openFile,
  )
 
+import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
 
@@ -57,14 +58,14 @@ data SMTContext = SMTContext
 -}
 
 mkContext ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Maybe FilePath ->
     io SMTContext
 mkContext transcriptPath = do
-    logOtherNS "booster" (LevelOther "SMT") "Starting new SMT solver"
+    logMessage ("Starting new SMT solver" :: Text)
     mbTranscript <-
         forM transcriptPath $ \path -> do
-            logOtherNS "booster" (LevelOther "SMT") $ "Transcript in file " <> pack path
+            logMessage $ "Transcript in file " <> pack path
             liftIO $ do
                 h <- openFile path AppendMode
                 hSetBuffering h (BlockBuffering Nothing)
@@ -76,7 +77,7 @@ mkContext transcriptPath = do
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
     whenJust mbTranscript $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
-    logOtherNS "booster" (LevelOther "SMT") "Solver ready to use"
+    logMessage ("Solver ready to use" :: Text)
     pure
         SMTContext
             { solver
@@ -84,22 +85,22 @@ mkContext transcriptPath = do
             , mbTranscript
             }
 
-closeContext :: MonadLoggerIO io => SMTContext -> io ()
+closeContext :: LoggerMIO io => SMTContext -> io ()
 closeContext ctxt = do
-    logOtherNS "booster" (LevelOther "SMT") "Stopping SMT solver"
+    logMessage ("Stopping SMT solver" :: Text)
     whenJust ctxt.mbTranscript $ \h -> liftIO $ do
         BS.hPutStrLn h "; stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
         hClose h
     liftIO ctxt.solverClose
 
 newtype SMT m a = SMT (ReaderT SMTContext m a)
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
 
 runSMT :: SMTContext -> SMT io a -> io a
 runSMT ctxt (SMT action) =
     runReaderT action ctxt
 
-declare :: MonadLoggerIO io => [DeclareCommand] -> SMT io ()
+declare :: LoggerMIO io => [DeclareCommand] -> SMT io ()
 declare = mapM_ runCmd
 
 class SMTEncode cmd where
@@ -110,16 +111,16 @@ class SMTEncode cmd where
 
     -- selecting the actual runner (command_ for Declare and Control, command for query)
     run_ ::
-        MonadLoggerIO io =>
+        LoggerMIO io =>
         cmd ->
         Backend.Solver ->
         BS.Builder ->
         SMT io BS.ByteString
 
-runCmd_ :: (SMTEncode cmd, MonadLoggerIO io) => cmd -> SMT io ()
+runCmd_ :: (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io ()
 runCmd_ = void . runCmd
 
-runCmd :: forall cmd io. (SMTEncode cmd, MonadLoggerIO io) => cmd -> SMT io Response
+runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd cmd = do
     let cmdBS = encode cmd
     ctxt <- SMT ask
@@ -132,7 +133,7 @@ runCmd cmd = do
     whenJust ctxt.mbTranscript $
         liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
     when (isError result) $
-        logOtherNS "booster" (LevelOther "SMT") $
+        logMessage $
             "SMT solver reports: " <> pack (show result)
     pure result
   where
@@ -181,7 +182,7 @@ instance SMTEncode SMTCommand where
     run_ (Control c) = run_ c
 
 -- typical interaction function for checking satisfiability
-runCheck :: MonadLoggerIO io => [DeclareCommand] -> SMT io Response
+runCheck :: LoggerMIO io => [DeclareCommand] -> SMT io Response
 runCheck decls =
     void (runCmd Push)
         >> mapM_ runCmd decls

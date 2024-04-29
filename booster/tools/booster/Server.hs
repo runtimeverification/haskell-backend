@@ -24,7 +24,6 @@ import Control.Monad.Logger (
     runNoLoggingT,
  )
 import Control.Monad.Logger qualified as Logger
-import Data.ByteString qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -34,14 +33,15 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding qualified as Text (decodeUtf8)
 import Options.Applicative
 import System.Clock (
     Clock (..),
     getTime,
  )
 import System.Exit
-import System.IO qualified as IO
+import System.FilePath.Glob qualified as Glob
+import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Attributes.Base (ComputedAxiomAttributes (notPreservesDefinednessReasons))
@@ -50,11 +50,13 @@ import Booster.Definition.Ceil (ComputeCeilSummary (..), computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
+import Booster.Log qualified
 import Booster.Prettyprinter (renderText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
+import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
 import Data.Limit (Limit (..))
 import GlobalMain qualified
@@ -102,6 +104,9 @@ main = do
                     , port
                     , llvmLibraryFile
                     , logLevels
+                    , logTimeStamps
+                    , logContexts
+                    , notLogContexts
                     , smtOptions
                     , equationOptions
                     , eventlogEnabledUserEvents
@@ -118,20 +123,25 @@ main = do
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
+        globPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) logContexts
+        negGlobPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) notLogContexts
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
-            lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
+            lvl `elem` customLevels
+                || case lvl of
+                    LevelOther l ->
+                        not (any (flip Glob.match (Text.unpack l)) negGlobPatterns)
+                            && any (flip Glob.match (Text.unpack l)) globPatterns
+                    _ -> False
+                || lvl >= logLevel && lvl <= LevelError
         koreLogExtraLevels =
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
-    Booster.withLogFile simplificationLogFile $ \mLogFileHandle -> do
-        let simplificationLogHandle = fromMaybe IO.stderr mLogFileHandle
-            logLevelToHandle = \case
-                Logger.LevelOther "SimplifyJson" -> simplificationLogHandle
-                _ -> IO.stderr
+    mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-        Booster.runHandleLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
+    Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
+        flip runLoggingT (handleOutput stderrLogger mFileLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
@@ -171,15 +181,10 @@ main = do
                                         , standardLogAction =
                                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
                                         , jsonLogAction =
-                                            ( LogAction $ \txt ->
-                                                let bytes =
-                                                        Text.encodeUtf8 $
-                                                            if simplificationLogHandle == IO.stderr
-                                                                then "[SimplifyJson] " <> txt <> "\n"
-                                                                else txt <> "\n"
-                                                 in liftIO $ do
-                                                        BS.hPutStr simplificationLogHandle bytes
-                                                        IO.hFlush simplificationLogHandle
+                                            ( LogAction $ \txt -> liftIO $
+                                                case mFileLogger of
+                                                    Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
+                                                    Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
                                             )
                                         }
                             , Log.logFormat = Log.Standard
@@ -244,7 +249,7 @@ main = do
 
                     let koreRespond, boosterRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
                         koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                        boosterRespond = Booster.respond boosterState
+                        boosterRespond = Booster.Log.runLogger . Booster.Log.withContext "booster" . Booster.respond boosterState
 
                         proxyConfig =
                             ProxyConfig
@@ -267,7 +272,7 @@ main = do
                                 ]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
-                                IO.hPutStrLn IO.stderr "[Info#proxy] Server shutting down"
+                                stderrLogger "[Info#proxy] Server shutting down\n"
                             whenJust statsVar Stats.showStats
                             exitSuccess
                     handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger

@@ -87,24 +87,24 @@ instance Pretty FailReason where
         DifferentValues t1 t2 ->
             "Values differ:" <> align (sep [pretty t1, pretty t2])
         DifferentSymbols t1 t2 ->
-            vsep ["Symbols differ:", pretty t1, pretty t2] -- shorten?
+            hsep ["Symbols differ:", pretty t1, pretty t2] -- shorten?
         DifferentSorts t1 t2 ->
-            vsep ["Sorts differ:", pretty t1, pretty t2] -- shorten?
+            hsep ["Sorts differ:", pretty t1, pretty t2] -- shorten?
         VariableRecursion v t ->
             "Variable recursion found: " <> pretty v <> " in " <> pretty t
         VariableConflict v t1 t2 ->
-            vsep
+            hsep
                 [ "Variable conflict for " <> pretty v
                 , pretty t1
                 , pretty t2
                 ]
         KeyNotFound k m ->
-            vsep
+            hsep
                 [ "Key " <> pretty k <> " not found in map"
                 , pretty m
                 ]
         DuplicateKeys k m ->
-            vsep
+            hsep
                 [ "Key " <> pretty k <> " appears more than once in map"
                 , pretty m
                 ]
@@ -796,3 +796,8 @@ data SortError
     = FoundSortVariable VarName
     | FoundUnknownSort Sort
     deriving (Eq, Show)
+
+instance Pretty SortError where
+    pretty = \case
+        FoundSortVariable v -> "Found sort variable" <+> pretty (show v)
+        FoundUnknownSort s -> "FOund unknown sort" <+> pretty s
