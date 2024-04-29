@@ -49,6 +49,7 @@ import Booster.CLOptions
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
+import Booster.Util qualified as Booster (runHandleLoggingT, withLogFile)
 import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
@@ -143,6 +144,7 @@ main = do
                     , logLevels
                     , smtOptions
                     , eventlogEnabledUserEvents
+                    , simplificationLogFile
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -153,79 +155,82 @@ main = do
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
-    Logger.runStderrLoggingT $ Logger.filterLogger levelFilter $ do
-        liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
-            putStrLn $ "Tracing " <> show t
-            enableCustomUserEvent t
+    Booster.withLogFile simplificationLogFile $ \mLogFileHandle -> do
+        let simplificationLogHandle = fromMaybe IO.stderr mLogFileHandle
+            logLevelToHandle = \case
+                Logger.LevelOther "SimplifyJson" -> simplificationLogHandle
+                _ -> IO.stderr
 
-        -- TODO this should we controlled by a CLI option, see booster/tools/booster/Server.hs
-        let simplificationLogHandle = IO.stderr
+        Booster.runHandleLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
+            liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
+                putStrLn $ "Tracing " <> show t
+                enableCustomUserEvent t
 
-        monadLogger <- askLoggerIO
+            monadLogger <- askLoggerIO
 
-        let koreLogActions ::
-                forall m.
-                MonadIO m =>
-                [LogAction m Log.SomeEntry]
-            koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
-              where
-                koreStandardPrettyLogAction =
-                    koreSomeEntryLogAction
-                        (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                        (not . (`elem` ["DebugAttemptEquation"]))
-                        (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
-
-                koreJsonLogAction =
-                    koreSomeEntryLogAction
-                        (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                        (`elem` ["DebugAttemptEquation"])
-                        ( LogAction $ \txt ->
-                            let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
-                             in liftIO $ do
-                                    BS.hPutStr simplificationLogHandle bytes
-                                    IO.hFlush simplificationLogHandle
-                        )
+            let koreLogActions ::
+                    forall m.
+                    MonadIO m =>
+                    [LogAction m Log.SomeEntry]
+                koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
                   where
-                    prefix = if simplificationLogHandle == IO.stderr then ("[SimplifyJson] " <>) else id
+                    koreStandardPrettyLogAction =
+                        koreSomeEntryLogAction
+                            (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
+                            (not . (`elem` ["DebugAttemptEquation"]))
+                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
 
-        let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
-            koreLogOptions =
-                (defaultKoreLogOptions (ExeName "") startTime)
-                    { Log.logLevel = coLogLevel
-                    , Log.logEntries = koreLogExtraLevels
-                    , Log.timestampsSwitch = TimestampsDisable
-                    , Log.debugSolverOptions =
-                        Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                    , Log.logType =
-                        LogBooster $
-                            Log.LogBoosterActionData
-                                { messageFilter = const True
-                                , logActions = koreLogActions
-                                }
-                    , Log.logFormat = Log.Standard
-                    }
-            srvSettings = serverSettings port "*"
+                    koreJsonLogAction =
+                        koreSomeEntryLogAction
+                            (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
+                            (`elem` ["DebugAttemptEquation"])
+                            ( LogAction $ \txt ->
+                                let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
+                                 in liftIO $ do
+                                        BS.hPutStr simplificationLogHandle bytes
+                                        IO.hFlush simplificationLogHandle
+                            )
+                      where
+                        prefix = if simplificationLogHandle == IO.stderr then ("[SimplifyJson] " <>) else id
 
-        liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
-            withLogger koreLogOptions $ \actualLogAction -> do
-                mvarLogAction <- newMVar actualLogAction
-                let logAction = swappableLogger mvarLogAction
-                kore@KoreServer{runSMT} <-
-                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
-                runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
+            let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
+                koreLogOptions =
+                    (defaultKoreLogOptions (ExeName "") startTime)
+                        { Log.logLevel = coLogLevel
+                        , Log.logEntries = koreLogExtraLevels
+                        , Log.timestampsSwitch = TimestampsDisable
+                        , Log.debugSolverOptions =
+                            Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
+                        , Log.logType =
+                            LogBooster $
+                                Log.LogBoosterActionData
+                                    { messageFilter = const True
+                                    , logActions = koreLogActions
+                                    }
+                        , Log.logFormat = Log.Standard
+                        }
+                srvSettings = serverSettings port "*"
 
-                let koreRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
-                    koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                    server =
-                        jsonRpcServer
-                            srvSettings
-                            (const $ respond koreRespond)
-                            [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
-                    interruptHandler _ = do
-                        when (logLevel >= LevelInfo) $
-                            hPutStrLn stderr "[Info#proxy] Server shutting down"
-                        exitSuccess
-                handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger
+            liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
+                withLogger koreLogOptions $ \actualLogAction -> do
+                    mvarLogAction <- newMVar actualLogAction
+                    let logAction = swappableLogger mvarLogAction
+                    kore@KoreServer{runSMT} <-
+                        mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                    runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
+
+                    let koreRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
+                        koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
+                        server =
+                            jsonRpcServer
+                                srvSettings
+                                (const $ respond koreRespond)
+                                [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
+                        interruptHandler _ = do
+                            when (logLevel >= LevelInfo) $
+                                hPutStrLn stderr "[Info#proxy] Server shutting down"
+                            exitSuccess
+                    handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger
   where
     clParser =
         info
