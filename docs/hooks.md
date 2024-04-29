@@ -836,13 +836,13 @@ Comparison: is the first argument equal to the second?
 ~~~
 
 
-### KEQUAL.neq
+### KEQUAL.ne
 
 Comparison: is the first argument inequal to the second?
 
 ~~~
     hooked-symbol neq{}(Item{}, Item{}) : Bool{}
-        [hook{}("KEQUAL.neq")]
+        [hook{}("KEQUAL.ne")]
 ~~~
 
 ### KEQUAL.ite

@@ -122,10 +122,10 @@ symbolVerifiers =
                             ++ " in KEQUAL.ite"
                         )
 
-{- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@, @KEQUAL.neq@, and
+{- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@, @KEQUAL.ne@, and
 @KEQUAL.ite@.
 
-@KEQUAL.eq@ and @KEQUAL.neq@ can take arbitrary terms (of the same sort) and
+@KEQUAL.eq@ and @KEQUAL.ne@ can take arbitrary terms (of the same sort) and
 check whether they are equal or not, producing a builtin boolean value.
 
 @KEQUAL.ite@ can take a boolean expression and two arbitrary terms (of the same
@@ -198,7 +198,7 @@ eqKey :: IsString s => s
 eqKey = "KEQUAL.eq"
 
 neqKey :: IsString s => s
-neqKey = "KEQUAL.neq"
+neqKey = "KEQUAL.ne"
 
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
