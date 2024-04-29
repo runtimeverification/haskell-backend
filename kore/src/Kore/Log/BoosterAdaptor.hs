@@ -28,6 +28,7 @@ import Data.Functor.Contravariant (
 import Data.Text (
     Text,
  )
+import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LazyText
 import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
 import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)
@@ -65,20 +66,25 @@ withMainLogger koreLogOptions = runContT $ do
         . Log.koreLogTransformer koreLogOptions
         . Log.koreLogFilters koreLogOptions
         $ case logType koreLogOptions of
-            LogProxy LogProxyActionData{logActions} -> mconcat logActions
+            LogProxy logAction -> logAction
             ltype -> error ("Unexpected log type " <> show ltype)
 
 koreSomeEntryLogAction ::
     MonadIO m =>
+    -- | how to render a timestamped 'SomeEntry' into Text
     (WithTimestamp -> Text) ->
+    -- | filter log entries, applies BEFORE rendering to text
     (SomeEntry -> Bool) ->
+    -- | filter log entries, applies AFTER rendering to text
+    (Text -> Bool) ->
     LogAction m Text ->
     LogAction m SomeEntry
-koreSomeEntryLogAction renderer selector textLogAction =
+koreSomeEntryLogAction renderer earlyFilter lateFilter textLogAction =
     textLogAction
+        & Colog.cfilter lateFilter
         & contramap renderer
         & Colog.cmapM withTimestamp
-        & Colog.cfilter selector
+        & Colog.cfilter earlyFilter
 
 renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _context actualEntry) _entryTime) =

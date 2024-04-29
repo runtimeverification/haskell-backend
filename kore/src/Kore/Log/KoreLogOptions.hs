@@ -7,7 +7,6 @@ License     : BSD-3-Clause
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
-    LogProxyActionData (..),
     KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
@@ -166,16 +165,8 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | -- | Log actions forwarded from proxy servers (e.g. kore-rpc-booster, kore-rpc-dev)
-      LogProxy LogProxyActionData
-
--- | Log actions forwarded from 'booster/Server.hs'
-data LogProxyActionData = LogProxyActionData
-    { messageFilter :: (Text -> Bool)
-    -- ^ which messages to log
-    , logActions :: (forall m. MonadIO m => [LogAction m SomeEntry])
-    -- ^ actual log actions
-    }
+    | -- | Log action forwarded from proxy servers (e.g. kore-rpc-booster, kore-rpc-dev)
+      LogProxy (forall m. MonadIO m => LogAction m SomeEntry)
 
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
