@@ -75,7 +75,7 @@ import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
     LogAction (LogAction),
-    LogBoosterActionData (..),
+    LogProxyActionData (..),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
@@ -190,8 +190,8 @@ main = do
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                             , Log.logType =
-                                LogBooster $
-                                    Log.LogBoosterActionData
+                                LogProxy $
+                                    Log.LogProxyActionData
                                         { messageFilter = const True
                                         , logActions = koreLogActions
                                         }
