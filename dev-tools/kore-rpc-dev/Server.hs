@@ -29,7 +29,7 @@ import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -174,7 +174,10 @@ main = do
                     [LogAction m Log.SomeEntry]
                 koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
                   where
-                    logAsJson entry = Log.entryTypeText entry == "DebugAttemptEquation"
+                    logAsJson =
+                        if (Logger.LevelOther "SimplifyJson") `elem` customLevels
+                            then \entry -> Log.entryTypeText entry `elem` getKoreEntriesForLevel (Logger.LevelOther "SimplifyJson")
+                            else const False
 
                     koreStandardPrettyLogAction =
                         koreSomeEntryLogAction
@@ -268,6 +271,9 @@ logLevelToKoreLogEntryMap =
         , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
         , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
         ]
+
+getKoreEntriesForLevel :: LogLevel -> [Text.Text]
+getKoreEntriesForLevel level = concat . maybeToList $ Map.lookup level logLevelToKoreLogEntryMap
 
 newtype CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions
