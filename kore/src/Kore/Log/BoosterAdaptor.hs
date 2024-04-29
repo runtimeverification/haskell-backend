@@ -71,14 +71,14 @@ withMainLogger koreLogOptions = runContT $ do
 koreSomeEntryLogAction ::
     MonadIO m =>
     (WithTimestamp -> Text) ->
-    (Text -> Bool) ->
+    (SomeEntry -> Bool) ->
     LogAction m Text ->
     LogAction m SomeEntry
 koreSomeEntryLogAction renderer selector textLogAction =
     textLogAction
         & contramap renderer
         & Colog.cmapM withTimestamp
-        & Colog.cfilter (selector . entryTypeText)
+        & Colog.cfilter selector
 
 renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _context actualEntry) _entryTime) =

@@ -174,16 +174,18 @@ main = do
                     [LogAction m Log.SomeEntry]
                 koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
                   where
+                    logAsJson entry = Log.entryTypeText entry == "DebugAttemptEquation"
+
                     koreStandardPrettyLogAction =
                         koreSomeEntryLogAction
                             (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                            (not . (`elem` ["DebugAttemptEquation"]))
+                            (not . logAsJson)
                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
 
                     koreJsonLogAction =
                         koreSomeEntryLogAction
                             (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                            (`elem` ["DebugAttemptEquation"])
+                            logAsJson
                             ( LogAction $ \txt ->
                                 let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
                                  in liftIO $ do
