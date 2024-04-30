@@ -316,7 +316,7 @@ comparisonKSymbol name = comparisonSymbol name kSort
 keqBoolSymbol :: Internal.Symbol
 keqBoolSymbol = comparisonKSymbol "keqBool" & hook "KEQUAL.eq"
 kneqBoolSymbol :: Internal.Symbol
-kneqBoolSymbol = comparisonKSymbol "kneqBool" & hook "KEQUAL.neq"
+kneqBoolSymbol = comparisonKSymbol "kneqBool" & hook "KEQUAL.ne"
 kiteKSymbol :: Internal.Symbol
 kiteKSymbol =
     builtinSymbol "kiteK" kSort [boolSort, kSort, kSort]
