@@ -20,7 +20,6 @@ import Control.Monad.Logger (
     LoggingT (runLoggingT),
     MonadLoggerIO (askLoggerIO),
     ToLogStr (toLogStr),
-    defaultLoc,
     runNoLoggingT,
  )
 import Control.Monad.Logger qualified as Logger
@@ -30,7 +29,7 @@ import Data.InternedText (globalInternedTextCache)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe, isJust, mapMaybe, maybeToList)
+import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8)
@@ -79,6 +78,7 @@ import Kore.Log.BoosterAdaptor (
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
     renderJson,
+    renderOnelinePretty,
     renderStandardPretty,
     swappableLogger,
     withLogger,
@@ -137,8 +137,6 @@ main = do
                             && any (flip Glob.match (Text.unpack l)) globPatterns
                     _ -> False
                 || lvl >= logLevel && lvl <= LevelError
-        koreLogExtraLevels =
-            Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
@@ -158,19 +156,26 @@ main = do
             monadLogger <- askLoggerIO
 
             let koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
-                koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
+                koreLogActions = [koreStandardPrettyLogAction, koreOnelinePrettyLogAction, koreJsonLogAction]
                   where
-                    logAsJson =
-                        if (Logger.LevelOther "SimplifyJson") `elem` customLevels
-                            then \entry -> Log.entryTypeText entry `elem` getKoreEntriesForLevel (Logger.LevelOther "SimplifyJson")
-                            else const False
-
+                    logAsJson = const False -- TODO: add --log-format json to CLOptions and use here
                     koreStandardPrettyLogAction =
                         koreSomeEntryLogAction
                             (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                            (not . logAsJson)
+                            (const False) -- FIXME: add --log-format standard and to CLOptions and use here
                             (const True)
-                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
+                            (LogAction $ \txt -> liftIO $ stderrLogger $ toLogStr txt <> "\n")
+
+                    koreOnelinePrettyLogAction =
+                        koreSomeEntryLogAction
+                            (renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
+                            (not . logAsJson)
+                            ( \txt ->
+                                -- FIXME: likely terrible performance! Use something that does not unpack Text
+                                not (any (flip Glob.match (Text.unpack txt)) negGlobPatterns)
+                                    && any (flip Glob.match (Text.unpack txt)) globPatterns
+                            )
+                            (LogAction $ \txt -> liftIO $ stderrLogger $ toLogStr txt <> "\n")
 
                     koreJsonLogAction =
                         koreSomeEntryLogAction
@@ -183,12 +188,21 @@ main = do
                                     Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
                             )
 
+            let defaultKoreLogLevels =
+                    Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry) $
+                        [ "DebugAttemptedRewriteRules"
+                        , "DebugAppliedLabeledRewriteRule"
+                        , "DebugAppliedRewriteRules"
+                        , "DebugAttemptEquation"
+                        , "DebugApplyEquation"
+                        ]
+
             liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
                     koreLogOptions =
                         (defaultKoreLogOptions (ExeName "") startTime)
                             { Log.logLevel = coLogLevel
-                            , Log.logEntries = koreLogExtraLevels
+                            , Log.logEntries = defaultKoreLogLevels
                             , Log.timestampsSwitch = TimestampsDisable
                             , Log.debugSolverOptions =
                                 Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
@@ -302,27 +316,27 @@ toSeverity LevelWarn = Just Log.Warning
 toSeverity LevelError = Just Log.Error
 toSeverity LevelOther{} = Nothing
 
-koreExtraLogs :: Map.Map LogLevel Log.EntryTypes
-koreExtraLogs =
-    Map.map
-        (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry))
-        logLevelToKoreLogEntryMap
+-- koreExtraLogs :: Map.Map LogLevel Log.EntryTypes
+-- koreExtraLogs =
+--     Map.map
+--         (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry))
+--         logLevelToKoreLogEntryMap
 
-logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
-logLevelToKoreLogEntryMap =
-    Map.fromList
-        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
-        , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
-        ,
-            ( LevelOther "RewriteKore"
-            , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
-            )
-        , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
-        , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
-        ]
+-- logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
+-- logLevelToKoreLogEntryMap =
+--     Map.fromList
+--         [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
+--         , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
+--         ,
+--             ( LevelOther "RewriteKore"
+--             , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
+--             )
+--         , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
+--         , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
+--         ]
 
-getKoreEntriesForLevel :: LogLevel -> [Text.Text]
-getKoreEntriesForLevel level = concat . maybeToList $ Map.lookup level logLevelToKoreLogEntryMap
+-- getKoreEntriesForLevel :: LogLevel -> [Text.Text]
+-- getKoreEntriesForLevel level = concat . maybeToList $ Map.lookup level logLevelToKoreLogEntryMap
 
 data CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions

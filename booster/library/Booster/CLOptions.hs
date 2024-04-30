@@ -32,7 +32,8 @@ data CLOptions = CLOptions
     , logLevels :: [LogLevel]
     , logTimeStamps :: Bool
     , logContexts :: [String]
-    , notLogContexts :: [String]
+    , -- , logFormat :: [LogFormat]
+      notLogContexts :: [String]
     , simplificationLogFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
