@@ -154,7 +154,6 @@ main = do
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
-
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
     Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger ->
@@ -182,7 +181,6 @@ main = do
                             (not . logAsJson)
                             (const True)
                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
-
 
                     koreJsonLogAction =
                         koreSomeEntryLogAction
