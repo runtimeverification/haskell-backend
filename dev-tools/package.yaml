@@ -61,6 +61,8 @@ executables:
     - containers
     - conduit-extra
     - deepseq
+    - fast-logger
+    - Glob
     - hs-backend-booster
     - optparse-applicative
     - text
@@ -181,6 +183,7 @@ executables:
       - conduit-extra
       - containers
       - exceptions
+      - fast-logger
       - hs-backend-booster
       - json-rpc
       - kore

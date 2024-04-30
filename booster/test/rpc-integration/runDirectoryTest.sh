@@ -73,7 +73,7 @@ echo "Starting server: $server $kore --module ${MODULE:-UNKNOWN} $server_params"
 $server $kore --module ${MODULE?"Unable to find main module"} $server_params &
 server_pid=$!
 
-trap 'kill -2 ${server_pid}; popd' ERR EXIT
+trap 'kill -2 ${server_pid} || true; popd' ERR EXIT
 echo "Server PID ${server_pid}"
 
 i=$connection_attempts
@@ -97,7 +97,7 @@ client="$client -p ${server_port}"
 
 if [ -d $dir ] && [ -f "${dir}/test.sh" ]; then
     echo "shell-scripted test, running $dir/testsh as-is"
-    . ./${dir}/test.sh
+    SERVER_PID=${server_pid} . ./${dir}/test.sh
 elif [ -d $dir ]; then
     echo "Directory test"
     command=""
