@@ -3,6 +3,7 @@
 module Booster.CLOptions (
     CLOptions (..),
     EquationOptions (..),
+    LogFormat (..),
     clOptionsParser,
     adjustLogLevels,
     versionInfoParser,
@@ -31,9 +32,9 @@ data CLOptions = CLOptions
     , port :: Int
     , logLevels :: [LogLevel]
     , logTimeStamps :: Bool
+    , logFormat :: LogFormat
     , logContexts :: [String]
-    , -- , logFormat :: [LogFormat]
-      notLogContexts :: [String]
+    , notLogContexts :: [String]
     , simplificationLogFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
@@ -41,6 +42,18 @@ data CLOptions = CLOptions
       eventlogEnabledUserEvents :: [CustomUserEventType]
     }
     deriving (Show)
+
+data LogFormat
+    = Standard
+    | OneLine
+    | Json
+    deriving (Eq)
+
+instance Show LogFormat where
+    show = \case
+        OneLine -> "oneline"
+        Standard -> "standard"
+        Json -> "json"
 
 clOptionsParser :: Parser CLOptions
 clOptionsParser =
@@ -83,6 +96,14 @@ clOptionsParser =
                 )
             )
         <*> switch (long "log-timestamps" <> help "Add timestamps to logs")
+        <*> option
+            (eitherReader readLogFormat)
+            ( metavar "LOGFORMAT"
+                <> value OneLine
+                <> long "log-format"
+                <> help "Format to output logs in"
+                <> showDefault
+            )
         <*> many
             ( option
                 str
@@ -143,6 +164,13 @@ clOptionsParser =
         (\s -> maybe (Left $ s <> " not supported in eventlog tracing") Right $ readMaybe s)
             . toPascal
             . fromKebab
+
+    readLogFormat :: String -> Either String LogFormat
+    readLogFormat = \case
+        "oneline" -> Right OneLine
+        "standard" -> Right Standard
+        "json" -> Right Json
+        other -> Left $ other <> ": Unsupported log format"
 
 -- custom log levels that can be selected
 allowedLogLevels :: [(String, String)]
