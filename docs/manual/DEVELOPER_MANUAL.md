@@ -100,7 +100,7 @@
             8. [SET.list2set](#implementation-hooks-set-list2set)
         7. [KEQUAL](#implementation-hooks-kequal)
             1. [KEQUAL.eq](#implementation-hooks-kequal-eq)
-            2. [KEQUAL.neq](#implementation-hooks-kequal-neq)
+            2. [KEQUAL.ne](#implementation-hooks-kequal-neq)
             3. [KEQUAL.ite](#implementation-hooks-kequal-ite)
         8. [KRYPTO](#implementation-hooks-krypto)
             1. [KRYPTO.keccak256](#implementation-hooks-krypto-keccak266)
