@@ -34,7 +34,7 @@ import Kore.Log (
     LoggerT,
     logInfo,
     parseKoreLogOptions,
-    runKoreLogThreadSafe,
+    runKoreLogThreadSafeLegacy,
  )
 import Kore.Log.ErrorException (
     handleSomeException,
@@ -145,11 +145,12 @@ mainWithOptions
             =<< withBugReport
                 Main.exeName
                 bugReportOption
-                ( \_tmpDir ->
+                ( \tmpDir ->
                     koreRpcServerRun localOptions
                         & handleJust isInterrupt handleInterrupt
                         & handle handleSomeException
-                        & runKoreLogThreadSafe
+                        & runKoreLogThreadSafeLegacy
+                            tmpDir
                             koreLogOptions
                 )
       where

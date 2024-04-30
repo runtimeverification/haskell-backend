@@ -24,7 +24,6 @@ import Control.Monad.Logger (
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Logger qualified as Logger
 import Data.Aeson.Types (Value (..))
-import Data.ByteString qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -33,7 +32,7 @@ import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding qualified as Text (decodeUtf8)
 import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
@@ -43,13 +42,13 @@ import System.Clock (
  )
 import System.Exit
 import System.IO (hPutStrLn, stderr)
-import System.IO qualified as IO
+import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
-import Booster.Util qualified as Booster (runHandleLoggingT, withLogFile)
+import Booster.Util qualified as Booster
 import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
@@ -144,6 +143,7 @@ main = do
                     , smtOptions
                     , eventlogEnabledUserEvents
                     , simplificationLogFile
+                    , logTimeStamps
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -154,13 +154,11 @@ main = do
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
-    Booster.withLogFile simplificationLogFile $ \mLogFileHandle -> do
-        let simplificationLogHandle = fromMaybe IO.stderr mLogFileHandle
-            logLevelToHandle = \case
-                Logger.LevelOther "SimplifyJson" -> simplificationLogHandle
-                _ -> IO.stderr
 
-        Booster.runHandleLoggingT logLevelToHandle . Logger.filterLogger levelFilter $ do
+    mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
+
+    Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger ->
+        flip runLoggingT (Booster.handleOutput stderrLogger mFileLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
@@ -185,19 +183,17 @@ main = do
                             (const True)
                             (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
 
+
                     koreJsonLogAction =
                         koreSomeEntryLogAction
                             (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
                             logAsJson
                             (const True)
-                            ( LogAction $ \txt ->
-                                let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
-                                 in liftIO $ do
-                                        BS.hPutStr simplificationLogHandle bytes
-                                        IO.hFlush simplificationLogHandle
+                            ( LogAction $ \txt -> liftIO $
+                                case mFileLogger of
+                                    Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
+                                    Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
                             )
-                      where
-                        prefix = if simplificationLogHandle == IO.stderr then ("[SimplifyJson] " <>) else id
 
             let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
                 koreLogOptions =

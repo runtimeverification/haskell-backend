@@ -28,7 +28,6 @@ import Data.Functor.Contravariant (
 import Data.Text (
     Text,
  )
-import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LazyText
 import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
 import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)

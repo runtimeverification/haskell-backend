@@ -15,7 +15,6 @@ module Kore.Log (
     Colog.logTextStderr,
     Colog.logTextHandle,
     runKoreLog,
-    runKoreLogThreadSafe,
     runKoreLogThreadSafeLegacy,
     WithTimestamp (..),
     withTimestamp,
@@ -249,14 +248,6 @@ runKoreLogThreadSafeLegacy reportDirectory options loggerT =
         let swapLogAction = swappableLogger mvarLogAction
         runLoggerT loggerT swapLogAction
 
--- | Run a 'LoggerT' with the given options, using `swappableLogger` to make it thread safe.
-runKoreLogThreadSafe :: KoreLogOptions -> LoggerT IO a -> IO a
-runKoreLogThreadSafe options loggerT =
-    withLogger options $ \actualLogAction -> do
-        mvarLogAction <- newMVar actualLogAction
-        let swapLogAction = swappableLogger mvarLogAction
-        runLoggerT loggerT swapLogAction
-
 {- | The default Kore logger used by the legacy backend.
 
 Creates a kore logger which:
@@ -298,8 +289,6 @@ renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(Som
             , context'
             ]
       where
-        shortHeader = "[kore]"
-
         header =
             (Pretty.hsep . catMaybes)
                 [ Just exeName'
@@ -322,11 +311,6 @@ renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(Som
             \case
                 [] -> []
                 xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
-
-        oneLineContext =
-            entryContext
-                & reverse
-                & concatMap (\(SomeEntry _ e) -> oneLineContextDoc e)
 
         mkContext =
             \case

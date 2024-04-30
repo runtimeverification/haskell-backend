@@ -177,14 +177,11 @@ main = do
                             (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
                             logAsJson
                             (const True)
-                            ( LogAction $ \txt ->
-                                let bytes = Text.encodeUtf8 $ prefix txt <> "\n"
-                                 in liftIO $ do
-                                        BS.hPutStr simplificationLogHandle bytes
-                                        IO.hFlush simplificationLogHandle
+                            ( LogAction $ \txt -> liftIO $
+                                case mFileLogger of
+                                    Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
+                                    Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
                             )
-                      where
-                        prefix = if simplificationLogHandle == IO.stderr then ("[SimplifyJson] " <>) else id
 
             liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
