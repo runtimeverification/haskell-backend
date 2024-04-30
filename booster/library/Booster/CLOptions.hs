@@ -30,6 +30,9 @@ data CLOptions = CLOptions
     , llvmLibraryFile :: Maybe FilePath
     , port :: Int
     , logLevels :: [LogLevel]
+    , logTimeStamps :: Bool
+    , logContexts :: [String]
+    , notLogContexts :: [String]
     , simplificationLogFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
@@ -76,6 +79,26 @@ clOptionsParser =
                           \or a custom level: "
                             <> intercalate ", " (map fst allowedLogLevels)
                         )
+                )
+            )
+        <*> switch (long "log-timestamps" <> help "Add timestamps to logs")
+        <*> many
+            ( option
+                str
+                ( metavar "CONTEXT"
+                    <> long "log-context"
+                    <> short 'c'
+                    <> help
+                        "Log context"
+                )
+            )
+        <*> many
+            ( option
+                str
+                ( metavar "CONTEXT"
+                    <> long "not-log-context"
+                    <> help
+                        "Not in log context"
                 )
             )
         <*> optional

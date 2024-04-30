@@ -4,7 +4,7 @@ License     : BSD-3-Clause
 -}
 module Main (main) where
 
-import Booster.Util (runHandleLoggingT, withLogFile)
+import Booster.Util (handleOutput, withFastLogger)
 import Control.Concurrent (newMVar)
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
@@ -15,10 +15,11 @@ import Control.Monad.Logger.CallStack (LogLevel (LevelError))
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (isNothing)
 import Data.Text (Text, unpack)
 import Options.Applicative
-import System.IO qualified as IO
+import System.FilePath.Glob qualified as Glob
+import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Base (KoreDefinition (..))
@@ -27,9 +28,11 @@ import Booster.GlobalState
 import Booster.JsonRpc (ServerState (..), handleSmtError, respond)
 import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
+import Booster.Log (runLogger)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
+import Data.Text qualified as Text
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 
@@ -41,6 +44,9 @@ main = do
             , mainModuleName
             , port
             , logLevels
+            , logContexts
+            , notLogContexts
+            , logTimeStamps
             , llvmLibraryFile
             , smtOptions
             , equationOptions
@@ -57,7 +63,7 @@ main = do
             <> ", main module "
             <> show mainModuleName
 
-    withLogFile simplificationLogFile $ \mLogFileHandle -> withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
+    withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
         definitionMap <-
             loadDefinition definitionFile
                 >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
@@ -75,9 +81,12 @@ main = do
             definitionMap
             mainModuleName
             mLlvmLibrary
-            mLogFileHandle
+            simplificationLogFile
             smtOptions
             (adjustLogLevels logLevels)
+            logContexts
+            notLogContexts
+            logTimeStamps
   where
     withLlvmLib libFile m = case libFile of
         Nothing -> m Nothing
@@ -101,32 +110,42 @@ runServer ::
     Map Text KoreDefinition ->
     Text ->
     Maybe LLVM.API ->
-    Maybe IO.Handle ->
+    Maybe FilePath ->
     Maybe SMT.SMTOptions ->
     (LogLevel, [LogLevel]) ->
+    [String] ->
+    [String] ->
+    Bool ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary mLogFileHandle mSMTOptions (logLevel, customLevels) =
+runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOptions (logLevel, customLevels) logContexts notLogContexts logTimeStamps =
     do
-        let logLevelToHandle = \case
-                Log.LevelOther "SimplifyJson" -> fromMaybe IO.stderr mLogFileHandle
-                _ -> IO.stderr
+        mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-        stateVar <-
-            newMVar
-                ServerState
-                    { definitions
-                    , defaultMain
-                    , mLlvmLibrary
-                    , mSMTOptions
-                    , addedModules = mempty
-                    }
-        runHandleLoggingT logLevelToHandle . Log.filterLogger levelFilter $
-            jsonRpcServer
-                srvSettings
-                (const $ respond stateVar)
-                [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
+        withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
+            stateVar <-
+                newMVar
+                    ServerState
+                        { definitions
+                        , defaultMain
+                        , mLlvmLibrary
+                        , mSMTOptions
+                        , addedModules = mempty
+                        }
+            flip Log.runLoggingT (handleOutput stderrLogger mFileLogger) . Log.filterLogger levelFilter $
+                jsonRpcServer
+                    srvSettings
+                    (const $ runLogger . respond stateVar)
+                    [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
+    globPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) logContexts
+    negGlobPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) notLogContexts
+    levelFilter :: Log.LogSource -> LogLevel -> Bool
     levelFilter _source lvl =
-        lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
-
+        lvl `elem` customLevels
+            || case lvl of
+                Log.LevelOther l ->
+                    not (any (flip Glob.match (Text.unpack l)) negGlobPatterns)
+                        && any (flip Glob.match (Text.unpack l)) globPatterns
+                _ -> False
+            || lvl >= logLevel && lvl <= LevelError
     srvSettings = serverSettings port "*"
