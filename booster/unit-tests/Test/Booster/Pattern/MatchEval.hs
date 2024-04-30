@@ -118,7 +118,7 @@ varsAndValues =
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
            in test "same variable name, different sort" v1 v2 $
-                failed (DifferentSorts v1 v2)
+                failed (VariableConflict (Variable someSort "X") v1 v2)
         , let d1 = dv someSort "1"
               d2 = dv someSort "1"
            in test "same domain values (same sort)" d1 d2 $
@@ -145,7 +145,8 @@ varsAndValues =
                 failed (DifferentSorts v d)
         , let v = var "X" someSort
               d = dv someSort ""
-           in test "dv matching a var (on RHS): indeterminate" d v $
+           in -- see https://github.com/runtimeverification/hs-backend-booster/issues/231
+              test "dv matching a var (on RHS): indeterminate" d v $
                 MatchIndeterminate $
                     NE.singleton (d, v)
         , let d = dv someSort ""
@@ -177,7 +178,7 @@ andTerms =
               ca = app con1 [da]
               cb = app con1 [db]
            in test
-                "And-term on the left, one unifies one fails"
+                "And-term on the left, one matches one fails"
                 (AndTerm ca cb)
                 ca
                 (failed $ DifferentValues db da)
@@ -209,17 +210,17 @@ kmapTerms =
             "Non-empty concrete KMap ~= empty KMap: fails"
             concreteKMapWithOneItem
             emptyKMap
-            (failed $ DifferentValues concreteKMapWithOneItem emptyKMap)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
         , test
             "Non-empty symbolic KMap ~= empty KMap: fails"
             symbolicKMapWithOneItem
             emptyKMap
-            (failed $ DifferentValues symbolicKMapWithOneItem emptyKMap)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
         , test
             "Non-empty symbolic KMap ~= non-empty concrete KMap, same key: matches contained value"
             symbolicKMapWithOneItem -- "key" -> A
             concreteKMapWithOneItem -- "key" -> "value"
-            (success [("A", kmapElementSort, dv kmapElementSort "value")])
+            (success [("B", kmapElementSort, dv kmapElementSort "value")])
         , test
             "One key and rest variable ~= same key: Match rest with empty map"
             concreteKMapWithOneItemAndRest
@@ -233,12 +234,11 @@ kmapTerms =
                in success [("REST", kmapSort, restMap)]
             )
         , -- pattern has more assocs than subject
-          let patRest = kmap [(dv kmapKeySort "key2", dv kmapElementSort "value2")] Nothing
-           in test
-                "Extra concrete key in pattern, no rest in subject: fail on rest"
-                concreteKMapWithTwoItems
-                concreteKMapWithOneItem
-                (failed $ DifferentValues patRest emptyKMap)
+          test
+            "Extra concrete key in pattern, no rest in subject: fail on rest"
+            concreteKMapWithTwoItems
+            concreteKMapWithOneItem
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] emptyKMap)
         , -- cases with disjoint keys
           test
             "Variable key ~= concrete key (and common element) without rest: match key"
@@ -261,10 +261,10 @@ kmapTerms =
                 concreteKMapWithTwoItems
                 (MatchIndeterminate $ NE.singleton (patMap, concreteKMapWithTwoItems))
         , test
-            "Keys disjoint and pattern keys are fully-concrete: fail"
+            "Pattern keys are fully-concrete, subject key function: indeterminate"
             concreteKMapWithOneItemAndRest
             functionKMapWithOneItem
-            (failed $ DifferentValues concreteKMapWithOneItemAndRest functionKMapWithOneItem)
+            (MatchIndeterminate $ NE.singleton (concreteKMapWithOneItemAndRest, functionKMapWithOneItem))
         , let patMap =
                 kmap
                     [ (var "A" kmapKeySort, dv kmapElementSort "a")

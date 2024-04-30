@@ -45,7 +45,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift (..))
-import Prettyprinter (Pretty (..))
+import Prettyprinter (Pretty (..), (<+>))
 import Prettyprinter qualified as Pretty
 
 type VarName = ByteString
@@ -780,7 +780,7 @@ prettyBS = Pretty.pretty . Text.decodeUtf8
 instance Pretty Term where
     pretty = \case
         AndTerm t1 t2 ->
-            pretty t1 <> "/\\" <> pretty t2
+            pretty t1 <+> "/\\" <+> pretty t2
         SymbolApplication symbol _sortParams args ->
             pretty (Text.replace "Lbl" "" $ Text.decodeUtf8 $ decodeLabel' symbol.name)
                 <> KPretty.argumentsP args
@@ -790,7 +790,7 @@ instance Pretty Term where
         Injection _source _target t' -> pretty t'
         KMap _attrs keyVals rest ->
             Pretty.braces . Pretty.hsep . Pretty.punctuate Pretty.comma $
-                [pretty k <> "->" <> pretty v | (k, v) <- keyVals]
+                [pretty k <+> "->" <+> pretty v | (k, v) <- keyVals]
                     ++ maybe [] ((: []) . pretty) rest
         KList _meta heads (Just (mid, tails)) ->
             Pretty.hsep $

@@ -68,7 +68,7 @@ sorts =
         "sort variables"
         [ test "sort variable in pattern" (app con1 [varX]) (app con1 [dSome]) $
             sortErr (FoundSortVariable "sort me!")
-        , test "sort variable in subject" (app con1 [dSub]) (app con1 [varZ]) $
+        , test "sort variable in subject" (app con1 [varZ]) (app con1 [dSub]) $
             sortErr (FoundSortVariable "me, too!")
         , test "several sort variables" (app con3 [varX, varY]) (app con3 [dSome, varZ]) $
             sortErr (FoundSortVariable "sort me!")
@@ -85,7 +85,7 @@ sorts =
 constructors :: TestTree
 constructors =
     testGroup
-        "Unifying constructors"
+        "Matching constructors"
         [ test
             "same constructors, one variable argument"
             (app con1 [var "X" someSort])
@@ -176,7 +176,7 @@ varsAndValues =
         , let v1 = var "X" someSort
               v2 = var "Y" aSubsort
            in test "two variables (v2 subsort v1)" v1 v2 $
-                success [("X", someSort, v2)]
+                success [("X", someSort, inj aSubsort someSort v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
            in test "two variables (v1 subsort v2)" v1 v2 $
@@ -276,22 +276,22 @@ internalLists =
                 "Concrete lists of different length fail to match"
                 two
                 three
-                (failed $ DifferentValues two three)
+                (failed $ DifferentValues emptyList $ klist [headElem] Nothing)
         , test
             "Empty and non-empty list fail to match (symbolic tail)"
             headList
             emptyList
             (failed $ DifferentValues headList emptyList)
         , test
-            "Empty and non-empty list fail to match (symbolic init)"
+            "Non-empty and empty list fail to match (symbolic init)"
             tailList
             emptyList
             (failed $ DifferentValues tailList emptyList)
         , test
-            "Unification failures may swap the argument lists"
+            "Empty and non-empty list fail to match (symbolic init)"
             emptyList
             tailList
-            (failed $ DifferentValues tailList emptyList)
+            (failed $ DifferentValues emptyList tailList)
         , test
             "Head list and tail list produce indeterminate unification"
             headList
@@ -350,7 +350,7 @@ internalLists =
                     (replicate 3 headElem)
                     (Just (var "LIST2" listSort, replicate 3 lastElem))
            in test
-                "Unifies two lists with symbolic middle (binding LIST1)"
+                "Match two lists with symbolic middle (binding LIST1)"
                 list1
                 list2
                 (success [("LIST1", listSort, klist [] (Just (var "LIST2" listSort, [lastElem])))])
@@ -363,10 +363,12 @@ internalLists =
                     (replicate 3 headElem)
                     (Just (var "LIST2" listSort, replicate 3 lastElem))
            in test
-                "Unifies two lists with symbolic middle (binding LIST1), reverse direction"
+                "Match two lists with symbolic middle, reverse direction indeterminate"
                 list2
                 list1
-                (success [("LIST1", listSort, klist [] (Just (var "LIST2" listSort, [lastElem])))])
+                ( remainder
+                    [(klist [] (Just (var "LIST2" listSort, [lastElem])), klist [] (Just (var "LIST1" listSort, [])))]
+                )
         ]
   where
     headElem = [trm| \dv{SomeSort{}}("head") |]
@@ -389,23 +391,30 @@ internalMaps =
             concreteKMapWithTwoItems
             (success [])
         , test
-            "Can match a concrete and symbolic map"
-            concreteKMapWithOneItem
+            "Can match a symbolic and concrete map"
             symbolicKMapWithOneItem
-            (success [("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])])
+            concreteKMapWithOneItem
+            (success [("B", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])])
         , test
-            "Can match a concrete and symbolic map with two elements"
-            concreteKMapWithTwoItems
+            "Can match a symbolic and concrete map with two elements"
             symbolicKMapWithTwoItems
+            concreteKMapWithTwoItems
             ( success
                 [ ("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])
                 , ("B", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value2")|])
                 ]
             )
         , test
-            "Can match {\"key\" |-> \"value\", ...REST} with {A |-> \"value\"}"
-            concreteKMapWithOneItemAndRest
+            "Can match {\"key\" |-> A, ...REST} with {\"key\" |-> B}"
+            concreteKeySymbolicValueKMapWithRest
             symbolicKMapWithOneItem
+            ( success
+                [("REST", kmapSort, emptyKMap), ("A", kmapElementSort, [trm| B:SortTestKMapItem{} |])]
+            )
+        , test
+            "Can match {\"key\" |-> A, ...REST} with {\"key\" |-> \"value\"}"
+            concreteKeySymbolicValueKMapWithRest
+            concreteKMapWithOneItem
             ( success
                 [("REST", kmapSort, emptyKMap), ("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])]
             )
@@ -428,28 +437,27 @@ internalMaps =
                     )
                 ]
             )
-        , -- TODO: re-enable once we re-factor the map matching
-          -- this would not produce a matchign substitution and should therefore fail
+        , -- this would not produce a matching substitution and should therefore fail
           -- at match time
-          -- , test
-          --     "Fails to match {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
-          --     concreteAndSymbolicKMapWithTwoItems
-          --     concreteKMapWithOneItemAndRest
-          --     ( failed $
-          --         DifferentSymbols
-          --             ( KMap
-          --                 testKMapDefinition
-          --                 [
-          --                     ( [trm| A:SortTestKMapKey{}|]
-          --                     , [trm| \dv{SortTestKMapItem{}}("value2") |]
-          --                     )
-          --                 ]
-          --                 Nothing
-          --             )
-          --             (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
-          --     )
           test
-            "Can match {\"f()\" |-> \"value\", ...REST} with {\"f()\" |-> B}"
+            "Fails to match {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
+            concreteAndSymbolicKMapWithTwoItems
+            concreteKMapWithOneItemAndRest
+            ( failed $
+                DifferentSymbols
+                    ( KMap
+                        testKMapDefinition
+                        [
+                            ( [trm| A:SortTestKMapKey{}|]
+                            , [trm| \dv{SortTestKMapItem{}}("value2") |]
+                            )
+                        ]
+                        Nothing
+                    )
+                    (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
+            )
+        , test
+            "Can match {\"f()\" |-> \"value\", ...REST} with {\"f()\" |-> \"value\"}"
             functionKMapWithOneItemAndRest
             functionKMapWithOneItem
             ( success
@@ -461,23 +469,18 @@ internalMaps =
                         []
                         Nothing
                     )
-                ,
-                    ( "B"
-                    , SortApp "SortTestKMapItem" []
-                    , [trm| \dv{SortTestKMapItem{}}("value") |]
-                    )
                 ]
             )
         , test
             "Empty and non-empty concrete map fail to match"
             emptyKMap
             concreteKMapWithOneItem
-            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
+            (failed $ DifferentSymbols emptyKMap concreteKMapWithOneItem)
         , test
             "Concrete maps of different length fail to match"
             concreteKMapWithTwoItems
             concreteKMapWithOneItem
-            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] concreteKMapWithOneItem)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] emptyKMap)
         , test
             "Symbolic non-empty map and empty map fail to match"
             symbolicKMapWithOneItem

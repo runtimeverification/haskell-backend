@@ -14,6 +14,7 @@ import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 
 import Booster.LLVM as LLVM (API, simplifyBool)
+import Booster.Log
 import Booster.Pattern.Bool
 import Booster.Pattern.Util (isConcrete, sortOfTerm)
 import Booster.Util (Flag (..))
@@ -73,7 +74,7 @@ instance Pretty ComputeCeilSummary where
                         ]
 
 computeCeilsDefinition ::
-    MonadLoggerIO io => Maybe LLVM.API -> KoreDefinition -> io (KoreDefinition, [ComputeCeilSummary])
+    LoggerMIO io => Maybe LLVM.API -> KoreDefinition -> io (KoreDefinition, [ComputeCeilSummary])
 computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
     (rewriteTheory', ceilSummaries) <-
         runWriterT $
@@ -87,7 +88,7 @@ computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
     pure (def{rewriteTheory = rewriteTheory'}, toList ceilSummaries)
 
 computeCeilRule ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     RewriteRule.RewriteRule "Rewrite" ->

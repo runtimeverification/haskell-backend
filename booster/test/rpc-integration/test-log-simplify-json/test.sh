@@ -32,4 +32,8 @@ done
 echo "Running a request which will produce the simplify-log.txt log file"
 ${client} \
     send $dir/state-002.send ${client_args} > /dev/null
+
+if [ -n "${SERVER_PID}" ]; then
+    kill -2 ${SERVER_PID}
+fi
 ${diff} $dir/simplify-log.txt.golden $dir/simplify-log.txt
