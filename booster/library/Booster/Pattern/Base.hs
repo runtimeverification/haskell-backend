@@ -596,17 +596,20 @@ pattern KMap def keyVals rest <- Term _ (KMapF def keyVals rest)
                     r -> ([], r)
                 newKeyVals = sortAndDeduplicate $ keyVals ++ keyVals'
                 newRest = rest'
-             in Term
-                    argAttributes
-                        { hash =
-                            Hashable.hash
-                                ( "KMap" :: ByteString
-                                , def
-                                , map (\(k, v) -> (hash $ getAttributes k, hash $ getAttributes v)) newKeyVals
-                                , hash . getAttributes <$> newRest
-                                )
-                        }
-                    $ KMapF def newKeyVals newRest
+             in case (newKeyVals, newRest) of
+                    ([], Just r) -> r
+                    _ ->
+                        Term
+                            argAttributes
+                                { hash =
+                                    Hashable.hash
+                                        ( "KMap" :: ByteString
+                                        , def
+                                        , map (\(k, v) -> (hash $ getAttributes k, hash $ getAttributes v)) newKeyVals
+                                        , hash . getAttributes <$> newRest
+                                        )
+                                }
+                            $ KMapF def newKeyVals newRest
 
 pattern KList :: KListDefinition -> [Term] -> Maybe (Term, [Term]) -> Term
 pattern KList def heads rest <- Term _ (KListF def heads rest)
@@ -630,18 +633,21 @@ pattern KList def heads rest <- Term _ (KListF def heads rest)
                                 (\(m, ts) -> (heads <> heads', Just (m, ts <> tails)))
                                 rest'
                     other -> (heads, other)
-             in Term
-                    argAttributes
-                        { hash =
-                            Hashable.hash
-                                ( "KList" :: ByteString
-                                , def
-                                , map (hash . getAttributes) newHeads
-                                , fmap (hash . getAttributes . fst) newRest
-                                , fmap (map (hash . getAttributes) . snd) newRest
-                                )
-                        }
-                    $ KListF def newHeads newRest
+             in case (newHeads, newRest) of
+                    ([], Just (r, [])) -> r
+                    _ ->
+                        Term
+                            argAttributes
+                                { hash =
+                                    Hashable.hash
+                                        ( "KList" :: ByteString
+                                        , def
+                                        , map (hash . getAttributes) newHeads
+                                        , fmap (hash . getAttributes . fst) newRest
+                                        , fmap (map (hash . getAttributes) . snd) newRest
+                                        )
+                                }
+                            $ KListF def newHeads newRest
 
 pattern KSet :: KSetDefinition -> [Term] -> Maybe Term -> Term
 pattern KSet def elements rest <- Term _ (KSetF def elements rest)
@@ -662,17 +668,20 @@ pattern KSet def elements rest <- Term _ (KSetF def elements rest)
                     other -> ([], other)
                 newElements = sortAndDeduplicate $ elements <> elements'
                 newRest = rest'
-             in Term
-                    argAttributes
-                        { hash =
-                            Hashable.hash
-                                ( "KSet" :: ByteString
-                                , def
-                                , map (hash . getAttributes) newElements
-                                , fmap (hash . getAttributes) newRest
-                                )
-                        }
-                    $ KSetF def newElements newRest
+             in case (newElements, newRest) of
+                    ([], Just r) -> r
+                    _ ->
+                        Term
+                            argAttributes
+                                { hash =
+                                    Hashable.hash
+                                        ( "KSet" :: ByteString
+                                        , def
+                                        , map (hash . getAttributes) newElements
+                                        , fmap (hash . getAttributes) newRest
+                                        )
+                                }
+                            $ KSetF def newElements newRest
 {-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var, Injection, KMap, KList, KSet #-}
 
 -- hard-wired injection symbol
