@@ -114,7 +114,7 @@ testListGetHooks =
             hook <- maybe (error "List.get hook not found") pure $ Map.lookup "LIST.get" Builtin.hooks
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ hook []
-            assertException $ hook $ [[trm| X:SortList{} |]]
+            assertException $ hook [[trm| X:SortList{} |]]
             assertException $ hook $ replicate 3 [trm| X:SortList{} |]
         , testProperty "LIST.get with empty lists has no result" . property $ do
             hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
