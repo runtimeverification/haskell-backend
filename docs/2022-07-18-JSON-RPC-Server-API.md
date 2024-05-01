@@ -242,35 +242,37 @@ An additional `next-states` field contains all following states of the branch po
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "state": {
-      "term": {"format":"KORE", "version":1, "term":{}},
-      "predicate": {"format":"KORE", "version":1, "term":{}},
-      "substitution": {"format":"KORE", "version":1, "term":{}},
-    },
-    "depth": 2,
     "reason": "branching",
+    "depth": 0,
+    "state": <T><k> a ~> . </k> <val> X </val></T>
     "next-states": [
       {
-        "term": {"format": "KORE", "version": 1, "term": {}},
-        "predicate": {"format":"KORE", "version":1, "term":{}},
-        "substitution": {"format":"KORE", "version":1, "term":{}},
+        "term": <T><k> c ~> . </k> <val> X </val></T>,
+        "predicate": #Not (X #Equals 0),
+        "rule-id": "6974170fb1496dc2cae5b77afce0c12386d66ce73a4b2344c6512681ba06c70d",
+        "rule-predicate": #Not (X #Equals 0),
+        "rule-substitution": {...}
       },
       {
-        "term": {"format": "KORE", "version": 1, "term": {}},
-        "predicate": {"format":"KORE", "version":1, "term":{}},
-        "substitution": {"format":"KORE", "version":1, "term":{}},
+        "term": <T><k> b ~> . </k> <val> 0 </val></T>,
+        "rule-id": "79cf50846fb75eb486ff134a1a00f1546aee170ae548228b79d8898c12c93d2b",
+        "rule-predicate": X #Equals 0,
+        "substitution": V #Equals X #And X #Equals 0 #And ...
       }
-    ],
-    "logs": []
+    ]
   }
 }
 ```
+
+(note, in the example above theconfiguation and conditions have been pretty printed for clarity. The actual response would contain a `{"format":"KORE", "version":1, "term":{...}}` JSON term.)
 
 ##### Clarifications
 * It is possible that some of the `next-states` in a `branching` result have not actually taken rewrite steps. If one of the branches is stuck because of the added (branching) side condition, `next-states` will also contain this branch, with a term identical to the one in `state` and the branching condition added to the prior `predicate` from `term`.  
   Rationale: The branching should be indicated to the user. A subsequent `execute` step starting from this stuck `state` will of course immediately report `stuck`.
 * `branching` results are preferred to `cut-point-rule` and `terminal-rule` results. That means, if execution reaches a branch with one of the applying rules having a label/ID from `cut-point-rules` or `terminal-rules`, the response will be `branching`.  
   Rationale: The branching information must be provided, assuming the client will re-execute on each branch.
+* The `rule-predicate` term is a subterm of the `predicate` response and signals the requires clause predicate that was undecidable and thus caused branching. Note that variables inside `rule-predicate` may not always be present in the configuration, as they may have been simplified away.
+* `rule-substitution` is the substitution of the internal variables of the rules LHS with terms in the configuration before the rewrite. This data is purely for diagnostic purposes and should not be used for any reasoning as it contains interal variable names from the applied rule. The `substitution` field on the other hand is returned when the backend infers a new equality for some of the variables present in the configuration, e.g. when the backend splits on the condition `X == 0`, it adds `X == 0` into the substitution field in the response.
 
 #### Optional Logging
 
