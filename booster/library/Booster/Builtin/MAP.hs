@@ -77,9 +77,14 @@ mapUpdateAllHook [original, KMap _ [] Nothing] =
 mapUpdateAllHook [KMap _ [] Nothing, updates] =
     -- original map is empty, result is updates map
     pure $ Just updates
-mapUpdateAllHook [KMap _ _ (Just _), _updates] =
-    -- indeterminate part in original map, leave unevaluated
-    pure Nothing
+mapUpdateAllHook [original@(KMap _ pairs1 rest1@(Just _)), KMap _ pairs2 rest2]
+    | pairs1 == pairs2
+    , rest1 == rest2 -- identical maps, result is original
+        =
+        pure $ Just original
+    | otherwise -- indeterminate part in original map, leave unevaluated
+        =
+        pure Nothing
 mapUpdateAllHook [KMap def pairs1 Nothing, KMap _ pairs2 mbRest2]
     -- performing the update requires all keys to be fully evaluated
     -- (constructor-like) or syntactically equal.

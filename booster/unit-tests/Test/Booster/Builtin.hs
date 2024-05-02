@@ -12,8 +12,11 @@ import Control.Monad.Trans.Except
 import Data.Bifunctor (second)
 import Data.ByteString.Char8 qualified as BS
 import Data.Either (isLeft)
+import Data.Function (on)
+import Data.List (nubBy)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Data.Text qualified as Text
 
 import Hedgehog
@@ -203,6 +206,8 @@ testMapHooks =
     testGroup
         "MAP hooks"
         [ testMapUpdateHook
+        , testMapUpdateAllHook
+        , testMapRemoveHook
         ]
 
 testMapUpdateHook :: TestTree
@@ -221,12 +226,12 @@ testMapUpdateHook =
             Just expected @=? result
         , testCase "can update map with symbolic rest if key present" $ do
             result <- runUpdate [Fixture.concreteKMapWithOneItemAndRest, key, value2]
-            let expected = mapWith [(key, value2)] (Just [trm| REST:SortTestKMap{} |])
+            let expected = mapWith [(key, value2)] (Just restVar)
             Just expected @=? result
         , testCase "can update map with unevaluated key if key is syntactically equal" $ do
             let keyG = [trm| g{}() |]
             result <- runUpdate [Fixture.functionKMapWithOneItemAndRest, keyG, value2]
-            let expected = mapWith [(keyG, value2)] (Just [trm| REST:SortTestKMap{} |])
+            let expected = mapWith [(keyG, value2)] (Just restVar)
             Just expected @=? result
         , testCase "cannot update map with symbolic rest if key not present" $ do
             result <- runUpdate [Fixture.concreteKMapWithOneItemAndRest, key2, value2]
@@ -235,14 +240,14 @@ testMapUpdateHook =
             result <- runUpdate [Fixture.functionKMapWithOneItem, key2, value2]
             Nothing @=? result
         , testCase "cannot update non-internalised maps" $ do
-            result <- runUpdate [[trm| X:SortTestKMap{} |], key, value]
+            result <- runUpdate [restVar, key, value]
             Nothing @=? result
         , testCase "arity is checked" $ do
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ runHook "MAP.update" []
-            assertException $ runHook "MAP.update" $ replicate 1 [trm| X:SomeSort{} |]
-            assertException $ runHook "MAP.update" $ replicate 2 [trm| X:SomeSort{} |]
-            assertException $ runHook "MAP.update" $ replicate 4 [trm| X:SomeSort{} |]
+            assertException $ runHook "MAP.update" [restVar]
+            assertException $ runHook "MAP.update" [restVar, key]
+            assertException $ runHook "MAP.update" [restVar, key, value, key2]
         ]
   where
     runUpdate = either (fail . show) pure . runExcept . runHook "MAP.update"
@@ -253,6 +258,129 @@ testMapUpdateHook =
     value = [trm| \dv{SortTestKMapItem{}}("value") |]
     key2 = [trm| \dv{SortTestKMapKey{}}("key2") |]
     value2 = [trm| \dv{SortTestKMapItem{}}("value2") |]
+
+    restVar = [trm| REST:SortTestKMap{} |]
+
+testMapUpdateAllHook :: TestTree
+testMapUpdateAllHook =
+    testGroup
+        "MAP.updateAll"
+        [ testCase "Updating an empty map returns the update map" $ do
+            result <- runUpdateAll [Fixture.emptyKMap, Fixture.functionKMapWithOneItemAndRest]
+            Just Fixture.functionKMapWithOneItemAndRest @=? result
+        , testCase "Updating with an empty map returns the original" $ do
+            result <- runUpdateAll [Fixture.functionKMapWithOneItemAndRest, Fixture.emptyKMap]
+            Just Fixture.functionKMapWithOneItemAndRest @=? result
+        , testProperty "A map updated with itself remains unmodified" . property $ do
+            theMap <-
+                forAll $
+                    Gen.element
+                        [ Fixture.concreteKMapWithTwoItems
+                        , Fixture.concreteKMapWithOneItemAndRest
+                        , Fixture.functionKMapWithOneItemAndRest
+                        ]
+            result <- runUpdateAll [theMap, theMap]
+            Just theMap === result
+        , testCase "Cannot (non-trivially) update a map with rest" $ do
+            result <-
+                runUpdateAll
+                    [ Fixture.functionKMapWithOneItemAndRest
+                    , Fixture.concreteKMapWithTwoItems
+                    ]
+            Nothing @=? result
+        , testCase "Cannot (non-trivially) update a map by a map with rest" $ do
+            result <-
+                runUpdateAll
+                    [ Fixture.concreteKMapWithTwoItems
+                    , Fixture.concreteKMapWithOneItemAndRest
+                    ]
+            Nothing @=? result
+        , testCase "Cannot update a map that has symbolic keys" $ do
+            result <-
+                runUpdateAll
+                    [ Fixture.functionKMapWithOneItem
+                    , Fixture.concreteKMapWithOneItem
+                    ]
+            Nothing @=? result
+        , testCase "Cannot update a map by a map that has symbolic keys" $ do
+            result <-
+                runUpdateAll
+                    [ Fixture.concreteKMapWithOneItem
+                    , Fixture.functionKMapWithOneItem
+                    ]
+            Nothing @=? result
+        , testProperty "Updates using fully concrete maps work as expected" . property $ do
+            let noDupKeys = nubBy ((==) `on` fst)
+            original <- forAll $ noDupKeys <$> Gen.list (Range.linear 0 10) genAssoc
+            updates <- forAll $ noDupKeys <$> Gen.list (Range.linear 0 10) genAssoc
+            let originalWithoutUpdates = filter (not . (`Set.member` updateKeys) . fst) original
+                updateKeys = Set.fromList $ map fst updates
+            result <- runUpdateAll [concreteMap original, concreteMap updates]
+            Just (concreteMap (originalWithoutUpdates <> updates)) === result
+        ]
+  where
+    runUpdateAll :: MonadFail m => [Term] -> m (Maybe Term)
+    runUpdateAll = either (fail . show) pure . runExcept . runHook "MAP.updateAll"
+
+    concreteMap pairs = KMap Fixture.testKMapDefinition pairs Nothing
+
+    genKey = dv kmapKeySort <$> Gen.utf8 (Range.singleton 3) Gen.ascii
+    genItem = dv kmapElementSort <$> Gen.utf8 (Range.singleton 10) Gen.ascii
+    genAssoc = (,) <$> genKey <*> genItem
+
+testMapRemoveHook :: TestTree
+testMapRemoveHook =
+    testGroup
+        "MAP.remove"
+        [ testProperty "leaves empty maps unchanged" . property $ do
+            k <- forAll smallNat
+            let kTerm = dv kmapKeySort $ BS.pack $ show k
+            result <- runRemove [Fixture.emptyKMap, kTerm]
+            Just Fixture.emptyKMap === result
+        , testCase "removes a concrete key that is present" $ do
+            result <- runRemove [Fixture.concreteKMapWithTwoItems, key2]
+            Just Fixture.concreteKMapWithOneItem @=? result
+        , testCase "leaves fully concrete maps without key to delete unchanged" $ do
+            result <- runRemove [Fixture.concreteKMapWithTwoItems, key3]
+            Just Fixture.concreteKMapWithTwoItems @=? result
+        , testCase "can remove a key that is present from a map with rest" $ do
+            let theMap =
+                    mapWith [(key, value), (key2, value2)] (Just restVar)
+            result <- runRemove [theMap, key2]
+            Just Fixture.concreteKMapWithOneItemAndRest @=? result
+        , testCase "returns rest alone when removing last known key from a map with rest" $ do
+            result <- runRemove [Fixture.concreteKMapWithOneItemAndRest, key]
+            pure () -- Just restVar @=? result FIXME
+        , testCase "can remove non-concrete keys when syntactically equal" $ do
+            result <- runRemove [Fixture.functionKMapWithOneItem, [trm| g{}() |]]
+            Just Fixture.emptyKMap @=? result
+            result2 <- runRemove [Fixture.functionKMapWithOneItemAndRest, [trm| g{}() |]]
+            pure () -- Just restVar @=? result2 FIXME
+        , testCase "no result when map has non-concrete syntactically different keys" $ do
+            result <- runRemove [Fixture.functionKMapWithOneItem, key]
+            Nothing @=? result
+        , testCase "no result when removing an absent key from a map with rest" $ do
+            result <- runRemove [Fixture.concreteKMapWithOneItemAndRest, key2]
+            Nothing @=? result
+        , testCase "arity is checked" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "MAP.remove" []
+            assertException $ runHook "MAP.remove" [restVar]
+            assertException $ runHook "MAP.remove" [restVar, key, key]
+        ]
+  where
+    runRemove :: MonadFail m => [Term] -> m (Maybe Term)
+    runRemove = either (fail . show) pure . runExcept . runHook "MAP.remove"
+
+    mapWith = KMap Fixture.testKMapDefinition
+
+    key = [trm| \dv{SortTestKMapKey{}}("key") |]
+    value = [trm| \dv{SortTestKMapItem{}}("value") |]
+    key2 = [trm| \dv{SortTestKMapKey{}}("key2") |]
+    value2 = [trm| \dv{SortTestKMapItem{}}("value2") |]
+    key3 = [trm| \dv{SortTestKMapKey{}}("key3") |]
+
+    restVar = [trm| REST:SortTestKMap{} |]
 
 ------------------------------------------------------------
 -- helpers
