@@ -157,7 +157,7 @@ data Condition = Condition
 
 data ImpliesResult = ImpliesResult
     { implication :: KoreJson
-    , satisfiable :: Bool
+    , valid :: Bool
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
     }
