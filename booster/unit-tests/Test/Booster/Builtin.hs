@@ -208,7 +208,30 @@ testMapHooks =
         [ testMapUpdateHook
         , testMapUpdateAllHook
         , testMapRemoveHook
+        , testMapSizeHook
+        , testMapInKeysHook
+        , testMapLookupHook
+        , testMapLookupOrDefaultHook
+        , testMapKeysListHook
+        , testMapValuesHook
+        , testMapInclusionHook
         ]
+
+-- map helpers for property tests
+genKey, genItem :: MonadGen m => m Term
+genKey = dv kmapKeySort <$> Gen.utf8 (Range.singleton 3) Gen.ascii
+genItem = dv kmapElementSort <$> Gen.utf8 (Range.singleton 10) Gen.ascii
+
+genAssoc :: MonadGen m => m (Term, Term)
+genAssoc = (,) <$> genKey <*> genItem
+
+genAssocs :: MonadGen m => Range Int -> m [(Term, Term)]
+genAssocs range = noDupKeys <$> Gen.list range genAssoc
+  where
+    noDupKeys = nubBy ((==) `on` fst)
+
+mapWith :: [(Term, Term)] -> Maybe Term -> Term
+mapWith = KMap Fixture.testKMapDefinition
 
 testMapUpdateHook :: TestTree
 testMapUpdateHook =
@@ -251,8 +274,6 @@ testMapUpdateHook =
         ]
   where
     runUpdate = either (fail . show) pure . runExcept . runHook "MAP.update"
-
-    mapWith = KMap Fixture.testKMapDefinition
 
     key = [trm| \dv{SortTestKMapKey{}}("key") |]
     value = [trm| \dv{SortTestKMapItem{}}("value") |]
@@ -310,9 +331,8 @@ testMapUpdateAllHook =
                     ]
             Nothing @=? result
         , testProperty "Updates using fully concrete maps work as expected" . property $ do
-            let noDupKeys = nubBy ((==) `on` fst)
-            original <- forAll $ noDupKeys <$> Gen.list (Range.linear 0 10) genAssoc
-            updates <- forAll $ noDupKeys <$> Gen.list (Range.linear 0 10) genAssoc
+            original <- forAll $ genAssocs (Range.linear 0 10)
+            updates <- forAll $ genAssocs (Range.linear 0 10)
             let originalWithoutUpdates = filter (not . (`Set.member` updateKeys) . fst) original
                 updateKeys = Set.fromList $ map fst updates
             result <- runUpdateAll [concreteMap original, concreteMap updates]
@@ -322,11 +342,7 @@ testMapUpdateAllHook =
     runUpdateAll :: MonadFail m => [Term] -> m (Maybe Term)
     runUpdateAll = either (fail . show) pure . runExcept . runHook "MAP.updateAll"
 
-    concreteMap pairs = KMap Fixture.testKMapDefinition pairs Nothing
-
-    genKey = dv kmapKeySort <$> Gen.utf8 (Range.singleton 3) Gen.ascii
-    genItem = dv kmapElementSort <$> Gen.utf8 (Range.singleton 10) Gen.ascii
-    genAssoc = (,) <$> genKey <*> genItem
+    concreteMap = flip mapWith Nothing
 
 testMapRemoveHook :: TestTree
 testMapRemoveHook =
@@ -372,8 +388,6 @@ testMapRemoveHook =
     runRemove :: MonadFail m => [Term] -> m (Maybe Term)
     runRemove = either (fail . show) pure . runExcept . runHook "MAP.remove"
 
-    mapWith = KMap Fixture.testKMapDefinition
-
     key = [trm| \dv{SortTestKMapKey{}}("key") |]
     value = [trm| \dv{SortTestKMapItem{}}("value") |]
     key2 = [trm| \dv{SortTestKMapKey{}}("key2") |]
@@ -381,6 +395,92 @@ testMapRemoveHook =
     key3 = [trm| \dv{SortTestKMapKey{}}("key3") |]
 
     restVar = [trm| REST:SortTestKMap{} |]
+
+testMapSizeHook :: TestTree
+testMapSizeHook =
+    testGroup
+        "MAP.size"
+        [ testCase "arity is checked" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "MAP.size" []
+            assertException $ runHook "MAP.size" $ replicate 2 [trm| X:SortTestKMap |]
+        , testCase "cannot determine size of a map with rest" $ do
+            result <- runSize [Fixture.concreteKMapWithOneItemAndRest]
+            Nothing @=? result
+        , testProperty "correctly determines size of a map without rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 42)
+            result <- runSize [mapWith assocs Nothing]
+            Just (Builtin.intTerm (fromIntegral $ length assocs)) === result
+        ]
+  where
+    runSize :: MonadFail m => [Term] -> m (Maybe Term)
+    runSize = either (fail . show) pure . runExcept . runHook "MAP.size"
+
+testMapLookupHook :: TestTree
+testMapLookupHook =
+    testGroup
+        "MAP.lookup"
+        [ testCase "arity is checked" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "MAP.lookup" []
+            assertException $ runHook "MAP.lookup" [[trm| X:SortTestKMap |]]
+            assertException $ runHook "MAP.lookup" [[trm| X:SortTestKMap |], notAKey, notAKey]
+        , testCase "returns Nothing when looking into an empty map" $ do
+            result <- runLookup [Fixture.emptyKMap, notAKey]
+            Nothing @=? result
+        , testProperty "returns Nothing when key not found" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 10)
+            result <- runLookup [mapWith assocs Nothing, notAKey]
+            Nothing === result
+            result2 <- runLookup [mapWith assocs (Just restVar), notAKey]
+            Nothing === result2
+        , testProperty "returns item when key found" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 1 10)
+            key <- forAll $ Gen.element $ map fst assocs
+            let expected = fromMaybe (error "bad key choice") $ lookup key assocs
+            result <- runLookup [mapWith assocs Nothing, key]
+            Just expected === result
+            result2 <- runLookup [mapWith assocs (Just restVar), key]
+            Just expected === result2
+        ]
+  where
+    runLookup :: MonadFail m => [Term] -> m (Maybe Term)
+    runLookup = either (fail . show) pure . runExcept . runHook "MAP.lookup"
+
+    notAKey = [trm| \dv{SortTestKMapKey{}}("too-long-to-be-a-key") |]
+    -- keys generated by genKey are 3 characters long
+
+    restVar = [trm| REST:SortTestKMap{} |]
+
+testMapLookupOrDefaultHook :: TestTree
+testMapLookupOrDefaultHook =
+    testGroup
+        "MAP.lookupOrDefault"
+        []
+
+testMapInKeysHook :: TestTree
+testMapInKeysHook =
+    testGroup
+        "MAP.inKeys"
+        []
+
+testMapKeysListHook :: TestTree
+testMapKeysListHook =
+    testGroup
+        "MAP.keysList"
+        []
+
+testMapValuesHook :: TestTree
+testMapValuesHook =
+    testGroup
+        "MAP.values"
+        []
+
+testMapInclusionHook :: TestTree
+testMapInclusionHook =
+    testGroup
+        "MAP.inclusion"
+        []
 
 ------------------------------------------------------------
 -- helpers
