@@ -26,6 +26,9 @@ import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
+import Kore.Attribute.UniqueId (
+    UniqueId,
+ )
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -36,9 +39,6 @@ import Kore.Internal.Predicate as Predicate (
     makeFalsePredicate,
     makeNotPredicate,
     makeTruePredicate,
- )
-import Kore.Attribute.UniqueId (
-    UniqueId,
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
