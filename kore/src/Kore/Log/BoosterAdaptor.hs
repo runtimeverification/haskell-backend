@@ -105,17 +105,6 @@ renderOnelinePretty _exeName _startTime _timestampSwitch (WithTimestamp entry@(S
             & Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
             & Pretty.renderText
 
--- renderOneLineContext :: SomeEntry -> Text
--- renderOneLineContext entry@(SomeEntry context _actualEntry) =
---     let cs =
---             context
---                 & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
---         leaf = oneLineDoc entry
---      in Pretty.renderText
---             . Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
---             . mconcat
---             $ ("[kore]" : (cs <> [leaf]))
-
 renderStandardPretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =
     prettyActualEntry
