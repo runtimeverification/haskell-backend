@@ -94,7 +94,7 @@ import Proxy qualified
 import SMT qualified as KoreSMT
 import Stats qualified
 
-envName:: String
+envName :: String
 envName = "KORE_RPC_OPTS" -- aligned with legacy kore-rpc
 
 main :: IO ()
