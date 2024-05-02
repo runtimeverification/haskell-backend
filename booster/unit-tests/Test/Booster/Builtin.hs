@@ -370,12 +370,12 @@ testMapRemoveHook =
             Just Fixture.concreteKMapWithOneItemAndRest @=? result
         , testCase "returns rest alone when removing last known key from a map with rest" $ do
             result <- runRemove [Fixture.concreteKMapWithOneItemAndRest, key]
-            pure () -- Just restVar @=? result FIXME
+            Just restVar @=? result
         , testCase "can remove non-concrete keys when syntactically equal" $ do
             result <- runRemove [Fixture.functionKMapWithOneItem, [trm| g{}() |]]
             Just Fixture.emptyKMap @=? result
             result2 <- runRemove [Fixture.functionKMapWithOneItemAndRest, [trm| g{}() |]]
-            pure () -- Just restVar @=? result2 FIXME
+            Just restVar @=? result2
         , testCase "no result when map has non-concrete syntactically different keys" $ do
             result <- runRemove [Fixture.functionKMapWithOneItem, key]
             Nothing @=? result
