@@ -606,7 +606,7 @@ pattern KMap def keyVals rest <- Term _ (KMapF def keyVals rest)
                                 , hash . getAttributes <$> newRest
                                 )
                         }
-                    $ KMapF def newKeyVals newRest
+                    $      KMapF def newKeyVals newRest
 
 pattern KList :: KListDefinition -> [Term] -> Maybe (Term, [Term]) -> Term
 pattern KList def heads rest <- Term _ (KListF def heads rest)
