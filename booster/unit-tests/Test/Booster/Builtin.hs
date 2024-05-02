@@ -24,8 +24,8 @@ import Test.Tasty.HUnit hiding (assert)
 import Test.Tasty.Hedgehog
 
 import Booster.Builtin qualified as Builtin (hooks)
-import Booster.Builtin.Base qualified as Builtin (BuiltinFunction)
 import Booster.Builtin.BOOL qualified as Builtin
+import Booster.Builtin.Base qualified as Builtin (BuiltinFunction)
 import Booster.Builtin.INT qualified as Builtin
 import Booster.Pattern.Base
 import Booster.Syntax.Json.Internalise (trm)
@@ -59,22 +59,19 @@ testIntHooks =
     -- testIntHook2 :: ByteString -> (Int -> Int -> a) -> (a -> Term) -> TestTree
     testIntHook2 name op result =
         testProperty ("Hook " <> show name) . property $ do
-            let f =
-                    fromMaybe
-                        (error $ "Hook " <> show name <> " missing")
-                        (Map.lookup name Builtin.hooks)
-                runHook h args = either (error . Text.unpack) id . runExcept $ h args
+            let f = runHook name
+                run args = either (error . Text.unpack) id . runExcept $ f args
             a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
             b <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
             let dv_a = Builtin.intTerm a
                 dv_b = Builtin.intTerm b
             -- regular computation
-            Just (result $ op a b) === runHook f [dv_a, dv_b]
+            Just (result $ op a b) === run [dv_a, dv_b]
             -- Nothing for unevaluated arguments
             let fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
-            Nothing === runHook f [app fct [dv_a], dv_b]
-            Nothing === runHook f [dv_a, app fct [dv_b]]
-            Nothing === runHook f [app fct [dv_a], app fct [dv_b]]
+            Nothing === run [app fct [dv_a], dv_b]
+            Nothing === run [dv_a, app fct [dv_b]]
+            Nothing === run [app fct [dv_a], app fct [dv_b]]
             -- arity error on wrong argument count
             let assertException = assert . isLeft . runExcept
             assertException $ f []
@@ -86,65 +83,59 @@ testListSizeHooks =
     testGroup
         "LIST.size hooks"
         [ testProperty "LIST.size on concrete lists" . property $ do
-            l <- forAll $ Gen.int (Range.constant 0 12)
+            l <- forAll smallNat
             let aList =
                     KList Fixture.testKListDef (replicate l [trm| \dv{SomeSort{}}("thing")|]) Nothing
-            hook <- maybe failure pure $ Map.lookup "LIST.size" Builtin.hooks
             result <- evalEither $ runExcept $ hook [aList]
             Just (Builtin.intTerm (fromIntegral l)) === result
         , testProperty "LIST.size on symbolic lists has no result" . property $ do
-            l <- forAll $ Gen.int (Range.constant 1 5)
+            l <- forAll $ between1And 5
             let aList =
                     KList Fixture.testKListDef [] $
                         Just ([trm| INIT:SortList|], replicate l [trm| \dv{SomeSort{}}("thing")|])
-            hook <- maybe failure pure $ Map.lookup "LIST.size" Builtin.hooks
             result <- evalEither $ runExcept $ hook [aList]
             Nothing === result
         , testCase "LIST.size arity is checked" $ do
-            hook <- maybe (error "LIST.size hook not found") pure $ Map.lookup "LIST.size" Builtin.hooks
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ hook []
             assertException $ hook $ replicate 2 [trm| X:SortList{} |]
             assertException $ hook $ replicate 3 [trm| X:SortList{} |]
         ]
+  where
+    hook = runHook "LIST.size"
 
 testListGetHooks :: TestTree
 testListGetHooks =
     testGroup
         "LIST.get hooks"
         [ testCase "LIST.get arity is checked" $ do
-            hook <- maybe (error "List.get hook not found") pure $ Map.lookup "LIST.get" Builtin.hooks
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ hook []
             assertException $ hook [[trm| X:SortList{} |]]
             assertException $ hook $ replicate 3 [trm| X:SortList{} |]
         , testProperty "LIST.get with empty lists has no result" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
             i <- forAll $ Gen.int (Range.constant (-42) 42)
             let iTerm = Builtin.intTerm $ fromIntegral i
             result <- evalEither $ runExcept $ hook [aList [] Nothing, iTerm]
             Nothing === result
         , -- positive index
           testProperty "LIST.get with idx >= 0 on concrete lists" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            i <- forAll $ Gen.int (Range.constant 0 l)
+            l <- forAll smallNat
+            i <- forAll $ between0And l
             let iTerm = Builtin.intTerm $ fromIntegral i
             result <- evalEither $ runExcept $ hook [aList [0 .. l] Nothing, iTerm]
             Just (mkDV i) === result
         , testProperty "LIST.get with idx >= 0 on list with symbolic tail" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            i <- forAll $ Gen.int (Range.constant 0 l)
+            l <- forAll smallNat
+            i <- forAll $ between0And l
             let iTerm = Builtin.intTerm $ fromIntegral i
             result <-
                 evalEither . runExcept $
                     hook [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
             Just (mkDV i) === result
         , testProperty "List.get with idx >= 0 where concrete head too short" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            delta <- forAll $ Gen.int (Range.constant 1 42)
+            l <- forAll smallNat
+            delta <- forAll $ between1And 42
             let iTerm = Builtin.intTerm $ fromIntegral (l + delta)
             result <-
                 evalEither . runExcept $
@@ -155,34 +146,30 @@ testListGetHooks =
             Nothing === result
             Nothing === result2
         , testProperty "LIST.get with idx >= 0 on list with symbolic head" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            i <- forAll $ Gen.int (Range.constant 0 l)
+            l <- forAll smallNat
+            i <- forAll $ between0And l
             let symList = aList [] $ Just ([trm| X:SortList|], [0 .. l])
                 iTerm = Builtin.intTerm $ fromIntegral i
             result <- evalEither $ runExcept $ hook [symList, iTerm]
             Nothing === result
         , -- negative indexes
           testProperty "LIST.get with idx < 0 on concrete lists" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            i <- forAll $ Gen.int (Range.constant 1 $ l + 1)
+            l <- forAll smallNat
+            i <- forAll $ between1And (l + 1)
             let iTerm = Builtin.intTerm $ fromIntegral $ negate i
             result <- evalEither $ runExcept $ hook [aList [0 .. l] Nothing, iTerm]
             Just (mkDV (l + 1 - i)) === result
         , testProperty "LIST.get with idx < 0 on list with symbolic tail" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            i <- forAll $ Gen.int (Range.constant 1 $ l + 1)
+            l <- forAll smallNat
+            i <- forAll $ between1And (l + 1)
             let iTerm = Builtin.intTerm $ fromIntegral $ negate i
             result <-
                 evalEither . runExcept $
                     hook [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
             Nothing === result
         , testProperty "List.get with idx < 0 where concrete tail too short" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            delta <- forAll $ Gen.int (Range.constant 1 42)
+            l <- forAll smallNat
+            delta <- forAll $ between1And 42
             let iTerm = Builtin.intTerm $ fromIntegral $ negate (l + 1 + delta)
             result <-
                 evalEither . runExcept $
@@ -193,9 +180,8 @@ testListGetHooks =
             Nothing === result
             Nothing === result2
         , testProperty "LIST.get on list with symbolic head, concrete tail" . property $ do
-            hook <- maybe failure pure $ Map.lookup "LIST.get" Builtin.hooks
-            l <- forAll $ Gen.int (Range.constant 0 42)
-            i <- forAll $ Gen.int (Range.constant 1 $ l + 1)
+            l <- forAll smallNat
+            i <- forAll $ between1And (l + 1)
             let iTerm = Builtin.intTerm $ fromIntegral $ negate i
             result <-
                 evalEither . runExcept $
@@ -203,9 +189,12 @@ testListGetHooks =
             Just (mkDV (l + 1 - i)) === result
         ]
   where
+    hook = runHook "LIST.get"
+
     aList :: [Int] -> Maybe (Term, [Int]) -> Term
     aList heads mbTail =
         KList Fixture.testKListDef (map mkDV heads) (fmap (second $ map mkDV) mbTail)
+
     -- FIXME strictly-speaking, we would need injections to KItem here
     mkDV = dv someSort . BS.pack . show
 
@@ -246,7 +235,7 @@ testMapUpdateHook =
             result <- runUpdate [Fixture.functionKMapWithOneItem, key2, value2]
             Nothing @=? result
         , testCase "cannot update non-internalised maps" $ do
-            result <- runUpdate [ [trm| X:SortTestKMap{} |], key, value]
+            result <- runUpdate [[trm| X:SortTestKMap{} |], key, value]
             Nothing @=? result
         , testCase "arity is checked" $ do
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
@@ -254,7 +243,7 @@ testMapUpdateHook =
             assertException $ runHook "MAP.update" $ replicate 1 [trm| X:SomeSort{} |]
             assertException $ runHook "MAP.update" $ replicate 2 [trm| X:SomeSort{} |]
             assertException $ runHook "MAP.update" $ replicate 4 [trm| X:SomeSort{} |]
-       ]
+        ]
   where
     runUpdate = either (fail . show) pure . runExcept . runHook "MAP.update"
 
@@ -265,15 +254,20 @@ testMapUpdateHook =
     key2 = [trm| \dv{SortTestKMapKey{}}("key2") |]
     value2 = [trm| \dv{SortTestKMapItem{}}("value2") |]
 
+------------------------------------------------------------
+-- helpers
 runHook :: BS.ByteString -> Builtin.BuiltinFunction
 runHook name =
-        fromMaybe (error $ show name <> " hook not found") $
-            Map.lookup name Builtin.hooks
+    fromMaybe (error $ show name <> " hook not found") $
+        Map.lookup name Builtin.hooks
 
-
--- helpers
 smallNat :: Gen Int
 smallNat = Gen.int (Range.linear 0 42)
+
+between0And :: Int -> Gen Int
+between0And n -- assuming n >= 0
+    | n >= 0 = Gen.int (Range.linear 0 n)
+    | otherwise = error $ "Unexpected request for number between 0 and " <> show n
 
 between1And :: Int -> Gen Int
 between1And n -- assuming n > 0!
