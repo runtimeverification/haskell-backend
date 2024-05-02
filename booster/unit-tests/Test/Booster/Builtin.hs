@@ -24,6 +24,7 @@ import Test.Tasty.HUnit hiding (assert)
 import Test.Tasty.Hedgehog
 
 import Booster.Builtin qualified as Builtin (hooks)
+import Booster.Builtin.Base qualified as Builtin (BuiltinFunction)
 import Booster.Builtin.BOOL qualified as Builtin
 import Booster.Builtin.INT qualified as Builtin
 import Booster.Pattern.Base
@@ -36,6 +37,7 @@ test_builtins =
     [ testIntHooks
     , testListSizeHooks
     , testListGetHooks
+    , testMapHooks
     ]
 
 testIntHooks :: TestTree
@@ -206,3 +208,74 @@ testListGetHooks =
         KList Fixture.testKListDef (map mkDV heads) (fmap (second $ map mkDV) mbTail)
     -- FIXME strictly-speaking, we would need injections to KItem here
     mkDV = dv someSort . BS.pack . show
+
+testMapHooks :: TestTree
+testMapHooks =
+    testGroup
+        "MAP hooks"
+        [ testMapUpdateHook
+        ]
+
+testMapUpdateHook :: TestTree
+testMapUpdateHook =
+    testGroup
+        "MAP.update hook tests"
+        [ testCase "updates an empty map to a singleton" $ do
+            result <- runUpdate [Fixture.emptyKMap, key, value]
+            Just Fixture.concreteKMapWithOneItem @=? result
+        , testCase "can add an association to a map" $ do
+            result <- runUpdate [Fixture.concreteKMapWithOneItem, key2, value2]
+            Just Fixture.concreteKMapWithTwoItems @=? result
+        , testCase "can overwrite a value" $ do
+            result <- runUpdate [Fixture.concreteKMapWithTwoItems, key2, value]
+            let expected = mapWith [(key, value), (key2, value)] Nothing
+            Just expected @=? result
+        , testCase "can update map with symbolic rest if key present" $ do
+            result <- runUpdate [Fixture.concreteKMapWithOneItemAndRest, key, value2]
+            let expected = mapWith [(key, value2)] (Just [trm| REST:SortTestKMap{} |])
+            Just expected @=? result
+        , testCase "can update map with unevaluated key if key is syntactically equal" $ do
+            let keyG = [trm| g{}() |]
+            result <- runUpdate [Fixture.functionKMapWithOneItemAndRest, keyG, value2]
+            let expected = mapWith [(keyG, value2)] (Just [trm| REST:SortTestKMap{} |])
+            Just expected @=? result
+        , testCase "cannot update map with symbolic rest if key not present" $ do
+            result <- runUpdate [Fixture.concreteKMapWithOneItemAndRest, key2, value2]
+            Nothing @=? result
+        , testCase "cannot update map if any unevaluated keys present" $ do
+            result <- runUpdate [Fixture.functionKMapWithOneItem, key2, value2]
+            Nothing @=? result
+        , testCase "cannot update non-internalised maps" $ do
+            result <- runUpdate [ [trm| X:SortTestKMap{} |], key, value]
+            Nothing @=? result
+        , testCase "arity is checked" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "MAP.update" []
+            assertException $ runHook "MAP.update" $ replicate 1 [trm| X:SomeSort{} |]
+            assertException $ runHook "MAP.update" $ replicate 2 [trm| X:SomeSort{} |]
+            assertException $ runHook "MAP.update" $ replicate 4 [trm| X:SomeSort{} |]
+       ]
+  where
+    runUpdate = either (fail . show) pure . runExcept . runHook "MAP.update"
+
+    mapWith = KMap Fixture.testKMapDefinition
+
+    key = [trm| \dv{SortTestKMapKey{}}("key") |]
+    value = [trm| \dv{SortTestKMapItem{}}("value") |]
+    key2 = [trm| \dv{SortTestKMapKey{}}("key2") |]
+    value2 = [trm| \dv{SortTestKMapItem{}}("value2") |]
+
+runHook :: BS.ByteString -> Builtin.BuiltinFunction
+runHook name =
+        fromMaybe (error $ show name <> " hook not found") $
+            Map.lookup name Builtin.hooks
+
+
+-- helpers
+smallNat :: Gen Int
+smallNat = Gen.int (Range.linear 0 42)
+
+between1And :: Int -> Gen Int
+between1And n -- assuming n > 0!
+    | n > 0 = Gen.int (Range.linear 1 n)
+    | otherwise = error $ "Unexpected request for number between 1 and " <> show n
