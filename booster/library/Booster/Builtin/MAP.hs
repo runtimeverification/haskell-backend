@@ -246,8 +246,15 @@ mapInclusionHook = \case
             pure Nothing -- unevaluated keys present, indeterminate
     [KMap _ _ (Just _), KMap _ _ _] ->
         pure Nothing -- indeterminate part cannot be checked
-    [_, _] ->
-        pure Nothing
+    [KMap def [] Nothing, term] -> do
+        -- empty map included in any map of correct sort
+        term `shouldHaveSort` def.mapSortName
+        pure $ Just $ boolTerm True
+    [t1, t2]
+        | t1 == t2 -> -- identical arguments
+            pure $ Just $ boolTerm True
+        | otherwise -> -- unevaluated map
+            pure Nothing
     args ->
         arityError "MAP.inclusion" 2 args
   where
