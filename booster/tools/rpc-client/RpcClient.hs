@@ -49,7 +49,13 @@ import System.IO.Extra
 import System.Time.Extra (Seconds, sleep)
 
 import Booster.JsonRpc (rpcJsonConfig)
-import Booster.JsonRpc.Utils (KoreRpcJson (RpcRequest), decodeKoreRpc, diffJson, isIdentical, renderResult)
+import Booster.JsonRpc.Utils (
+    KoreRpcJson (RpcRequest),
+    decodeKoreRpc,
+    diffJson,
+    isIdentical,
+    renderResult,
+ )
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json qualified as Syntax
 import Kore.JsonRpc.Types qualified

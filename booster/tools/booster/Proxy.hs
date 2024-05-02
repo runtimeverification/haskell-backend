@@ -106,7 +106,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     handleExecute logSettings def start execReq
     Implies{} -> do
         -- try the booster end-point first
-        (boosterResult, boosterTime) <- Stats.timed $ booster req 
+        (boosterResult, boosterTime) <- Stats.timed $ booster req
         case boosterResult of
             res@Right{} -> do
                 logStats ImpliesM (boosterTime, 0)

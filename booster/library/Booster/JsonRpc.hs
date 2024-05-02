@@ -544,10 +544,10 @@ respond stateVar =
                                         . Left
                                         . RpcError.backendError
                                         . RpcError.ImplicationCheckError
-                                        . RpcError.ErrorWithContext "does-not-imply2" $
-                                        [ "not matching substitution"
-                                        , pack $ renderDefault $ vsep [pretty k <> "->" <> pretty v | (k, v) <- Map.toList violatingItems]
-                                        ]
+                                        . RpcError.ErrorWithContext "does-not-imply2"
+                                        $ [ "not matching substitution"
+                                          , pack $ renderDefault $ vsep [pretty k <> "->" <> pretty v | (k, v) <- Map.toList violatingItems]
+                                          ]
                                 else -- doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
                                 do
                                     let filteredConsequentPreds =
