@@ -274,12 +274,10 @@ showHashHex :: Int -> Text
 showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ Text.pack $ showHex w64 ""
 
 ruleIdText :: Equation a -> Text
-ruleIdText equation =
-    shortenRuleId $
-        fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
-  where
-    shortenRuleId :: Text -> Text
-    shortenRuleId msg = Text.take 8 msg
+ruleIdText equation = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)
+
+shortRuleIdText :: Equation a -> Text
+shortRuleIdText = Text.take 8 . ruleIdText
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
@@ -297,7 +295,7 @@ instance Entry DebugAttemptEquation where
         _entry@(DebugAttemptEquation equation term) ->
             let equationKindTxt = if isSimplification equation then "simplification" else "function"
              in [ Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term]
-                , Pretty.hsep . map Pretty.pretty $ [equationKindTxt, ruleIdText equation]
+                , Pretty.hsep . map Pretty.pretty $ [equationKindTxt, shortRuleIdText equation]
                 ]
         (DebugAttemptEquationResult _ result) -> case result of
             Right{} -> ["success"]
@@ -309,7 +307,7 @@ instance Entry DebugAttemptEquation where
             ( \loc ->
                 Pretty.hsep . concat $
                     [ ["[detail]"]
-                    , ["applying equation", Pretty.pretty (ruleIdText equation)]
+                    , ["applying equation", Pretty.pretty (shortRuleIdText equation)]
                     , ["at", pretty loc]
                     , ["to term", Pretty.pretty . showHashHex $ hash term, unparse term]
                     ]
