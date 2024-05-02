@@ -96,7 +96,7 @@ renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _conte
         xs -> xs
 
 renderOnelinePretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
-renderOnelinePretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =
+renderOnelinePretty _exeName _startTime _timestampSwitch (WithTimestamp entry@(SomeEntry entryContext _actualEntry) _entryTime) =
     let cs =
             entryContext
                 & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))

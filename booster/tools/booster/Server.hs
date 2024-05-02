@@ -29,7 +29,7 @@ import Data.InternedText (globalInternedTextCache)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe, isJust, mapMaybe, maybeToList)
+import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8)

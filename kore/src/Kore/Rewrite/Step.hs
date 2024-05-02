@@ -73,7 +73,6 @@ import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedLabeledRewriteRule,
  )
 import Kore.Log.DebugAttemptedRewriteRules (
-    debugAttemptedRewriteRule,
     whileDebugAttemptRewriteRule,
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
