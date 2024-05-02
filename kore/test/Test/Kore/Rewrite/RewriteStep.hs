@@ -37,6 +37,9 @@ import Kore.Internal.Predicate as Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import Kore.Attribute.UniqueId (
+    UniqueId,
+ )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
@@ -144,6 +147,7 @@ unifyRule ::
     Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
     From rule Label =>
+    From rule UniqueId =>
     Pattern RewritingVariableName ->
     rule ->
     IO [Step.UnifiedRule rule]
