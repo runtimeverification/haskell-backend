@@ -25,6 +25,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v25
