@@ -89,6 +89,7 @@ listInternalisation =
                     replicate 4 $
                         inList [trm| \dv{SomeSort{}}("after variable") |]
            in testCase "mixing a list" $ internalise (listConcat before listAfter) @=? mixedList
+        , testCase "[...REST] normalises to REST" $ KList Fixture.testKListDef [] (Just ([trm| REST:SortTestList{} |], [])) @=? [trm| REST:SortTestList{} |]
         ]
   where
     internalise = internaliseKList Fixture.testKListDef
@@ -178,6 +179,7 @@ setInternalisation =
                     (Just $ SymbolApplication Fixture.setConcatSym [] [var1, var2])
            in testCase "two variables and some concrete elements in set, concat pushed inwards" $
                 result @=? internalise twoVarsSet
+        , testCase "{...REST} normalises to REST" $ KSet Fixture.testKSetDef [] (Just [trm| REST:SortTestSet{} |]) @=? [trm| REST:SortTestSet{} |]
         ]
   where
     internalise = internaliseKSet Fixture.testKSetDef
@@ -270,6 +272,7 @@ mapSmartConstructors =
             let input = makeKMapWithRest [1, 2, 3] (makeKMapWithRest [1, 2, 4] [trm| REST:SortTestMap{}|])
                 expected = makeKMapWithRest [1, 2, 3, 4] [trm| REST:SortTestMap{}|]
              in input @=? expected
+        , testCase "{...REST} normalises to REST" $ KMap Fixture.testKMapDefinition [] (Just [trm| REST:SortTestMap{} |]) @=? [trm| REST:SortTestMap{} |]
         ]
   where
     -- produced a map of identities for all input ints: x1 |-> x1, x2 |-> x2 ...
