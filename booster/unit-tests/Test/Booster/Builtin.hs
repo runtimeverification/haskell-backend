@@ -30,6 +30,7 @@ import Booster.Builtin qualified as Builtin (hooks)
 import Booster.Builtin.BOOL qualified as Builtin
 import Booster.Builtin.Base qualified as Builtin (BuiltinFunction)
 import Booster.Builtin.INT qualified as Builtin
+import Booster.Builtin.LIST qualified as Builtin (kItemListDef)
 import Booster.Pattern.Base
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
@@ -232,6 +233,9 @@ genAssocs range = noDupKeys <$> Gen.list range genAssoc
 
 mapWith :: [(Term, Term)] -> Maybe Term -> Term
 mapWith = KMap Fixture.testKMapDefinition
+
+concreteList :: [Term] -> Term
+concreteList items = KList Builtin.kItemListDef items Nothing
 
 testMapUpdateHook :: TestTree
 testMapUpdateHook =
@@ -513,6 +517,26 @@ testMapInKeysHook =
             assertException $ runHook "MAP.in_keys" []
             assertException $ runHook "MAP.in_keys" [notAKey]
             assertException $ runHook "MAP.in_keys" [notAKey, restVar, restVar]
+        , testProperty "returns false when key not in fully-concrete map" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 42)
+            result <- runInKeys [notAKey, mapWith assocs Nothing]
+            Just (Builtin.boolTerm False) === result
+        , testProperty "no result when key not present and map has rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 42)
+            result <- runInKeys [notAKey, mapWith assocs (Just restVar)]
+            Nothing === result
+        , testProperty "returns true when key present (rest or not)" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 1 42)
+            key <- forAll $ Gen.element $ map fst assocs
+            result <- runInKeys [key, mapWith assocs Nothing]
+            Just (Builtin.boolTerm True) === result
+            result2 <- runInKeys [key, mapWith assocs (Just restVar)]
+            Just (Builtin.boolTerm True) === result2
+        , testCase "no result if unevaluated map keys present" $ do
+            result <- runInKeys [notAKey, Fixture.functionKMapWithOneItem]
+            Nothing @=? result
+            result2 <- runInKeys [notAKey, Fixture.functionKMapWithOneItemAndRest]
+            Nothing @=? result2
         ]
   where
     runInKeys :: MonadFail m => [Term] -> m (Maybe Term)
@@ -531,6 +555,17 @@ testMapKeysListHook =
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ runHook "MAP.keys_list" []
             assertException $ runHook "MAP.keys_list" [restVar, restVar]
+        , testProperty "no result if map has rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 10)
+            result <- runKeysList [mapWith assocs (Just restVar)]
+            Nothing === result
+        , testProperty "returns all keys for maps without rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 10)
+            result <- runKeysList [mapWith assocs Nothing]
+            let expected =
+                    -- map assocs are sorted and deduplicated
+                    concreteList . map fst . Set.toAscList . Set.fromList $ assocs
+            Just expected === result
         ]
   where
     runKeysList :: MonadFail m => [Term] -> m (Maybe Term)
@@ -546,6 +581,17 @@ testMapValuesHook =
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ runHook "MAP.values" []
             assertException $ runHook "MAP.values" [restVar, restVar]
+        , testProperty "no result if map has rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 10)
+            result <- runValues [mapWith assocs (Just restVar)]
+            Nothing === result
+        , testProperty "returns all values for maps without rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 0 10)
+            result <- runValues [mapWith assocs Nothing]
+            let expected =
+                    -- map assocs are sorted and deduplicated
+                    concreteList . map snd . Set.toAscList . Set.fromList $ assocs
+            Just expected === result
         ]
   where
     runValues :: MonadFail m => [Term] -> m (Maybe Term)
@@ -562,12 +608,90 @@ testMapInclusionHook =
             assertException $ runHook "MAP.inclusion" []
             assertException $ runHook "MAP.inclusion" [restVar]
             assertException $ runHook "MAP.inclusion" [restVar, restVar, restVar]
+        , testProperty "returns true if two argument maps are identical" . property $ do
+            theMap <- forAll anyMap
+            result <- runInclusion [theMap, theMap]
+            Just (Builtin.boolTerm True) === result
+        , testProperty "an empty map is included in any map" . property $ do
+            theMap <- forAll anyMap
+            result <- runInclusion [Fixture.emptyKMap, theMap]
+            Just (Builtin.boolTerm True) === result
+        , testProperty "no result if maps differ and the first one has a rest" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 1 10)
+            result <-
+                runInclusion
+                    [ mapWith assocs (Just restVar)
+                    , mapWith ((key, value) : assocs) Nothing
+                    ]
+            Nothing === result
+            result2 <-
+                runInclusion
+                    [ mapWith assocs (Just restVar)
+                    , mapWith ((key, value) : assocs) (Just restVar)
+                    ]
+            Nothing === result2
+        , testProperty "returns true if 1st map without rest included in 2nd" . property $ do
+            assocs <- forAll $ genAssocs (Range.linear 1 10)
+            result <-
+                runInclusion
+                    [ mapWith assocs Nothing
+                    , mapWith ((key, value) : assocs) Nothing
+                    ]
+            Just (Builtin.boolTerm True) === result
+            result2 <-
+                runInclusion
+                    [ mapWith assocs Nothing
+                    , mapWith ((key, value) : assocs) (Just restVar)
+                    ]
+            Just (Builtin.boolTerm True) === result2
+        , testProperty
+            "returns false if 1st map without rest not included in 2nd without rest"
+            . property
+            $ do
+                assocs <- forAll $ genAssocs (Range.linear 1 10)
+                result <-
+                    runInclusion
+                        [ mapWith ((key, value) : assocs) Nothing
+                        , mapWith assocs Nothing
+                        ]
+                Just (Builtin.boolTerm False) === result
+        , testProperty
+            "no result if 1st map without rest not included in 2nd with rest"
+            . property
+            $ do
+                assocs <- forAll $ genAssocs (Range.linear 1 10)
+                result2 <-
+                    runInclusion
+                        [ mapWith ((key, value) : assocs) Nothing
+                        , mapWith assocs (Just restVar)
+                        ]
+                Nothing === result2
         ]
   where
     runInclusion :: MonadFail m => [Term] -> m (Maybe Term)
     runInclusion = either (fail . show) pure . runExcept . runHook "MAP.inclusion"
 
     restVar = [trm| REST:SortTestKMap{} |]
+
+    key = [trm| \dv{SortTestKMapKey{}}("new key") |]
+    -- NB longer than generated ones!
+    value = [trm| \dv{SortTestKMapItem{}}("value") |]
+
+    anyMap = do
+        assocs <- genAssocs (Range.linear 0 10)
+        Gen.element
+            [ Fixture.emptyKMap
+            , Fixture.concreteKMapWithOneItem
+            , Fixture.concreteKMapWithTwoItems
+            , Fixture.concreteKMapWithOneItemAndRest
+            , Fixture.concreteKeySymbolicValueKMapWithRest
+            , Fixture.symbolicKMapWithOneItem
+            , Fixture.symbolicKMapWithTwoItems
+            , Fixture.concreteAndSymbolicKMapWithTwoItems
+            , Fixture.functionKMapWithOneItemAndRest
+            , Fixture.functionKMapWithOneItem
+            , mapWith assocs (Just restVar)
+            ]
 
 ------------------------------------------------------------
 -- helpers
