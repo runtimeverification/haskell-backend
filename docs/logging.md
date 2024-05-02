@@ -110,3 +110,8 @@ log any calls to the llvm simplifier here. usually it will be of the form:
 ...[constraint][term 585d8c3][detail] _<=Int_("0", "32")
 ...[constraint][term 585d8c3][llvm][success][term 98b0892][detail] "true"
 ```
+
+
+# Timestamps
+
+The booster now supports timestamps via `--log-timestamps`
