@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Booster.JsonRpc.Utils (
     diffJson,
+    diffJson',
     DiffResult (..),
     isIdentical,
     renderResult,
@@ -45,8 +46,11 @@ import Kore.Syntax.Json.Types hiding (Left, Right)
 import Prettyprinter qualified as Pretty
 
 diffJson :: BS.ByteString -> BS.ByteString -> DiffResult
-diffJson file1 file2 =
-    case (decodeKoreRpc file1, decodeKoreRpc file2) of
+diffJson file1 file2 = diffJson' (decodeKoreRpc file1) (decodeKoreRpc file2)
+
+diffJson' :: KoreRpcJson -> KoreRpcJson -> DiffResult
+diffJson' file1 file2 =
+    case (file1, file2) of
         -- special case for Branching execute result with two next states,
         -- useful when comparing responses of `kore-rpc` and `kore-rpc-booster`
         (contents1@(RpcResponse (Execute res1)), RpcResponse (Execute res2))

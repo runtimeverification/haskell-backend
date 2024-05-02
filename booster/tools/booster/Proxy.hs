@@ -34,7 +34,7 @@ import System.Clock (Clock (Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoS
 
 import Booster.Definition.Base (KoreDefinition)
 import Booster.JsonRpc as Booster (ServerState (..), execStateToKoreJson, toExecState)
-import Booster.JsonRpc.Utils (diffBy)
+import Booster.JsonRpc.Utils
 import Booster.Syntax.Json.Internalise
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
@@ -104,8 +104,19 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                             fromMaybe (error $ "Module " <> show m <> " not found") $
                                 Map.lookup m bState.definitions
                     handleExecute logSettings def start execReq
-    Implies impliesReq -> do
-        loggedKore ImpliesM (Implies impliesReq)
+    Implies{} -> do
+        -- try the booster end-point first
+        (boosterResult, boosterTime) <- Stats.timed $ booster req 
+        case boosterResult of
+            res@Right{} -> do
+                logStats ImpliesM (boosterTime, 0)
+                pure res
+            Left err -> do
+                Log.logWarnNS "proxy" . Text.pack $
+                    "implies error in booster: " <> fromError err
+                (koreRes, koreTime) <- Stats.timed $ kore req
+                logStats ImpliesM (boosterTime + koreTime, koreTime)
+                pure koreRes
     Simplify simplifyReq ->
         liftIO (getTime Monotonic) >>= handleSimplify simplifyReq . Just
     AddModule _ -> do

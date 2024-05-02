@@ -30,6 +30,7 @@ module Booster.Pattern.ApplyEquations (
     simplifyConstraints,
     SimplifierCache,
     logWarn,
+    evaluateConstraints,
 ) where
 
 import Control.Applicative (Alternative (..))
@@ -560,7 +561,7 @@ evaluatePattern doTracing def mLlvmLibrary smtSolver cache =
 
 -- version for internal nested evaluation
 evaluatePattern' ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
@@ -572,14 +573,38 @@ evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternCon
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
     pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
-  where
-    -- evaluate the given predicate assuming all others
-    simplifyAssumedPredicate p = withContext "constraint" $ do
-        allPs <- predicates <$> getState
-        let otherPs = Set.delete p allPs
-        eqState $ modify $ \s -> s{predicates = otherPs}
-        newP <- simplifyConstraint' True $ coerce p
-        pushConstraints $ Set.singleton $ coerce newP
+
+-- evaluate the given predicate assuming all others
+simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
+simplifyAssumedPredicate p = do
+    allPs <- predicates <$> getState
+    let otherPs = Set.delete p allPs
+    eqState $ modify $ \s -> s{predicates = otherPs}
+    newP <- simplifyConstraint' True $ coerce p
+    pushConstraints $ Set.singleton $ coerce newP
+
+evaluateConstraints ::
+    LoggerMIO io =>
+    Flag "CollectEquationTraces" ->
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    Maybe SMT.SMTContext ->
+    SimplifierCache ->
+    Set Predicate ->
+    io (Either EquationFailure (Set Predicate), SimplifierCache)
+evaluateConstraints doTracing def mLlvmLibrary smtSolver cache =
+    runEquationT doTracing def mLlvmLibrary smtSolver cache . evaluateConstraints'
+
+evaluateConstraints' ::
+    LoggerMIO io =>
+    Set Predicate ->
+    EquationT io (Set Predicate)
+evaluateConstraints' constraints = do
+    pushConstraints constraints
+    -- evaluate all existing constraints, once
+    traverse_ simplifyAssumedPredicate . predicates =<< getState
+    -- this may yield additional new constraints, left unevaluated
+    predicates <$> getState
 
 ----------------------------------------
 
