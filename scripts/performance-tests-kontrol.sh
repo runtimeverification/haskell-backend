@@ -30,9 +30,16 @@ if [ ! -e "$TEMPD" ]; then
     exit 1
 fi
 
-# Make sure the temp directory gets removed and kore-rpc-booster gets killed on script exit.
-trap "exit 1"           HUP INT PIPE QUIT TERM
-trap 'rm -rf "$TEMPD" && killall kore-rpc-booster || echo "no zombie processes found"'  EXIT
+clean_up () {
+    if [ -z "$KEEP_TEMPD" ]; then
+        rm -rf "$TEMPD"
+    fi
+    killall kore-rpc-booster || echo "no zombie processes found"
+}
+
+# Make sure the temp directory gets removed (unless KEEP_TEMPD is set) and kore-rpc-booster gets killed on script exit.
+trap "exit 1"  HUP INT PIPE QUIT TERM
+trap clean_up  EXIT
 
 cd $TEMPD
 git clone --depth 1 --branch $KONTROL_VERSION https://github.com/runtimeverification/kontrol.git
