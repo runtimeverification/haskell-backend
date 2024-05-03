@@ -595,20 +595,26 @@ respond stateVar =
                         }
 
     implies s' l r subst =
-        let s = externaliseSort s' in
-        pure $
-            Right $
-                RpcTypes.Implies
-                    RpcTypes.ImpliesResult
-                        { implication = addHeader $ Syntax.KJImplies s l r
-                        , valid = True
-                        , condition = Just RpcTypes.Condition {
-                            predicate = addHeader $ Syntax.KJTop s
-                            , substitution =
-                                addHeader $ (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs) . map (uncurry $ externaliseSubstitution s) . Map.toList $ subst
+        let s = externaliseSort s'
+         in pure $
+                Right $
+                    RpcTypes.Implies
+                        RpcTypes.ImpliesResult
+                            { implication = addHeader $ Syntax.KJImplies s l r
+                            , valid = True
+                            , condition =
+                                Just
+                                    RpcTypes.Condition
+                                        { predicate = addHeader $ Syntax.KJTop s
+                                        , substitution =
+                                            addHeader $
+                                                (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs)
+                                                    . map (uncurry $ externaliseSubstitution s)
+                                                    . Map.toList $
+                                                    subst
+                                        }
+                            , logs = Nothing
                             }
-                        , logs = Nothing
-                        }
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
