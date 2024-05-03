@@ -607,11 +607,11 @@ respond stateVar =
                                     RpcTypes.Condition
                                         { predicate = addHeader $ Syntax.KJTop s
                                         , substitution =
-                                            addHeader $
-                                                (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs)
+                                            addHeader
+                                                $ (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs)
                                                     . map (uncurry $ externaliseSubstitution s)
-                                                    . Map.toList $
-                                                    subst
+                                                    . Map.toList
+                                                $ subst
                                         }
                             , logs = Nothing
                             }
