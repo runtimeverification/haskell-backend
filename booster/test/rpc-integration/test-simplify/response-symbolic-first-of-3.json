@@ -43,29 +43,13 @@
                                 ]
                             },
                             {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                },
+                                "value": "68"
                             }
                         ]
                     }

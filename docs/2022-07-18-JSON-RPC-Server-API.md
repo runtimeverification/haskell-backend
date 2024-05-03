@@ -337,12 +337,13 @@ Not all backends support logging processing time, and some won't have the differ
   "params": {
     "antecedent": {"format": "KORE", "version": 1, "term": {}},
     "consequent": {"format": "KORE", "version": 1, "term": {}},
-    "module": "MODULE-NAME"
+    "module": "MODULE-NAME",
+    "log-timing": true
   }
 }
 ```
 
-Optional parameters: `module` (main module name)
+Optional parameters: `module` (main module name), `log-timing`
 
 ### Error Response:
 
@@ -390,7 +391,8 @@ If the implication holds, `satisfiable` is `true` and `condition` contains a wit
     "condition": {
       "substitution": {"format": "KORE", "version": 1, "term": {}},
       "predicate": {"format": "KORE", "version": 1, "term": {}}
-    }
+    },
+    "logs": []
   }
 }
 ```
@@ -403,7 +405,8 @@ If the implication cannot be shown to hold, `satisfiable` is false.
   "id": 1,
   "result": {
     "implication":  {"format": "KORE", "version": 1, "term": {}},
-    "satisfiable": false
+    "satisfiable": false,
+    "logs": []
   }
 }
 ```
@@ -429,12 +432,13 @@ indicating that the program configuration can be rewritten further => `satisfiab
   "method": "simplify",
   "params": {
     "state": {"format": "KORE", "version": 1, "term": {}},
-    "module": "MODULE-NAME"
+    "module": "MODULE-NAME",
+    "log-timing": true
   }
 }
 ```
 
-Optional parameters: `module` (main module name)
+Optional parameters: `module` (main module name), `log-timing`
 
 ### Error Response:
 
@@ -447,7 +451,8 @@ Same as for execute
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "state": {"format": "KORE", "version": 1, "term": {}}
+    "state": {"format": "KORE", "version": 1, "term": {}},
+    "logs": []
   }
 }
 ```
