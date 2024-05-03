@@ -13,6 +13,7 @@ module Booster.JsonRpc.Utils (
     rpcTypeOf,
     typeString,
     diffBy,
+    methodOfRpcCall,
 ) where
 
 import Control.Applicative ((<|>))
@@ -200,20 +201,21 @@ typeString = BS.pack . show
 
 rpcTypeOf :: KoreRpcJson -> KoreRpcType
 rpcTypeOf = \case
-    RpcRequest req -> RpcReq $ methodOf req
-    RpcResponse r -> RpcResp $ methodOf r
+    RpcRequest req -> RpcReq $ methodOfRpcCall req
+    RpcResponse r -> RpcResp $ methodOfRpcCall r
     RpcError{} -> RpcErr
     RpcKoreJson{} -> RpcKore
     RpcJson{} -> RpcJs
     NotRpcJson{} -> NotRpcJs
-  where
-    methodOf = \case
-        Execute _ -> ExecuteM
-        Implies _ -> ImpliesM
-        Simplify _ -> SimplifyM
-        AddModule _ -> AddModuleM
-        GetModel _ -> GetModelM
-        Cancel -> error "Cancel"
+
+methodOfRpcCall :: API r -> APIMethod
+methodOfRpcCall = \case
+    Execute _ -> ExecuteM
+    Implies _ -> ImpliesM
+    Simplify _ -> SimplifyM
+    AddModule _ -> AddModuleM
+    GetModel _ -> GetModelM
+    Cancel -> error "Cancel"
 
 -------------------------------------------------------------------
 -- doing the actual diff when output is requested

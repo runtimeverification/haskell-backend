@@ -115,6 +115,7 @@ executables:
       - base
       - bytestring
       - bz2
+      - casing
       - clock
       - directory
       - extra

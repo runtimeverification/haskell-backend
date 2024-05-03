@@ -47,6 +47,8 @@ import System.Exit
 import System.FilePath
 import System.IO.Extra
 import System.Time.Extra (Seconds, sleep)
+import Text.Casing (fromKebab, toPascal)
+import Text.Read (readMaybe)
 
 import Booster.JsonRpc (rpcJsonConfig)
 import Booster.JsonRpc.Utils (
@@ -54,6 +56,7 @@ import Booster.JsonRpc.Utils (
     decodeKoreRpc,
     diffJson,
     isIdentical,
+    methodOfRpcCall,
     renderResult,
  )
 import Booster.Prettyprinter (renderDefault)
@@ -121,7 +124,7 @@ makeRequest ::
     Maybe Socket ->
     BS.ByteString ->
     (BS.ByteString -> m a) ->
-    [String] ->
+    [Kore.JsonRpc.Types.APIMethod] ->
     m (Maybe a)
 makeRequest _ _ Nothing _ _ _ = pure Nothing
 makeRequest time name (Just s) request handleResponse runOnly = do
@@ -130,7 +133,7 @@ makeRequest time name (Just s) request handleResponse runOnly = do
     logDebug_ $ "Request JSON: " <> BS.unpack request
     case decodeKoreRpc request of
         RpcRequest r -> do
-            if null runOnly || reqToStr r `elem` runOnly
+            if null runOnly || methodOfRpcCall r `elem` runOnly
                 then do
                     liftIO $ sendAll s request
                     response <- liftIO readResponse
@@ -144,7 +147,7 @@ makeRequest time name (Just s) request handleResponse runOnly = do
                         liftIO $ writeFile (name <> ".time") timeStr
                     Just <$> handleResponse response
                 else do
-                    logInfo_ $ "Only processing " <> unwords runOnly <> " requests. Skipping..."
+                    logInfo_ $ "Skipping " <> reqToStr r <> " request"
                     pure Nothing
         _ -> do
             logWarn_ "Expected an RPC request. Skipping..."
@@ -241,7 +244,7 @@ data RunOptions
       RunTarball
         FilePath -- tar file
         Bool -- do not stop on first diff if set to true
-        [String] -- only run specified types of requests. run all if empty
+        [Kore.JsonRpc.Types.APIMethod] -- only run specified types of requests. run all if empty
     deriving stock (Show)
 
 data ProcessingOptions = ProcessingOptions
@@ -439,9 +442,9 @@ parseMode =
                     ( RunTarball
                         <$> strArgument (metavar "FILENAME")
                         <*> switch (long "keep-going" <> help "do not stop on unexpected output")
-                        <*> multiString
-                            ( long "run-request"
-                                <> help "Only run the specified request(s), e.g. --run-request \"add-module implies\""
+                        <*> readAPIMethods
+                            ( long "run-only"
+                                <> help "Only run the specified request(s), e.g. --run-only \"add-module implies\""
                             )
                         <**> helper
                     )
@@ -455,9 +458,12 @@ parseMode =
                 long "param-file"
                     <> metavar "PARAMFILE"
                     <> help "file with parameters (json object), optional"
-    multiString desc = concat <$> some single
+    readAPIMethods desc = concat <$> many single
       where
-        single = option (str >>= return . words) desc
+        single = option (maybeReader $ \s -> mapM readAPIMethod $ words s) desc
+
+        readAPIMethod :: String -> Maybe Kore.JsonRpc.Types.APIMethod
+        readAPIMethod = readMaybe . (<> "M") . toPascal . fromKebab
 
     paramOpt =
         option readPair $
@@ -470,7 +476,8 @@ parseMode =
 ----------------------------------------
 -- Running all requests contained in the `rpc_*` directory of a tarball
 
-runTarball :: CommonOptions -> Maybe Socket -> FilePath -> Bool -> [String] -> IO ()
+runTarball ::
+    CommonOptions -> Maybe Socket -> FilePath -> Bool -> [Kore.JsonRpc.Types.APIMethod] -> IO ()
 runTarball _ Nothing _ _ _ = pure ()
 runTarball common (Just sock) tarFile keepGoing runOnly = do
     -- unpack tar files, determining type from extension(s)
