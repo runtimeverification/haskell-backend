@@ -548,8 +548,7 @@ respond stateVar =
                                         $ [ "not matching substitution"
                                           , pack $ renderDefault $ vsep [pretty k <> "->" <> pretty v | (k, v) <- Map.toList violatingItems]
                                           ]
-                                else -- doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
-                                do
+                                else do
                                     let filteredConsequentPreds =
                                             Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
                                     solver <- traverse (SMT.initSolver def) mSMTOptions
