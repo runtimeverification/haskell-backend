@@ -555,13 +555,13 @@ respond stateVar =
                                     solver <- traverse (SMT.initSolver def) mSMTOptions
 
                                     if null filteredConsequentPreds
-                                        then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term
+                                        then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
                                         else -- pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $ "implies"
 
                                             ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
                                                 (Right newPreds, _) ->
                                                     if all (== Pattern.Predicate TrueBool) newPreds
-                                                        then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term
+                                                        then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
                                                         else --  pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $ "implies"
                                                             pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
                                                 (Left other, _) ->
@@ -594,14 +594,19 @@ respond stateVar =
                         , logs = Nothing
                         }
 
-    implies s l r =
+    implies s' l r subst =
+        let s = externaliseSort s' in
         pure $
             Right $
                 RpcTypes.Implies
                     RpcTypes.ImpliesResult
-                        { implication = addHeader $ Syntax.KJImplies (externaliseSort s) l r
+                        { implication = addHeader $ Syntax.KJImplies s l r
                         , valid = True
-                        , condition = Nothing
+                        , condition = Just RpcTypes.Condition {
+                            predicate = addHeader $ Syntax.KJTop s
+                            , substitution =
+                                addHeader $ (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs) . map (uncurry $ externaliseSubstitution s) . Map.toList $ subst
+                            }
                         , logs = Nothing
                         }
 
