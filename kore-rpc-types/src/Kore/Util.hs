@@ -19,7 +19,7 @@ showHashHex h = let cutoff = 7 in Text.take cutoff . Text.pack $ showHex (fromIn
 
 -- | From a Kore/Booster contextual one-line log message, extract the context prefix
 extractLogMessageContext :: Text -> Text
-extractLogMessageContext = Text.takeWhile isContextCharacter
+extractLogMessageContext = Text.filter (not . isBracket) . Text.takeWhile isContextCharacter
   where
     isContextCharacter :: Char -> Bool
     isContextCharacter c = isHexDigit c || isLower c || isSpace c || isBracket c
