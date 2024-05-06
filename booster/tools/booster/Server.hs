@@ -88,6 +88,7 @@ import Kore.Log.DebugSolver qualified as Log
 import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
+import Kore.Util (extractLogMessageContext)
 import Options.SMT as KoreSMT (KoreSolverOptions (..), Solver (..))
 import Prettyprinter qualified as Pretty
 import Proxy (KoreServer (..), ProxyConfig (..))
@@ -165,9 +166,10 @@ main = do
                     OneLine ->
                         if contexLoggingEnabled
                             then \txt ->
-                                -- FIXME: likely terrible performance! Use something that does not unpack Text
-                                not (any (flip Glob.match (Text.unpack txt)) negGlobPatterns)
-                                    && any (flip Glob.match (Text.unpack txt)) globPatterns
+                                let contextStr = Text.unpack $ extractLogMessageContext txt
+                                 in -- FIXME: likely terrible performance! Use something that does not unpack Text
+                                    not (any (flip Glob.match contextStr) negGlobPatterns)
+                                        && any (flip Glob.match contextStr) globPatterns
                             else const True
                     _ -> const True
 
