@@ -29,8 +29,8 @@ import Kore.Internal.Variable (
  )
 import Kore.Rewrite.RewritingVariable
 import Kore.Unparser
-import Log
 import Kore.Util (showHashHex)
+import Log
 import Prelude.Kore
 import Pretty (
     Pretty (..),

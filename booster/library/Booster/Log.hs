@@ -14,7 +14,6 @@ import Booster.Pattern.Base (
     TermAttributes (hash),
     pattern AndTerm,
  )
-import Kore.Util (showHashHex)
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, prettyPattern)
 import Control.Monad.IO.Class
@@ -43,6 +42,7 @@ import Data.Text (Text, pack)
 import Data.Text.Lazy qualified as LazyText
 import GHC.Exts (IsString (..))
 import GHC.TypeLits (KnownSymbol, symbolVal)
+import Kore.Util (showHashHex)
 import Prettyprinter (Pretty, pretty)
 
 newtype Logger a = Logger (a -> IO ())
