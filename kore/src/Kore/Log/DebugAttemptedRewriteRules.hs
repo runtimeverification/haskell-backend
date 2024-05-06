@@ -14,7 +14,6 @@ module Kore.Log.DebugAttemptedRewriteRules (
 
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Word (Word64)
 import Kore.Attribute.Axiom (
     SourceLocation,
     UniqueId (..),
@@ -31,7 +30,7 @@ import Kore.Internal.Variable (
 import Kore.Rewrite.RewritingVariable
 import Kore.Unparser
 import Log
-import Numeric (showHex)
+import Kore.Util (showHashHex)
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -58,9 +57,6 @@ instance Pretty DebugAttemptedRewriteRules where
             , "On configuration:"
             , Pretty.indent 2 . unparse $ configuration
             ]
-
-showHashHex :: Int -> Text
-showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ Text.pack $ showHex w64 ""
 
 shortenRuleId :: Text -> Text
 shortenRuleId msg = Text.take 8 msg

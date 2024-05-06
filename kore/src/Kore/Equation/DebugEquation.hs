@@ -33,7 +33,6 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
-import Data.Word (Word64)
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -61,8 +60,8 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Unparser (Unparse (..))
+import Kore.Util (showHashHex)
 import Log
-import Numeric (showHex)
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
@@ -268,10 +267,7 @@ failureDescription err = shorten . Pretty.renderText . Pretty.layoutOneLine . Pr
     shorten :: Text -> Text
     shorten msg =
         let cutoff = 500
-         in if Text.length msg > cutoff then Text.take 500 msg <> ("...truncated" :: Text) else msg
-
-showHashHex :: Int -> Text
-showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ Text.pack $ showHex w64 ""
+         in if Text.length msg > cutoff then Text.take cutoff msg <> ("...truncated" :: Text) else msg
 
 ruleIdText :: Equation a -> Text
 ruleIdText equation = fromMaybe "UNKNOWN" (Attribute.getUniqueId . Attribute.uniqueId . attributes $ equation)

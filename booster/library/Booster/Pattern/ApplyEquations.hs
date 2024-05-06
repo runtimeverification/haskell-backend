@@ -84,6 +84,7 @@ import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Bound (..), Flag (..))
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
+import Kore.Util (showHashHex)
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)

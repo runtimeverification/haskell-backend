@@ -14,6 +14,7 @@ import Booster.Pattern.Base (
     TermAttributes (hash),
     pattern AndTerm,
  )
+import Kore.Util (showHashHex)
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, prettyPattern)
 import Control.Monad.IO.Class
@@ -39,12 +40,9 @@ import Data.List.Extra (splitOn, takeEnd)
 import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text, pack)
-import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LazyText
-import Data.Word (Word64)
 import GHC.Exts (IsString (..))
 import GHC.TypeLits (KnownSymbol, symbolVal)
-import Numeric (showHex)
 import Prettyprinter (Pretty, pretty)
 
 newtype Logger a = Logger (a -> IO ())
@@ -96,9 +94,6 @@ withContext :: LoggerMIO m => LogContext -> m a -> m a
 withContext c = withLogger (\(Logger l) -> Logger $ l . (\(LogMessage ctxt m) -> LogMessage (c : ctxt) m))
 
 newtype TermCtxt = TermCtxt Int
-
-showHashHex :: Int -> Text
-showHashHex h = let w64 :: Word64 = fromIntegral h in Text.take 7 $ pack $ showHex w64 ""
 
 instance ToLogFormat TermCtxt where
     toTextualLog (TermCtxt hsh) = "term " <> (showHashHex hsh)
