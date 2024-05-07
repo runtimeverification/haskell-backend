@@ -15,7 +15,7 @@ import Numeric (showHex)
 
 -- | Represent an 'Int' as a short hexadecimal string
 showHashHex :: Int -> Text
-showHashHex h = let cutoff = 7 in Text.pack  . take cutoff $ showHex (fromIntegral @Int @Word64 h) ""
+showHashHex h = let cutoff = 7 in Text.pack . take cutoff $ showHex (fromIntegral @Int @Word64 h) ""
 
 -- | From a Kore/Booster contextual one-line log message, extract the context prefix
 extractLogMessageContext :: Text -> Text
