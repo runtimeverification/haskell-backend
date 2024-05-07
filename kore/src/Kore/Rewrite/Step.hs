@@ -42,6 +42,9 @@ import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
+import Kore.Attribute.UniqueId (
+    UniqueId (..),
+ )
 import Kore.Internal.Condition (
     Condition,
  )
@@ -70,7 +73,7 @@ import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedLabeledRewriteRule,
  )
 import Kore.Log.DebugAttemptedRewriteRules (
-    debugAttemptedRewriteRule,
+    whileDebugAttemptRewriteRule,
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
@@ -114,6 +117,7 @@ unifyRules ::
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
     From rule Label =>
+    From rule UniqueId =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -148,6 +152,7 @@ unifyRule ::
     UnifyingRule rule =>
     From rule SourceLocation =>
     From rule Label =>
+    From rule UniqueId =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -157,29 +162,30 @@ unifyRule ::
     NewUnifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     let maybeLabel = unLabel . from $ rule
-    debugAttemptedRewriteRule initial maybeLabel location
-    ruleMarker "Init"
-    let (initialTerm, initialCondition) = Pattern.splitTerm initial
-        sideCondition' =
-            sideCondition
-                & SideCondition.addConditionWithReplacements initialCondition
-    -- Unify the left-hand side of the rule with the term of the initial
-    -- configuration.
-    let ruleLeft = matchingPattern rule
-    ruleMarker "Unify"
-    unification <-
-        unificationProcedure sideCondition' initialTerm ruleLeft
-    -- Combine the unification solution with the rule's requirement clause,
-    ruleMarker "CheckSide"
-    let ruleRequires = precondition rule
-        requires' = Condition.fromPredicate ruleRequires
-    unification' <-
-        Simplifier.simplifyCondition
-            sideCondition'
-            (unification <> requires')
-    debugAppliedLabeledRewriteRule initial maybeLabel location
-    ruleMarker "Success"
-    return (rule `Conditional.withCondition` unification')
+        ruleId = from rule
+    whileDebugAttemptRewriteRule initial ruleId maybeLabel location $ do
+        ruleMarker "Init"
+        let (initialTerm, initialCondition) = Pattern.splitTerm initial
+            sideCondition' =
+                sideCondition
+                    & SideCondition.addConditionWithReplacements initialCondition
+        -- Unify the left-hand side of the rule with the term of the initial
+        -- configuration.
+        let ruleLeft = matchingPattern rule
+        ruleMarker "Unify"
+        unification <-
+            unificationProcedure sideCondition' initialTerm ruleLeft
+        -- Combine the unification solution with the rule's requirement clause,
+        ruleMarker "CheckSide"
+        let ruleRequires = precondition rule
+            requires' = Condition.fromPredicate ruleRequires
+        unification' <-
+            Simplifier.simplifyCondition
+                sideCondition'
+                (unification <> requires')
+        debugAppliedLabeledRewriteRule initial maybeLabel location
+        ruleMarker "Success"
+        return (rule `Conditional.withCondition` unification')
   where
     location = from @_ @SourceLocation rule
 
