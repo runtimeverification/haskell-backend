@@ -37,6 +37,7 @@ common haskell
     OverloadedStrings
     StandaloneDeriving
     ScopedTypeVariables
+    TypeApplications
     TypeFamilies
   default-language: Haskell2010
   build-depends: base >=4.7
@@ -82,6 +83,7 @@ library
   import: haskell
   import: library
   exposed-modules:
+    Kore.Util
     Kore.JsonRpc.Error
     Kore.JsonRpc.Types
     Kore.JsonRpc.Types.Log

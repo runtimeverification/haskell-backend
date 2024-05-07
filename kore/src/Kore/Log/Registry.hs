@@ -51,6 +51,7 @@ import Kore.Log.DebugAttemptedRewriteRules (
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
  )
+import Kore.Log.DebugContext (DebugContext)
 import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
@@ -263,6 +264,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugFinalPatterns
             , mk $ Proxy @DebugRewriteTrace
             , mk $ Proxy @LogJsonRpcServer
+            , mk $ Proxy @DebugContext
             , mk $ Proxy @InfoJsonRpcProcessRequest
             , mk $ Proxy @InfoJsonRpcCancelRequest
             ]

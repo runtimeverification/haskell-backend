@@ -536,6 +536,16 @@ present, replace the associated value with the new value provided.
         [hook{}("MAP.update")]
 ~~~
 
+### MAP.updateAll
+
+Insert all associations from the second map into the first map. If any key 
+is already present in the first map, the associated value is replaced with 
+the new value from the second map.
+
+~~~
+    hooked-symbol updateMap{}(Map{}, Map{}) : Map{}
+        [hook{}("MAP.updateAll")]
+~~~
 ### MAP.remove
 
 Remove the key and the value associated with it from the map. If the key

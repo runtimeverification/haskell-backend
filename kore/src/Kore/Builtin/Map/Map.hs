@@ -34,6 +34,7 @@ module Kore.Builtin.Map.Map (
     removeKey,
     unitKey,
     updateKey,
+    updateAllKey,
     sizeKey,
     valuesKey,
     inclusionKey,
@@ -72,6 +73,9 @@ unitKey = "MAP.unit"
 
 updateKey :: IsString s => s
 updateKey = "MAP.update"
+
+updateAllKey :: IsString s => s
+updateAllKey = "MAP.updateAll"
 
 in_keysKey :: IsString s => s
 in_keysKey = "MAP.in_keys"

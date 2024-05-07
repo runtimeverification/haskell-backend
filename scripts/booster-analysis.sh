@@ -4,11 +4,15 @@ set -euxo pipefail
 # Environment variables:
 #   LOG_DIR: path to bug report run logs, defaults to $BUG_REPORT_DIR-logs
 #   PARALLEL: number of bug reports to process in parallel, defaults to $(nproc)
+#   SERVER_OPTS: additional options for the server (default: none)
+#   K_VERSION: K version to use for testing (default: from deps/k_release)
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 
 PARALLEL=${PARALLEL:-$(nproc)}
+
+SERVER_OPTS=${SERVER_OPTS:-}
 
 BUG_REPORT_DIR=$1
 
@@ -24,11 +28,12 @@ nix_shell "cabal build kore-rpc-client"
 
 export CLIENT=$(nix_shell "cabal exec which kore-rpc-client" | tail -1)
 
-export LOG_DIR=${LOG_DIR:-"$BUG_REPORT_DIR-logs"}
+# removes trailing "/" from BUG_REPORT_DIR
+export LOG_DIR=${LOG_DIR:-"$(dirname "$BUG_REPORT_DIR/.")-logs"}
 
 mkdir -p $LOG_DIR
 
-K_VERSION=$(cat $SCRIPT_DIR/../deps/k_release)
+K_VERSION=${K_VERSION:-$(cat $SCRIPT_DIR/../deps/k_release)}
 export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps.secp256k1 --no-link  --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
 PLUGIN_VERSION=$(cat $SCRIPT_DIR/../deps/blockchain-k-plugin_release)
 export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PLUGIN_VERSION --no-link --json | jq -r '.[].outputs | to_entries[].value')
@@ -37,7 +42,7 @@ export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PL
 
 run_tarball(){
   echo "######## $1 ########";
-  $SCRIPT_DIR/run-with-tarball.sh "$1" -l Aborts --print-stats 2>&1 | tee "$LOG_DIR/$(basename "$1").out";
+  $SCRIPT_DIR/run-with-tarball.sh "$1" -l Aborts --print-stats ${SERVER_OPTS} 2>&1 | tee "$LOG_DIR/$(basename "$1").out";
 }
 
 export -f run_tarball
