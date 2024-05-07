@@ -7,7 +7,6 @@ License     : BSD-3-Clause
 module Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
     KoreLogType (..),
-    LogSomeActionData (..),
     KoreLogFormat (..),
     EntryTypes,
     ExeName (..),
@@ -166,17 +165,8 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | -- | Log using the two specified log actions
-      LogSomeAction LogSomeActionData
-
-{- | Log some entries as standard, and other as json, using the correspondingly named log actions.
-  Items are logged as Json (using the 'jsonLogAction' log action), if 'entrySelector' returns 'True' for the name of their type constructor.
--}
-data LogSomeActionData = LogSomeActionData
-    { entrySelector :: (Text -> Bool)
-    , jsonLogAction :: (forall m. MonadIO m => LogAction m Text)
-    , standardLogAction :: (forall m. MonadIO m => LogAction m Text)
-    }
+    | -- | Log action forwarded from proxy servers (e.g. kore-rpc-booster, kore-rpc-dev)
+      LogProxy (forall m. MonadIO m => LogAction m SomeEntry)
 
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
@@ -187,7 +177,7 @@ instance Show KoreLogType where
     show = \case
         LogStdErr -> "LogStdErr"
         LogFileText fp -> "LogFileText " <> show fp
-        LogSomeAction{} -> "LogSomeAction _"
+        LogProxy{} -> "LogProxy"
 
 data KoreLogFormat
     = Standard
@@ -540,7 +530,7 @@ selectDebugAttemptRewrite options entry
     | otherwise = False
   where
     getLabel = do
-        DebugAttemptedRewriteRules _ ruleLabel _ <- fromEntry entry
+        DebugAttemptedRewriteRules _ _ ruleLabel _ <- fromEntry entry
         ruleLabel
 
 newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions (HashSet Text)
@@ -680,7 +670,7 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
-        koreLogTypeFlag (LogSomeAction{}) = []
+        koreLogTypeFlag (LogProxy{}) = []
 
         koreLogFormatFlag Standard = []
         koreLogFormatFlag OneLine = ["--log-format=oneline"]
