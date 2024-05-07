@@ -39,8 +39,10 @@ import System.Clock (
     TimeSpec (..),
     getTime,
  )
+import System.Environment qualified as Env
 import System.Exit
 import System.FilePath.Glob qualified as Glob
+import System.IO (hPutStrLn, stderr)
 import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
@@ -96,10 +98,19 @@ import Proxy qualified
 import SMT qualified as KoreSMT
 import Stats qualified
 
+envName :: String
+envName = "KORE_RPC_OPTS" -- aligned with legacy kore-rpc
+
 main :: IO ()
 main = do
     startTime <- getTime Monotonic
-    options <- execParser clParser
+    options <- do
+        Env.lookupEnv envName >>= \case
+            Nothing -> execParser clParser
+            Just envArgs -> do
+                hPutStrLn stderr $ "Reading additional server options from " <> envName
+                args <- Env.getArgs
+                Env.withArgs (words envArgs <> args) $ execParser clParser
     let CLProxyOptions
             { clOptions =
                 clOPts@CLOptions
