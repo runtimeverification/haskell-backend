@@ -344,6 +344,7 @@ library
     Kore.Internal.Variable
     Kore.JsonRpc
     Kore.Log
+    Kore.Log.BoosterAdaptor
     Kore.Log.DebugAppliedRewriteRules
     Kore.Log.DebugAttemptedRewriteRules
     Kore.Log.DebugBeginClaim
@@ -368,6 +369,7 @@ library
     Kore.Log.ErrorRewritesInstantiation
     Kore.Log.ErrorVerify
     Kore.Log.DebugAttemptUnification
+    Kore.Log.DebugContext
     Kore.Log.JsonRpc
     Kore.Log.InfoExecBreadth
     Kore.Log.InfoExecDepth

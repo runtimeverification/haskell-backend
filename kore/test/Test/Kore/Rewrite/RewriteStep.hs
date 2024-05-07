@@ -26,6 +26,9 @@ import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
+import Kore.Attribute.UniqueId (
+    UniqueId,
+ )
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -144,6 +147,7 @@ unifyRule ::
     Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
     From rule Label =>
+    From rule UniqueId =>
     Pattern RewritingVariableName ->
     rule ->
     IO [Step.UnifiedRule rule]

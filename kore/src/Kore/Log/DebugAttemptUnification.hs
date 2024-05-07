@@ -38,6 +38,7 @@ instance Entry DebugAttemptUnification where
     entrySeverity _ = Debug
     contextDoc _ = Just "while attempting unification"
     oneLineDoc _ = "DebugAttemptUnification"
+    oneLineContextDoc _ = ["unify"]
     helpDoc _ = "log unification attempts"
 
 instance Pretty DebugAttemptUnification where
