@@ -13,9 +13,9 @@ import Data.Text qualified as Text
 import Data.Word (Word64)
 import Numeric (showHex)
 
--- | Represent aa 'Int' as a short hexadecimal string
+-- | Represent an 'Int' as a short hexadecimal string
 showHashHex :: Int -> Text
-showHashHex h = let cutoff = 7 in Text.take cutoff . Text.pack $ showHex (fromIntegral @Int @Word64 h) ""
+showHashHex h = let cutoff = 7 in Text.pack  . take cutoff $ showHex (fromIntegral @Int @Word64 h) ""
 
 -- | From a Kore/Booster contextual one-line log message, extract the context prefix
 extractLogMessageContext :: Text -> Text
