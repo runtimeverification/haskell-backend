@@ -23,6 +23,7 @@ fi
 
 # Create a temporary directory and store its name in a variable.
 TEMPD=$(mktemp -d)
+KEEP_TEMPD=${KEEP_TEMPD:-''}
 
 # Exit if the temp directory wasn't created successfully.
 if [ ! -e "$TEMPD" ]; then
@@ -30,9 +31,16 @@ if [ ! -e "$TEMPD" ]; then
     exit 1
 fi
 
-# Make sure the temp directory gets removed and kore-rpc-booster gets killed on script exit.
-trap "exit 1"           HUP INT PIPE QUIT TERM
-trap 'rm -rf "$TEMPD" && killall kore-rpc-booster || echo "no zombie processes found"'  EXIT
+clean_up () {
+    if [ -z "$KEEP_TEMPD" ]; then
+        rm -rf "$TEMPD"
+    fi
+    killall kore-rpc-booster || echo "no zombie processes found"
+}
+
+# Make sure the temp directory gets removed (unless KEEP_TEMPD is set) and kore-rpc-booster gets killed on script exit.
+trap "exit 1"  HUP INT PIPE QUIT TERM
+trap clean_up  EXIT
 
 cd $TEMPD
 git clone --depth 1 --branch $KONTROL_VERSION https://github.com/runtimeverification/kontrol.git
@@ -93,16 +101,27 @@ master_shell() {
   GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --command bash -c "$1"
 }
 
+# kompile Kontrol's K dependencies
 feature_shell "poetry install && poetry run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.foundry --jobs 4"
+
+# kompile the test contracts, to be reused in feature_shell and master_shell. Copy the result from pytest's temp directory
+PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir
+mkdir -p $PYTEST_TEMP_DIR
+FOUNDRY_DIR=$TEMPD/foundry
+mkdir -p $FOUNDRY_DIR
+feature_shell "make test-integration TEST_ARGS='--basetemp=$PYTEST_TEMP_DIR -n0 --dist=no -k test_foundry_kompile'"
+cp -r $PYTEST_TEMP_DIR/foundry/* $FOUNDRY_DIR
 
 mkdir -p $SCRIPT_DIR/logs
 
-feature_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
+feature_shell "make test-integration TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [ -z "$BUG_REPORT" ]; then
 if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-  master_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
+  # remove proofs so that they are not reused by the master shell call
+  rm -r $FOUNDRY_DIR/out/proofs
+  master_shell "make test-integration TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "no zombie processes found"
 fi
 
