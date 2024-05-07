@@ -23,6 +23,7 @@ fi
 
 # Create a temporary directory and store its name in a variable.
 TEMPD=$(mktemp -d)
+KEEP_TEMPD=${KEEP_TEMPD:-''}
 
 # Exit if the temp directory wasn't created successfully.
 if [ ! -e "$TEMPD" ]; then
