@@ -283,7 +283,7 @@ rpcJsonConfig =
                 , "next-states"
                 , "substitution"
                 , "predicate"
-                , "satisfiable"
+                , "valid"
                 , "implication"
                 , "condition"
                 , "module"
