@@ -29,7 +29,6 @@ module Booster.Pattern.ApplyEquations (
     simplifyConstraint,
     simplifyConstraints,
     SimplifierCache,
-    logWarn,
 ) where
 
 import Control.Applicative (Alternative (..))
@@ -383,16 +382,17 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 
 logWarn :: MonadLogger m => Text -> m ()
 logWarn msg =
-    logWarnNS "booster" $ msg <> " For more details, enable context logging '--log-context \"*abort\"'"
+    logWarnNS "booster" $
+        msg <> " For more details, enable context logging '--log-context \"*abort*detail\"'"
 
 checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
-        withContext "abort" $
+        withContext "abort" . withContext "detail" $
             logMessage $
                 renderOneLineText $
-                    "Equation loop:"
+                    "Equation loop detected:"
                         <+> hsep
                             ( intersperse "," $
                                 map (\(Term attrs _) -> "term" <+> pretty (showHashHex attrs.hash)) $
@@ -450,9 +450,14 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            let msg =
-                    "Recursion limit exceeded. The limit can be increased by restarting the server with '--equation-max-recursion N'."
-            withContext "abort" $ logMessage msg
+            let msg, details :: Text
+                msg =
+                    "Recursion limit exceeded. The limit can be increased by \
+                    \ restarting the server with '--equation-max-recursion N'."
+                details =
+                    "Recursion limit exceeded. \
+                    \Previous \"term*detail\" messages show the terms involved."
+            withContext "abort" . withContext "detail" $ logMessage details
             logWarn msg
             throw . TooManyRecursions . (.recursionStack) =<< getState
 
@@ -464,10 +469,10 @@ iterateEquations direction preference startTerm = do
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
                 let msg =
-                        renderOneLineText $
-                            "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                withContext "abort" $ logMessage msg
-                logWarn msg
+                        "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                withContext "abort" . withContext "detail" . logMessage . renderOneLineText $
+                    msg <+> "Final term:" <+> pretty currentTerm
+                logWarn $ renderOneLineText msg
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -497,14 +502,16 @@ llvmSimplify term = do
   where
     evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
-        | isConcrete t && attributes.canBeEvaluated = do
+        | isConcrete t && attributes.canBeEvaluated = withContext "llvm" $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
-                        withContext "llvm" $ withContext "abort" $ logMessage $ Text.decodeUtf8 e
-                        logWarn $ "LLVM backend error detected: " <> Text.decodeUtf8 e <> "."
+                        let msg = "LLVM backend error detected: " <> Text.decodeUtf8 e
+                            details = msg <> " while evaluating " <> renderOneLineText (pretty t)
+                        withContext "abort" . withContext "detail" $ logMessage details
+                        logWarn msg
                         throw $ UndefinedTerm t $ LlvmError e
-                    Right result -> withContext "llvm" $ do
+                    Right result -> do
                         when (result /= t) $ do
                             setChanged
                             withContext "success" $
@@ -692,12 +699,15 @@ applyHooksAndEquations pref term = do
         case term of
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
-                    withContext (LogContext $ "hook " <> maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook)
-                        $ either
-                            (\e -> withContext "abort" (logMessage e) >> logWarn e >> throw (InternalError e))
-                            checkChanged
-                            . runExcept
-                        $ hook args
+                    let hookName = maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook
+                        onError e = do
+                            withContext "abort" . withContext "detail" . logMessage $
+                                e <> " while evaluating " <> renderOneLineText (pretty term)
+                            logWarn e
+                            throw (InternalError e)
+                    withContext (LogContext $ "hook " <> hookName) $
+                        either onError checkChanged $
+                            runExcept (hook args)
             _other -> pure Nothing
 
     -- for the (unlikely) case that a built-in reproduces itself, we
@@ -1073,8 +1083,12 @@ simplifyConstraint' recurseIntoEvalBool = \case
                     withContext "llvm" $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
-                                withContext "abort" $ logMessage $ Text.decodeUtf8 e
-                                logWarn $ "LLVM backend error detected: " <> Text.decodeUtf8 e <> "."
+                                let msg =
+                                        "LLVM backend error detected: " <> Text.decodeUtf8 e
+                                    details =
+                                        msg <> " while evaluating " <> renderOneLineText (pretty t)
+                                withContext "abort" . withContext "detail" $ logMessage details
+                                logWarn msg
                                 throw $ UndefinedTerm t $ LlvmError e
                             Right res -> do
                                 let result =
