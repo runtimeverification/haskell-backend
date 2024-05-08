@@ -473,7 +473,7 @@ respond stateVar =
 
             case (internalised req.antecedent.term, internalised req.consequent.term) of
                 (Left patternError, _) -> do
-                    Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
+                    Log.logDebug $ "Error internalising antecedent" <> Text.pack (show patternError)
                     pure $
                         Left $
                             RpcError.backendError $
@@ -481,7 +481,7 @@ respond stateVar =
                                     [ patternErrorToRpcError patternError
                                     ]
                 (_, Left patternError) -> do
-                    Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
+                    Log.logDebug $ "Error internalising consequent" <> Text.pack (show patternError)
                     pure $
                         Left $
                             RpcError.backendError $
@@ -503,13 +503,7 @@ respond stateVar =
                                 "booster"
                                 (Log.LevelOther "ErrorDetails")
                                 (Text.unlines $ map prettyPattern unsupportedR)
-                    let doTracing =
-                            Flag $
-                                any
-                                    (fromMaybe False)
-                                    [ req.logSuccessfulSimplifications
-                                    , req.logFailedSimplifications
-                                    ]
+                    let
                         -- apply the given substitution before doing anything else
                         substPatL =
                             Pattern
@@ -535,36 +529,21 @@ respond stateVar =
                                 "match remainder: "
                                     <> renderDefault (pretty remainder)
                         MatchSuccess subst -> do
-                            -- check it is a "matching" substitution (substitutes variables
-                            -- from the subject term only). Return does not imply if not.
-                            let violatingItems = Map.restrictKeys subst (Map.keysSet subst `Set.difference` freeVariables substPatR.term)
-                            if not $ null violatingItems
-                                then do
-                                    pure
-                                        . Left
-                                        . RpcError.backendError
-                                        . RpcError.ImplicationCheckError
-                                        . RpcError.ErrorWithContext "does-not-imply2"
-                                        $ [ "not matching substitution"
-                                          , pack $ renderDefault $ vsep [pretty k <> "->" <> pretty v | (k, v) <- Map.toList violatingItems]
-                                          ]
-                                else do
-                                    let filteredConsequentPreds =
-                                            Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                    solver <- traverse (SMT.initSolver def) mSMTOptions
+                            let filteredConsequentPreds =
+                                    Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
+                                doTracing = Flag False
+                            solver <- traverse (SMT.initSolver def) mSMTOptions
 
-                                    if null filteredConsequentPreds
-                                        then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                        else -- pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $ "implies"
-
-                                            ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
-                                                (Right newPreds, _) ->
-                                                    if all (== Pattern.Predicate TrueBool) newPreds
-                                                        then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                                        else --  pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $ "implies"
-                                                            pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
-                                                (Left other, _) ->
-                                                    pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                            if null filteredConsequentPreds
+                                then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
+                                else
+                                    ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+                                        (Right newPreds, _) ->
+                                            if all (== Pattern.Predicate TrueBool) newPreds
+                                                then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
+                                                else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
+                                        (Left other, _) ->
+                                            pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
