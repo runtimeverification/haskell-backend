@@ -37,7 +37,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
-import Prettyprinter (pretty, vsep)
+import Prettyprinter (pretty)
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
@@ -57,7 +57,6 @@ import Booster.Pattern.Rewrite (
     performRewrite,
  )
 import Booster.Pattern.Util (
-    freeVariables,
     sortOfPattern,
     substituteInPredicate,
     substituteInTerm,
