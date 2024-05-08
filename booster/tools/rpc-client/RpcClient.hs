@@ -33,23 +33,35 @@ import Data.Int (Int64)
 import Data.List.Extra
 import Data.Maybe (isNothing, mapMaybe)
 import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 import Data.Vector as Array (fromList)
 import GHC.IO.Exception (IOErrorType (..), IOException (..))
 import Network.Run.TCP
 import Network.Socket
 import Network.Socket.ByteString.Lazy
 import Options.Applicative
+import Prettyprinter (pretty)
 import System.Clock
 import System.Directory
 import System.Exit
 import System.FilePath
 import System.IO.Extra
 import System.Time.Extra (Seconds, sleep)
+import Text.Casing (fromKebab, toPascal)
+import Text.Read (readMaybe)
 
 import Booster.JsonRpc (rpcJsonConfig)
-import Booster.JsonRpc.Utils (diffJson, isIdentical, renderResult)
+import Booster.JsonRpc.Utils (
+    KoreRpcJson (RpcRequest),
+    decodeKoreRpc,
+    diffJson,
+    isIdentical,
+    methodOfRpcCall,
+    renderResult,
+ )
+import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json qualified as Syntax
-import Data.Text.IO qualified as Text
+import Kore.JsonRpc.Types qualified
 
 main :: IO ()
 main = do
@@ -73,8 +85,8 @@ handleRunOptions common@CommonOptions{dryRun} s = \case
     [] -> case s of
         Just sock -> shutdown sock ShutdownReceive
         Nothing -> pure ()
-    (RunTarball tarFile keepGoing : xs) -> do
-        runTarball common s tarFile keepGoing
+    (RunTarball tarFile keepGoing runOnly : xs) -> do
+        runTarball common s tarFile keepGoing runOnly
         handleRunOptions common s xs
     (RunSingle mode optionFile options processingOptions : xs) -> do
         let ProcessingOptions{postProcessing, prettify, time} = processingOptions
@@ -102,6 +114,7 @@ handleRunOptions common@CommonOptions{dryRun} s = \case
                     s
                     request
                     (postProcess prettify postProcessing)
+                    []
         handleRunOptions common s xs
 
 makeRequest ::
@@ -111,24 +124,38 @@ makeRequest ::
     Maybe Socket ->
     BS.ByteString ->
     (BS.ByteString -> m a) ->
+    [Kore.JsonRpc.Types.APIMethod] ->
     m (Maybe a)
-makeRequest _ _ Nothing _ _ = pure Nothing
-makeRequest time name (Just s) request handleResponse = do
+makeRequest _ _ Nothing _ _ _ = pure Nothing
+makeRequest time name (Just s) request handleResponse runOnly = do
     start <- liftIO $ getTime Monotonic
     logInfo_ $ "Sending request " <> name <> "..."
     logDebug_ $ "Request JSON: " <> BS.unpack request
-    liftIO $ sendAll s request
-    response <- liftIO readResponse
-    end <- liftIO $ getTime Monotonic
-    logInfo_ "Response received."
-    logDebug_ $ "Response JSON: " <> BS.unpack response
-    let timeStr = timeSpecs start end
-    logInfo_ $ "Round trip time for request '" <> name <> "' was " <> timeStr
-    when time $ do
-        logInfo_ $ "Saving timing for " <> name
-        liftIO $ writeFile (name <> ".time") timeStr
-    Just <$> handleResponse response
+    case decodeKoreRpc request of
+        RpcRequest r -> do
+            if null runOnly || methodOfRpcCall r `elem` runOnly
+                then do
+                    liftIO $ sendAll s request
+                    response <- liftIO readResponse
+                    end <- liftIO $ getTime Monotonic
+                    logInfo_ "Response received."
+                    logDebug_ $ "Response JSON: " <> BS.unpack response
+                    let timeStr = timeSpecs start end
+                    logInfo_ $ "Round trip time for request '" <> name <> "' was " <> timeStr
+                    when time $ do
+                        logInfo_ $ "Saving timing for " <> name
+                        liftIO $ writeFile (name <> ".time") timeStr
+                    Just <$> handleResponse response
+                else do
+                    logInfo_ $ "Skipping " <> reqToStr r <> " request"
+                    pure Nothing
+        _ -> do
+            logWarn_ "Expected an RPC request. Skipping..."
+            pure Nothing
   where
+    reqToStr :: Kore.JsonRpc.Types.API 'Kore.JsonRpc.Types.Req -> String
+    reqToStr = renderDefault . pretty
+
     bufSize :: Int64
     bufSize = 1024
     readResponse :: IO BS.ByteString
@@ -217,6 +244,7 @@ data RunOptions
       RunTarball
         FilePath -- tar file
         Bool -- do not stop on first diff if set to true
+        [Kore.JsonRpc.Types.APIMethod] -- only run specified types of requests. run all if empty
     deriving stock (Show)
 
 data ProcessingOptions = ProcessingOptions
@@ -414,6 +442,10 @@ parseMode =
                     ( RunTarball
                         <$> strArgument (metavar "FILENAME")
                         <*> switch (long "keep-going" <> help "do not stop on unexpected output")
+                        <*> readAPIMethods
+                            ( long "run-only"
+                                <> help "Only run the specified request(s), e.g. --run-only \"add-module implies\""
+                            )
                         <**> helper
                     )
                     (progDesc "Run all requests and compare responses from a bug report tarball")
@@ -426,6 +458,13 @@ parseMode =
                 long "param-file"
                     <> metavar "PARAMFILE"
                     <> help "file with parameters (json object), optional"
+    readAPIMethods desc = concat <$> many single
+      where
+        single = option (maybeReader $ \s -> mapM readAPIMethod $ words s) desc
+
+        readAPIMethod :: String -> Maybe Kore.JsonRpc.Types.APIMethod
+        readAPIMethod = readMaybe . (<> "M") . toPascal . fromKebab
+
     paramOpt =
         option readPair $
             short 'O'
@@ -437,9 +476,10 @@ parseMode =
 ----------------------------------------
 -- Running all requests contained in the `rpc_*` directory of a tarball
 
-runTarball :: CommonOptions -> Maybe Socket -> FilePath -> Bool -> IO ()
-runTarball _ Nothing _ _ = pure ()
-runTarball common (Just sock) tarFile keepGoing = do
+runTarball ::
+    CommonOptions -> Maybe Socket -> FilePath -> Bool -> [Kore.JsonRpc.Types.APIMethod] -> IO ()
+runTarball _ Nothing _ _ _ = pure ()
+runTarball common (Just sock) tarFile keepGoing runOnly = do
     -- unpack tar files, determining type from extension(s)
     let unpackTar
             | ".tar" == takeExtension tarFile = Tar.read
@@ -527,7 +567,7 @@ runTarball common (Just sock) tarFile keepGoing = do
             request <- liftIO . BS.readFile $ tmpDir </> basename <> "_request.json"
             expected <- liftIO . BS.readFile $ tmpDir </> basename <> "_response.json"
 
-            makeRequest False basename (Just skt) request pure >>= \case
+            makeRequest False basename (Just skt) request pure runOnly >>= \case
                 Nothing -> pure Nothing -- should not be reachable
                 Just actual -> do
                     let diff = diffJson expected actual

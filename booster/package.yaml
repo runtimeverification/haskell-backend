@@ -115,15 +115,18 @@ executables:
       - base
       - bytestring
       - bz2
+      - casing
       - clock
       - directory
       - extra
       - filepath
       - hs-backend-booster
+      - kore-rpc-types
       - monad-logger
       - network
       - network-run
       - optparse-applicative
+      - prettyprinter
       - tar
       - text
       - vector
