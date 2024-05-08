@@ -22,7 +22,13 @@ if [[ $FEATURE_BRANCH_NAME == "master" ]]; then
 fi
 
 # Create a temporary directory and store its name in a variable.
-TEMPD=$(mktemp -d)
+FRESH_TEMPD=0
+TEMPD=${TEMPD:-''}
+if [ -z "$TEMPD" ]; then
+    FRESH_TEMPD=1
+    TEMPD=$(mktemp -d)
+fi
+KEEP_TEMPD=${KEEP_TEMPD:-''}
 
 # Exit if the temp directory wasn't created successfully.
 if [ ! -e "$TEMPD" ]; then
@@ -30,9 +36,16 @@ if [ ! -e "$TEMPD" ]; then
     exit 1
 fi
 
-# Make sure the temp directory gets removed and kore-rpc-booster gets killed on script exit.
-trap "exit 1"           HUP INT PIPE QUIT TERM
-trap 'rm -rf "$TEMPD" && killall kore-rpc-booster || echo "No zombie processes found"'  EXIT
+clean_up () {
+    if [ -z "$KEEP_TEMPD" ]; then
+        rm -rf "$TEMPD"
+    fi
+    killall kore-rpc-booster || echo "no zombie processes found"
+}
+
+# Make sure the temp directory gets removed (unless KEEP_TEMPD is set) and kore-rpc-booster gets killed on script exit.
+trap "exit 1"  HUP INT PIPE QUIT TERM
+trap clean_up  EXIT
 
 feature_shell() {
   GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --command bash -c "$1"
@@ -43,7 +56,9 @@ master_shell() {
 }
 
 cd $TEMPD
-git clone --depth 1 --branch $KEVM_VERSION https://github.com/runtimeverification/evm-semantics.git
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+    git clone --depth 1 --branch $KEVM_VERSION https://github.com/runtimeverification/evm-semantics.git
+fi
 cd evm-semantics
 
 if [[ $KEVM_VERSION == "master" ]]; then
@@ -52,7 +67,9 @@ else
   KEVM_VERSION="${KEVM_VERSION//\//-}"
 fi
 
-git submodule update --init --recursive --depth 1 kevm-pyk/src/kevm_pyk/kproj/plugin
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+    git submodule update --init --recursive --depth 1 kevm-pyk/src/kevm_pyk/kproj/plugin
+fi
 
 BUG_REPORT=''
 POSITIONAL_ARGS=()
@@ -77,18 +94,25 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
-feature_shell "make poetry && poetry run -C kevm-pyk -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+    # kompile evm-semantics
+    feature_shell "make poetry && poetry run -C kevm-pyk -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+fi
 
+# kompile all verification K definitions and specs
+PREKOMPILED_DIR=$TEMPD/prekompiled
+mkdir -p $PREKOMPILED_DIR
+feature_shell "cd kevm-pyk && poetry run pytest src/tests/integration/test_prove.py::test_kompile_targets -vv --maxfail=0 --kompiled-targets-dir $PREKOMPILED_DIR"
 
 mkdir -p $SCRIPT_DIR/logs
 
-feature_shell "make test-prove-pyk PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --use-booster $BUG_REPORT' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+feature_shell "make test-prove-pyk PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --use-booster $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "No zombie processes found"
 
 
 if [ -z "$BUG_REPORT" ]; then
 if [ ! -e "$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-  master_shell "make test-prove-pyk PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --use-booster' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
+  master_shell "make test-prove-pyk PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --use-booster --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "No zombie processes found"
 fi
 
