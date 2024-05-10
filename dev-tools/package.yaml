@@ -183,6 +183,7 @@ executables:
       - conduit-extra
       - containers
       - exceptions
+      - fast-logger
       - hs-backend-booster
       - json-rpc
       - kore

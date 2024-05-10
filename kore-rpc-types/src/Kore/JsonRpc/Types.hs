@@ -157,7 +157,7 @@ data Condition = Condition
 
 data ImpliesResult = ImpliesResult
     { implication :: KoreJson
-    , satisfiable :: Bool
+    , valid :: Bool
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
     }
@@ -207,7 +207,7 @@ data APIMethod
     | SimplifyM
     | AddModuleM
     | GetModelM
-    deriving stock (Eq, Ord, Show, Enum)
+    deriving stock (Eq, Ord, Show, Enum, Read)
 
 type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
@@ -283,7 +283,7 @@ rpcJsonConfig =
                 , "next-states"
                 , "substitution"
                 , "predicate"
-                , "satisfiable"
+                , "valid"
                 , "implication"
                 , "condition"
                 , "module"

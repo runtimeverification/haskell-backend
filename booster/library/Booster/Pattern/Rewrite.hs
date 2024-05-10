@@ -740,21 +740,14 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     logSimplify "Term is undefined, pruning"
                     emitRewriteTrace $ RewriteSimplified [] (Just r)
                     pure Nothing
-                -- NB any errors here might be caused by simplifying one
-                -- of the constraints, so we cannot use partial results
-                -- and have to return the original on errors.
-                Left r@(TooManyIterations n start result) -> do
-                    ApplyEquations.logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
-                    logOtherNS
-                        "booster"
-                        (LevelOther "ErrorDetails")
-                        ( Text.unlines
-                            [ "Start term: " <> prettyText start
-                            , "End term: " <> prettyText result
-                            ]
-                        )
-                    -- could output term before and after at debug or custom log level
+                Left r@(TooManyIterations n _start _result) -> do
+                    logSimplify $
+                        "Unable to simplify in " <> Text.pack (show n) <> " iterations, returning original"
+                    -- warning has been printed inside ApplyEquation.evaluatePattern
                     emitRewriteTrace $ RewriteSimplified [] (Just r)
+                    -- NB start/result in this error are terms and might come
+                    -- from simplifying one of the constraints. Therefore, the
+                    -- original pattern must be returned.
                     pure $ Just p
                 Left r@(EquationLoop (t : ts)) -> do
                     logError "Equation evaluation loop"

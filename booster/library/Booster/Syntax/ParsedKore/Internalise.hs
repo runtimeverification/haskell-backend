@@ -15,6 +15,7 @@ module Booster.Syntax.ParsedKore.Internalise (
     DefinitionError (..),
     symb,
     definitionErrorToRpcError,
+    extractExistentials,
 ) where
 
 import Control.Monad
@@ -701,6 +702,13 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
             ((name, sort, term) :) <$> extractBinders rest
         other -> throwE $ DefinitionAxiomError $ MalformedArgumentBinder parsedAx other
 
+extractExistentials :: Syntax.KorePattern -> (Syntax.KorePattern, [(Id, Sort)])
+extractExistentials = \case
+    Syntax.KJExists{var, varSort, arg} -> do
+        ((var, varSort) :)
+            <$> extractExistentials arg
+    other -> (other, [])
+
 internaliseAxiom ::
     PartialDefinition ->
     ParsedAxiom ->
@@ -708,12 +716,6 @@ internaliseAxiom ::
 internaliseAxiom (Partial partialDefinition) parsedAxiom =
     classifyAxiom parsedAxiom >>= maybe (pure Nothing) processAxiom
   where
-    extractExistentials = \case
-        Syntax.KJExists{var, varSort, arg} -> do
-            ((var, varSort) :)
-                <$> extractExistentials arg
-        other -> (other, [])
-
     processAxiom :: AxiomData -> Except DefinitionError (Maybe AxiomResult)
     processAxiom = \case
         SubsortAxiom' Syntax.SortApp{name = Syntax.Id sub} Syntax.SortApp{name = Syntax.Id super} -> do

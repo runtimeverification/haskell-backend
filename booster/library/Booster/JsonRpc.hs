@@ -48,14 +48,20 @@ import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
+import Booster.Pattern.Bool (pattern TrueBool)
+import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
 import Booster.Pattern.Rewrite (
     RewriteFailed (..),
     RewriteResult (..),
     RewriteTrace (..),
     performRewrite,
  )
-import Booster.Pattern.Util (sortOfPattern, substituteInPredicate, substituteInTerm)
-import Booster.Prettyprinter (renderText)
+import Booster.Pattern.Util (
+    sortOfPattern,
+    substituteInPredicate,
+    substituteInTerm,
+ )
+import Booster.Prettyprinter (renderDefault, renderText)
 import Booster.SMT.Base qualified as SMT
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
@@ -73,7 +79,11 @@ import Booster.Syntax.Json.Internalise (
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base hiding (ParsedModule)
 import Booster.Syntax.ParsedKore.Base qualified as ParsedModule (ParsedModule (..))
-import Booster.Syntax.ParsedKore.Internalise (addToDefinitions, definitionErrorToRpcError)
+import Booster.Syntax.ParsedKore.Internalise (
+    addToDefinitions,
+    definitionErrorToRpcError,
+    extractExistentials,
+ )
 import Booster.Util (Flag (..), constructorName)
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..), Respond)
@@ -455,11 +465,87 @@ respond stateVar =
                                         { satisfiable = RpcTypes.Sat
                                         , substitution
                                         }
+        RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "implies" $ do
+            -- internalise given constrained term
+            let internalised =
+                    runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
+
+            case (internalised req.antecedent.term, internalised req.consequent.term) of
+                (Left patternError, _) -> do
+                    Log.logDebug $ "Error internalising antecedent" <> Text.pack (show patternError)
+                    pure $
+                        Left $
+                            RpcError.backendError $
+                                RpcError.CouldNotVerifyPattern
+                                    [ patternErrorToRpcError patternError
+                                    ]
+                (_, Left patternError) -> do
+                    Log.logDebug $ "Error internalising consequent" <> Text.pack (show patternError)
+                    pure $
+                        Left $
+                            RpcError.backendError $
+                                RpcError.CouldNotVerifyPattern
+                                    [ patternErrorToRpcError patternError
+                                    ]
+                (Right (patL, substitutionL, unsupportedL), Right (patR, substitutionR, unsupportedR)) -> do
+                    unless (null unsupportedL && null unsupportedR) $ do
+                        Log.logWarnNS
+                            "booster"
+                            "Implies: aborting due to unsupported predicate parts"
+                        unless (null unsupportedL) $
+                            Log.logOtherNS
+                                "booster"
+                                (Log.LevelOther "ErrorDetails")
+                                (Text.unlines $ map prettyPattern unsupportedL)
+                        unless (null unsupportedR) $
+                            Log.logOtherNS
+                                "booster"
+                                (Log.LevelOther "ErrorDetails")
+                                (Text.unlines $ map prettyPattern unsupportedR)
+                    let
+                        -- apply the given substitution before doing anything else
+                        substPatL =
+                            Pattern
+                                { term = substituteInTerm substitutionL patL.term
+                                , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
+                                , ceilConditions = patL.ceilConditions
+                                }
+                        substPatR =
+                            Pattern
+                                { term = substituteInTerm substitutionR patR.term
+                                , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
+                                , ceilConditions = patR.ceilConditions
+                                }
+
+                    case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
+                        MatchFailed (SubsortingError sortError) ->
+                            pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
+                                show sortError
+                        MatchFailed{} ->
+                            doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
+                        MatchIndeterminate remainder ->
+                            pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
+                                "match remainder: "
+                                    <> renderDefault (pretty remainder)
+                        MatchSuccess subst -> do
+                            let filteredConsequentPreds =
+                                    Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
+                                doTracing = Flag False
+                            solver <- traverse (SMT.initSolver def) mSMTOptions
+
+                            if null filteredConsequentPreds
+                                then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
+                                else
+                                    ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+                                        (Right newPreds, _) ->
+                                            if all (== Pattern.Predicate TrueBool) newPreds
+                                                then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
+                                                else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
+                                        (Left other, _) ->
+                                            pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
-        -- using "Method does not exist" error code
-        _ -> pure $ Left RpcError.notImplemented
   where
     withModule ::
         Maybe Text ->
@@ -473,6 +559,39 @@ respond stateVar =
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
+
+    doesNotImply s l r =
+        pure $
+            Right $
+                RpcTypes.Implies
+                    RpcTypes.ImpliesResult
+                        { implication = addHeader $ Syntax.KJImplies (externaliseSort s) l r
+                        , valid = False
+                        , condition = Nothing
+                        , logs = Nothing
+                        }
+
+    implies s' l r subst =
+        let s = externaliseSort s'
+         in pure $
+                Right $
+                    RpcTypes.Implies
+                        RpcTypes.ImpliesResult
+                            { implication = addHeader $ Syntax.KJImplies s l r
+                            , valid = True
+                            , condition =
+                                Just
+                                    RpcTypes.Condition
+                                        { predicate = addHeader $ Syntax.KJTop s
+                                        , substitution =
+                                            addHeader
+                                                $ (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs)
+                                                    . map (uncurry $ externaliseSubstitution s)
+                                                    . Map.toList
+                                                $ subst
+                                        }
+                            , logs = Nothing
+                            }
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
@@ -764,7 +883,7 @@ mkLogRewriteTrace
                 | logSuccessfulRewrites ->
                     Just $
                         singleton $
-                            Rewrite
+                            Kore.JsonRpc.Types.Log.Rewrite
                                 { result =
                                     Success
                                         { rewrittenTerm = Nothing
@@ -778,7 +897,7 @@ mkLogRewriteTrace
                 | logFailedRewrites ->
                     Just $
                         singleton $
-                            Rewrite
+                            Kore.JsonRpc.Types.Log.Rewrite
                                 { result = case reason of
                                     NoApplicableRules{} -> Failure{reason = "No applicable rules found", _ruleId = Nothing}
                                     TermIndexIsNone{} -> Failure{reason = "Term index is None for term", _ruleId = Nothing}
