@@ -60,6 +60,8 @@ import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
 import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
+import Control.Monad.Trans.Reader (runReaderT)
+import Data.Aeson (Value (Null))
 import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
@@ -145,11 +147,6 @@ main = do
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
             lvl `elem` customLevels
-                || case lvl of
-                    LevelOther l ->
-                        not (any (flip Glob.match (Text.unpack l)) negGlobPatterns)
-                            && any (flip Glob.match (Text.unpack l)) globPatterns
-                    _ -> False
                 || lvl >= logLevel && lvl <= LevelError
         koreSolverOptions = translateSMTOpts smtOptions
 
@@ -173,6 +170,9 @@ main = do
                     Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
                     OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
                     Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                koreLogEarlyFilter = case logFormat of
+                    Json -> \(Log.SomeEntry _ e) -> Log.oneLineJson e /= Null
+                    _ -> const True
                 koreLogLateFilter = case logFormat of
                     OneLine ->
                         if contexLoggingEnabled
@@ -191,13 +191,22 @@ main = do
                         else -- no context logging: only enable Kore log entries for the given Proxy log levels
                             Set.unions . mapMaybe (`Map.lookup` koreExtraLogs) $ customLevels
 
+                boosterContextLogger = case logFormat of
+                    Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
+                    _ -> Booster.Log.textLogger stderrLogger
+                filteredBoosterContextLogger =
+                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
+                        let ctxt = unwords $ map (\(Booster.Log.LogContext lc) -> Text.unpack $ Booster.Log.toTextualLog lc) ctxts
+                         in not (any (flip Glob.match ctxt) negGlobPatterns)
+                                && any (flip Glob.match ctxt) globPatterns
+
                 koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
                 koreLogActions = [koreLogAction]
                   where
                     koreLogAction =
                         koreSomeEntryLogAction
                             koreLogRenderer
-                            (const True)
+                            koreLogEarlyFilter
                             koreLogLateFilter
                             ( LogAction $ \txt -> liftIO $
                                 case mFileLogger of
@@ -277,7 +286,11 @@ main = do
 
                     let koreRespond, boosterRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
                         koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                        boosterRespond = Booster.Log.runLogger . Booster.Log.withContext "booster" . Booster.respond boosterState
+                        boosterRespond =
+                            flip runReaderT filteredBoosterContextLogger
+                                . Booster.Log.unLoggerT
+                                . Booster.Log.withContext "booster"
+                                . Booster.respond boosterState
 
                         proxyConfig =
                             ProxyConfig
@@ -333,14 +346,19 @@ koreExtraLogs =
 logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
 logLevelToKoreLogEntryMap =
     Map.fromList
-        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
-        , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
+        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation", "DebugTerm"])
+        , (LevelOther "SimplifyJson", ["DebugAttemptEquation", "DebugTerm"])
         ,
             ( LevelOther "RewriteKore"
-            , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
+            ,
+                [ "DebugAttemptedRewriteRules"
+                , "DebugAppliedLabeledRewriteRule"
+                , "DebugAppliedRewriteRules"
+                , "DebugTerm"
+                ]
             )
-        , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
-        , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
+        , (LevelOther "SimplifySuccess", ["DebugApplyEquation", "DebugTerm"])
+        , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules", "DebugTerm"])
         ]
 
 data CLProxyOptions = CLProxyOptions

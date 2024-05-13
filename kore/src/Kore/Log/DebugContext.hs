@@ -6,6 +6,7 @@ module Kore.Log.DebugContext (
     DebugContext (..),
 ) where
 
+import Data.Aeson qualified as JSON
 import Data.Text qualified as Text
 import Log
 import Prelude.Kore
@@ -24,3 +25,5 @@ instance Entry DebugContext where
     helpDoc _ = "Plain text debug message to signify an action's context"
     oneLineDoc DebugContext{msg} = pretty msg
     oneLineContextDoc DebugContext{msg} = [pretty msg]
+    oneLineJson DebugContext{} = JSON.Null
+    oneLineContextJson DebugContext{msg} = JSON.String msg

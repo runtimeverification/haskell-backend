@@ -37,6 +37,7 @@ import Data.Text qualified as Text
 import Kore.Equation.DebugEquation (
     DebugApplyEquation,
     DebugAttemptEquation,
+    DebugTerm,
  )
 import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedLabeledRewriteRule,
@@ -251,6 +252,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugAttemptEquation
             , mk $ Proxy @DebugApplyEquation
             , mk $ Proxy @DebugUnification
+            , mk $ Proxy @DebugTerm
             , mk $ Proxy @InfoProofDepth
             , mk $ Proxy @InfoExecDepth
             , mk $ Proxy @DebugBeginClaim

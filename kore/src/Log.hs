@@ -270,8 +270,7 @@ instance MonadCatch m => MonadLog (LoggerT m) where
         lift $ someLogAction <& toEntry entry
     {-# INLINE logEntry #-}
 
-    logWhile entry2 action = do
-        logEntry entry2
+    logWhile entry2 action =
         (LoggerT . addContext $ getLoggerT action)
             `catch` (\(SomeEntry ctxt e) -> throwM $ SomeEntry (toEntry entry2 : ctxt) e)
       where

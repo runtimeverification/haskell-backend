@@ -82,7 +82,10 @@ import Booster.Pattern.Match
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
+import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..), Flag (..))
+import Data.Aeson (object, (.=))
+import Data.Bifunctor (bimap)
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Util (showHashHex)
 
@@ -731,7 +734,7 @@ applyHooksAndEquations pref term = do
                                 e <> " while evaluating " <> renderOneLineText (pretty term)
                             logWarn e
                             throw (InternalError e)
-                    withContext (LogContext $ "hook " <> hookName) $
+                    withContext (LogContext $ HookCtxt hookName) $
                         either onError checkChanged $
                             runExcept (hook args)
             _other -> pure Nothing
@@ -924,8 +927,9 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             withContext "match" $
                 withContext "failure" $
                     logMessage $
-                        renderOneLineText $
-                            "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                        WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                            renderOneLineText $
+                                "Uncertain about match with rule. Remainder:" <+> pretty remainder
             throwE IndeterminateMatch
         MatchSuccess subst -> do
             -- cancel if condition
@@ -937,9 +941,11 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             withContext "match" $
                 withContext "success" $
                     logMessage $
-                        renderOneLineText $
-                            "Substitution:"
-                                <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
+                        WithJsonMessage
+                            (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)]) $
+                            renderOneLineText $
+                                "Substitution:"
+                                    <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
 
             -- check required conditions, using substitution
             let required =
