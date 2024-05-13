@@ -336,8 +336,8 @@ instance Entry DebugAttemptEquation where
                     JSON.toJSON $ failureDescription failure
 
 newtype DebugTerm = DebugTerm (TermLike RewritingVariableName) deriving newtype (Pretty, Show)
-newtype DebugTermContext = DebugTermContext (TermLike RewritingVariableName) deriving newtype (Pretty, Show)
-
+newtype DebugTermContext = DebugTermContext (TermLike RewritingVariableName)
+    deriving newtype (Pretty, Show)
 
 newtype DebugEquation = DebugEquation (Equation RewritingVariableName)
     deriving newtype (Pretty, Show)
@@ -373,8 +373,6 @@ instance Entry DebugTerm where
 
     oneLineJson (DebugTerm term) =
         JSON.toJSON $ Kore.Syntax.Json.fromTermLike (getRewritingTerm term)
-
-
 
 instance Entry DebugEquation where
     entrySeverity _ = Debug

@@ -37,6 +37,8 @@ import System.Clock (
     toNanoSecs,
  )
 
+import Data.Aeson.Encode.Pretty (Config (confIndent), Indent (Spaces))
+import Data.ByteString.Lazy qualified as BSL
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)
 import Kore.Log qualified as Log
@@ -47,8 +49,6 @@ import Kore.Log.Registry (
  )
 import Log
 import Prelude.Kore
-import qualified Data.ByteString.Lazy as BSL
-import Data.Aeson.Encode.Pretty (Config(confIndent), Indent (Spaces))
 
 withLogger ::
     KoreLogOptions ->

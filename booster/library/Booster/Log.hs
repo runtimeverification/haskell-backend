@@ -15,7 +15,7 @@ import Control.Monad.Trans.Reader (ReaderT (..), ask, withReaderT)
 import Control.Monad.Trans.State (StateT (..))
 import Control.Monad.Trans.State.Strict qualified as Strict
 import Data.Aeson (ToJSON (..), Value (..), encode, (.=))
-import Data.Aeson.Encode.Pretty ( encodePretty', Config (confIndent), Indent (Spaces) )
+import Data.Aeson.Encode.Pretty (Config (confIndent), Indent (Spaces), encodePretty')
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.Types (object)
 import Data.Coerce (coerce)
@@ -167,7 +167,14 @@ instance ToLogFormat WithJsonMessage where
     toJSONLog (WithJsonMessage v _) = v
 
 newtype LoggerT m a = LoggerT {unLoggerT :: ReaderT (Logger LogMessage) m a}
-    deriving newtype (Applicative, Functor, Monad, MonadIO, Control.Monad.Logger.MonadLogger, Control.Monad.Logger.MonadLoggerIO)
+    deriving newtype
+        ( Applicative
+        , Functor
+        , Monad
+        , MonadIO
+        , Control.Monad.Logger.MonadLogger
+        , Control.Monad.Logger.MonadLoggerIO
+        )
 
 instance Control.Monad.Logger.MonadLoggerIO m => LoggerMIO (LoggerT m) where
     getLogger = LoggerT ask
@@ -176,12 +183,23 @@ instance Control.Monad.Logger.MonadLoggerIO m => LoggerMIO (LoggerT m) where
 textLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
 textLogger l = Logger $ \(LogMessage ctxts msg) ->
     let logLevel = mconcat $ intersperse "][" $ map (\(LogContext lc) -> toTextualLog lc) ctxts
-     in l $ "[" <> (Control.Monad.Logger.toLogStr logLevel) <> "] " <> (Control.Monad.Logger.toLogStr $ toTextualLog msg) <> "\n"
+     in l $
+            "["
+                <> (Control.Monad.Logger.toLogStr logLevel)
+                <> "] "
+                <> (Control.Monad.Logger.toLogStr $ toTextualLog msg)
+                <> "\n"
 
 jsonLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
 jsonLogger l = Logger $ \(LogMessage ctxts msg) ->
     let ctxt = toJSON $ map (\(LogContext lc) -> toJSONLog lc) ctxts
-     in liftIO $ l $ (Control.Monad.Logger.toLogStr $ encodePretty' rpcJsonConfig{confIndent = Spaces 0} $ object ["context" .= ctxt, "message" .= toJSONLog msg]) <> "\n"
+     in liftIO $
+            l $
+                ( Control.Monad.Logger.toLogStr $
+                    encodePretty' rpcJsonConfig{confIndent = Spaces 0} $
+                        object ["context" .= ctxt, "message" .= toJSONLog msg]
+                )
+                    <> "\n"
 
 filterLogger :: (LogMessage -> Bool) -> Logger LogMessage -> Logger LogMessage
 filterLogger p (Logger l) = Logger $ \m -> when (p m) $ l m

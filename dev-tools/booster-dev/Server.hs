@@ -16,7 +16,7 @@ import Control.Monad.Trans.Reader (runReaderT)
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing, fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text, unpack)
 import Options.Applicative
 import System.FilePath.Glob qualified as Glob
@@ -146,8 +146,11 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
             flip Log.runLoggingT (handleOutput stderrLogger mFileLogger) . Log.filterLogger levelFilter $
                 jsonRpcServer
                     srvSettings
-                    (const $  flip runReaderT filteredBoosterContextLogger
-                                . Booster.Log.unLoggerT . respond stateVar)
+                    ( const $
+                        flip runReaderT filteredBoosterContextLogger
+                            . Booster.Log.unLoggerT
+                            . respond stateVar
+                    )
                     [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
     globPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) logContexts
