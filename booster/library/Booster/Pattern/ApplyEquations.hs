@@ -938,14 +938,14 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             -- is violated
             withContext "match" $ checkConcreteness rule.attributes.concreteness subst
 
-            withContext "match" $
-                withContext "success" $
-                    logMessage $
-                        WithJsonMessage
-                            (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)]) $
-                            renderOneLineText $
-                                "Substitution:"
-                                    <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
+            withContext "match"
+                $ withContext "success"
+                $ logMessage
+                $ WithJsonMessage
+                    (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
+                $ renderOneLineText
+                $ "Substitution:"
+                    <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
 
             -- check required conditions, using substitution
             let required =

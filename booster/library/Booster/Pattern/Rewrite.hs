@@ -308,15 +308,15 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                             "Uncertain about match with rule. Remainder:" <+> pretty remainder
             failRewrite $ RuleApplicationUnclear rule pat.term remainder
         MatchSuccess substitution -> do
-            withContext "success" $
-                logMessage $
-                    WithJsonMessage
-                        ( object
-                            ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList substitution)]
-                        ) $
-                        renderOneLineText $
-                            "Substitution:"
-                                <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList substitution)
+            withContext "success"
+                $ logMessage
+                $ WithJsonMessage
+                    ( object
+                        ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList substitution)]
+                    )
+                $ renderOneLineText
+                $ "Substitution:"
+                    <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList substitution)
             pure substitution
 
     -- Also fail the whole rewrite if a rule applies but may introduce
