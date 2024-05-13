@@ -294,11 +294,7 @@ instance Entry DebugAttemptEquation where
     helpDoc _ = "log equation application attempts"
 
     oneLineContextDoc = \case
-        _entry@(DebugAttemptEquation equation term) ->
-            let equationKindTxt = if isSimplification equation then "simplification" else "function"
-             in [ Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term]
-                , Pretty.hsep . map Pretty.pretty $ [equationKindTxt, shortRuleIdText equation]
-                ]
+        _entry@DebugAttemptEquation{} -> ["detail"]
         (DebugAttemptEquationResult _ result) -> case result of
             Right Conditional{term} -> ["success", Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term], "kore-term"]
             Left{} -> ["failure"]
@@ -307,12 +303,7 @@ instance Entry DebugAttemptEquation where
         maybe
             mempty
             ( \loc ->
-                Pretty.hsep . concat $
-                    [ ["[detail]"]
-                    , ["applying equation", Pretty.pretty (shortRuleIdText equation)]
-                    , ["at", pretty loc]
-                    -- , ["to term", Pretty.pretty . showHashHex $ hash term, unparse term]
-                    ]
+                Pretty.hsep (["applying equation", Pretty.pretty (shortRuleIdText equation), "at", pretty loc])
             )
             (srcLoc equation)
     oneLineDoc (DebugAttemptEquationResult _ result) = case result of
@@ -320,15 +311,7 @@ instance Entry DebugAttemptEquation where
         Left failure -> " " <> Pretty.pretty (failureDescription failure)
 
     oneLineContextJson = \case
-        _entry@(DebugAttemptEquation equation _term) ->
-            let equationKindTxt = if isSimplification equation then "simplification" else "function"
-             in JSON.Array $
-                    Vec.fromList
-                        [ JSON.object
-                            [ equationKindTxt
-                                JSON..= shortRuleIdText equation
-                            ]
-                        ]
+        _entry@DebugAttemptEquation{} -> JSON.toJSON ["detail" :: Text]
         _entry@(DebugAttemptEquationResult _equation result) ->
             case result of
                 Right Conditional{term} ->
@@ -344,10 +327,7 @@ instance Entry DebugAttemptEquation where
 
     oneLineJson = \case
         _entry@(DebugAttemptEquation equation _term) ->
-            JSON.object
-                [ "message" JSON..= renderDefault (maybe "UNKNOWN" pretty (srcLoc equation))
-                , "context" JSON..= ["detail" :: Text]
-                ]
+            JSON.toJSON $ renderDefault (maybe "UNKNOWN" pretty (srcLoc equation))
         _entry@(DebugAttemptEquationResult _equation result) ->
             case result of
                 Right Conditional{term} ->
@@ -356,26 +336,65 @@ instance Entry DebugAttemptEquation where
                     JSON.toJSON $ failureDescription failure
 
 newtype DebugTerm = DebugTerm (TermLike RewritingVariableName) deriving newtype (Pretty, Show)
+newtype DebugTermContext = DebugTermContext (TermLike RewritingVariableName) deriving newtype (Pretty, Show)
 
-instance Entry DebugTerm where
+
+newtype DebugEquation = DebugEquation (Equation RewritingVariableName)
+    deriving newtype (Pretty, Show)
+
+instance Entry DebugTermContext where
     entrySeverity _ = Debug
 
-    oneLineDoc (DebugTerm term) =
-        "[kore-term]" Pretty.<+> unparse term
+    oneLineDoc DebugTermContext{} = mempty
 
-    oneLineContextDoc (DebugTerm term) =
+    oneLineContextDoc (DebugTermContext term) =
         [Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term]]
 
-    oneLineContextJson (DebugTerm term) =
+    oneLineContextJson (DebugTermContext term) =
         JSON.object
             [ "term" JSON..= showHashHex (hash term)
             ]
 
-    oneLineJson (DebugTerm term) =
-        JSON.object
-            [ "message" JSON..= Kore.Syntax.Json.fromTermLike (getRewritingTerm term)
-            , "context" JSON..= ["kore-term" :: Text]
+    oneLineJson DebugTermContext{} =
+        JSON.Null
+
+instance Entry DebugTerm where
+    entrySeverity _ = Debug
+
+    oneLineDoc (DebugTerm term) = unparse term
+
+    oneLineContextDoc DebugTerm{} =
+        ["kore-term"]
+
+    oneLineContextJson DebugTerm{} =
+        JSON.toJSON
+            [ "kore-term" :: Text
             ]
+
+    oneLineJson (DebugTerm term) =
+        JSON.toJSON $ Kore.Syntax.Json.fromTermLike (getRewritingTerm term)
+
+
+
+instance Entry DebugEquation where
+    entrySeverity _ = Debug
+
+    oneLineDoc _ = mempty
+
+    oneLineContextDoc (DebugEquation equation) =
+        let equationKindTxt = if isSimplification equation then "simplification" else "function"
+         in [ Pretty.hsep . map Pretty.pretty $ [equationKindTxt, shortRuleIdText equation]
+            ]
+    oneLineContextJson (DebugEquation equation) =
+        let equationKindTxt = if isSimplification equation then "simplification" else "function"
+         in JSON.Array $
+                Vec.fromList
+                    [ JSON.object
+                        [ equationKindTxt
+                            JSON..= shortRuleIdText equation
+                        ]
+                    ]
+    oneLineJson _ = JSON.Null
 
 whileDebugTerm ::
     MonadLog log =>
@@ -383,7 +402,7 @@ whileDebugTerm ::
     log a ->
     log a
 whileDebugTerm termLike m =
-    logEntry (DebugTerm termLike) >> logWhile (DebugTerm termLike) m
+    logWhile (DebugTermContext termLike) $ logEntry (DebugTerm termLike) >> m
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
@@ -401,8 +420,9 @@ whileDebugAttemptEquation ::
     log a ->
     log a
 whileDebugAttemptEquation termLike equation m =
-    logEntry (DebugAttemptEquation equation termLike)
-        >> logWhile (DebugAttemptEquation equation termLike) m
+    logWhile (DebugEquation equation) $
+        logEntry (DebugAttemptEquation equation termLike)
+            >> m
 
 -- | Log when an 'Equation' is actually applied.
 data DebugApplyEquation

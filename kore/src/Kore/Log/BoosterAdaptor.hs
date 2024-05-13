@@ -20,16 +20,24 @@ import Control.Monad.Cont (
     runContT,
  )
 import Data.Aeson qualified as JSON
+import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.Aeson.KeyMap qualified as JSON
-import Data.Aeson.Text qualified as JSON
 import Data.Functor.Contravariant (
     contramap,
  )
 import Data.Text (
     Text,
  )
-import Data.Text.Lazy qualified as LazyText
+import Data.Text.Encoding qualified as Text
 import Data.Vector qualified as Vec
+import Pretty qualified
+import System.Clock (
+    TimeSpec (..),
+    diffTimeSpec,
+    toNanoSecs,
+ )
+
+import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)
 import Kore.Log qualified as Log
 import Kore.Log.KoreLogOptions as KoreLogOptions
@@ -39,12 +47,8 @@ import Kore.Log.Registry (
  )
 import Log
 import Prelude.Kore
-import Pretty qualified
-import System.Clock (
-    TimeSpec (..),
-    diffTimeSpec,
-    toNanoSecs,
- )
+import qualified Data.ByteString.Lazy as BSL
+import Data.Aeson.Encode.Pretty (Config(confIndent), Indent (Spaces))
 
 withLogger ::
     KoreLogOptions ->
@@ -87,7 +91,7 @@ koreSomeEntryLogAction renderer earlyFilter lateFilter textLogAction =
 
 renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderJson _exeName _startTime _timestampSwitch (WithTimestamp e@(SomeEntry context actualEntry) _entryTime) =
-    LazyText.toStrict . JSON.encodeToLazyText $ json
+    Text.decodeUtf8 . BSL.toStrict . JSON.encodePretty' rpcJsonConfig{confIndent = Spaces 0} $ json
   where
     jsonContext =
         foldr
@@ -115,7 +119,7 @@ renderOnelinePretty _exeName _startTime _timestampSwitch (WithTimestamp entry@(S
             (entryContext <> [entry])
                 & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
         leaf = oneLineDoc entry
-     in mconcat (cs <> [leaf])
+     in mconcat cs Pretty.<+> leaf
             & Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
             & Pretty.renderText
 

@@ -5,6 +5,32 @@
 
 module Booster.Log (module Booster.Log) where
 
+import Control.Monad (when)
+import Control.Monad.IO.Class
+import Control.Monad.Logger qualified
+import Control.Monad.Trans.Class qualified as Trans
+import Control.Monad.Trans.Except (ExceptT (..))
+import Control.Monad.Trans.Maybe (MaybeT (..))
+import Control.Monad.Trans.Reader (ReaderT (..), ask, withReaderT)
+import Control.Monad.Trans.State (StateT (..))
+import Control.Monad.Trans.State.Strict qualified as Strict
+import Data.Aeson (ToJSON (..), Value (..), encode, (.=))
+import Data.Aeson.Encode.Pretty ( encodePretty', Config (confIndent), Indent (Spaces) )
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.Types (object)
+import Data.Coerce (coerce)
+import Data.Data (Proxy (..))
+import Data.Hashable qualified
+import Data.List (foldl', intercalate, intersperse)
+import Data.List.Extra (splitOn, takeEnd)
+import Data.Set qualified as Set
+import Data.String (IsString)
+import Data.Text (Text, pack)
+import Data.Text.Lazy qualified as LazyText
+import GHC.Exts (IsString (..))
+import GHC.TypeLits (KnownSymbol, symbolVal)
+import Prettyprinter (Pretty, pretty)
+
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base (RewriteRule (..), SourceRef (..), sourceRef)
 import Booster.Pattern.Base (
@@ -17,41 +43,8 @@ import Booster.Pattern.Base (
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (externaliseTerm)
-import Control.Monad (when)
-import Control.Monad.IO.Class
-import Control.Monad.Logger (
-    LogLevel (..),
-    LogStr,
-    MonadLogger,
-    MonadLoggerIO (askLoggerIO),
-    NoLoggingT,
-    ToLogStr (toLogStr),
-    defaultLoc,
-    filterLogger,
- )
-import Control.Monad.Trans.Class qualified as Trans
-import Control.Monad.Trans.Except (ExceptT (..))
-import Control.Monad.Trans.Maybe (MaybeT (..))
-import Control.Monad.Trans.Reader (ReaderT (..), ask, withReaderT)
-import Control.Monad.Trans.State (StateT (..))
-import Control.Monad.Trans.State.Strict qualified as Strict
-import Data.Aeson (ToJSON (..), Value (..), encode, (.=))
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.Types (object)
-import Data.ByteString (ByteString)
-import Data.Coerce (coerce)
-import Data.Data (Proxy (..))
-import Data.Hashable qualified
-import Data.List (foldl', intercalate, intersperse)
-import Data.List.Extra (splitOn, takeEnd)
-import Data.Set qualified as Set
-import Data.String (IsString)
-import Data.Text (Text, pack)
-import Data.Text.Lazy qualified as LazyText
-import GHC.Exts (IsString (..))
-import GHC.TypeLits (KnownSymbol, symbolVal)
+import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Util (showHashHex)
-import Prettyprinter (Pretty, pretty)
 
 newtype Logger a = Logger (a -> IO ())
 
@@ -67,7 +60,7 @@ instance IsString LogContext where
 data LogMessage where
     LogMessage :: ToLogFormat a => [LogContext] -> a -> LogMessage
 
-class MonadLoggerIO m => LoggerMIO m where
+class Control.Monad.Logger.MonadLoggerIO m => LoggerMIO m where
     getLogger :: m (Logger LogMessage)
     default getLogger :: (Trans.MonadTrans t, LoggerMIO n, m ~ t n) => m (Logger LogMessage)
     getLogger = Trans.lift getLogger
@@ -85,7 +78,7 @@ instance LoggerMIO m => LoggerMIO (StateT s m) where
 instance LoggerMIO m => LoggerMIO (Strict.StateT s m) where
     withLogger modL (Strict.StateT m) = Strict.StateT $ \s -> withLogger modL $ m s
 
-instance MonadIO m => LoggerMIO (NoLoggingT m) where
+instance MonadIO m => LoggerMIO (Control.Monad.Logger.NoLoggingT m) where
     getLogger = pure $ Logger $ \_ -> pure ()
     withLogger _ = id
 
@@ -174,21 +167,21 @@ instance ToLogFormat WithJsonMessage where
     toJSONLog (WithJsonMessage v _) = v
 
 newtype LoggerT m a = LoggerT {unLoggerT :: ReaderT (Logger LogMessage) m a}
-    deriving newtype (Applicative, Functor, Monad, MonadIO, MonadLogger, MonadLoggerIO)
+    deriving newtype (Applicative, Functor, Monad, MonadIO, Control.Monad.Logger.MonadLogger, Control.Monad.Logger.MonadLoggerIO)
 
-instance MonadLoggerIO m => LoggerMIO (LoggerT m) where
+instance Control.Monad.Logger.MonadLoggerIO m => LoggerMIO (LoggerT m) where
     getLogger = LoggerT ask
     withLogger modL (LoggerT m) = LoggerT $ withReaderT modL m
 
-textLogger :: (LogStr -> IO ()) -> Logger LogMessage
+textLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
 textLogger l = Logger $ \(LogMessage ctxts msg) ->
     let logLevel = mconcat $ intersperse "][" $ map (\(LogContext lc) -> toTextualLog lc) ctxts
-     in l $ "[" <> (toLogStr logLevel) <> "] " <> (toLogStr $ toTextualLog msg) <> "\n"
+     in l $ "[" <> (Control.Monad.Logger.toLogStr logLevel) <> "] " <> (Control.Monad.Logger.toLogStr $ toTextualLog msg) <> "\n"
 
-jsonLogger :: (LogStr -> IO ()) -> Logger LogMessage
+jsonLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
 jsonLogger l = Logger $ \(LogMessage ctxts msg) ->
     let ctxt = toJSON $ map (\(LogContext lc) -> toJSONLog lc) ctxts
-     in liftIO $ l $ (toLogStr $ encode $ object ["context" .= ctxt, "message" .= toJSONLog msg]) <> "\n"
+     in liftIO $ l $ (Control.Monad.Logger.toLogStr $ encodePretty' rpcJsonConfig{confIndent = Spaces 0} $ object ["context" .= ctxt, "message" .= toJSONLog msg]) <> "\n"
 
 filterLogger :: (LogMessage -> Bool) -> Logger LogMessage -> Logger LogMessage
 filterLogger p (Logger l) = Logger $ \m -> when (p m) $ l m

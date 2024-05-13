@@ -23,9 +23,12 @@ import Control.Monad.Logger (
     runNoLoggingT,
  )
 import Control.Monad.Logger qualified as Logger
+import Control.Monad.Trans.Reader (runReaderT)
+import Data.Aeson (Value (Null))
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
+import Data.Limit (Limit (..))
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
 import Data.Map qualified as Map
@@ -60,9 +63,6 @@ import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
 import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
-import Control.Monad.Trans.Reader (runReaderT)
-import Data.Aeson (Value (Null))
-import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
@@ -346,7 +346,7 @@ koreExtraLogs =
 logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
 logLevelToKoreLogEntryMap =
     Map.fromList
-        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation", "DebugTerm"])
+        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugTerm"])
         , (LevelOther "SimplifyJson", ["DebugAttemptEquation", "DebugTerm"])
         ,
             ( LevelOther "RewriteKore"
@@ -357,7 +357,7 @@ logLevelToKoreLogEntryMap =
                 , "DebugTerm"
                 ]
             )
-        , (LevelOther "SimplifySuccess", ["DebugApplyEquation", "DebugTerm"])
+        , (LevelOther "SimplifySuccess", ["DebugTerm"])
         , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules", "DebugTerm"])
         ]
 
