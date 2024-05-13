@@ -12,10 +12,11 @@ import Control.Monad (forM_, when)
 import Control.Monad.Logger (runNoLoggingT)
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Logger.CallStack (LogLevel (LevelError))
+import Control.Monad.Trans.Reader (runReaderT)
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromMaybe)
 import Data.Text (Text, unpack)
 import Options.Applicative
 import System.FilePath.Glob qualified as Glob
@@ -28,7 +29,7 @@ import Booster.GlobalState
 import Booster.JsonRpc (ServerState (..), handleSmtError, respond)
 import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
-import Booster.Log (runLogger)
+import Booster.Log qualified
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
@@ -47,6 +48,7 @@ main = do
             , logContexts
             , notLogContexts
             , logTimeStamps
+            , logFormat
             , llvmLibraryFile
             , smtOptions
             , equationOptions
@@ -87,6 +89,7 @@ main = do
             logContexts
             notLogContexts
             logTimeStamps
+            logFormat
   where
     withLlvmLib libFile m = case libFile of
         Nothing -> m Nothing
@@ -116,12 +119,21 @@ runServer ::
     [String] ->
     [String] ->
     Bool ->
+    LogFormat ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOptions (logLevel, customLevels) logContexts notLogContexts logTimeStamps =
+runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOptions (logLevel, customLevels) logContexts notLogContexts logTimeStamps logFormat =
     do
         mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
         withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
+            let boosterContextLogger = case logFormat of
+                    Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
+                    _ -> Booster.Log.textLogger stderrLogger
+                filteredBoosterContextLogger =
+                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
+                        let ctxt = unwords $ map (\(Booster.Log.LogContext lc) -> Text.unpack $ Booster.Log.toTextualLog lc) ctxts
+                         in not (any (flip Glob.match ctxt) negGlobPatterns)
+                                && any (flip Glob.match ctxt) globPatterns
             stateVar <-
                 newMVar
                     ServerState
@@ -134,7 +146,8 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
             flip Log.runLoggingT (handleOutput stderrLogger mFileLogger) . Log.filterLogger levelFilter $
                 jsonRpcServer
                     srvSettings
-                    (const $ runLogger . respond stateVar)
+                    (const $  flip runReaderT filteredBoosterContextLogger
+                                . Booster.Log.unLoggerT . respond stateVar)
                     [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
     globPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) logContexts
