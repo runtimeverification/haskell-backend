@@ -465,84 +465,87 @@ respond stateVar =
                                         { satisfiable = RpcTypes.Sat
                                         , substitution
                                         }
-        RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "implies" $ do
-            -- internalise given constrained term
-            let internalised =
-                    runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
+        RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) ->
+            Booster.Log.withContext "implies" $
+                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $
+                    "not implemented"
+        -- -- internalise given constrained term
+        -- let internalised =
+        --         runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
 
-            case (internalised req.antecedent.term, internalised req.consequent.term) of
-                (Left patternError, _) -> do
-                    Log.logDebug $ "Error internalising antecedent" <> Text.pack (show patternError)
-                    pure $
-                        Left $
-                            RpcError.backendError $
-                                RpcError.CouldNotVerifyPattern
-                                    [ patternErrorToRpcError patternError
-                                    ]
-                (_, Left patternError) -> do
-                    Log.logDebug $ "Error internalising consequent" <> Text.pack (show patternError)
-                    pure $
-                        Left $
-                            RpcError.backendError $
-                                RpcError.CouldNotVerifyPattern
-                                    [ patternErrorToRpcError patternError
-                                    ]
-                (Right (patL, substitutionL, unsupportedL), Right (patR, substitutionR, unsupportedR)) -> do
-                    unless (null unsupportedL && null unsupportedR) $ do
-                        Log.logWarnNS
-                            "booster"
-                            "Implies: aborting due to unsupported predicate parts"
-                        unless (null unsupportedL) $
-                            Log.logOtherNS
-                                "booster"
-                                (Log.LevelOther "ErrorDetails")
-                                (Text.unlines $ map prettyPattern unsupportedL)
-                        unless (null unsupportedR) $
-                            Log.logOtherNS
-                                "booster"
-                                (Log.LevelOther "ErrorDetails")
-                                (Text.unlines $ map prettyPattern unsupportedR)
-                    let
-                        -- apply the given substitution before doing anything else
-                        substPatL =
-                            Pattern
-                                { term = substituteInTerm substitutionL patL.term
-                                , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
-                                , ceilConditions = patL.ceilConditions
-                                }
-                        substPatR =
-                            Pattern
-                                { term = substituteInTerm substitutionR patR.term
-                                , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
-                                , ceilConditions = patR.ceilConditions
-                                }
+        -- case (internalised req.antecedent.term, internalised req.consequent.term) of
+        --     (Left patternError, _) -> do
+        --         Log.logDebug $ "Error internalising antecedent" <> Text.pack (show patternError)
+        --         pure $
+        --             Left $
+        --                 RpcError.backendError $
+        --                     RpcError.CouldNotVerifyPattern
+        --                         [ patternErrorToRpcError patternError
+        --                         ]
+        --     (_, Left patternError) -> do
+        --         Log.logDebug $ "Error internalising consequent" <> Text.pack (show patternError)
+        --         pure $
+        --             Left $
+        --                 RpcError.backendError $
+        --                     RpcError.CouldNotVerifyPattern
+        --                         [ patternErrorToRpcError patternError
+        --                         ]
+        --     (Right (patL, substitutionL, unsupportedL), Right (patR, substitutionR, unsupportedR)) -> do
+        --         unless (null unsupportedL && null unsupportedR) $ do
+        --             Log.logWarnNS
+        --                 "booster"
+        --                 "Implies: aborting due to unsupported predicate parts"
+        --             unless (null unsupportedL) $
+        --                 Log.logOtherNS
+        --                     "booster"
+        --                     (Log.LevelOther "ErrorDetails")
+        --                     (Text.unlines $ map prettyPattern unsupportedL)
+        --             unless (null unsupportedR) $
+        --                 Log.logOtherNS
+        --                     "booster"
+        --                     (Log.LevelOther "ErrorDetails")
+        --                     (Text.unlines $ map prettyPattern unsupportedR)
+        --         let
+        --             -- apply the given substitution before doing anything else
+        --             substPatL =
+        --                 Pattern
+        --                     { term = substituteInTerm substitutionL patL.term
+        --                     , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
+        --                     , ceilConditions = patL.ceilConditions
+        --                     }
+        --             substPatR =
+        --                 Pattern
+        --                     { term = substituteInTerm substitutionR patR.term
+        --                     , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
+        --                     , ceilConditions = patR.ceilConditions
+        --                     }
 
-                    case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
-                        MatchFailed (SubsortingError sortError) ->
-                            pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                show sortError
-                        MatchFailed{} ->
-                            doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
-                        MatchIndeterminate remainder ->
-                            pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                "match remainder: "
-                                    <> renderDefault (pretty remainder)
-                        MatchSuccess subst -> do
-                            let filteredConsequentPreds =
-                                    Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                doTracing = Flag False
-                            solver <- traverse (SMT.initSolver def) mSMTOptions
+        --         case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
+        --             MatchFailed (SubsortingError sortError) ->
+        --                 pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
+        --                     show sortError
+        --             MatchFailed{} ->
+        --                 doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
+        --             MatchIndeterminate remainder ->
+        --                 pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
+        --                     "match remainder: "
+        --                         <> renderDefault (pretty remainder)
+        --             MatchSuccess subst -> do
+        --                 let filteredConsequentPreds =
+        --                         Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
+        --                     doTracing = Flag False
+        --                 solver <- traverse (SMT.initSolver def) mSMTOptions
 
-                            if null filteredConsequentPreds
-                                then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                else
-                                    ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
-                                        (Right newPreds, _) ->
-                                            if all (== Pattern.Predicate TrueBool) newPreds
-                                                then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                                else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
-                                        (Left other, _) ->
-                                            pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+        --                 if null filteredConsequentPreds
+        --                     then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
+        --                     else
+        --                         ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+        --                             (Right newPreds, _) ->
+        --                                 if all (== Pattern.Predicate TrueBool) newPreds
+        --                                     then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
+        --                                     else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
+        --                             (Left other, _) ->
+        --                                 pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
