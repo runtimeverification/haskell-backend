@@ -169,7 +169,11 @@ decidePredicate ::
 decidePredicate onUnknown sideCondition predicates =
     whileDebugEvaluateCondition predicates $
         do
-            result <- query >>= whenUnknown retry
+            result <- case onUnknown of
+                -- do not retry the query on Unknown if the use-case is "soft", i.e. applying simplifications
+                WarnDecidePredicateUnknown _ _ -> query
+                -- if Unknown leads to a hard error, retry the query with scaled timeouts
+                ErrorDecidePredicateUnknown _ _ -> query >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
                 Unsat -> return False
