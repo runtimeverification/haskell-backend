@@ -104,7 +104,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                             fromMaybe (error $ "Module " <> show m <> " not found") $
                                 Map.lookup m bState.definitions
                     handleExecute logSettings def start execReq
-    Implies{assumeDefined}
+    Implies ImpliesRequest{assumeDefined}
         | fromMaybe False assumeDefined -> do
             -- try the booster end-point first
             (boosterResult, boosterTime) <- Stats.timed $ booster req
