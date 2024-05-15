@@ -14,7 +14,7 @@ import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Trans.Reader (ReaderT (..), ask, withReaderT)
 import Control.Monad.Trans.State (StateT (..))
 import Control.Monad.Trans.State.Strict qualified as Strict
-import Data.Aeson (ToJSON (..), Value (..), encode, (.=))
+import Data.Aeson (ToJSON (..), Value (..), (.=))
 import Data.Aeson.Encode.Pretty (Config (confIndent), Indent (Spaces), encodePretty')
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.Types (object)
@@ -60,7 +60,7 @@ instance IsString LogContext where
 data LogMessage where
     LogMessage :: ToLogFormat a => [LogContext] -> a -> LogMessage
 
-class Control.Monad.Logger.MonadLoggerIO m => LoggerMIO m where
+class MonadIO m => LoggerMIO m where
     getLogger :: m (Logger LogMessage)
     default getLogger :: (Trans.MonadTrans t, LoggerMIO n, m ~ t n) => m (Logger LogMessage)
     getLogger = Trans.lift getLogger
@@ -176,7 +176,7 @@ newtype LoggerT m a = LoggerT {unLoggerT :: ReaderT (Logger LogMessage) m a}
         , Control.Monad.Logger.MonadLoggerIO
         )
 
-instance Control.Monad.Logger.MonadLoggerIO m => LoggerMIO (LoggerT m) where
+instance MonadIO m => LoggerMIO (LoggerT m) where
     getLogger = LoggerT ask
     withLogger modL (LoggerT m) = LoggerT $ withReaderT modL m
 

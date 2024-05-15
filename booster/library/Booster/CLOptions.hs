@@ -22,6 +22,7 @@ import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
 import Text.Read (readMaybe)
 
 import Booster.GlobalState (EquationOptions (..))
+import Booster.Log.Context (ContextFilter, readContextFilter)
 import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
 import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
 
@@ -33,8 +34,7 @@ data CLOptions = CLOptions
     , logLevels :: [LogLevel]
     , logTimeStamps :: Bool
     , logFormat :: LogFormat
-    , logContexts :: [String]
-    , notLogContexts :: [String]
+    , logContexts :: [ContextFilter]
     , simplificationLogFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
@@ -106,21 +106,12 @@ clOptionsParser =
             )
         <*> many
             ( option
-                str
+                (eitherReader readContextFilter)
                 ( metavar "CONTEXT"
                     <> long "log-context"
                     <> short 'c'
                     <> help
                         "Log context"
-                )
-            )
-        <*> many
-            ( option
-                str
-                ( metavar "CONTEXT"
-                    <> long "not-log-context"
-                    <> help
-                        "Not in log context"
                 )
             )
         <*> optional

@@ -25,14 +25,26 @@ The rpc backends allow tracing of rewrites and simplifications based on contexts
 [booster][execute][term 58b79a1][simplify][term 58b79a1][term 24777d8][function 00be500][failure] Concreteness constraint violated: term has variables
 ```
 
-To turn on this logging, pass `--log-context "booster*"` and/or `--log-context "kore*"` to the rpc server. If this produces too much loging, one can filter the logs as they are being emitted via a glob syntax filter. e.g. `--log-context "*success"` will only log all successful matches/rewrites/simplifications and `--log-context "*rewrite*match*success"` will only log successful matches with a rewrite rule. Conversely, we can also use `--not-log-context "*kore"`/`--not-log-context "*detail"` to supress pretty printing terms/rule locations or `--not-log-context "*failure"` to hide all failures or a combination, such as `--log-context "*success*" --not-log-context "*constraint*"  --not-log-context "*simplify*"` to log any successes not inside a constraint or simplification context.
-
 ## Logging contexts
 
 The log contexts should allow the reader to reconstruct how execution proceeded within the two backends. Note however that due to the different architectures of the two backends, the logs will not always have the same structure.
 
-### `[booster]`/ `[kore-term]`
-top level context signifying computation in the given backend.
+### `[booster]`/ `[kore]`/ `[proxy]`
+top level contexts signifying computation in the given backend.
+
+### `[ceil]`
+
+Context showing the ceil/definedness analysis of rules at load-time. See below for the structure of the emmited infromation:
+
+```
+[ceil][rewrite d76d278][detail] ...kproj/evm-semantics/evm.md :  (1822, 10)
+[ceil][rewrite d76d278][partial-symbols] Lbl#point(_)_EVM_Bytes_G1Point, LblBN128Add(_,_)_KRYPTO_G1Point_G1Point_G1Point
+[ceil][rewrite d76d278][computed-ceils] #Ceil( isValidPoint(_)_KRYPTO_Bool_G1Point(Rule#VarP1:SortG1Point{}) ), #Ceil( #point(_)_EVM_Bytes_G1Point(BN128Add(_,_)_KRYPTO_G1Point_G1Point_G1Point(Rule#VarP1:SortG1Point{}, Rule#VarP2:SortG1Point{})) ), #Ceil( isValidPoint(_)_KRYPTO_Bool_G1Point(Rule#VarP2:SortG1Point{}) )
+[ceil][simplification 5c9073a][detail] ...evm-semantics/lemmas/lemmas.k :  (178, 10)
+[ceil][simplification 5c9073a][partial-symbols] Lbl_modInt_
+```
+
+
 
 ### `[execute]`/`[add-module]`/`[get-model]`
 top-level (right below `[booster]`) contexts corresponding to rpc calls
@@ -112,6 +124,30 @@ log any calls to the llvm simplifier here. usually it will be of the form:
 ```
 
 
-# Timestamps
+## Context filtering
+
+
+To turn on context logging, use the `--log-context` flag to select which of the above contexts to emit. The expression, accepted by this flag has the following features:
+
+* `foo` - match context `foo` eactly
+* `foo*` - match context with the prefix `foo`, e.g. `simplification a*` will match the context `[simplification aa89f12]`
+* `*foo` - match context with the suffix `foo`
+* `*foo*` - match context with the infix `foo`
+* `!foo*` - don't match `foo`
+* `foo|bar` - match `foo` or `bar` context, e.g. `kore|booster`
+* `foo,bar` - match a context `foo` with an immediately nested context `bar`
+* `foo>bar` - match a context `foo` with a child context `bar`
+* `foo>bar.` - match a context `foo` with a child context `bar` which is the last context, e.g. the context `[foo][baz][bar]` would match but `[foo][bar][baz]` does not.
+
+
+Here are some common patterns we may want to use:
+
+* `kore|booster` - log everything from kore and booster
+* `kore|booster>!kore-term.` - log everything from kore and booster except for the innermost `kore-term` contexts, which contain the pretty printed terms
+* `kore|booster>simplification*` - log every simplification rule attempt from kore and booster
+* `kore|booster>simplification*|equation*` - log every simplification and function application attempt from kore and booster
+* `ceil>partial-symbols.` - log a minimal ceil analysis showing all the rules which contain partial symbols on the RHS and aren't marked as preserving definedness
+
+## Timestamps
 
 The booster now supports timestamps via `--log-timestamps`
