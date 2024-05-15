@@ -51,7 +51,10 @@ import System.IO (hPutStrLn, stderr)
 import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
-import Booster.Definition.Attributes.Base (ComputedAxiomAttributes (notPreservesDefinednessReasons), NotPreservesDefinednessReason(UndefinedSymbol))
+import Booster.Definition.Attributes.Base (
+    ComputedAxiomAttributes (notPreservesDefinednessReasons),
+    NotPreservesDefinednessReason (UndefinedSymbol),
+ )
 import Booster.Definition.Base (
     KoreDefinition (..),
     RewriteRule (computedAttributes),
@@ -62,7 +65,7 @@ import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Log qualified
 import Booster.Log.Context qualified
-import Booster.Pattern.Base (Predicate(..))
+import Booster.Pattern.Base (Predicate (..))
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
@@ -164,7 +167,6 @@ main = do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
 
-           
             Logger.logInfoNS "proxy" $
                 Text.pack $
                     "Loading definition from "
@@ -256,36 +258,43 @@ main = do
                                     forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
                                         forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
                                             Booster.Log.withRuleContext rule $ do
-                                                Booster.Log.withContext "partial-symbols" $
-                                                    Booster.Log.logMessage $
-                                                        Booster.Log.WithJsonMessage
-                                                            (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons) $
-                                                            
-                                                        renderOneLineText $
-                                                            Pretty.hsep $ Pretty.punctuate Pretty.comma $
-                                                                map (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym) rule.computedAttributes.notPreservesDefinednessReasons
-                                                unless (null ceils) $
-                                                    Booster.Log.withContext "computed-ceils" $
-                                                        Booster.Log.logMessage $
-                                                        Booster.Log.WithJsonMessage
-                                                            (JSON.object ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]) $
-
-                                                            renderOneLineText $ 
-                                                                Pretty.hsep $ Pretty.punctuate Pretty.comma $
-                                                                    map
-                                                                        (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
-                                                                        (Set.toList ceils)
+                                                Booster.Log.withContext "partial-symbols"
+                                                    $ Booster.Log.logMessage
+                                                    $ Booster.Log.WithJsonMessage
+                                                        (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
+                                                    $ renderOneLineText
+                                                    $ Pretty.hsep
+                                                    $ Pretty.punctuate Pretty.comma
+                                                    $ map
+                                                        (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
+                                                        rule.computedAttributes.notPreservesDefinednessReasons
+                                                unless (null ceils)
+                                                    $ Booster.Log.withContext "computed-ceils"
+                                                    $ Booster.Log.logMessage
+                                                    $ Booster.Log.WithJsonMessage
+                                                        ( JSON.object
+                                                            ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
+                                                        )
+                                                    $ renderOneLineText
+                                                    $ Pretty.hsep
+                                                    $ Pretty.punctuate Pretty.comma
+                                                    $ map
+                                                        (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
+                                                        (Set.toList ceils)
 
                                         forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
-                                            unless (null s.computedAttributes.notPreservesDefinednessReasons) $
-                                                Booster.Log.withRuleContext s $ 
-                                                    Booster.Log.withContext "partial-symbols" $
-                                                        Booster.Log.logMessage $
-                                                            Booster.Log.WithJsonMessage
-                                                            (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons) $
-                                                            renderOneLineText $
-                                                                Pretty.hsep $ Pretty.punctuate Pretty.comma $
-                                                                    map (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym) s.computedAttributes.notPreservesDefinednessReasons
+                                            unless (null s.computedAttributes.notPreservesDefinednessReasons)
+                                                $ Booster.Log.withRuleContext s
+                                                $ Booster.Log.withContext "partial-symbols"
+                                                $ Booster.Log.logMessage
+                                                $ Booster.Log.WithJsonMessage
+                                                    (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
+                                                $ renderOneLineText
+                                                $ Pretty.hsep
+                                                $ Pretty.punctuate Pretty.comma
+                                                $ map
+                                                    (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
+                                                    s.computedAttributes.notPreservesDefinednessReasons
                     mvarLogAction <- newMVar actualLogAction
                     let logAction = swappableLogger mvarLogAction
 
