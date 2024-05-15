@@ -53,6 +53,7 @@ data ImpliesRequest = ImpliesRequest
     { antecedent :: !KoreJson
     , consequent :: !KoreJson
     , _module :: !(Maybe Text)
+    , assumeDefined :: !(Maybe Bool)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
     , logTiming :: !(Maybe Bool)
