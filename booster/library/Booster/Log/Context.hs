@@ -1,4 +1,4 @@
-module Booster.Log.Context (module Booster.Log.Context) where
+module Booster.Log.Context (ContextFilter, mustMatch, readContextFilter, readMatch) where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8 qualified as A
@@ -15,9 +15,9 @@ data ContextFilterSingle
     deriving (Show)
 
 data ContextFilter
-    = Single [ContextFilterSingle]
-    | Child [ContextFilterSingle] ContextFilter
-    | DirectChild [ContextFilterSingle] ContextFilter
+    = First [ContextFilterSingle]
+    | ThenDirectChild [ContextFilterSingle] ContextFilter
+    | ThenChild [ContextFilterSingle] ContextFilter
     | Last [ContextFilterSingle]
     deriving (Show)
 
@@ -31,6 +31,7 @@ singleP :: A.Parser ContextFilterSingle
 singleP =
     A.char '!' *> A.skipSpace *> (Negate <$> singleP)
         <|> A.char '*' *> (Infix <$> stringP) <* A.char '*'
+        -- we want to allow * being parsed as `Suffix ""` so we allow the empty string via `takeWhile`
         <|> A.char '*' *> (Suffix . BS.dropWhileEnd isSpace <$> A.takeWhile (not . (`elem` reserved)))
         <|> Prefix . BS.dropWhile isSpace <$> stringP <* A.char '*'
         <|> Exact . BS.strip <$> stringP
@@ -41,10 +42,10 @@ orP = singleP `A.sepBy` (A.char '|')
 contextFilterP :: A.Parser ContextFilter
 contextFilterP =
     A.skipSpace
-        *> ( Child <$> (orP <* A.skipSpace <* A.char '>') <*> contextFilterP
-                <|> DirectChild <$> (orP <* A.skipSpace <* A.char ',') <*> contextFilterP
+        *> ( ThenChild <$> (orP <* A.skipSpace <* A.char '>') <*> contextFilterP
+                <|> ThenDirectChild <$> (orP <* A.skipSpace <* A.char ',') <*> contextFilterP
                 <|> Last <$> (orP <* A.skipSpace <* A.char '.')
-                <|> (Single <$> orP) <* A.skipSpace
+                <|> First <$> orP
            )
 
 readContextFilter :: String -> Either String ContextFilter
@@ -59,16 +60,16 @@ matchSingle (Infix c) s = BS.isInfixOf c s
 matchSingle (Negate c) s = not $ matchSingle c s
 
 mustMatch :: ContextFilter -> [BS.ByteString] -> Bool
-mustMatch (Single c) [] = any (flip matchSingle "") c
-mustMatch (Single c) (x : _) = any (flip matchSingle x) c
-mustMatch (Last c) [x] = any (flip matchSingle x) c
+mustMatch (First cs) [] = any (flip matchSingle "") cs
+mustMatch (First cs) (x : _) = any (flip matchSingle x) cs
+mustMatch (Last cs) [x] = any (flip matchSingle x) cs
 mustMatch Last{} _ = False
-mustMatch (Child _ _) [] = False
-mustMatch (Child c cs) (x : xs) =
-    any (flip matchSingle x) c && mayMatch cs xs
-mustMatch (DirectChild _ _) [] = False
-mustMatch (DirectChild c c') (x : xs) =
-    any (flip matchSingle x) c && mustMatch c' xs
+mustMatch (_ `ThenDirectChild` _) [] = False
+mustMatch (cs `ThenDirectChild` css) (x : xs) =
+    any (flip matchSingle x) cs && mustMatch css xs
+mustMatch (_ `ThenChild` _) [] = False
+mustMatch (cs `ThenChild` css) (x : xs) =
+    any (flip matchSingle x) cs && mayMatch css xs
 
 mayMatch :: ContextFilter -> [BS.ByteString] -> Bool
 mayMatch c [] = mustMatch c []

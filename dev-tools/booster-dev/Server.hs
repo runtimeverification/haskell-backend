@@ -4,7 +4,6 @@ License     : BSD-3-Clause
 -}
 module Main (main) where
 
-import Booster.Util (handleOutput, withFastLogger)
 import Control.Concurrent (newMVar)
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
@@ -18,8 +17,8 @@ import Data.Map (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text, unpack)
+import Data.Text.Encoding qualified as Text
 import Options.Applicative
-import System.FilePath.Glob qualified as Glob
 import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
@@ -30,10 +29,11 @@ import Booster.JsonRpc (ServerState (..), handleSmtError, respond)
 import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Log qualified
+import Booster.Log.Context qualified as Booster.Log
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Data.Text qualified as Text
+import Booster.Util (handleOutput, withFastLogger)
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 
@@ -46,7 +46,6 @@ main = do
             , port
             , logLevels
             , logContexts
-            , notLogContexts
             , logTimeStamps
             , logFormat
             , llvmLibraryFile
@@ -87,7 +86,6 @@ main = do
             smtOptions
             (adjustLogLevels logLevels)
             logContexts
-            notLogContexts
             logTimeStamps
             logFormat
   where
@@ -116,12 +114,11 @@ runServer ::
     Maybe FilePath ->
     Maybe SMT.SMTOptions ->
     (LogLevel, [LogLevel]) ->
-    [String] ->
-    [String] ->
+    [Booster.Log.ContextFilter] ->
     Bool ->
     LogFormat ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOptions (logLevel, customLevels) logContexts notLogContexts logTimeStamps logFormat =
+runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps logFormat =
     do
         mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
@@ -131,9 +128,8 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
                     _ -> Booster.Log.textLogger stderrLogger
                 filteredBoosterContextLogger =
                     flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
-                        let ctxt = unwords $ map (\(Booster.Log.LogContext lc) -> Text.unpack $ Booster.Log.toTextualLog lc) ctxts
-                         in not (any (flip Glob.match ctxt) negGlobPatterns)
-                                && any (flip Glob.match ctxt) globPatterns
+                        let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
+                         in any (flip Booster.Log.mustMatch ctxt) logContexts
             stateVar <-
                 newMVar
                     ServerState
@@ -153,15 +149,8 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
                     )
                     [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
-    globPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) logContexts
-    negGlobPatterns = map (Glob.compile . filter (\c -> not (c == '\'' || c == '"'))) notLogContexts
     levelFilter :: Log.LogSource -> LogLevel -> Bool
     levelFilter _source lvl =
         lvl `elem` customLevels
-            || case lvl of
-                Log.LevelOther l ->
-                    not (any (flip Glob.match (Text.unpack l)) negGlobPatterns)
-                        && any (flip Glob.match (Text.unpack l)) globPatterns
-                _ -> False
             || lvl >= logLevel && lvl <= LevelError
     srvSettings = serverSettings port "*"
