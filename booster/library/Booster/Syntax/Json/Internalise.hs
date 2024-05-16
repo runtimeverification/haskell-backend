@@ -208,7 +208,7 @@ internaliseTermRaw ::
     KoreDefinition ->
     Syntax.KorePattern ->
     Except PatternError Internal.Term
-internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinition{sorts, symbols} pat =
+internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinition{sorts, symbols} pat = withCaching $
     case pat of
         Syntax.KJEVar{name, sort} -> do
             variableSort <- lookupInternalSort' sort
@@ -326,6 +326,8 @@ internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinitio
         _ -> False
 
     recursion = internaliseTermRaw qq allowAlias checkSubsorts sortVars definition
+
+    withCaching = if coerce qq then id else fmap Internal.cacheTerm
 
 internaliseTerm ::
     Flag "alias" ->

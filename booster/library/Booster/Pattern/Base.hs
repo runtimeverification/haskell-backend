@@ -12,6 +12,32 @@ module Booster.Pattern.Base (
     module Booster.Pattern.Base,
 ) where
 
+import Control.Concurrent (MVar)
+import Control.Concurrent qualified as C
+
+import Control.DeepSeq (NFData (..))
+import Data.Bifunctor (second)
+import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 qualified as BS
+import Data.Data (Data)
+import Data.Functor (void)
+import Data.Functor.Foldable
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as M
+import Data.Hashable (Hashable)
+import Data.Hashable qualified as Hashable
+import Data.List as List (foldl', foldl1', sort)
+import Data.Set (Set)
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
+import GHC.Generics (Generic)
+import Language.Haskell.TH.Syntax (Lift (..))
+import Prettyprinter (Pretty (..), (<+>))
+import Prettyprinter qualified as Pretty
+import System.IO.Unsafe (unsafePerformIO)
+import System.Mem.Weak
+
 import Booster.Definition.Attributes.Base (
     FunctionType (..),
     KCollectionMetadata (..),
@@ -28,25 +54,7 @@ import Booster.Definition.Attributes.Base (
     pattern IsNotMacroOrAlias,
  )
 import Booster.Prettyprinter qualified as KPretty
-
 import Booster.Util (decodeLabel')
-import Control.DeepSeq (NFData (..))
-import Data.Bifunctor (second)
-import Data.ByteString.Char8 (ByteString)
-import Data.ByteString.Char8 qualified as BS
-import Data.Data (Data)
-import Data.Functor.Foldable
-import Data.Hashable (Hashable)
-import Data.Hashable qualified as Hashable
-import Data.List as List (foldl', foldl1', sort)
-import Data.Set (Set)
-import Data.Set qualified as Set
-import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text
-import GHC.Generics (Generic)
-import Language.Haskell.TH.Syntax (Lift (..))
-import Prettyprinter (Pretty (..), (<+>))
-import Prettyprinter qualified as Pretty
 
 type VarName = ByteString
 type SymbolName = ByteString
@@ -453,7 +461,7 @@ internaliseKSet def = \case
                     | Just r2 <- rest2 ->
                         KSet def elems2 (Just $ SymbolApplication concatSym [] [other1, r2])
                 (other1, other2) ->
-                    SymbolApplication (stripCollectionMetadata concatSym) [] [other1, other2]
+                    SymbolApplication (stripCollectionMetadata concatSym) [] [other1, other2] -- FIXME use TermF
     other -> other
 
 externaliseKSet :: KSetDefinition -> [Term] -> Maybe Term -> Term
@@ -871,3 +879,48 @@ pattern FunctionApplication sym sorts args <-
         (SymbolApplicationF sym@(Symbol _ _ _ _ (SymbolAttributes{symbolType = Function _})) sorts args)
 
 {-# COMPLETE AndTerm, ConsApplication, FunctionApplication, DomainValue, Var, Injection, KMap, KList, KSet #-}
+
+------------------------------------------------------------
+
+{- | Global term cache, avoids duplicating terms
+
+* The cache contains all terms that have been constructed, as a hash map of terms to themselves.
+* concurrency is handled by using an MVar as a mutex holding the cache.
+-}
+termCacheVar :: MVar (HashMap Term Term)
+termCacheVar = unsafePerformIO $ C.newMVar mempty
+{-# NOINLINE termCacheVar #-}
+
+{- | The cache is manually managed at the moment, it requires regular
+clearing to avoid RAM growth of the server. In the presence of
+concurrent requests, this means that if the first request clears the
+cache, any other requests in flight lose the sharing of all terms
+stored in that cache before. Everything will continue to work, though.
+-}
+clearTermCache :: IO ()
+clearTermCache = void $ C.swapMVar termCacheVar mempty
+
+{- | Cache a constructed term, i.e., replace it by the cached version if
+   one exists, or else add it to the cache and return the argument.
+
+   We add a finaliser to the term before adding it that will remove
+   the term from the cache. This is currently obsolete, as the cache
+   itself will keep all stored terms alive, but should be done once
+   the cache is managed by GC through weak pointers.
+-}
+cacheTerm :: Term -> Term
+cacheTerm t = unsafePerformIO $ do
+    cache <- C.takeMVar termCacheVar -- mutex on cache operations
+    case M.lookup t cache of
+        Nothing -> do
+            void $ mkWeakPtr t (Just removeFromCache)
+            let !newCache = M.insert t t cache
+            C.putMVar termCacheVar newCache
+            pure t
+        Just t' -> do
+            C.putMVar termCacheVar cache
+            pure t' -- t is now garbage
+  where
+    removeFromCache :: IO ()
+    removeFromCache =
+        C.modifyMVar termCacheVar $ \c -> pure (M.delete t c, ())

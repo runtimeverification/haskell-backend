@@ -72,7 +72,7 @@ instance Show Version where
     show version = printf "%d.%d.%d" version.major version.minor version.patch
 
 data Block
-    = BTerm Term
+    = BTerm !Term
     | BPredicate Predicate
     | BString ByteString
     | BSort Sort
@@ -269,7 +269,7 @@ decodeBlock mbSize = do
             KOREVariable -> do
                 var <- decodeString
                 [sort] <- popStackSorts 1
-                pushStack $ BTerm $ Var $ Variable sort var
+                pushStack $ BTerm $ cacheTerm $ Var $ Variable sort var
             h -> fail $ "Invalid header " <> show h
 
     getStack
@@ -299,12 +299,12 @@ decodeBlock mbSize = do
         | Injection sort SortKItem t' <- t
         , sort == sortOfTerm t' =
             pure $ BTerm t'
-    mkSymbolApplication "\\and" _ [BTerm t1, BTerm t2] = pure $ BTerm $ AndTerm t1 t2
+    mkSymbolApplication "\\and" _ [BTerm t1, BTerm t2] = pure $ BTerm $ cacheTerm $ AndTerm t1 t2
     mkSymbolApplication "\\and" _ bs =
         argError "AndTerm" [BTerm undefined, BTerm undefined] bs
     mkSymbolApplication "\\bottom" _ bs = argError "Bottom" [] bs
     mkSymbolApplication "\\ceil" _ bs = argError "Ceil" [BTerm undefined] bs
-    mkSymbolApplication "\\dv" [sort] [BString txt] = pure $ BTerm $ DomainValue sort txt
+    mkSymbolApplication "\\dv" [sort] [BString txt] = pure $ BTerm $ cacheTerm $ DomainValue sort txt
     mkSymbolApplication "\\dv" _ bs = argError "DomainValue" [BString undefined] bs
     mkSymbolApplication "\\equals" _ [BTerm t, BTerm TrueBool] = pure $ BPredicate $ Predicate t
     mkSymbolApplication "\\equals" _ [BTerm TrueBool, BTerm t] = pure $ BPredicate $ Predicate t
@@ -318,7 +318,7 @@ decodeBlock mbSize = do
     mkSymbolApplication "\\not" _ bs = argError "Not" [BPredicate undefined] bs
     mkSymbolApplication "\\or" _ bs = argError "Or" [BPredicate undefined, BPredicate undefined] bs
     mkSymbolApplication "\\top" _ bs = argError "Top" [] bs
-    mkSymbolApplication "inj" [source, target] [BTerm t] = pure $ BTerm $ Injection source target t
+    mkSymbolApplication "inj" [source, target] [BTerm t] = pure $ BTerm $ cacheTerm $ Injection source target t
     mkSymbolApplication "inj" _ bs = argError "Injection" [BTerm undefined] bs
     mkSymbolApplication name sorts bs =
         lookupKoreDefinitionSymbol name >>= \case
@@ -327,7 +327,7 @@ decodeBlock mbSize = do
                 args <- forM bs $ \case
                     BTerm trm -> pure trm
                     _ -> fail "Expecting term"
-                pure $ BTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
+                pure $ BTerm $ cacheTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
             Right (Just symbol@Symbol{sortVars, argSorts}) -> do
                 args <- forM (zip argSorts bs) $ \case
                     (srt, BTerm trm) ->
@@ -340,7 +340,7 @@ decodeBlock mbSize = do
                                         <> renderDefault (pretty $ sortOfTerm trm)
                             else pure trm
                     _ -> fail "Expecting term"
-                pure $ BTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
+                pure $ BTerm $ cacheTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
             Right Nothing -> fail $ "Unknown symbol " <> show name
 
     argError cons expectedArgs receivedArgs =

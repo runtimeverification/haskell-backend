@@ -98,8 +98,16 @@ respond ::
     LoggerMIO m =>
     MVar ServerState ->
     Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
-respond stateVar =
-    \case
+respond stateVar request =
+    respond_ stateVar request <* liftIO Pattern.clearTermCache
+
+respond_ ::
+    forall m.
+    LoggerMIO m =>
+    MVar ServerState ->
+    Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
+respond_ stateVar request =
+    case request of
         RpcTypes.Execute req
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
