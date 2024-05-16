@@ -263,10 +263,41 @@ makeKoreLoggerLegacy ::
     KoreLogFormat ->
     LogAction io Text ->
     LogAction io SomeEntry
-makeKoreLoggerLegacy exeName startTime timestampSwitch _koreLogFormat logActionText =
-    logActionText
-        & contramap (renderStandardPretty exeName startTime timestampSwitch)
-        & Colog.cmapM withTimestamp
+makeKoreLoggerLegacy exeName startTime timestampSwitch koreLogFormat logActionText =
+    let renderLogEntry = case koreLogFormat of
+            OneLine -> renderOneLinePrettyLegacy
+            _ -> renderStandardPretty
+     in logActionText
+            & contramap (renderLogEntry exeName startTime timestampSwitch)
+            & Colog.cmapM withTimestamp
+
+renderOneLinePrettyLegacy :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
+renderOneLinePrettyLegacy exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry _entryContext actualEntry) entryTime) =
+    Pretty.hsep [header, oneLineDoc actualEntry]
+        & Pretty.layoutPretty Pretty.defaultLayoutOptions
+        & Pretty.renderText
+  where
+    severity' = prettySeverity (entrySeverity actualEntry)
+    timestamp =
+        case timestampSwitch of
+            TimestampsDisable -> Nothing
+            TimestampsEnable ->
+                Just . Pretty.brackets . Pretty.pretty $
+                    toMicroSecs (diffTimeSpec startTime entryTime)
+    toMicroSecs = (`div` 1000) . toNanoSecs
+    exeName' = Pretty.pretty exeName <> Pretty.colon
+    type' e =
+        Pretty.pretty $
+            lookupTextFromTypeWithError $
+                typeOfSomeEntry e
+    header =
+        (Pretty.hsep . catMaybes)
+            [ Just exeName'
+            , timestamp
+            , Just severity'
+            , Just (Pretty.parens $ type' entry)
+            ]
+            <> Pretty.colon
 
 renderStandardPretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =
