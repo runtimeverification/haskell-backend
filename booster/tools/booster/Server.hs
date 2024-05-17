@@ -74,8 +74,6 @@ import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
 import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
-import Data.ByteString.Char8 qualified as BS
-import Debug.Trace qualified
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
