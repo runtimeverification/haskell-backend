@@ -125,7 +125,7 @@ PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir
 mkdir -p $PYTEST_TEMP_DIR
 FOUNDRY_DIR=$TEMPD/foundry
 mkdir -p $FOUNDRY_DIR
-feature_shell "make test-integration TEST_ARGS='--basetemp=$PYTEST_TEMP_DIR -n0 --dist=no -k test_foundry_kompile'"
+feature_shell "make test-integration TEST_ARGS='--basetemp=$PYTEST_TEMP_DIR --foundry-root $FOUNDRY_DIR -n0 --dist=no -k test_foundry_kompile'"
 cp -r $PYTEST_TEMP_DIR/foundry/* $FOUNDRY_DIR
 
 mkdir -p $SCRIPT_DIR/logs
@@ -138,14 +138,14 @@ fi
 # set test arguments and select which tests to run
 TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT -k "not (test_kontrol_cse or test_foundry_minimize_proof or test_kontrol_end_to_end)"'
 
-feature_shell "make test-integration TEST_ARGS=$TEST_ARGS | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
+feature_shell "make test-integration TEST_ARGS=\"$TEST_ARGS\" | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [ -z "$BUG_REPORT" ]; then
 if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
   # remove proofs so that they are not reused by the master shell call
   rm -rf $FOUNDRY_DIR/out/proofs
-  master_shell "make test-integration TEST_ARGS=$TEST_ARGS | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
+  master_shell "make test-integration TEST_ARGS=\"$TEST_ARGS\" | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "no zombie processes found"
 fi
 
