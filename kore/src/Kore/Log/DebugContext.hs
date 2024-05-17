@@ -24,6 +24,6 @@ instance Entry DebugContext where
     entrySeverity DebugContext{} = Debug
     helpDoc _ = "Plain text debug message to signify an action's context"
     oneLineDoc DebugContext{msg} = pretty msg
-    oneLineContextDoc DebugContext{msg} = [pretty msg]
+    oneLineContextDoc DebugContext{msg} = [msg]
     oneLineJson DebugContext{} = JSON.Null
     oneLineContextJson DebugContext{msg} = JSON.String msg

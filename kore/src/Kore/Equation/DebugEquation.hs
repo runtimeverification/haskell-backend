@@ -296,7 +296,7 @@ instance Entry DebugAttemptEquation where
     oneLineContextDoc = \case
         _entry@DebugAttemptEquation{} -> ["detail"]
         (DebugAttemptEquationResult _ result) -> case result of
-            Right Conditional{term} -> ["success", Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term], "kore-term"]
+            Right Conditional{term} -> ["success", "term " <> (showHashHex $ hash term), "kore-term"]
             Left{} -> ["failure"]
 
     oneLineDoc (DebugAttemptEquation equation _term) =
@@ -348,7 +348,7 @@ instance Entry DebugTermContext where
     oneLineDoc DebugTermContext{} = mempty
 
     oneLineContextDoc (DebugTermContext term) =
-        [Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term]]
+        ["term " <> (showHashHex $ hash term)]
 
     oneLineContextJson (DebugTermContext term) =
         JSON.object
@@ -381,7 +381,7 @@ instance Entry DebugEquation where
 
     oneLineContextDoc (DebugEquation equation) =
         let equationKindTxt = if isSimplification equation then "simplification" else "function"
-         in [ Pretty.hsep . map Pretty.pretty $ [equationKindTxt, shortRuleIdText equation]
+         in [ equationKindTxt <> " " <> shortRuleIdText equation
             ]
     oneLineContextJson (DebugEquation equation) =
         let equationKindTxt = if isSimplification equation then "simplification" else "function"
@@ -389,7 +389,7 @@ instance Entry DebugEquation where
                 Vec.fromList
                     [ JSON.object
                         [ equationKindTxt
-                            JSON..= shortRuleIdText equation
+                            JSON..= ruleIdText equation
                         ]
                     ]
     oneLineJson _ = JSON.Null

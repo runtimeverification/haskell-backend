@@ -68,9 +68,9 @@ class (Show entry, Typeable entry) => Entry entry where
     default oneLineContextJson :: entry -> JSON.Value
     oneLineContextJson _ = JSON.Array mempty
 
-    oneLineContextDoc :: entry -> [Pretty.Doc ann]
-    default oneLineContextDoc :: entry -> [Pretty.Doc ann]
-    oneLineContextDoc = (: []) . Pretty.pretty . entryTypeText . toEntry
+    oneLineContextDoc :: entry -> [Text]
+    default oneLineContextDoc :: entry -> [Text]
+    oneLineContextDoc = (: []) . entryTypeText . toEntry
 
     contextDoc :: entry -> Maybe (Pretty.Doc ann)
     contextDoc = const Nothing

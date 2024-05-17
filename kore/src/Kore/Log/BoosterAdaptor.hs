@@ -97,7 +97,6 @@ renderJson _exeName _startTime _timestampSwitch (WithTimestamp e@(SomeEntry cont
         foldr
             ( \(SomeEntry _ c) cs -> case oneLineContextJson c of
                 JSON.Array cs' -> cs' <> cs
-                -- JSON.Object o | Just (JSON.Array cs') <- JSON.lookup "context" o -> cs' <> cs
                 j -> Vec.cons j cs
             )
             mempty
@@ -117,7 +116,7 @@ renderOnelinePretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp 
 renderOnelinePretty _exeName _startTime _timestampSwitch (WithTimestamp entry@(SomeEntry entryContext _actualEntry) _entryTime) =
     let cs =
             (entryContext <> [entry])
-                & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
+                & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> Pretty.pretty <$> oneLineContextDoc e))
         leaf = oneLineDoc entry
      in mconcat cs Pretty.<+> leaf
             & Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
