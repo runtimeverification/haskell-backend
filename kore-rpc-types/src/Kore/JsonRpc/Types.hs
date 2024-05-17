@@ -290,6 +290,8 @@ rpcJsonConfig =
                 , "module"
                 , "step-timeout"
                 , "moving-average-step-timeout"
+                , "code"
+                , "data"
                 , "context"
                 , "message"
                 ]
