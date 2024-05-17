@@ -75,6 +75,7 @@ import Booster.Trace
 import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
 import Data.ByteString.Char8 qualified as BS
+import Debug.Trace qualified
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
@@ -111,7 +112,6 @@ import Proxy (KoreServer (..), ProxyConfig (..))
 import Proxy qualified
 import SMT qualified as KoreSMT
 import Stats qualified
-import qualified Debug.Trace
 
 envName :: String
 envName = "KORE_RPC_OPTS" -- aligned with legacy kore-rpc
