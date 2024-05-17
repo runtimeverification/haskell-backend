@@ -21,9 +21,14 @@ if [[ $FEATURE_BRANCH_NAME == "master" ]]; then
   FEATURE_BRANCH_NAME="feature"
 fi
 
-# Create a temporary directory and store its name in a variable.
-TEMPD=$(mktemp -d)
+# Create a temporary directory (or use the one provided) and store its name in a variable.
 KEEP_TEMPD=${KEEP_TEMPD:-''}
+FRESH_TEMPD=0
+TEMPD=${TEMPD:-''}
+if [ -z "$TEMPD" ]; then
+    FRESH_TEMPD=1
+    TEMPD=$(mktemp -d)
+fi
 
 # Exit if the temp directory wasn't created successfully.
 if [ ! -e "$TEMPD" ]; then
@@ -43,10 +48,14 @@ trap "exit 1"  HUP INT PIPE QUIT TERM
 trap clean_up  EXIT
 
 cd $TEMPD
-git clone --depth 1 --branch $KONTROL_VERSION https://github.com/runtimeverification/kontrol.git
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+    git clone --depth 1 --branch $KONTROL_VERSION https://github.com/runtimeverification/kontrol.git
+fi
 cd kontrol
-git submodule update --init --recursive --depth 1
 
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+    git submodule update --init --recursive --depth 1
+fi
 
 if [[ $KONTROL_VERSION == "master" ]]; then
   KONTROL_VERSION=$(git name-rev --tags --name-only $(git rev-parse HEAD))
@@ -80,18 +89,23 @@ done
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 
-# poetry takes too long to clone kevm-pyk, so we just do a shallow clone locally and override pyproject.toml
-git clone --depth 1 --branch $KEVM_VERSION https://github.com/runtimeverification/evm-semantics.git
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+  # poetry takes too long to clone kevm-pyk, so we just do a shallow clone locally and override pyproject.toml
+  git clone --depth 1 --branch $KEVM_VERSION https://github.com/runtimeverification/evm-semantics.git
+fi
 cd evm-semantics
-git submodule update --init --recursive --depth 1 kevm-pyk/src/kevm_pyk/kproj/plugin
-
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+  git submodule update --init --recursive --depth 1 kevm-pyk/src/kevm_pyk/kproj/plugin
+fi
 cd ..
 
-# Patch kontrol
-sed -i'' -e "s|git = \"https://github.com/runtimeverification/evm-semantics.git\", tag = \"$KEVM_VERSION\", subdirectory = \"kevm-pyk\"|path = \"evm-semantics/kevm-pyk/\"|g" pyproject.toml
-sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/kontrol/foundry.py
-sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/tests/utils.py
-sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/tests/integration/conftest.py
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+  # Patch kontrol
+  sed -i'' -e "s|git = \"https://github.com/runtimeverification/evm-semantics.git\", tag = \"$KEVM_VERSION\", subdirectory = \"kevm-pyk\"|path = \"evm-semantics/kevm-pyk/\"|g" pyproject.toml
+  sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/kontrol/foundry.py
+  sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/tests/utils.py
+  sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/tests/integration/conftest.py
+fi
 
 feature_shell() {
   GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend $SCRIPT_DIR/../ --command bash -c "$1"
@@ -101,8 +115,10 @@ master_shell() {
   GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --command bash -c "$1"
 }
 
-# kompile Kontrol's K dependencies
-feature_shell "poetry install && poetry run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.foundry --jobs 4"
+# kompile Kontrol's K dependencies or skip kompilation if using an existing TEMPD
+if [[ $FRESH_TEMPD -gt 0 ]]; then
+    feature_shell "poetry install && poetry run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.foundry --jobs 4"
+fi
 
 # kompile the test contracts, to be reused in feature_shell and master_shell. Copy the result from pytest's temp directory
 PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir
@@ -114,13 +130,17 @@ cp -r $PYTEST_TEMP_DIR/foundry/* $FOUNDRY_DIR
 
 mkdir -p $SCRIPT_DIR/logs
 
+if [[ $FRESH_TEMPD -eq 0 ]]; then
+    # remove leftover proofs from previous runs
+    rm -rf $FOUNDRY_DIR/out/proofs
+fi
 feature_shell "make test-integration TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [ -z "$BUG_REPORT" ]; then
 if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
   # remove proofs so that they are not reused by the master shell call
-  rm -r $FOUNDRY_DIR/out/proofs
+  rm -rf $FOUNDRY_DIR/out/proofs
   master_shell "make test-integration TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "no zombie processes found"
 fi
