@@ -49,6 +49,7 @@ import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Bool (pattern TrueBool)
+import Booster.Pattern.Cache (clearTermCache)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
 import Booster.Pattern.Rewrite (
     RewriteFailed (..),
@@ -99,7 +100,7 @@ respond ::
     MVar ServerState ->
     Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
 respond stateVar request =
-    respond_ stateVar request <* liftIO Pattern.clearTermCache
+    respond_ stateVar request <* liftIO clearTermCache
 
 respond_ ::
     forall m.

@@ -67,6 +67,7 @@ import Booster.Definition.Base (KoreDefinition (..), emptyKoreDefinition)
 import Booster.Log (LoggerMIO, logMessage, withKorePatternContext)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
+import Booster.Pattern.Cache (cacheTerm)
 import Booster.Pattern.Util (freeVariables, sortOfTerm, substituteInSort)
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json (addHeader)
@@ -327,7 +328,7 @@ internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinitio
 
     recursion = internaliseTermRaw qq allowAlias checkSubsorts sortVars definition
 
-    withCaching = if coerce qq then id else fmap Internal.cacheTerm
+    withCaching = if coerce qq then id else fmap cacheTerm
 
 internaliseTerm ::
     Flag "alias" ->

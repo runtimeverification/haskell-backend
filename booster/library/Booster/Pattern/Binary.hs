@@ -40,6 +40,7 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Bool (pattern TrueBool)
+import Booster.Pattern.Cache (cacheTerm)
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Prettyprinter (renderDefault)
 
