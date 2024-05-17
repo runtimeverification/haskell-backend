@@ -111,6 +111,7 @@ import Proxy (KoreServer (..), ProxyConfig (..))
 import Proxy qualified
 import SMT qualified as KoreSMT
 import Stats qualified
+import qualified Debug.Trace
 
 envName :: String
 envName = "KORE_RPC_OPTS" -- aligned with legacy kore-rpc
@@ -152,7 +153,7 @@ main = do
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
-        contexLoggingEnabled = not (null logContexts)
+        contextLoggingEnabled = not (null logContexts)
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
             lvl `elem` customLevels
@@ -186,17 +187,17 @@ main = do
                     OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
                     Standard -> const True
                 koreFilterContext ctxt =
-                    not contexLoggingEnabled
+                    not contextLoggingEnabled
                         || ( let contextStrs =
-                                    map
-                                        ( \(Log.SomeEntry _ c) -> BS.pack $ Pretty.renderString $ Pretty.layoutOneLine $ Pretty.hsep $ Log.oneLineContextDoc c
+                                    concatMap
+                                        ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
                                         )
                                         ctxt
                               in any (flip Booster.Log.Context.mustMatch contextStrs) logContexts
                            )
 
                 koreLogEntries =
-                    if contexLoggingEnabled
+                    if contextLoggingEnabled
                         then -- context logging: enable all Proxy-required Kore log entries
                             Set.unions . Map.elems $ koreExtraLogs
                         else -- no context logging: only enable Kore log entries for the given Proxy log levels
