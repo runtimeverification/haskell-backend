@@ -63,7 +63,6 @@ executables:
     - deepseq
     - directory
     - fast-logger
-    - Glob
     - hs-backend-booster
     - kore-rpc-types
     - monad-logger
