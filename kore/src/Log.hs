@@ -78,6 +78,7 @@ import Control.Monad.Trans.State.Strict qualified as Strict (
 import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
+    pack,
  )
 import GHC.Generics qualified as GHC
 import GHC.Stack qualified as GHC
@@ -106,7 +107,9 @@ data LogMessage = LogMessage
 instance Entry LogMessage where
     entrySeverity LogMessage{severity} = severity
     oneLineDoc LogMessage{message} = Pretty.pretty message
+    oneLineContextDoc LogMessage{severity} = [pack $ show severity]
     oneLineJson LogMessage{message} = JSON.toJSON message
+    oneLineContextJson LogMessage{severity} = JSON.toJSON $ show severity
 
 instance Pretty LogMessage where
     pretty LogMessage{message, callstack} =

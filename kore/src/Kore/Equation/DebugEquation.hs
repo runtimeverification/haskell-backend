@@ -311,7 +311,7 @@ instance Entry DebugAttemptEquation where
         Left failure -> " " <> Pretty.pretty (failureDescription failure)
 
     oneLineContextJson = \case
-        _entry@DebugAttemptEquation{} -> JSON.toJSON ["detail" :: Text]
+        _entry@DebugAttemptEquation{} -> JSON.String "detail"
         _entry@(DebugAttemptEquationResult _equation result) ->
             case result of
                 Right Conditional{term} ->
