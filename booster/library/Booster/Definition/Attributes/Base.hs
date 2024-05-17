@@ -47,6 +47,7 @@ module Booster.Definition.Attributes.Base (
 
 import Control.DeepSeq (NFData (..))
 import Data.Aeson (ToJSON (..))
+import Data.Aeson qualified as JSON
 import Data.ByteString (ByteString)
 import Data.Data (Data)
 import Data.Hashable (Hashable)
@@ -62,7 +63,6 @@ import Prettyprinter as Pretty
 import Booster.SMT.Base (SExpr)
 import Booster.Util (Flag (..))
 import Booster.Util qualified as Util
-import Data.Aeson qualified as JSON
 
 data DefinitionAttributes = DefinitionAttributes
     {

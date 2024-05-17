@@ -48,7 +48,9 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State
+import Data.Aeson (object, (.=))
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
@@ -84,8 +86,6 @@ import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..), Flag (..))
-import Data.Aeson (object, (.=))
-import Data.Bifunctor (bimap)
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Util (showHashHex)
 
