@@ -15,10 +15,12 @@ module Kore.Equation.DebugEquation (
     whileMatch,
     whileApplyMatchResult,
     whileDebugAttemptEquation,
+    whileDebugTerm,
 
     -- * Logging
     DebugAttemptEquation (..),
     DebugApplyEquation (..),
+    DebugTerm (..),
     debugApplyEquation,
     debugAttemptEquationResult,
     srcLoc,
@@ -29,10 +31,12 @@ import Control.Error (
     withExceptT,
  )
 import Data.Aeson qualified as JSON
+import Data.List.Extra (intercalate, splitOn, takeEnd)
 import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Data.Vector qualified as Vec
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -44,7 +48,7 @@ import Kore.Attribute.SourceLocation (
  )
 import Kore.Equation.Equation (Equation (..))
 import Kore.Internal.OrCondition (OrCondition)
-import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Pattern (Conditional (..), Pattern)
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (SideCondition)
 import Kore.Internal.TermLike (
@@ -58,8 +62,10 @@ import Kore.Rewrite.Axiom.MatcherData (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
+    getRewritingTerm,
  )
-import Kore.Unparser (Unparse (..))
+import Kore.Syntax.Json qualified
+import Kore.Unparser (Unparse (..), renderDefault)
 import Kore.Util (showHashHex)
 import Log
 import Prelude.Kore
@@ -288,55 +294,113 @@ instance Entry DebugAttemptEquation where
     helpDoc _ = "log equation application attempts"
 
     oneLineContextDoc = \case
-        _entry@(DebugAttemptEquation equation term) ->
-            let equationKindTxt = if isSimplification equation then "simplification" else "function"
-             in [ Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash term]
-                , Pretty.hsep . map Pretty.pretty $ [equationKindTxt, shortRuleIdText equation]
-                ]
+        _entry@DebugAttemptEquation{} -> ["detail"]
         (DebugAttemptEquationResult _ result) -> case result of
-            Right{} -> ["success"]
-            Left failure -> ["failure", Pretty.pretty $ failureDescription failure]
+            Right Conditional{term} -> ["success", "term " <> (showHashHex $ hash term), "kore-term"]
+            Left{} -> ["failure"]
 
-    oneLineDoc (DebugAttemptEquation equation term) =
+    oneLineDoc (DebugAttemptEquation equation _term) =
         maybe
             mempty
             ( \loc ->
-                Pretty.hsep . concat $
-                    [ ["[detail]"]
-                    , ["applying equation", Pretty.pretty (shortRuleIdText equation)]
-                    , ["at", pretty loc]
-                    , ["to term", Pretty.pretty . showHashHex $ hash term, unparse term]
-                    ]
+                Pretty.hsep (["applying equation", Pretty.pretty (shortRuleIdText equation), "at", pretty loc])
             )
             (srcLoc equation)
     oneLineDoc (DebugAttemptEquationResult _ result) = case result of
-        Right{} -> Pretty.brackets "success"
-        Left failure -> Pretty.hsep [Pretty.brackets "failure", Pretty.pretty $ failureDescription failure]
+        Right Conditional{term} -> " " <> unparse term
+        Left failure -> " " <> Pretty.pretty (failureDescription failure)
+
+    oneLineContextJson = \case
+        _entry@DebugAttemptEquation{} -> JSON.String "detail"
+        _entry@(DebugAttemptEquationResult _equation result) ->
+            case result of
+                Right Conditional{term} ->
+                    JSON.Array $
+                        Vec.fromList
+                            [ JSON.String "success"
+                            , JSON.object
+                                [ "term" JSON..= showHashHex (hash term)
+                                ]
+                            , JSON.String "kore-term"
+                            ]
+                Left _failure -> JSON.String "failure"
 
     oneLineJson = \case
-        entry@(DebugAttemptEquation equation _) ->
-            JSON.object
-                [ "tag" JSON..= entryTypeText (toEntry entry)
-                , "rule-id"
-                    JSON..= ruleIdText equation
-                ]
-        _entry@(DebugAttemptEquationResult equation result) ->
-            let resultInfo = case result of
-                    Right _ ->
-                        JSON.object
-                            [ "tag" JSON..= ("success" :: Text)
-                            , "rule-id" JSON..= ruleIdText equation
-                            ]
-                    Left failure ->
-                        JSON.object
-                            [ "tag" JSON..= ("failure" :: Text)
-                            , "rule-id" JSON..= ruleIdText equation
-                            , "reason" JSON..= failureDescription failure
-                            ]
-             in JSON.object
-                    [ "tag" JSON..= ("simplification" :: Text)
-                    , "result" JSON..= resultInfo
+        _entry@(DebugAttemptEquation equation _term) ->
+            JSON.toJSON $ renderDefault (maybe "UNKNOWN" pretty (srcLoc equation))
+        _entry@(DebugAttemptEquationResult _equation result) ->
+            case result of
+                Right Conditional{term} ->
+                    JSON.toJSON $ Kore.Syntax.Json.fromTermLike (getRewritingTerm term)
+                Left failure ->
+                    JSON.toJSON $ failureDescription failure
+
+newtype DebugTerm = DebugTerm (TermLike RewritingVariableName) deriving newtype (Pretty, Show)
+newtype DebugTermContext = DebugTermContext (TermLike RewritingVariableName)
+    deriving newtype (Pretty, Show)
+
+newtype DebugEquation = DebugEquation (Equation RewritingVariableName)
+    deriving newtype (Pretty, Show)
+
+instance Entry DebugTermContext where
+    entrySeverity _ = Debug
+
+    oneLineDoc DebugTermContext{} = mempty
+
+    oneLineContextDoc (DebugTermContext term) =
+        ["term " <> (showHashHex $ hash term)]
+
+    oneLineContextJson (DebugTermContext term) =
+        JSON.object
+            [ "term" JSON..= showHashHex (hash term)
+            ]
+
+    oneLineJson DebugTermContext{} =
+        JSON.Null
+
+instance Entry DebugTerm where
+    entrySeverity _ = Debug
+
+    oneLineDoc (DebugTerm term) = unparse term
+
+    oneLineContextDoc DebugTerm{} =
+        ["kore-term"]
+
+    oneLineContextJson DebugTerm{} =
+        JSON.toJSON
+            [ "kore-term" :: Text
+            ]
+
+    oneLineJson (DebugTerm term) =
+        JSON.toJSON $ Kore.Syntax.Json.fromTermLike (getRewritingTerm term)
+
+instance Entry DebugEquation where
+    entrySeverity _ = Debug
+
+    oneLineDoc _ = mempty
+
+    oneLineContextDoc (DebugEquation equation) =
+        let equationKindTxt = if isSimplification equation then "simplification" else "function"
+         in [ equationKindTxt <> " " <> shortRuleIdText equation
+            ]
+    oneLineContextJson (DebugEquation equation) =
+        let equationKindTxt = if isSimplification equation then "simplification" else "function"
+         in JSON.Array $
+                Vec.fromList
+                    [ JSON.object
+                        [ equationKindTxt
+                            JSON..= ruleIdText equation
+                        ]
                     ]
+    oneLineJson _ = JSON.Null
+
+whileDebugTerm ::
+    MonadLog log =>
+    TermLike RewritingVariableName ->
+    log a ->
+    log a
+whileDebugTerm termLike m =
+    logWhile (DebugTermContext termLike) $ logEntry (DebugTerm termLike) >> m
 
 -- | Log the result of attempting to apply an 'Equation'.
 debugAttemptEquationResult ::
@@ -353,8 +417,10 @@ whileDebugAttemptEquation ::
     Equation RewritingVariableName ->
     log a ->
     log a
-whileDebugAttemptEquation termLike equation =
-    logWhile (DebugAttemptEquation equation termLike)
+whileDebugAttemptEquation termLike equation m =
+    logWhile (DebugEquation equation) $
+        logEntry (DebugAttemptEquation equation termLike)
+            >> m
 
 -- | Log when an 'Equation' is actually applied.
 data DebugApplyEquation
@@ -378,13 +444,22 @@ instance Pretty DebugApplyEquation where
             ]
 
 srcLoc :: Equation RewritingVariableName -> Maybe Attribute.SourceLocation
-srcLoc equation
-    | (not . isLocEmpty) kLoc = Just kLoc
-    | AstLocationFile fileLocation <- locationFromAst equation =
-        Just (from @FileLocation fileLocation)
-    | otherwise = Nothing
+srcLoc equation = adjustFile <$> srcLoc'
   where
+    srcLoc'
+        | (not . isLocEmpty) kLoc = Just kLoc
+        | AstLocationFile fileLocation <- locationFromAst equation =
+            Just (from @FileLocation fileLocation)
+        | otherwise = Nothing
+
     kLoc = Attribute.sourceLocation $ attributes equation
+
+    adjustFile (SourceLocation loc (Attribute.Source (Just source))) =
+        ( SourceLocation
+            loc
+            (Attribute.Source (Just ("..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" source))))
+        )
+    adjustFile sl = sl
 
 isLocEmpty :: Attribute.SourceLocation -> Bool
 isLocEmpty Attribute.SourceLocation{source = Attribute.Source file} =
@@ -397,11 +472,17 @@ instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
     oneLineDoc
         ( DebugApplyEquation
-                Equation{attributes = Attribute.Axiom{sourceLocation}}
                 _
+                Conditional{term}
             ) =
-            pretty sourceLocation
+            Pretty.hsep
+                [ "applied equation, with result:"
+                , Pretty.pretty . showHashHex $ hash term
+                , unparse term
+                ]
     helpDoc _ = "log equation application successes"
+
+    oneLineJson _ = JSON.Null
 
 {- | Log when an 'Equation' is actually applied.
 

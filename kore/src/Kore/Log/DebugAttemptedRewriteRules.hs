@@ -62,7 +62,7 @@ shortenRuleId :: Text -> Text
 shortenRuleId msg = Text.take 8 msg
 
 shortRuleIdTxt :: UniqueId -> Text
-shortRuleIdTxt = shortenRuleId . fromMaybe "UNKNWON" . getUniqueId
+shortRuleIdTxt = shortenRuleId . fromMaybe "UNKNOWN" . getUniqueId
 
 instance Entry DebugAttemptedRewriteRules where
     entrySeverity _ = Debug
@@ -70,13 +70,12 @@ instance Entry DebugAttemptedRewriteRules where
 
     oneLineContextDoc = \case
         (DebugAttemptedRewriteRules{configuration, ruleId, label}) ->
-            [ Pretty.hsep ["term", Pretty.pretty . showHashHex $ hash configuration]
-            , Pretty.hsep . map Pretty.pretty $
-                ["rewrite", shortRuleIdTxt ruleId, fromMaybe "" label]
+            [ "term " <> (showHashHex $ hash configuration)
+            , "rewrite" <> shortRuleIdTxt ruleId <> fromMaybe "" label
             ]
 
     oneLineDoc entry@(DebugAttemptedRewriteRules{configuration, label, ruleId, attemptedRewriteRule}) =
-        let context = map Pretty.brackets (oneLineContextDoc entry <> ["detail"])
+        let context = map Pretty.brackets (pretty <$> oneLineContextDoc entry <> ["detail"])
             logMsg =
                 ( Pretty.hsep . concat $
                     [ ["attempting to apply rewrite rule", Pretty.pretty (shortRuleIdTxt ruleId), Pretty.pretty label]

@@ -96,6 +96,7 @@ import Kore.Syntax.Json.Types qualified as Syntax
 respond ::
     forall m.
     LoggerMIO m =>
+    Log.MonadLoggerIO m =>
     MVar ServerState ->
     Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
 respond stateVar =
@@ -302,7 +303,6 @@ respond stateVar =
                             Right
                                 (addHeader $ Syntax.KJTop (fromMaybe (error "not a predicate") $ sortOfJson req.state.term), [])
                     | otherwise -> do
-                        Log.logInfoNS "booster" "Simplifying predicates"
                         unless (null ps.unsupported) $ do
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)

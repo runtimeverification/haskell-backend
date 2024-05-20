@@ -26,6 +26,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
+import Data.Aeson (object, (.=))
+import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
 import Data.Hashable qualified as Hashable
 import Data.List (intersperse, partition)
@@ -46,6 +48,7 @@ import Booster.Log (
     LogMessage,
     Logger,
     LoggerMIO (..),
+    WithJsonMessage (..),
     logMessage,
     logPretty,
     withContext,
@@ -73,6 +76,7 @@ import Booster.Pattern.Match (
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
+import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..), constructorName)
 
 newtype RewriteT io a = RewriteT
@@ -134,6 +138,7 @@ getDefinition = RewriteT $ definition <$> ask
 -}
 rewriteStep ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     [Text] ->
     [Text] ->
     Pattern ->
@@ -156,6 +161,7 @@ rewriteStep cutLabels terminalLabels pat = do
   where
     processGroups ::
         LoggerMIO io =>
+        MonadLoggerIO io =>
         Pattern ->
         [[RewriteRule "Rewrite"]] ->
         RewriteT io (RewriteResult Pattern)
@@ -280,6 +286,7 @@ abort the entire rewrite).
 applyRule ::
     forall io.
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Pattern ->
     RewriteRule "Rewrite" ->
     RewriteT io (RewriteRuleAppResult (RewriteRule "Rewrite", Pattern))
@@ -299,15 +306,22 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
         MatchIndeterminate remainder -> do
             withContext "abort" $
                 logMessage $
-                    renderOneLineText $
-                        "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                        renderOneLineText $
+                            "Uncertain about match with rule. Remainder:" <+> pretty remainder
             failRewrite $ RuleApplicationUnclear rule pat.term remainder
         MatchSuccess substitution -> do
-            withContext "success" $
-                logMessage $
-                    renderOneLineText $
-                        "Substitution:"
-                            <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList substitution)
+            withContext "success" $ do
+                logMessage rule
+                withContext "substitution"
+                    $ logMessage
+                    $ WithJsonMessage
+                        ( object
+                            ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList substitution)]
+                        )
+                    $ renderOneLineText
+                    $ "Substitution:"
+                        <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList substitution)
             pure substitution
 
     -- Also fail the whole rewrite if a rule applies but may introduce
@@ -675,6 +689,7 @@ showPattern title pat = hang 4 $ vsep [title, pretty pat.term]
 performRewrite ::
     forall io.
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Flag "CollectRewriteTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->

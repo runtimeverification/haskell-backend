@@ -61,14 +61,14 @@ executables:
     - containers
     - conduit-extra
     - deepseq
+    - directory
     - fast-logger
-    - Glob
     - hs-backend-booster
+    - kore-rpc-types
+    - monad-logger
     - optparse-applicative
     - text
-    - directory
-    - monad-logger
-    - kore-rpc-types
+    - transformers
     ghc-options:
     - -rtsopts
     - -threaded
