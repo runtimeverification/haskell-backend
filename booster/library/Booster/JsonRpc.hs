@@ -281,7 +281,7 @@ respond stateVar =
                                 , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                 , ceilConditions = pat.ceilConditions
                                 }
-                    ApplyEquations.evaluatePattern doTracing def mLlvmLibrary solver mempty substPat >>= \case
+                    ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPat >>= \case
                         (Right newPattern, _) -> do
                             let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
                                 tSort = externaliseSort (sortOfPattern newPattern)
@@ -313,7 +313,6 @@ respond stateVar =
                         let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
                         withContext "constraint" $
                             ApplyEquations.simplifyConstraints
-                                doTracing
                                 def
                                 mLlvmLibrary
                                 solver
@@ -530,13 +529,12 @@ respond stateVar =
                         MatchSuccess subst -> do
                             let filteredConsequentPreds =
                                     Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                doTracing = Flag False
                             solver <- traverse (SMT.initSolver def) mSMTOptions
 
                             if null filteredConsequentPreds
                                 then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
                                 else
-                                    ApplyEquations.evaluateConstraints doTracing def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
                                         (Right newPreds, _) ->
                                             if all (== Pattern.Predicate TrueBool) newPreds
                                                 then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst

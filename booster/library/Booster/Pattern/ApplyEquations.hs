@@ -152,7 +152,6 @@ data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
     , smtSolver :: Maybe SMT.SMTContext
-    , doTracing :: Flag "CollectEquationTraces"
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
@@ -415,14 +414,13 @@ data EquationPreference = PreferFunctions | PreferSimplifications
 
 runEquationT ::
     LoggerMIO io =>
-    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     EquationT io a ->
     io (Either EquationFailure a, SimplifierCache)
-runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
+runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
     (res, endState) <-
@@ -434,7 +432,6 @@ runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
                         { definition
                         , llvmApi
                         , smtSolver
-                        , doTracing
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
                         , logger
@@ -537,15 +534,14 @@ llvmSimplify term = do
 evaluateTerm ::
     LoggerMIO io =>
     MonadLoggerIO io =>
-    Flag "CollectEquationTraces" ->
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm doTracing direction def llvmApi smtSolver =
-    runEquationT doTracing def llvmApi smtSolver mempty
+evaluateTerm direction def llvmApi smtSolver =
+    runEquationT def llvmApi smtSolver mempty
         . evaluateTerm' direction
 
 -- version for internal nested evaluation
@@ -562,15 +558,14 @@ evaluateTerm' direction = iterateEquations direction PreferFunctions
 evaluatePattern ::
     LoggerMIO io =>
     MonadLoggerIO io =>
-    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
-evaluatePattern doTracing def mLlvmLibrary smtSolver cache =
-    runEquationT doTracing def mLlvmLibrary smtSolver cache . evaluatePattern'
+evaluatePattern def mLlvmLibrary smtSolver cache =
+    runEquationT def mLlvmLibrary smtSolver cache . evaluatePattern'
 
 -- version for internal nested evaluation
 evaluatePattern' ::
@@ -600,15 +595,14 @@ simplifyAssumedPredicate p = do
 evaluateConstraints ::
     LoggerMIO io =>
     MonadLoggerIO io =>
-    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
-evaluateConstraints doTracing def mLlvmLibrary smtSolver cache =
-    runEquationT doTracing def mLlvmLibrary smtSolver cache . evaluateConstraints'
+evaluateConstraints def mLlvmLibrary smtSolver cache =
+    runEquationT def mLlvmLibrary smtSolver cache . evaluateConstraints'
 
 evaluateConstraints' ::
     LoggerMIO io =>
@@ -1084,28 +1078,26 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
 simplifyConstraint ::
     LoggerMIO io =>
     MonadLoggerIO io =>
-    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) = do
-    runEquationT doTracing def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi mbSMT cache (Predicate p) = do
+    runEquationT def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     LoggerMIO io =>
     MonadLoggerIO io =>
-    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)
-simplifyConstraints doTracing def mbApi mbSMT cache ps =
-    runEquationT doTracing def mbApi mbSMT cache $
+simplifyConstraints def mbApi mbSMT cache ps =
+    runEquationT def mbApi mbSMT cache $
         concatMap splitAndBools
             <$> mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
