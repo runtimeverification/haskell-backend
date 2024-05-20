@@ -16,8 +16,6 @@ module Booster.Pattern.ApplyEquations (
     EquationPreference (..),
     EquationFailure (..),
     EquationTrace (..),
-    pattern CollectEquationTraces,
-    pattern NoCollectEquationTraces,
     eraseStates,
     EquationMetadata (..),
     ApplyEquationResult (..),
@@ -85,7 +83,7 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
-import Booster.Util (Bound (..), Flag (..))
+import Booster.Util (Bound (..))
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Util (showHashHex)
 
@@ -156,12 +154,6 @@ data EquationConfig = EquationConfig
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
     }
-
-pattern CollectEquationTraces :: Flag "CollectEquationTraces"
-pattern CollectEquationTraces = Flag True
-
-pattern NoCollectEquationTraces :: Flag "CollectEquationTraces"
-pattern NoCollectEquationTraces = Flag False
 
 data EquationState = EquationState
     { termStack :: Seq Term
