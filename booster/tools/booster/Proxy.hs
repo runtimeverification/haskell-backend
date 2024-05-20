@@ -292,10 +292,11 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 else "Iterating execute request at " <> show currentDepth
         -- calculate depth limit, considering possible forced Kore simplification
         let mbDepthLimit = case (cfg.forceFallback, r.maxDepth) of
-                (Just (Depth forceDepth), Just (Depth maxDepth)) ->
-                    if cDepth + forceDepth < maxDepth
-                        then Just $ Depth forceDepth
-                        else Just $ Depth $ maxDepth - cDepth
+                (Just (Depth forceDepth), Just (Depth maxDepth))
+                    | cDepth + forceDepth < maxDepth ->
+                        cfg.forceFallback
+                    | otherwise ->
+                        Just $ Depth $ maxDepth - cDepth
                 (Just forceDepth, _) -> Just forceDepth
                 (_, Just maxDepth) -> Just $ maxDepth - currentDepth
                 _ -> Nothing
@@ -303,7 +304,9 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         case bResult of
             Right (Execute boosterResult)
                 -- the execution reached the depth bound due to a forced Kore simplification
-                | boosterResult.reason == DepthBound && isJust cfg.forceFallback -> do
+                | DepthBound <- boosterResult.reason
+                , Just forceDepth <- cfg.forceFallback
+                , forceDepth == boosterResult.depth -> do
                     Log.logInfoNS "proxy" . Text.pack $
                         "Forced simplification at " <> show (currentDepth + boosterResult.depth)
                     simplifyResult <- simplifyExecuteState logSettings r._module def boosterResult.state
