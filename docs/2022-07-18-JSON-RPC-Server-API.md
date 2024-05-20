@@ -338,12 +338,15 @@ Not all backends support logging processing time, and some won't have the differ
     "antecedent": {"format": "KORE", "version": 1, "term": {}},
     "consequent": {"format": "KORE", "version": 1, "term": {}},
     "module": "MODULE-NAME",
-    "log-timing": true
+    "log-timing": true,
+    "assume-defined": false
   }
 }
 ```
 
-Optional parameters: `module` (main module name), `log-timing`
+Optional parameters: `module` (main module name), `log-timing`, `assume-defined`.
+
+The `assume-defined` flag defaults to `false`. When set to `true`, the server uses the new simplified implication check in booster, which makes the assumption that the antecedent and consequent are bot defined, i.e. don't simplify to `#Bottom`.
 
 ### Error Response:
 
