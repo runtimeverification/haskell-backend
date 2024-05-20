@@ -858,13 +858,15 @@ applyEquations theory handler term = do
     processEquations [] =
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
-        res <-  withRuleContext eq $ applyEquation term eq
+        res <- withRuleContext eq $ applyEquation term eq
         emitEquationTrace term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
         handler
-            (\t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t))
+            ( \t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
+            )
             (processEquations rest)
-            (withContext (LogContext eq) $ withContext "abort" $
-                logMessage ("Aborting simplification/function evaluation" :: Text) >> pure term
+            ( withContext (LogContext eq) $
+                withContext "abort" $
+                    logMessage ("Aborting simplification/function evaluation" :: Text) >> pure term
             )
             res
 
