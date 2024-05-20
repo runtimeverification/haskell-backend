@@ -448,9 +448,7 @@ iterateEquations ::
     Term ->
     EquationT io Term
 iterateEquations direction preference startTerm = do
-    result <- pushRecursion startTerm >>= checkCounter >> go startTerm <* popRecursion
-    when (startTerm /= result) $ withContext "success" $ withTermContext result $ pure ()
-    pure result
+    pushRecursion startTerm >>= checkCounter >> go startTerm <* popRecursion
   where
     checkCounter counter = do
         config <- getConfig
@@ -860,12 +858,12 @@ applyEquations theory handler term = do
     processEquations [] =
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
-        res <- applyEquation term eq
+        res <-  withRuleContext eq $ applyEquation term eq
         emitEquationTrace term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
         handler
-            (\t -> setChanged >> pure t)
+            (\t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t))
             (processEquations rest)
-            ( withContext "abort" $
+            (withContext (LogContext eq) $ withContext "abort" $
                 logMessage ("Aborting simplification/function evaluation" :: Text) >> pure term
             )
             res
@@ -903,7 +901,7 @@ applyEquation ::
     Term ->
     RewriteRule tag ->
     EquationT io ApplyEquationResult
-applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $ runExceptT $ do
+applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $ do
         withContext "abort" $
