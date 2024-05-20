@@ -48,7 +48,9 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State
+import Data.Aeson (object, (.=))
 import Data.Aeson.Text (encodeToLazyText)
+import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
@@ -82,6 +84,7 @@ import Booster.Pattern.Match
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
+import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..), Flag (..))
 import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Util (showHashHex)
@@ -385,7 +388,7 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 logWarn :: MonadLogger m => Text -> m ()
 logWarn msg =
     logWarnNS "booster" $
-        msg <> " For more details, enable context logging '--log-context \"*abort*detail\"'"
+        msg <> " For more details, enable context logging '--log-context \"*>abort,detail\"'"
 
 checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
@@ -533,6 +536,7 @@ llvmSimplify term = do
 -- | Evaluate and simplify a term.
 evaluateTerm ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Flag "CollectEquationTraces" ->
     Direction ->
     KoreDefinition ->
@@ -557,6 +561,7 @@ evaluateTerm' direction = iterateEquations direction PreferFunctions
 -}
 evaluatePattern ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -570,6 +575,7 @@ evaluatePattern doTracing def mLlvmLibrary smtSolver cache =
 -- version for internal nested evaluation
 evaluatePattern' ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Pattern ->
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
@@ -583,7 +589,7 @@ evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternCon
     pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
 
 -- evaluate the given predicate assuming all others
-simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
+simplifyAssumedPredicate :: LoggerMIO io => MonadLoggerIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
     allPs <- predicates <$> getState
     let otherPs = Set.delete p allPs
@@ -593,6 +599,7 @@ simplifyAssumedPredicate p = do
 
 evaluateConstraints ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -605,6 +612,7 @@ evaluateConstraints doTracing def mLlvmLibrary smtSolver cache =
 
 evaluateConstraints' ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Set Predicate ->
     EquationT io (Set Predicate)
 evaluateConstraints' constraints = do
@@ -731,7 +739,7 @@ applyHooksAndEquations pref term = do
                                 e <> " while evaluating " <> renderOneLineText (pretty term)
                             logWarn e
                             throw (InternalError e)
-                    withContext (LogContext $ "hook " <> hookName) $
+                    withContext (LogContext $ HookCtxt hookName) $
                         either onError checkChanged $
                             runExcept (hook args)
             _other -> pure Nothing
@@ -924,8 +932,9 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             withContext "match" $
                 withContext "failure" $
                     logMessage $
-                        renderOneLineText $
-                            "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                        WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                            renderOneLineText $
+                                "Uncertain about match with rule. Remainder:" <+> pretty remainder
             throwE IndeterminateMatch
         MatchSuccess subst -> do
             -- cancel if condition
@@ -934,12 +943,15 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
             -- is violated
             withContext "match" $ checkConcreteness rule.attributes.concreteness subst
 
-            withContext "match" $
-                withContext "success" $
-                    logMessage $
-                        renderOneLineText $
-                            "Substitution:"
-                                <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
+            withContext "match" $ withContext "success" $ do
+                logMessage rule
+                withContext "substitution"
+                    $ logMessage
+                    $ WithJsonMessage
+                        (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
+                    $ renderOneLineText
+                    $ "Substitution:"
+                        <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
 
             -- check required conditions, using substitution
             let required =
@@ -1071,6 +1083,7 @@ applyEquation term rule = withRuleContext rule $ fmap (either Failure Success) $
 -}
 simplifyConstraint ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -1083,6 +1096,7 @@ simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) = do
 
 simplifyConstraints ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->

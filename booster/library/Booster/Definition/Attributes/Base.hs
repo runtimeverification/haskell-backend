@@ -46,6 +46,8 @@ module Booster.Definition.Attributes.Base (
 ) where
 
 import Control.DeepSeq (NFData (..))
+import Data.Aeson (ToJSON (..))
+import Data.Aeson qualified as JSON
 import Data.ByteString (ByteString)
 import Data.Data (Data)
 import Data.Hashable (Hashable)
@@ -110,6 +112,9 @@ newtype NotPreservesDefinednessReason = UndefinedSymbol ByteString
 instance Pretty NotPreservesDefinednessReason where
     pretty = \case
         UndefinedSymbol name -> "non-total symbol " <> (pretty $ Text.decodeUtf8 $ Util.decodeLabel' name)
+
+instance ToJSON NotPreservesDefinednessReason where
+    toJSON (UndefinedSymbol n) = JSON.String $ Text.decodeUtf8 n
 
 type Label = Text
 

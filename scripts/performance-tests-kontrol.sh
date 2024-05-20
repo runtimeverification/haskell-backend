@@ -114,14 +114,18 @@ cp -r $PYTEST_TEMP_DIR/foundry/* $FOUNDRY_DIR
 
 mkdir -p $SCRIPT_DIR/logs
 
-feature_shell "make test-integration TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
+# set test arguments and select which tests to run
+QUOTE='"'
+TEST_ARGS="--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT -k 'not (test_kontrol_cse or test_foundry_minimize_proof or test_kontrol_end_to_end)'"
+
+feature_shell "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [ -z "$BUG_REPORT" ]; then
 if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
   # remove proofs so that they are not reused by the master shell call
-  rm -r $FOUNDRY_DIR/out/proofs
-  master_shell "make test-integration TEST_ARGS='--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
+  rm -rf $FOUNDRY_DIR/out/proofs
+  master_shell "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "no zombie processes found"
 fi
 

@@ -27,6 +27,7 @@ import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin (koreEvaluators)
+import Kore.Equation.DebugEquation (whileDebugTerm)
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
@@ -206,7 +207,7 @@ evaluatePattern
     defaultValue =
         do
             BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
-            do
+            whileDebugTerm termLike $ do
                 merged <- do
                     result <- liftSimplifier $ evaluator termLike sideCondition
                     flattened <- case result of

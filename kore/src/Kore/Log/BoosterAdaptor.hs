@@ -20,17 +20,26 @@ import Control.Monad.Cont (
     runContT,
  )
 import Data.Aeson qualified as JSON
-import Data.Aeson.Key qualified as JSON
+import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.Aeson.KeyMap qualified as JSON
-import Data.Aeson.Text qualified as JSON
 import Data.Functor.Contravariant (
     contramap,
  )
 import Data.Text (
     Text,
  )
-import Data.Text.Lazy qualified as LazyText
-import Kore.JsonRpc.Types.Log (LogOrigin (KoreRpc))
+import Data.Text.Encoding qualified as Text
+import Data.Vector qualified as Vec
+import Pretty qualified
+import System.Clock (
+    TimeSpec (..),
+    diffTimeSpec,
+    toNanoSecs,
+ )
+
+import Data.Aeson.Encode.Pretty (Config (confIndent), Indent (Spaces))
+import Data.ByteString.Lazy qualified as BSL
+import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)
 import Kore.Log qualified as Log
 import Kore.Log.KoreLogOptions as KoreLogOptions
@@ -40,12 +49,6 @@ import Kore.Log.Registry (
  )
 import Log
 import Prelude.Kore
-import Pretty qualified
-import System.Clock (
-    TimeSpec (..),
-    diffTimeSpec,
-    toNanoSecs,
- )
 
 withLogger ::
     KoreLogOptions ->
@@ -87,21 +90,35 @@ koreSomeEntryLogAction renderer earlyFilter lateFilter textLogAction =
         & Colog.cfilter earlyFilter
 
 renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
-renderJson _exeName _startTime _timestampSwitch (WithTimestamp (SomeEntry _context actualEntry) _entryTime) =
-    LazyText.toStrict . JSON.encodeToLazyText . addOriginField $ oneLineJson actualEntry
+renderJson _exeName _startTime _timestampSwitch (WithTimestamp e@(SomeEntry context actualEntry) _entryTime) =
+    Text.decodeUtf8 . BSL.toStrict . JSON.encodePretty' rpcJsonConfig{confIndent = Spaces 0} $ json
   where
-    addOriginField :: JSON.Value -> JSON.Value
-    addOriginField = \case
-        (JSON.Object xs) -> JSON.Object $ JSON.insert (JSON.fromText "origin") (JSON.toJSON KoreRpc) xs
-        xs -> xs
+    jsonContext =
+        foldr
+            ( \(SomeEntry _ c) cs -> case oneLineContextJson c of
+                JSON.Array cs' -> cs' <> cs
+                j -> Vec.cons j cs
+            )
+            mempty
+            (context <> [e])
+
+    json = case oneLineJson actualEntry of
+        JSON.Object o
+            | Just (JSON.Array ctxt) <- JSON.lookup "context" o ->
+                JSON.Object $ JSON.insert "context" (JSON.Array $ jsonContext <> ctxt) o
+        other ->
+            JSON.object
+                [ "message" JSON..= other
+                , "context" JSON..= jsonContext
+                ]
 
 renderOnelinePretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
 renderOnelinePretty _exeName _startTime _timestampSwitch (WithTimestamp entry@(SomeEntry entryContext _actualEntry) _entryTime) =
     let cs =
-            entryContext
-                & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> oneLineContextDoc e))
+            (entryContext <> [entry])
+                & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> Pretty.pretty <$> oneLineContextDoc e))
         leaf = oneLineDoc entry
-     in mconcat ("[kore]" : (cs <> [leaf]))
+     in mconcat cs Pretty.<+> leaf
             & Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
             & Pretty.renderText
 

@@ -192,16 +192,18 @@ retryTCPClient delay retries host port operation
         error $ "retryTCPClient: negative parameters " <> show (delay, retries)
     | retries == 0 = runTCPClient host port operation
     | otherwise =
-        catchJust isNoSuchThing (runTCPClient host port operation) tryAgain
+        catchJust isSocketError (runTCPClient host port operation) tryAgain
   where
-    tryAgain _ = do
-        hPutStrLn stderr $ "[Warning] Could not connect (retrying " <> show retries <> " times)"
+    tryAgain msg = do
+        hPutStrLn stderr $
+            "[Warning] Could not connect: " <> msg <> ". Retrying " <> show retries <> " times"
         sleep delay
         retryTCPClient delay (retries - 1) host port operation
 
-    isNoSuchThing :: IOError -> Maybe ()
-    isNoSuchThing IOError{ioe_type = NoSuchThing} = Just ()
-    isNoSuchThing _other = Nothing
+    isSocketError :: IOError -> Maybe String
+    isSocketError IOError{ioe_type = NoSuchThing, ioe_filename = Nothing, ioe_description} =
+        Just ioe_description
+    isSocketError _other = Nothing
 
 ----------------------------------------
 -- Logging
