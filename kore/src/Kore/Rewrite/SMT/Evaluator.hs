@@ -169,7 +169,11 @@ decidePredicate ::
 decidePredicate onUnknown sideCondition predicates =
     whileDebugEvaluateCondition predicates $
         do
-            result <- query >>= whenUnknown retry
+            result <- case onUnknown of
+                -- do not retry the query on Unknown if the use-case is "soft", i.e. applying simplifications
+                WarnDecidePredicateUnknown _ _ -> query
+                -- if Unknown leads to a hard error, retry the query with scaled timeouts
+                ErrorDecidePredicateUnknown _ _ -> query >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
                 Unsat -> return False
@@ -206,10 +210,8 @@ decidePredicate onUnknown sideCondition predicates =
 retryWithScaledTimeout :: MonadSMT m => m Result -> m Result
 retryWithScaledTimeout q = do
     SMT.RetryLimit limit <- SMT.askRetryLimit
-    -- Use the same timeout for the first retry, since sometimes z3
-    -- decides it doesn't want to work today and all we need is to
-    -- retry it once.
-    let timeoutScales = takeWithin limit [1 ..]
+    -- the timeout is doubled for every retry
+    let timeoutScales = takeWithin limit . map (2 ^) $ [1 :: Integer ..]
         retryActions = map (retryOnceWithScaledTimeout q) timeoutScales
         combineRetries [] = pure $ Unknown "retry limit is 0"
         combineRetries [r] = r

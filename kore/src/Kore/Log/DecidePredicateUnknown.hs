@@ -32,6 +32,7 @@ import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable
 import Kore.Syntax.Json qualified as PatternJson
+import Kore.Unparser (unparse)
 import Language.Haskell.TH.Syntax (Exp, Loc (..), Q, qLocation)
 import Log
 import Prelude.Kore
@@ -101,7 +102,23 @@ instance Entry DecidePredicateUnknown where
       where
         prettyHsLoc Loc{loc_module, loc_start = (row, col)} =
             Pretty.pretty loc_module <> ":" <> Pretty.pretty row <> ":" <> Pretty.pretty col
-    oneLineDoc _ = "DecidePredicateUnknown"
+    oneLineDoc (DecidePredicateUnknown{message, predicates}) =
+        Pretty.hsep
+            [ Pretty.brackets "smt"
+            , Pretty.pretty description
+            , unparse
+                ( Predicate.fromPredicate
+                    sortBool
+                    predicate
+                )
+            ]
+      where
+        predicate = Predicate.makeMultipleAndPredicate . toList $ predicates
+        description =
+            "solver returned unknwon with reason "
+                <> message
+                <> " for predicate "
+
     helpDoc _ =
         "error or a warning when the solver cannot decide the satisfiability of a formula"
 
@@ -125,6 +142,10 @@ externaliseDecidePredicateUnknown :: DecidePredicateUnknown -> (Text, PatternJso
 externaliseDecidePredicateUnknown err@DecidePredicateUnknown{message} =
     ( message
     , PatternJson.fromPredicate
-        (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
+        sortBool
         (Predicate.makeMultipleAndPredicate . toList $ predicates err)
     )
+
+sortBool :: TermLike.Sort
+sortBool =
+    (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
