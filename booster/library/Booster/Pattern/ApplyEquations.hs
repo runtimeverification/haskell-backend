@@ -388,7 +388,7 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 logWarn :: MonadLogger m => Text -> m ()
 logWarn msg =
     logWarnNS "booster" $
-        msg <> " For more details, enable context logging '--log-context \"*abort*detail\"'"
+        msg <> " For more details, enable context logging '--log-context \"*>abort,detail\"'"
 
 checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
