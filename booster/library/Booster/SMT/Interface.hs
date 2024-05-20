@@ -36,6 +36,7 @@ import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
+import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
 
 -- Includes all options from kore-rpc used by current clients. The
@@ -260,6 +261,7 @@ themselves (together, without constraints in K).
 checkPredicates ::
     forall io.
     Log.LoggerMIO io =>
+    MonadLoggerIO io =>
     SMT.SMTContext ->
     Set Predicate ->
     Map Variable Term ->

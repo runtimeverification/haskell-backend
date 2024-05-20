@@ -74,7 +74,11 @@ instance Pretty ComputeCeilSummary where
                         ]
 
 computeCeilsDefinition ::
-    LoggerMIO io => Maybe LLVM.API -> KoreDefinition -> io (KoreDefinition, [ComputeCeilSummary])
+    LoggerMIO io =>
+    MonadLoggerIO io =>
+    Maybe LLVM.API ->
+    KoreDefinition ->
+    io (KoreDefinition, [ComputeCeilSummary])
 computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
     (rewriteTheory', ceilSummaries) <-
         runWriterT $
@@ -89,6 +93,7 @@ computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
 
 computeCeilRule ::
     LoggerMIO io =>
+    MonadLoggerIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     RewriteRule.RewriteRule "Rewrite" ->

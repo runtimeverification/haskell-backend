@@ -75,8 +75,10 @@ import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State.Strict qualified as Strict (
     StateT,
  )
+import Data.Aeson qualified as JSON
 import Data.Text (
     Text,
+    pack,
  )
 import GHC.Generics qualified as GHC
 import GHC.Stack qualified as GHC
@@ -104,7 +106,10 @@ data LogMessage = LogMessage
 
 instance Entry LogMessage where
     entrySeverity LogMessage{severity} = severity
-    oneLineDoc (LogMessage{severity}) = prettySeverity severity
+    oneLineDoc LogMessage{message} = Pretty.pretty message
+    oneLineContextDoc LogMessage{severity} = [pack $ show severity]
+    oneLineJson LogMessage{message} = JSON.toJSON message
+    oneLineContextJson LogMessage{severity} = JSON.toJSON $ show severity
 
 instance Pretty LogMessage where
     pretty LogMessage{message, callstack} =
@@ -270,8 +275,7 @@ instance MonadCatch m => MonadLog (LoggerT m) where
         lift $ someLogAction <& toEntry entry
     {-# INLINE logEntry #-}
 
-    logWhile entry2 action = do
-        logEntry entry2
+    logWhile entry2 action =
         (LoggerT . addContext $ getLoggerT action)
             `catch` (\(SomeEntry ctxt e) -> throwM $ SomeEntry (toEntry entry2 : ctxt) e)
       where

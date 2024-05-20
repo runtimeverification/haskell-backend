@@ -149,7 +149,6 @@ executables:
       - exceptions
       - extra
       - fast-logger
-      - Glob
       - hs-backend-booster
       - json-rpc
       - kore
