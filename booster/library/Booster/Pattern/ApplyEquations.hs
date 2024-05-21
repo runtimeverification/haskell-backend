@@ -524,9 +524,8 @@ llvmSimplify term = do
                                     emitEquationTrace t Nothing (Just "LLVM") Nothing $
                                         Success result
                         pure result
-        | otherwise = do
-            result <- cb t
-            pure result
+        | otherwise =
+            cb t
 
 ----------------------------------------
 -- Interface functions
