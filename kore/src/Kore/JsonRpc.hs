@@ -162,22 +162,23 @@ respond serverState moduleName runSMT =
                         traversalResult <-
                             liftIO
                                 ( runSMT (Exec.metadataTools serializedModule) lemmas $
-                                    Log.logWhile (Log.DebugContext "execute") $
-                                        Exec.rpcExec
-                                            (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
-                                            (coerce stepTimeout)
-                                            ( if fromMaybe False movingAverageStepTimeout
-                                                then EnableMovingAverage
-                                                else DisableMovingAverage
-                                            )
-                                            ( if fromMaybe False assumeStateDefined
-                                                then EnableAssumeInitialDefined
-                                                else DisableAssumeInitialDefined
-                                            )
-                                            tracingEnabled
-                                            serializedModule
-                                            (toStopLabels cutPointRules terminalRules)
-                                            verifiedPattern
+                                    Log.logWhile (Log.DebugContext "kore") $
+                                        Log.logWhile (Log.DebugContext "execute") $
+                                            Exec.rpcExec
+                                                (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
+                                                (coerce stepTimeout)
+                                                ( if fromMaybe False movingAverageStepTimeout
+                                                    then EnableMovingAverage
+                                                    else DisableMovingAverage
+                                                )
+                                                ( if fromMaybe False assumeStateDefined
+                                                    then EnableAssumeInitialDefined
+                                                    else DisableAssumeInitialDefined
+                                                )
+                                                tracingEnabled
+                                                serializedModule
+                                                (toStopLabels cutPointRules terminalRules)
+                                                verifiedPattern
                                 )
 
                         stop <- liftIO $ getTime Monotonic
@@ -439,6 +440,7 @@ respond serverState moduleName runSMT =
                     (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
+                            . Log.logWhile (Log.DebugContext "kore")
                             . Log.logWhile (Log.DebugContext "implies")
                             . (evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule)
                             . runExceptT
@@ -523,6 +525,7 @@ respond serverState moduleName runSMT =
                     (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
+                            . Log.logWhile (Log.DebugContext "kore")
                             . Log.logWhile (Log.DebugContext "simplify")
                             . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
@@ -620,6 +623,7 @@ respond serverState moduleName runSMT =
                         serializedModule <-
                             liftIO
                                 . runSMT metadataTools lemmas
+                                . Log.logWhile (Log.DebugContext "kore")
                                 . Log.logWhile (Log.DebugContext "add-module")
                                 $ Exec.makeSerializedModule newModule
                         internedTextCacheHash <- liftIO $ readIORef globalInternedTextCache
@@ -679,6 +683,7 @@ respond serverState moduleName runSMT =
                                 else
                                     liftIO
                                         . runSMT tools lemmas
+                                        . Log.logWhile (Log.DebugContext "kore")
                                         . Log.logWhile (Log.DebugContext "get-model")
                                         . SMT.Evaluator.getModelFor tools
                                         $ NonEmpty.fromList preds

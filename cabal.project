@@ -6,11 +6,10 @@ packages:
 
 package *
   ghc-options: -fhide-source-paths -haddock
-  profiling-detail: none
 
 package kore
   ghc-options: -Wall -Werror
-  profiling-detail: toplevel-functions
+  profiling-detail: exported-functions
 
 source-repository-package
   type: git
