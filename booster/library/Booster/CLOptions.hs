@@ -217,6 +217,12 @@ levelToContext =
                 [ [ctxt| booster|kore>match,abort |]
                 ]
             )
+        ,
+            ( "SMT"
+            ,
+                [ [ctxt| booster|kore>smt |]
+                ]
+            )
         ]
 
 -- Partition provided log levels into standard and custom ones, and
