@@ -129,7 +129,9 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
                 filteredBoosterContextLogger =
                     flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
                         let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
-                         in any (flip Booster.Log.mustMatch ctxt) logContexts
+                         in any (flip Booster.Log.mustMatch ctxt) $
+                                logContexts
+                                    <> concatMap (\case Log.LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
             stateVar <-
                 newMVar
                     ServerState
@@ -139,7 +141,7 @@ runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOp
                         , mSMTOptions
                         , addedModules = mempty
                         }
-            flip Log.runLoggingT (handleOutput stderrLogger mFileLogger) . Log.filterLogger levelFilter $
+            flip Log.runLoggingT (handleOutput stderrLogger) . Log.filterLogger levelFilter $
                 jsonRpcServer
                     srvSettings
                     ( const $

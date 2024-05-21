@@ -198,8 +198,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
                                         ]
                                 | otherwise = Nothing
-                        -- NOTE: we do not include simplification logs into the response,
-                        -- as they are output at SimplifyJson CLI log level
+                        -- NOTE: we do not include simplification logs into the response
                         pure . Right . Simplify $
                             SimplifyResult
                                 { state = koreRes.state
@@ -491,7 +490,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
     -- into term and predicates by an internal trivial execute call).
     --
     -- Only the timing logs will be returned (if requested by the top-level).
-    -- Simplification logs are only output to stderr/file at SimplifyJson level.
     simplifyExecuteState ::
         LogSettings ->
         Maybe Text ->

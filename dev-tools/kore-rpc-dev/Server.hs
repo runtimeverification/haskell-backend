@@ -19,7 +19,6 @@ import Control.Monad.Logger (
     LoggingT (runLoggingT),
     MonadLoggerIO (askLoggerIO),
     ToLogStr (toLogStr),
-    defaultLoc,
  )
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Logger qualified as Logger
@@ -28,11 +27,11 @@ import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text (decodeUtf8)
+import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
 import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
@@ -45,6 +44,7 @@ import System.IO (hPutStrLn, stderr)
 import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
+import Booster.Log.Context qualified
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
@@ -68,6 +68,7 @@ import Kore.Log.BoosterAdaptor (
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
     renderJson,
+    renderOnelinePretty,
     renderStandardPretty,
     swappableLogger,
     withLogger,
@@ -140,6 +141,8 @@ main = do
                 clOPts@CLOptions
                     { port
                     , logLevels
+                    , logContexts
+                    , logFormat
                     , smtOptions
                     , eventlogEnabledUserEvents
                     , simplificationLogFile
@@ -147,17 +150,24 @@ main = do
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
+        logContextsWithcustomLevelContexts =
+            logContexts
+                <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
             lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
         koreLogExtraLevels =
-            Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
+            if not (null logContextsWithcustomLevelContexts)
+                then -- context logging: enable all Proxy-required Kore log entries
+                    Set.unions . Map.elems $ koreExtraLogs
+                else -- no context logging: only enable Kore log entries for the given Proxy log levels
+                    Set.unions . mapMaybe (`Map.lookup` koreExtraLogs) $ customLevels
         koreSolverOptions = translateSMTOpts smtOptions
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
     Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger ->
-        flip runLoggingT (Booster.handleOutput stderrLogger mFileLogger) . Logger.filterLogger levelFilter $ do
+        flip runLoggingT (Booster.handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
@@ -168,29 +178,36 @@ main = do
                     forall m.
                     MonadIO m =>
                     [LogAction m Log.SomeEntry]
-                koreLogActions = [koreStandardPrettyLogAction, koreJsonLogAction]
+                koreLogActions = [koreLogAction]
                   where
-                    logAsJson =
-                        if (Logger.LevelOther "SimplifyJson") `elem` customLevels
-                            then \entry -> Log.entryTypeText entry `elem` getKoreEntriesForLevel (Logger.LevelOther "SimplifyJson")
-                            else const False
+                    koreLogRenderer = case logFormat of
+                        Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                        OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                        Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                    koreLogEarlyFilter = case logFormat of
+                        Json -> \l@(Log.SomeEntry ctxt e) ->
+                            Log.oneLineJson e /= Null && koreFilterContext (ctxt <> [l])
+                        OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
+                        Standard -> const True
+                    koreFilterContext ctxt =
+                        null logContextsWithcustomLevelContexts
+                            || ( let contextStrs =
+                                        concatMap
+                                            ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
+                                            )
+                                            ctxt
+                                  in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
+                               )
 
-                    koreStandardPrettyLogAction =
+                    koreLogAction =
                         koreSomeEntryLogAction
-                            (renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                            (not . logAsJson)
-                            (const True)
-                            (LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt)
-
-                    koreJsonLogAction =
-                        koreSomeEntryLogAction
-                            (renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable)
-                            logAsJson
+                            koreLogRenderer
+                            koreLogEarlyFilter
                             (const True)
                             ( LogAction $ \txt -> liftIO $
                                 case mFileLogger of
                                     Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
-                                    Nothing -> stderrLogger $ toLogStr $ "[SimplifyJson] " <> txt <> "\n"
+                                    Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
                             )
 
             let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
@@ -253,7 +270,6 @@ logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
 logLevelToKoreLogEntryMap =
     Map.fromList
         [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
-        , (LevelOther "SimplifyJson", ["DebugAttemptEquation"])
         ,
             ( LevelOther "RewriteKore"
             , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
@@ -261,9 +277,6 @@ logLevelToKoreLogEntryMap =
         , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
         , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
         ]
-
-getKoreEntriesForLevel :: LogLevel -> [Text.Text]
-getKoreEntriesForLevel level = concat . maybeToList $ Map.lookup level logLevelToKoreLogEntryMap
 
 newtype CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions

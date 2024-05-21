@@ -32,7 +32,6 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
-import Control.Applicative (Alternative (..))
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -49,7 +48,6 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State
 import Data.Aeson (object, (.=))
-import Data.Aeson.Text (encodeToLazyText)
 import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
@@ -66,7 +64,6 @@ import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
-import Data.Text.Lazy qualified as Text (toStrict)
 import GHC.TypeLits (KnownSymbol)
 import Prettyprinter
 
@@ -86,7 +83,6 @@ import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..), Flag (..))
-import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 import Kore.Util (showHashHex)
 
 newtype EquationT io a
@@ -273,52 +269,6 @@ isMatchFailure (EquationNotApplied _ _ IndeterminateMatch{}) = True
 isMatchFailure _ = False
 isSuccess EquationApplied{} = True
 isSuccess _ = False
-
-{- | Attempt to get an equation's unique id, falling back to it's label or eventually to UNKNOWN.
-  The fallbacks are useful in case of cached equation applications or the ones done via LLVM,
-  as neither of these categories have unique IDs.
--}
-equationRuleIdWithFallbacks :: EquationMetadata -> Text
-equationRuleIdWithFallbacks metadata =
-    fromMaybe "UNKNOWN" (fmap getUniqueId metadata.ruleId <|> metadata.label)
-
-equationTraceToLogEntry :: EquationTrace Term -> KoreRpcLog.LogEntry
-equationTraceToLogEntry = \case
-    EquationApplied _subjectTerm metadata _rewritten ->
-        KoreRpcLog.Simplification
-            { originalTerm
-            , originalTermIndex
-            , origin
-            , result =
-                KoreRpcLog.Success Nothing Nothing _ruleId
-            }
-      where
-        originalTerm = Nothing
-        originalTermIndex = Nothing
-        origin = KoreRpcLog.Booster
-        _ruleId = equationRuleIdWithFallbacks metadata
-    EquationNotApplied _subjectTerm metadata failure ->
-        KoreRpcLog.Simplification
-            { originalTerm
-            , originalTermIndex
-            , origin
-            , result = KoreRpcLog.Failure (failureDescription failure) (Just _ruleId)
-            }
-      where
-        originalTerm = Nothing
-        originalTermIndex = Nothing
-        origin = KoreRpcLog.Booster
-        _ruleId = equationRuleIdWithFallbacks metadata
-
-        failureDescription :: ApplyEquationFailure -> Text.Text
-        failureDescription = \case
-            FailedMatch{} -> "Failed match"
-            IndeterminateMatch -> "IndeterminateMatch"
-            IndeterminateCondition{} -> "IndeterminateCondition"
-            ConditionFalse{} -> "ConditionFalse"
-            EnsuresFalse{} -> "EnsuresFalse"
-            RuleNotPreservingDefinedness -> "RuleNotPreservingDefinedness"
-            MatchConstraintViolated{} -> "MatchConstraintViolated"
 
 startState :: SimplifierCache -> EquationState
 startState cache =
@@ -889,9 +839,6 @@ emitEquationTrace t loc lbl uid res = do
                 Failure failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
         prettyItem = pack . renderDefault . pretty $ newTraceItem
     logOther (LevelOther "Simplify") prettyItem
-    logOther
-        (LevelOther "SimplifyJson")
-        (Text.toStrict . encodeToLazyText $ equationTraceToLogEntry newTraceItem)
     case res of
         Success{} -> logOther (LevelOther "SimplifySuccess") prettyItem
         _ -> pure ()
