@@ -301,7 +301,7 @@ a `equal` b = SymbolApplication eqInt [] [intTerm a, intTerm b]
 testDef :: KoreDefinition
 testDef =
     KoreDefinition
-        DefinitionAttributes
+        (DefinitionAttributes Nothing)
         Map.empty -- no modules (HACK)
         defSorts
         defSymbols

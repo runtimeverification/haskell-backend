@@ -12,6 +12,7 @@ Attributes stored together with different entities in a
 -}
 module Booster.Definition.Attributes.Base (
     DefinitionAttributes (..),
+    defaultDefAttributes,
     ModuleAttributes (..),
     AxiomAttributes (..),
     Concreteness (..),
@@ -64,13 +65,14 @@ import Booster.SMT.Base (SExpr)
 import Booster.Util (Flag (..))
 import Booster.Util qualified as Util
 
-data DefinitionAttributes = DefinitionAttributes
-    {
+newtype DefinitionAttributes = DefinitionAttributes
+    { indexCells :: Maybe [ByteString] -- which cells to index for rewriting
     }
-    -- none needed
-
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
+
+defaultDefAttributes :: DefinitionAttributes
+defaultDefAttributes = DefinitionAttributes Nothing
 
 data ModuleAttributes = ModuleAttributes
     {

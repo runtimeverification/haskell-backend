@@ -47,7 +47,14 @@ class HasAttributes ty where
 instance HasAttributes ParsedDefinition where
     type Attributes ParsedDefinition = DefinitionAttributes
 
-    mkAttributes _ = pure DefinitionAttributes
+    mkAttributes ParsedDefinition{attributes} = do
+        mbCells :: Maybe [Text] <- attributes .:? "indexCells"
+        let indexCells =
+                case mbCells of
+                    Nothing -> Nothing
+                    Just [] -> Nothing
+                    Just cs -> Just $ map Text.encodeUtf8 cs
+        pure DefinitionAttributes{indexCells}
 
 instance HasAttributes ParsedModule where
     type Attributes ParsedModule = ModuleAttributes
@@ -312,6 +319,10 @@ instance ReadT Text where
     readT [] = Left "empty"
     readT [t] = Right t
     readT ts = Left $ "invalid text value " <> show ts
+
+-- read lists by reading each part as a singleton list
+instance ReadT a => ReadT [a] where
+    readT = mapM readT . (: [])
 
 instance ReadT Position where
     readT [] = Left "empty position"

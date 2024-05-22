@@ -32,7 +32,7 @@ boolSort = SortApp "SortBool" []
 testDefinition :: KoreDefinition
 testDefinition =
     KoreDefinition
-        { attributes = DefinitionAttributes
+        { attributes = DefinitionAttributes Nothing
         , modules = Map.singleton "AMODULE" ModuleAttributes
         , sorts =
             Map.fromList

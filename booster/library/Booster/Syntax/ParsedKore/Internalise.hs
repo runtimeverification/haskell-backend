@@ -102,8 +102,12 @@ addToDefinitions m prior = do
         State
             { moduleMap = Map.singleton m.name.getId m
             , definitionMap = prior
-            , definitionAttributes = DefinitionAttributes
+            , definitionAttributes = priorDefAttributes
             }
+    priorDefAttributes :: DefinitionAttributes
+    priorDefAttributes
+        | (d : _) <- Map.elems prior = d.attributes
+        | otherwise = DefinitionAttributes Nothing -- should not happen
 
 lookupModule :: Text -> Map Text a -> Except DefinitionError a
 lookupModule k =
@@ -346,8 +350,12 @@ addModule
                 newFunctionEquations = mapMaybe retractFunctionRule newAxioms
                 newSimplifications = mapMaybe retractSimplificationRule newAxioms
                 newCeils = mapMaybe retractCeilRule newAxioms
-            let rewriteTheory =
-                    addToTheoryWith (Idx.kCellTermIndex . (.lhs)) newRewriteRules currentRewriteTheory
+            let rewriteIndex =
+                    case defAttributes.indexCells of
+                        Just (c : _) -> Idx.termIndexForCell c -- FIXME supports only a single cell at the moment
+                        _otherwise -> Idx.kCellTermIndex
+                rewriteTheory =
+                    addToTheoryWith (rewriteIndex . (.lhs)) newRewriteRules currentRewriteTheory
                 functionEquations =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newFunctionEquations currentFctEqs
                 simplifications =

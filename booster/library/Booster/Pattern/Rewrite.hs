@@ -63,7 +63,7 @@ import Booster.Pattern.ApplyEquations (
  )
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
-import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
+import Booster.Pattern.Index (TermIndex (..), kCellTermIndex, termIndexForCell)
 import Booster.Pattern.Match (
     FailReason (ArgLengthsDiffer, SubsortingError),
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
@@ -139,9 +139,13 @@ rewriteStep ::
     Pattern ->
     RewriteT io (RewriteResult Pattern)
 rewriteStep cutLabels terminalLabels pat = do
-    let termIdx = kCellTermIndex pat.term
-    when (termIdx == None) $ throw (TermIndexIsNone pat.term)
     def <- getDefinition
+    let getIndex =
+            case def.attributes.indexCells of
+                Just (c : _) -> termIndexForCell c -- FIXME supports only one cell at the moment
+                _otherwise -> kCellTermIndex
+        termIdx = getIndex pat.term
+    when (termIdx == None) $ throw (TermIndexIsNone pat.term)
     let idxRules = fromMaybe Map.empty $ Map.lookup termIdx def.rewriteTheory
         anyRules = fromMaybe Map.empty $ Map.lookup Anything def.rewriteTheory
         rules =
