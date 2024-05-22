@@ -51,7 +51,7 @@ import System.Posix.DynamicLinker qualified as Linker
 
 import Booster.LLVM.TH (dynamicBindings)
 import Booster.Pattern.Base
-import Booster.Pattern.Binary hiding (Block)
+import Booster.Pattern.Binary
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Trace
 import Booster.Trace qualified as Trace
