@@ -212,12 +212,6 @@ levelToContext =
                 ]
             )
         ,
-            ( "Aborts"
-            ,
-                [ [ctxt| booster|kore>match,abort |]
-                ]
-            )
-        ,
             ( "SMT"
             ,
                 [ [ctxt| booster|kore>smt |]
