@@ -72,9 +72,7 @@ mkContext transcriptPath = do
                 hSetBinaryMode h True
                 BS.hPutStrLn h "; starting solver process"
                 pure h
-    let config = Backend.defaultConfig
-    handle <- liftIO $ Backend.new config
-    solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
+    (solver, handle) <- initSolver
     whenJust mbTranscript $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
     logMessage ("Solver ready to use" :: Text)
@@ -93,6 +91,12 @@ closeContext ctxt = do
         hClose h
     liftIO ctxt.solverClose
 
+initSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
+initSolver = do
+    let config = Backend.defaultConfig
+    handle <- liftIO $ Backend.new config
+    solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
+    pure (solver, handle)
 newtype SMT m a = SMT (ReaderT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
 
