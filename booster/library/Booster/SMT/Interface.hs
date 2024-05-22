@@ -89,15 +89,9 @@ initSolver def smtOptions = Log.withContext "smt" $ do
     -- set timeout value before doing anything with the solver
     runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
-    let prelude = smtDeclarations def
-    case prelude of
-        Left err -> do
-            Log.logMessage $ "Error translating definition to SMT: " <> err
-            throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
-        Right{} -> pure ()
     check <-
         runSMT ctxt $
-            mapM_ runCmd (fromRight' prelude) >> runCmd CheckSat
+            runPrelude def >> runCmd CheckSat
     case check of
         Sat -> pure ctxt
         other -> do
@@ -105,6 +99,17 @@ initSolver def smtOptions = Log.withContext "smt" $ do
             closeContext ctxt
             throwSMT' $
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
+
+-- | Send the commands from the definition's SMT prelude
+runPrelude :: Log.LoggerMIO io => KoreDefinition -> SMT io ()
+runPrelude def = do
+    let prelude = smtDeclarations def
+    case prelude of
+        Left err -> do
+            Log.logMessage $ "Error translating definition to SMT: " <> err
+            throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
+        Right{} -> pure ()
+    mapM_ runCmd (fromRight' prelude)
 
 closeSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
 closeSolver ctxt = Log.withContext "smt" $ do
