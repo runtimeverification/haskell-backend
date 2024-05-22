@@ -56,7 +56,7 @@ for dir in $(ls -d test-*); do
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
         "log-simplify-json")
-            SERVER="${KORE_RPC_BOOSTER} --log-format json -l Simplify --log-file test-$name/simplify-log.txt" ./runDirectoryTest.sh test-$name $@
+            SERVER=$KORE_RPC_BOOSTER SERVER_OPTS="--log-format json -l Simplify --log-file test-$name/simplify-log.txt" ./runDirectoryTest.sh test-$name $@
             ;;
         "foundry-bug-report")
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@

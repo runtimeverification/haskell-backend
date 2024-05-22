@@ -52,7 +52,7 @@ main = do
             , smtOptions
             , equationOptions
             , eventlogEnabledUserEvents
-            , simplificationLogFile
+            , logFile
             } = options
 
     forM_ eventlogEnabledUserEvents $ \t -> do
@@ -82,7 +82,7 @@ main = do
             definitionMap
             mainModuleName
             mLlvmLibrary
-            simplificationLogFile
+            logFile
             smtOptions
             (adjustLogLevels logLevels)
             logContexts
@@ -118,11 +118,11 @@ runServer ::
     Bool ->
     LogFormat ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary simplificationLogFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps logFormat =
+runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps logFormat =
     do
         mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-        withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
+        withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
             let boosterContextLogger = case logFormat of
                     Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
                     _ -> Booster.Log.textLogger stderrLogger

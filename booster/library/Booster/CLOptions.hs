@@ -39,7 +39,7 @@ data CLOptions = CLOptions
     , logTimeStamps :: Bool
     , logFormat :: LogFormat
     , logContexts :: [ContextFilter]
-    , simplificationLogFile :: Maybe FilePath
+    , logFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
     , -- developer options below

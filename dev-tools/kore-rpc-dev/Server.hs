@@ -145,7 +145,7 @@ main = do
                     , logFormat
                     , smtOptions
                     , eventlogEnabledUserEvents
-                    , simplificationLogFile
+                    , logFile
                     , logTimeStamps
                     }
             } = options
@@ -166,7 +166,7 @@ main = do
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-    Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger ->
+    Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger ->
         flip runLoggingT (Booster.handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
