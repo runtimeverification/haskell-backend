@@ -22,7 +22,6 @@ import Data.Limit (Limit (..))
 import Data.List.Extra (mconcatMap)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict qualified as Map
-import Data.Sequence as Seq (Seq, empty)
 import Data.Set qualified as Set
 import Data.String (fromString)
 import Data.Text (Text, pack)
@@ -84,7 +83,6 @@ import Kore.Rewrite.RewriteStep (EnableAssumeInitialDefined (..))
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
-    getRewritingTerm,
     getRewritingVariable,
     isSomeConfigVariable,
     isSomeEquationVariable,
@@ -97,9 +95,9 @@ import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
  )
-import Kore.Simplify.API (evalSimplifier, evalSimplifierLogged)
+import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify (Simplifier, SimplifierTrace (..))
+import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
 import Kore.Syntax.Definition (Definition (..))
 import Kore.Syntax.Json qualified
@@ -143,7 +141,6 @@ respond serverState moduleName runSMT =
                 , assumeStateDefined
                 , stepTimeout
                 , logSuccessfulRewrites
-                , logSuccessfulSimplifications
                 , logTiming
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
                 start <- liftIO $ getTime Monotonic
@@ -157,8 +154,7 @@ respond serverState moduleName runSMT =
                                             map pack errorContext
                                         ]
                     Right verifiedPattern -> do
-                        let tracingEnabled =
-                                fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications
+                        let tracingEnabled = fromMaybe False logSuccessfulRewrites
                         traversalResult <-
                             liftIO
                                 ( runSMT (Exec.metadataTools serializedModule) lemmas $
@@ -207,25 +203,10 @@ respond serverState moduleName runSMT =
                          in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
                 mkLogs mbDuration rules
                     | isJust mbDuration
-                        || fromMaybe False logSuccessfulRewrites
-                        || fromMaybe False logSuccessfulSimplifications =
+                        || fromMaybe False logSuccessfulRewrites =
                         Just . concat $
                             maybe [] (\t -> [ProcessingTime (Just KoreRpc) t]) mbDuration
-                                : [ [ Simplification
-                                        { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
-                                        , originalTermIndex = Nothing
-                                        , result =
-                                            Success
-                                                { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
-                                                , substitution = Nothing
-                                                , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
-                                                }
-                                        , origin = KoreRpc
-                                        }
-                                    | fromMaybe False logSuccessfulSimplifications
-                                    , SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList simplifications
-                                    ]
-                                    ++ [ Rewrite
+                                : [ [ Rewrite
                                         { result =
                                             Success
                                                 { rewrittenTerm = Nothing
@@ -234,9 +215,9 @@ respond serverState moduleName runSMT =
                                                 }
                                         , origin = KoreRpc
                                         }
-                                       | fromMaybe False logSuccessfulRewrites
-                                       ]
-                                  | Exec.RuleTrace{simplifications, ruleId} <- toList rules
+                                    | fromMaybe False logSuccessfulRewrites
+                                    ]
+                                  | Exec.RuleTrace{ruleId} <- toList rules
                                   ]
                     | otherwise = Nothing
 
@@ -417,7 +398,7 @@ respond serverState moduleName runSMT =
                     a ||| b = \v -> a v || b v
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+        Implies ImpliesRequest{antecedent, consequent, _module, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left Error{errorError, errorContext} ->
@@ -437,18 +418,17 @@ respond serverState moduleName runSMT =
                                 mkRewritingTerm consVerified
                         rightPatt = Pattern.parsePatternFromTermLike consWOExistentials
 
-                    (logs, result) <-
+                    result <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . Log.logWhile (Log.DebugContext "kore")
                             . Log.logWhile (Log.DebugContext "implies")
-                            . (evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule)
+                            . evalInSimplifierContext serializedModule
                             . runExceptT
                             $ Claim.checkSimpleImplication
                                 leftPatt
                                 rightPatt
                                 existentialVars
-                    let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
                     stop <- liftIO $ getTime Monotonic
                     let timeLog =
                             ProcessingTime
@@ -456,8 +436,8 @@ respond serverState moduleName runSMT =
                                 (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
                         allLogs =
                             if (fromMaybe False logTiming)
-                                then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
-                                else simplLogs
+                                then Just [timeLog]
+                                else Nothing
                     pure $ buildResult allLogs sort result
           where
             verify = do
@@ -506,7 +486,7 @@ respond serverState moduleName runSMT =
                                  in ImpliesResult jsonTerm False (Just jsonCond) logs
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
-        Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+        Simplify SimplifyRequest{state, _module, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
             case verifyIn serializedModule state of
                 Left Error{errorError, errorContext} ->
@@ -522,15 +502,14 @@ respond serverState moduleName runSMT =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
                         sort = TermLike.termLikeSort stateVerified
 
-                    (logs, result) <-
+                    result <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . Log.logWhile (Log.DebugContext "kore")
                             . Log.logWhile (Log.DebugContext "simplify")
-                            . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
+                            . evalInSimplifierContext serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
-                    let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
                     stop <- liftIO $ getTime Monotonic
                     let timeLog =
                             ProcessingTime
@@ -538,8 +517,8 @@ respond serverState moduleName runSMT =
                                 (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
                         allLogs =
                             if (fromMaybe False logTiming)
-                                then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
-                                else simplLogs
+                                then Just [timeLog]
+                                else Nothing
                     pure $
                         Right $
                             Simplify
@@ -732,51 +711,22 @@ respond serverState moduleName runSMT =
             PatternVerifier.verifyStandalonePattern Nothing $
                 PatternJson.toParsedPattern (PatternJson.term state)
 
-    mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
-    mkSimplifierLogs Nothing _ = Nothing
-    mkSimplifierLogs (Just False) _ = Nothing
-    mkSimplifierLogs (Just True) logs =
-        Just
-            [ Simplification
-                { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
-                , originalTermIndex = Nothing
-                , result =
-                    Success
-                        { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
-                        , substitution = Nothing
-                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
-                        }
-                , origin = KoreRpc
-                }
-            | SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList logs
-            ]
-
     evalInSimplifierContext ::
-        Bool -> Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
+        Exec.SerializedModule -> Simplifier a -> SMT.SMT a
     evalInSimplifierContext
-        doTracing
         Exec.SerializedModule
             { sortGraph
             , overloadGraph
             , metadataTools
             , verifiedModule
             , equations
-            }
-            | doTracing =
-                evalSimplifierLogged
-                    verifiedModule
-                    sortGraph
-                    overloadGraph
-                    metadataTools
-                    equations
-            | otherwise =
-                fmap (Seq.empty,)
-                    . evalSimplifier
-                        verifiedModule
-                        sortGraph
-                        overloadGraph
-                        metadataTools
-                        equations
+            } =
+            evalSimplifier
+                verifiedModule
+                sortGraph
+                overloadGraph
+                metadataTools
+                equations
 
 data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition
