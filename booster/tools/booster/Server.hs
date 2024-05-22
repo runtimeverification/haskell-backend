@@ -138,7 +138,7 @@ main = do
                     , smtOptions
                     , equationOptions
                     , eventlogEnabledUserEvents
-                    , simplificationLogFile
+                    , logFile
                     }
             , proxyOptions =
                 ProxyOptions
@@ -151,7 +151,10 @@ main = do
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
-        contextLoggingEnabled = not (null logContexts)
+        logContextsWithcustomLevelContexts =
+            logContexts
+                <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
+        contextLoggingEnabled = not (null logContextsWithcustomLevelContexts)
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
             lvl `elem` customLevels
@@ -160,8 +163,8 @@ main = do
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-    Booster.withFastLogger mTimeCache simplificationLogFile $ \stderrLogger mFileLogger -> do
-        flip runLoggingT (handleOutput stderrLogger mFileLogger) . Logger.filterLogger levelFilter $ do
+    Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
+        flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
@@ -191,7 +194,7 @@ main = do
                                         ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
                                         )
                                         ctxt
-                              in any (flip Booster.Log.Context.mustMatch contextStrs) logContexts
+                              in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
                            )
 
                 koreLogEntries =
@@ -207,7 +210,7 @@ main = do
                 filteredBoosterContextLogger =
                     flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
                         let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
-                         in any (flip Booster.Log.Context.mustMatch ctxt) logContexts
+                         in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
                 koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
                 koreLogActions = [koreLogAction]
@@ -379,7 +382,6 @@ logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
 logLevelToKoreLogEntryMap =
     Map.fromList
         [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugTerm"])
-        , (LevelOther "SimplifyJson", ["DebugAttemptEquation", "DebugTerm"])
         ,
             ( LevelOther "RewriteKore"
             ,

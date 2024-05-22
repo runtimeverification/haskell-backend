@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Booster.CLOptions (
@@ -6,6 +7,7 @@ module Booster.CLOptions (
     LogFormat (..),
     clOptionsParser,
     adjustLogLevels,
+    levelToContext,
     versionInfoParser,
 ) where
 
@@ -22,9 +24,11 @@ import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
 import Text.Read (readMaybe)
 
 import Booster.GlobalState (EquationOptions (..))
-import Booster.Log.Context (ContextFilter, readContextFilter)
+import Booster.Log.Context (ContextFilter, ctxt, readContextFilter)
 import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
 import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
+import Data.Map (Map)
+import Data.Map qualified as Map
 
 data CLOptions = CLOptions
     { definitionFile :: FilePath
@@ -35,7 +39,7 @@ data CLOptions = CLOptions
     , logTimeStamps :: Bool
     , logFormat :: LogFormat
     , logContexts :: [ContextFilter]
-    , simplificationLogFile :: Maybe FilePath
+    , logFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
     , -- developer options below
@@ -116,10 +120,10 @@ clOptionsParser =
             )
         <*> optional
             ( strOption
-                ( metavar "JSON_LOG_FILE"
-                    <> long "simplification-log-file"
+                ( metavar "LOG_FILE"
+                    <> long "log-file"
                     <> help
-                        "Log file for the JSON simplification logs"
+                        "Log file to output the logs into"
                 )
             )
         <*> parseSMTOptions
@@ -171,13 +175,49 @@ allowedLogLevels =
     , ("RewriteKore", "Log all rewriting in kore-rpc fall-backs")
     , ("RewriteSuccess", "Log successful rewrites (booster and kore-rpc)")
     , ("Simplify", "Log all simplification/evaluation in booster")
-    , ("SimplifyJson", "Log simplification/evaluation in booster as JSON")
     , ("SimplifyKore", "Log all simplification in kore-rpc")
     , ("SimplifySuccess", "Log successful simplifications (booster and kore-rpc)")
     , ("Depth", "Log the current depth of the state")
     , ("SMT", "Log the SMT-solver interactions")
     , ("ErrorDetails", "Log error conditions with extensive details")
     ]
+
+levelToContext :: Map Text [ContextFilter]
+levelToContext =
+    Map.fromList
+        [
+            ( "Simplify"
+            ,
+                [ [ctxt| booster|kore>function*|simplification*,success|failure|abort|detail |]
+                , [ctxt| booster|kore>function*|simplification*,match,failure|abort |]
+                ]
+            )
+        ,
+            ( "SimplifySuccess"
+            ,
+                [ [ctxt| booster|kore>function*|simplification*,success|detail |]
+                ]
+            )
+        ,
+            ( "Rewrite"
+            ,
+                [ [ctxt| booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| booster|kore>rewrite*,match,failure|abort |]
+                ]
+            )
+        ,
+            ( "RewriteSuccess"
+            ,
+                [ [ctxt| booster|kore>rewrite*,success|detail |]
+                ]
+            )
+        ,
+            ( "SMT"
+            ,
+                [ [ctxt| booster|kore>smt |]
+                ]
+            )
+        ]
 
 -- Partition provided log levels into standard and custom ones, and
 -- select the lowest standard level. Default to 'LevelInfo' if no

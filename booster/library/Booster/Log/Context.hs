@@ -1,10 +1,16 @@
-module Booster.Log.Context (ContextFilter, mustMatch, readContextFilter, readMatch) where
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+
+module Booster.Log.Context (ContextFilter, mustMatch, readContextFilter, readMatch, ctxt) where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8 qualified as A
 import Data.ByteString.Char8 qualified as BS
 import Data.Char (isSpace)
+import Data.Generics (Data, extQ)
 import Data.List.Extra (replace)
+import Language.Haskell.TH (ExpQ, Lit (StringL), appE, litE, varE)
+import Language.Haskell.TH.Quote (QuasiQuoter (..), dataToExpQ)
 
 data ContextFilterSingle
     = Exact BS.ByteString
@@ -12,14 +18,14 @@ data ContextFilterSingle
     | Suffix BS.ByteString
     | Infix BS.ByteString
     | Negate ContextFilterSingle
-    deriving (Show)
+    deriving (Show, Data)
 
 data ContextFilter
     = First [ContextFilterSingle]
     | ThenDirectChild [ContextFilterSingle] ContextFilter
     | ThenChild [ContextFilterSingle] ContextFilter
     | Last [ContextFilterSingle]
-    deriving (Show)
+    deriving (Show, Data)
 
 reserved :: String
 reserved = "|*!>,."
@@ -79,3 +85,21 @@ readMatch :: BS.ByteString -> [BS.ByteString] -> Either String Bool
 readMatch pat' xs = do
     pat <- A.parseOnly (contextFilterP <* A.skipSpace <* A.endOfInput) pat'
     pure $ mustMatch pat xs
+
+ctxt :: QuasiQuoter
+ctxt =
+    QuasiQuoter
+        { quoteExp =
+            dataToExpQ (const Nothing `extQ` handleBS)
+                . either (error . show) id
+                . readContextFilter
+        , quotePat = undefined
+        , quoteType = undefined
+        , quoteDec = undefined
+        }
+  where
+    handleBS :: BS.ByteString -> Maybe ExpQ
+    handleBS x =
+        -- convert the byte string to a string literal
+        -- and wrap it back with BS.pack
+        Just $ appE (varE 'BS.pack) $ litE $ StringL $ BS.unpack x

@@ -118,19 +118,13 @@ decodeLabel' orig =
 -- logging helpers, some are adapted from monad-logger-aeson
 handleOutput ::
     FastLogger ->
-    Maybe FastLogger ->
     Log.Loc ->
     Log.LogSource ->
     Log.LogLevel ->
     Log.LogStr ->
     IO ()
-handleOutput stderrLogger mFileLogger loc src level msg =
-    case level of
-        Log.LevelOther "SimplifyJson" ->
-            case mFileLogger of
-                Nothing -> stderrLogger $ "[SimplifyJson] " <> msg <> "\n"
-                Just fileLogger -> fileLogger $ msg <> "\n"
-        _ -> stderrLogger $ Log.defaultLogStr loc src level msg
+handleOutput stderrLogger loc src level msg =
+    stderrLogger $ Log.defaultLogStr loc src level msg
 
 newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
 newFastLoggerMaybeWithTime = \case
