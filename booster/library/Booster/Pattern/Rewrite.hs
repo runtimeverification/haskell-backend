@@ -57,12 +57,10 @@ import Booster.Log (
  )
 import Booster.Pattern.ApplyEquations (
     EquationFailure (..),
-    EquationTrace,
     SimplifierCache,
     evaluatePattern,
     simplifyConstraint,
  )
-import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
@@ -96,9 +94,6 @@ data RewriteConfig = RewriteConfig
 instance MonadLoggerIO io => LoggerMIO (RewriteT io) where
     getLogger = RewriteT $ asks logger
     withLogger modL (RewriteT m) = RewriteT $ withReaderT (\cfg@RewriteConfig{logger} -> cfg{logger = modL logger}) m
-
-castDoTracingFlag :: Flag "CollectRewriteTraces" -> Flag "CollectEquationTraces"
-castDoTracingFlag = coerce
 
 pattern CollectRewriteTraces :: Flag "CollectRewriteTraces"
 pattern CollectRewriteTraces = Flag True
@@ -439,11 +434,11 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
         Predicate ->
         RewriteRuleAppT (RewriteT io) (Maybe a)
     checkConstraint onUnclear onBottom p = do
-        RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
+        RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get
         (simplified, cache) <-
             withContext "constraint" $
-                simplifyConstraint (castDoTracingFlag doTracing) definition llvmApi smtSolver oldCache p
+                simplifyConstraint definition llvmApi smtSolver oldCache p
         -- update cache
         lift . RewriteT . lift . modify $ const cache
         -- TODO should we keep the traces? Or only on success?
@@ -547,11 +542,7 @@ data RewriteTrace pat
     | -- | attempted rewrite failed
       RewriteStepFailed (RewriteFailed "Rewrite")
     | -- | Applied simplification to the pattern
-      RewriteSimplified [EquationTrace (TracePayload pat)] (Maybe EquationFailure)
-
-type family TracePayload pat where
-    TracePayload Pattern = Term
-    TracePayload () = ()
+      RewriteSimplified (Maybe EquationFailure)
 
 {- | For the given rewrite trace, construct a new one,
      removing the heavy-weight information (the states),
@@ -562,8 +553,7 @@ eraseStates = \case
     RewriteSingleStep rule_label mUniqueId _preState _postState -> RewriteSingleStep rule_label mUniqueId () ()
     RewriteBranchingStep _state branchMetadata -> RewriteBranchingStep () branchMetadata
     RewriteStepFailed failureInfo -> RewriteStepFailed failureInfo
-    RewriteSimplified equationTraces mbEquationFailure ->
-        RewriteSimplified (map ApplyEquations.eraseStates equationTraces) mbEquationFailure
+    RewriteSimplified mbEquationFailure -> RewriteSimplified mbEquationFailure
 
 instance Pretty (RewriteTrace Pattern) where
     pretty = \case
@@ -741,25 +731,25 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         st <- get
         let cache = st.simplifierCache
             smt = st.smtSolver
-        evaluatePattern (castDoTracingFlag doTracing) def mLlvmLibrary smt cache p >>= \(res, newCache) -> do
+        evaluatePattern def mLlvmLibrary smt cache p >>= \(res, newCache) -> do
             updateCache newCache
             case res of
                 Right newPattern -> do
-                    emitRewriteTrace $ RewriteSimplified [] Nothing
+                    emitRewriteTrace $ RewriteSimplified Nothing
                     pure $ Just newPattern
                 Left r@(SideConditionFalse _p) -> do
                     logSimplify "A side condition was found to be false, pruning"
-                    emitRewriteTrace $ RewriteSimplified [] (Just r)
+                    emitRewriteTrace $ RewriteSimplified (Just r)
                     pure Nothing
                 Left r@UndefinedTerm{} -> do
                     logSimplify "Term is undefined, pruning"
-                    emitRewriteTrace $ RewriteSimplified [] (Just r)
+                    emitRewriteTrace $ RewriteSimplified (Just r)
                     pure Nothing
                 Left r@(TooManyIterations n _start _result) -> do
                     logSimplify $
                         "Unable to simplify in " <> Text.pack (show n) <> " iterations, returning original"
                     -- warning has been printed inside ApplyEquation.evaluatePattern
-                    emitRewriteTrace $ RewriteSimplified [] (Just r)
+                    emitRewriteTrace $ RewriteSimplified (Just r)
                     -- NB start/result in this error are terms and might come
                     -- from simplifying one of the constraints. Therefore, the
                     -- original pattern must be returned.
@@ -773,11 +763,11 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 <> prettyText l
                                 <> ": \n"
                                 <> Text.unlines (map (prettyText . fst) termDiffs)
-                    emitRewriteTrace $ RewriteSimplified [] (Just r)
+                    emitRewriteTrace $ RewriteSimplified (Just r)
                     pure $ Just p
                 Left other -> do
                     logError $ "Simplification error during rewrite: " <> (Text.pack . constructorName $ other)
-                    emitRewriteTrace $ RewriteSimplified [] (Just other)
+                    emitRewriteTrace $ RewriteSimplified (Just other)
                     pure $ Just p
 
     -- Results may change when simplification prunes a false side

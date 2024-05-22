@@ -90,9 +90,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         | otherwise ->
             let logSettings =
                     LogSettings
-                        { logSuccessfulSimplifications = execReq.logSuccessfulSimplifications
-                        , logFailedSimplifications = execReq.logFailedSimplifications
-                        , logSuccessfulRewrites = execReq.logSuccessfulRewrites
+                        { logSuccessfulRewrites = execReq.logSuccessfulRewrites
                         , logFailedRewrites = execReq.logFailedRewrites
                         , logFallbacks = execReq.logFallbacks
                         , logTiming = execReq.logTiming
@@ -548,8 +546,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 SimplifyRequest
                     { state = execStateToKoreJson state
                     , _module = mbModule
-                    , logSuccessfulSimplifications = Nothing
-                    , logFailedSimplifications = Nothing
                     , logTiming
                     }
 
@@ -610,9 +606,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                     }
 
 data LogSettings = LogSettings
-    { logSuccessfulSimplifications :: Maybe Bool
-    , logFailedSimplifications :: Maybe Bool
-    , logSuccessfulRewrites :: Maybe Bool
+    { logSuccessfulRewrites :: Maybe Bool
     , logFailedRewrites :: Maybe Bool
     , logFallbacks :: Maybe Bool
     , logTiming :: Maybe Bool
