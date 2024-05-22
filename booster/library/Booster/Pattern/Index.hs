@@ -7,16 +7,16 @@ Everything to do with term indexing.
 module Booster.Pattern.Index (
     TermIndex (..),
     kCellTermIndex,
+    termIndexForCell,
     termTopIndex,
-    predicateTopIndex,
 ) where
 
 import Control.Applicative (Alternative (..), asum)
 import Control.DeepSeq (NFData)
 import Data.Functor.Foldable (embed, para)
+import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 
-import Booster.Definition.Attributes.Base (SymbolAttributes (..), SymbolType (..))
 import Booster.Pattern.Base
 
 {- | Index data allowing for a quick lookup of potential axioms.
@@ -68,57 +68,62 @@ instance Semigroup TermIndex where
   Only constructors are used, function symbols get index 'Anything'.
 -}
 kCellTermIndex :: Term -> TermIndex
-kCellTermIndex config =
-    case lookForKCell config of
-        Just (SymbolApplication _ _ children) ->
-            maybe Anything getTermIndex (lookForTopTerm (getFirstKCellElem children))
-        _ -> Anything
+kCellTermIndex config = termIndexForCell "k" config
+
+{- | Indexes a term by the head of a K sequence inside a given cell
+   (supplied name with prefix "Lbl'-LT-'" and suffix "'-GT-'").
+-}
+termIndexForCell :: SymbolName -> Term -> TermIndex
+termIndexForCell name config = fromMaybe Anything $ do
+    inCell <- getCell cellSymbol config
+    cellArg1 <- firstArgument inCell
+    seqHead <- getKSeqHead cellArg1
+    pure $ termTopIndex seqHead
   where
-    getTermIndex :: Term -> TermIndex
-    getTermIndex term =
-        case term of
-            SymbolApplication symbol _ _ ->
-                case symbol.attributes.symbolType of
-                    Constructor -> TopSymbol symbol.name
-                    _ -> Anything
-            AndTerm term1 term2 ->
-                getTermIndex term1 <> getTermIndex term2
-            _ -> Anything
+    cellSymbol = "Lbl'-LT-'" <> name <> "'-GT-'"
 
-    -- it is assumed there is only one K cell
-    -- Note: para is variant of cata in which recursive positions also include the original sub-tree,
-    -- in addition to the result of folding that sub-tree.
-    lookForKCell :: Term -> Maybe Term
-    lookForKCell = para $ \case
-        kCell@(SymbolApplicationF symbol _ (children :: [(Term, Maybe Term)]))
-            | symbol.name == "Lbl'-LT-'k'-GT-'" -> Just $ embed $ fmap fst kCell
-            | otherwise -> asum $ map snd children
-        other -> foldr ((<|>) . snd) Nothing other
+    firstArgument :: Term -> Maybe Term
+    firstArgument = \case
+        SymbolApplication _ _ (x : _) -> Just x
+        _otherwise -> Nothing --
 
-    -- this assumes that the top kseq is already normalized into right-assoc form
-    lookForTopTerm :: Term -> Maybe Term
-    lookForTopTerm =
-        \case
-            SymbolApplication symbol _ children
-                | symbol.name == "kseq" ->
-                    let firstChild = getKSeqFirst children
-                     in Just $ stripAwaySortInjections firstChild
-                | otherwise ->
-                    Nothing -- error ("lookForTopTerm: the first child of the K cell isn't a kseq" <> show symbol.name)
-            _other -> Nothing
+{- | Retrieve the cell contents of the cell with the given name.
+   It is assumed there is only one cell with this name
+-}
+getCell :: SymbolName -> Term -> Maybe Term
+getCell name = para $ \case
+    -- Note: para is a variant of cata in which recursive positions
+    -- also include the original sub-tree, in addition to the result
+    -- of folding that sub-tree.
+    targetCell@(SymbolApplicationF symbol _ (children :: [(Term, Maybe Term)]))
+        | symbol.name == name -> Just $ embed $ fmap fst targetCell
+        | otherwise -> asum $ map snd children
+    other -> foldr ((<|>) . snd) Nothing other
 
-    stripAwaySortInjections :: Term -> Term
-    stripAwaySortInjections =
-        \case
-            Injection _ _ child ->
-                stripAwaySortInjections child --
-            term -> term
+{- | Given a term of sort 'K', constructed using 'dotk' and 'kseq'
+   (normalised K sequence), return:
 
-    getKSeqFirst [] = error "lookForTopTerm: empty KSeq"
-    getKSeqFirst (x : _) = x
+  * the head element, with the 'KItem' injection removed, in case of 'kseq'
+  * the 'dotk' element in case of 'dotk'
+  * @Nothing@ otherwise.
+-}
+getKSeqHead :: Term -> Maybe Term
+getKSeqHead = \case
+    app@(SymbolApplication symbol _ args)
+        | symbol.name == "kseq"
+        , [hd, _tl] <- args ->
+            Just $ stripSortInjections hd
+        | symbol.name == "dotk"
+        , null args ->
+            Just app
+    _ ->
+        Nothing
 
-    getFirstKCellElem [] = error "kCellTermIndex: empty K cell"
-    getFirstKCellElem (x : _) = x
+stripSortInjections :: Term -> Term
+stripSortInjections = \case
+    Injection _ _ child ->
+        stripSortInjections child
+    term -> term
 
 -- | indexes terms by their top symbol (combining '\and' branches)
 termTopIndex :: Term -> TermIndex
@@ -129,7 +134,3 @@ termTopIndex = \case
         termTopIndex t1 <> termTopIndex t2
     _other ->
         Anything
-
--- indexes predicates by the name of their top-level connective
-predicateTopIndex :: Predicate -> TermIndex
-predicateTopIndex (Predicate t) = termTopIndex t
