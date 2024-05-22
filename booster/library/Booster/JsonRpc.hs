@@ -573,7 +573,7 @@ handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
     SMT.SMTSolverUnknown reason premises preds -> do
-        Log.logErrorNS "booster" "SMT returned `Unknown'"
+        Log.logErrorNS "booster" ("SMT returned `Unknown' with reason " <> reason)
 
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
