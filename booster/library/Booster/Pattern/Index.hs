@@ -84,7 +84,7 @@ coveringIndexes (TermIndex ixs) =
     Set.fromList . map TermIndex $ orAnything ixs
   where
     orAnything :: [CellIndex] -> [[CellIndex]]
-    orAnything [] = []
+    orAnything [] = [[]]
     orAnything (i:is) =
         let rest = orAnything is
          in map (i :) rest <> map (Anything :) rest

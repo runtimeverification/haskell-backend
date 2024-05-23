@@ -8,6 +8,7 @@ module Test.Booster.Pattern.Index (
     test_indexing,
 ) where
 
+import Data.Set qualified as Set
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -27,6 +28,7 @@ test_indexing =
         [ testKCellIndexing
         , testCompositeIndexing
         , testTopTermIndexing
+        , testIndexCover
         ]
 
 testKCellIndexing :: TestTree
@@ -59,7 +61,7 @@ testCompositeIndexing =
     testGroup
         "Indexing with custom cells"
         [ testCase "No cells for indexing results in empty index" $
-            Idx.compositeTermIndex [] undefined @=? TermIndex []
+            Idx.compositeTermIndex [] undefined @?= TermIndex []
         ]
 
 testTopTermIndexing :: TestTree
@@ -79,4 +81,35 @@ testTopTermIndexing =
         ]
   where
     (==>) :: Term -> CellIndex -> Assertion
-    t ==> result = Idx.termTopIndex t @=? TermIndex [result]
+    t ==> result = Idx.termTopIndex t @?= TermIndex [result]
+
+testIndexCover :: TestTree
+testIndexCover =
+    testGroup
+        "coveringIndexes function"
+        [ testCase "Anything in all components is unchanged" $
+            [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
+        , testCase "[Anything] is added to single-component indexes" $
+            [TopSymbol "bla"] ==> [[TopSymbol "bla"], [Anything]]
+        , testCase "Anything is added to every component, in all combinations" $ do
+            let cells = map TopSymbol ["bla", "blu", "bli"]
+            take 2 cells
+                ==> [ [TopSymbol "bla", TopSymbol "blu"]
+                    , [TopSymbol "bla", Anything]
+                    , [Anything, TopSymbol "blu"]
+                    , [Anything, Anything]
+                    ]
+            cells ==> [ cells
+                      , [TopSymbol "bla", TopSymbol "blu", Anything]
+                      , [TopSymbol "bla", Anything, TopSymbol "bli"]
+                      , [TopSymbol "bla", Anything, Anything]
+                      , [Anything, TopSymbol "blu", TopSymbol "bli"]
+                      , [Anything, TopSymbol "blu", Anything]
+                      , [Anything, Anything, TopSymbol "bli"]
+                      , [Anything, Anything, Anything]
+                     ]
+        ]
+  where
+    (==>) :: [CellIndex] -> [[CellIndex]] -> Assertion
+    idx ==> expected =
+        Set.toList (Idx.coveringIndexes $ TermIndex idx) @?= map TermIndex expected
