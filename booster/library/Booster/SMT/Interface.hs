@@ -17,6 +17,7 @@ import Control.Exception (Exception, throw)
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.State
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
 import Data.Either (isLeft)
@@ -291,6 +292,51 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         Log.logMessage . Pretty.renderOneLineText $
             hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
 
+        (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
+
+        Log.logMessage $
+            "Check of Given ∧ P and Given ∧ !P produced "
+                <> pack (show (positive, negative))
+
+        case (positive, negative) of
+            (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
+            (Sat, Sat) -> fail "Implication not determined"
+            (Sat, Unsat) -> pure True
+            (Unsat, Sat) -> pure False
+            (Unknown, _) -> failBecauseUnknown
+            -- n <- lift . SMT $ gets retriesLeft
+            -- if (n > 0)
+            --     then do
+            --         lift $ checkPredicates ctxt givenPs givenSubst psToCheck
+            --     else failBecauseUnknown
+            (_, Unknown) -> do
+                smtRun GetReasonUnknown >>= \case
+                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
+  where
+    smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
+    smtRun_ = lift . SMT.runCmd_
+    smtRun :: SMTEncode c => c -> MaybeT (SMT io) Response
+    smtRun = lift . SMT.runCmd
+
+    translated = SMT.runTranslator $ do
+        let mkSMTEquation v t =
+                SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
+        smtSubst <-
+            mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs givenSubst
+        smtPs <-
+            mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) $ Set.toList givenPs
+        toCheck <-
+            mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
+        pure (smtSubst <> smtPs, toCheck)
+
+    failBecauseUnknown =
+        smtRun GetReasonUnknown >>= \case
+            ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+            other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+
+    interactWihtSolver smtGiven sexprsToCheck transState = do
         smtRun_ Push
 
         -- declare-const all introduced variables (free in predicates
@@ -323,39 +369,4 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         negative <- smtRun CheckSat
         void $ smtRun Pop
 
-        Log.logMessage $
-            "Check of Given ∧ P and Given ∧ !P produced "
-                <> pack (show (positive, negative))
-
-        case (positive, negative) of
-            (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
-            (Sat, Sat) -> fail "Implication not determined"
-            (Sat, Unsat) -> pure True
-            (Unsat, Sat) -> pure False
-            (Unknown, _) -> failBecauseUnknown
-            (_, Unknown) -> do
-                smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
-            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
-  where
-    smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
-    smtRun_ = lift . SMT.runCmd_
-    smtRun :: SMTEncode c => c -> MaybeT (SMT io) Response
-    smtRun = lift . SMT.runCmd
-
-    translated = SMT.runTranslator $ do
-        let mkSMTEquation v t =
-                SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
-        smtSubst <-
-            mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs givenSubst
-        smtPs <-
-            mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) $ Set.toList givenPs
-        toCheck <-
-            mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
-        pure (smtSubst <> smtPs, toCheck)
-
-    failBecauseUnknown =
-        smtRun GetReasonUnknown >>= \case
-            ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
-            other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+        pure (positive, negative)
