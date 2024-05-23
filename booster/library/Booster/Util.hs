@@ -10,8 +10,10 @@ module Booster.Util (
     constructorName,
     handleOutput,
     withFastLogger,
+    newTimeCache,
 ) where
 
+import Control.AutoUpdate (defaultUpdateSettings, mkAutoUpdate, updateAction, updateFreq)
 import Control.DeepSeq (NFData (..))
 import Control.Exception (bracket, catch, throwIO)
 import Control.Monad.Logger.CallStack qualified as Log
@@ -21,6 +23,8 @@ import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.Map qualified as Map
+import Data.Time.Clock.System (SystemTime, getSystemTime, systemToUTCTime)
+import Data.Time.Format
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
 import System.Directory (removeFile)
@@ -35,7 +39,7 @@ import System.Log.FastLogger (
     newTimedFastLogger,
     toLogStr,
  )
-import System.Log.FastLogger.Types (FormattedTime)
+import System.Log.FastLogger.Types (FormattedTime, TimeFormat)
 
 newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -155,3 +159,21 @@ withFastLogger mFormattedTime (Just fp) log' =
         handleExists e
             | isDoesNotExistError e = return ()
             | otherwise = throwIO e
+
+{- |  Make 'IO' action which get cached formatted local time.
+Use this to avoid the cost of frequently time formatting by caching an
+auto updating formatted time, this cache update every 1 second.
+more detail in "Control.AutoUpdate"
+
+
+Borrowed almost verbatim from the fast-logger package: https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache, but the timestamp resolution and the action to get and format the time are tweaked
+-}
+newTimeCache :: TimeFormat -> IO (IO FormattedTime)
+newTimeCache fmt =
+    mkAutoUpdate
+        defaultUpdateSettings{updateFreq = 100}
+            { updateAction = formatSystemTime fmt <$> getSystemTime
+            }
+
+formatSystemTime :: TimeFormat -> SystemTime -> ByteString
+formatSystemTime fmt = BS.pack . formatTime defaultTimeLocale (BS.unpack fmt) . systemToUTCTime

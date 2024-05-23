@@ -48,7 +48,6 @@ import System.Clock (
 import System.Environment qualified as Env
 import System.Exit
 import System.IO (hPutStrLn, stderr)
-import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Attributes.Base (
@@ -161,7 +160,8 @@ main = do
                 || lvl >= logLevel && lvl <= LevelError
         koreSolverOptions = translateSMTOpts smtOptions
 
-    mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
+    mTimeCache <-
+        if logTimeStamps then Just <$> Booster.newTimeCache "%Y-%m-%dT%H:%M:%S:%6Q" else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
         flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do

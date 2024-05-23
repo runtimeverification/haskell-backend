@@ -19,7 +19,6 @@ import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text, unpack)
 import Data.Text.Encoding qualified as Text
 import Options.Applicative
-import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Base (KoreDefinition (..))
@@ -33,7 +32,7 @@ import Booster.Log.Context qualified as Booster.Log
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Booster.Util (handleOutput, withFastLogger)
+import Booster.Util (handleOutput, newTimeCache, withFastLogger)
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 
@@ -120,7 +119,7 @@ runServer ::
     IO ()
 runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps logFormat =
     do
-        mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
+        mTimeCache <- if logTimeStamps then Just <$> newTimeCache "%Y-%m-%dT%H:%M:%S:%6Q" else pure Nothing
 
         withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
             let boosterContextLogger = case logFormat of
