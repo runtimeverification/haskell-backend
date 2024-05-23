@@ -315,6 +315,12 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                     other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
   where
+
+    retryOnce smtGiven sexprsToCheck transState = do
+        lift reinitSolver
+        (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
+        processSMTResult positive negative failBecauseUnknown
+
     smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
     smtRun_ = lift . SMT.runCmd_
     smtRun :: SMTEncode c => c -> MaybeT (SMT io) Response
