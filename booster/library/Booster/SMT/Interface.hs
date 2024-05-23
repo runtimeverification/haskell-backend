@@ -332,10 +332,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Sat, Sat) -> fail "Implication not determined"
             (Sat, Unsat) -> pure True
             (Unsat, Sat) -> pure False
-            (Unknown, _) -> do
-                smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+            (Unknown, _) -> failBecauseUnknown
             (_, Unknown) -> do
                 smtRun GetReasonUnknown >>= \case
                     ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
@@ -357,3 +354,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         toCheck <-
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
+
+    failBecauseUnknown =
+        smtRun GetReasonUnknown >>= \case
+            ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+            other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
