@@ -21,7 +21,7 @@ import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import Control.Monad.Trans.Reader
+import Control.Monad.Trans.State
 import Data.ByteString.Builder qualified as BS
 import Data.ByteString.Char8 qualified as BS
 import Data.Text (Text, pack)
@@ -97,12 +97,12 @@ initSolver = do
     handle <- liftIO $ Backend.new config
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
     pure (solver, handle)
-newtype SMT m a = SMT (ReaderT SMTContext m a)
+newtype SMT m a = SMT (StateT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
 
-runSMT :: SMTContext -> SMT io a -> io a
+runSMT :: Monad io => SMTContext -> SMT io a -> io a
 runSMT ctxt (SMT action) =
-    runReaderT action ctxt
+    evalStateT action ctxt
 
 declare :: LoggerMIO io => [DeclareCommand] -> SMT io ()
 declare = mapM_ runCmd
@@ -127,7 +127,7 @@ runCmd_ = void . runCmd
 runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd cmd = do
     let cmdBS = encode cmd
-    ctxt <- SMT ask
+    ctxt <- SMT get
     whenJust ctxt.mbTranscript $ \h -> do
         whenJust (comment cmd) $ \c ->
             liftIO (BS.hPutBuilder h c)
