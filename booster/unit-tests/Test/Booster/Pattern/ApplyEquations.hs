@@ -28,7 +28,7 @@ import Booster.Definition.Base
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
-import Booster.Pattern.Index (TermIndex (..))
+import Booster.Pattern.Index (TermIndex (..), CellIndex (..))
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
@@ -251,13 +251,16 @@ test_errors =
 
 ----------------------------------------
 
+index :: SymbolName -> TermIndex
+index = TermIndex . (:[]) . TopSymbol
+
 funDef, simplDef, loopDef :: KoreDefinition
 funDef =
     testDefinition
         { functionEquations =
             mkTheory
-                [ (TopSymbol "f1", f1Equations)
-                , (TopSymbol "f2", f2Equations) -- should not be applied (f2 partial)
+                [ (index "f1", f1Equations)
+                , (index "f2", f2Equations) -- should not be applied (f2 partial)
                 ]
         }
 simplDef =
@@ -265,7 +268,7 @@ simplDef =
         { simplifications =
             mkTheory
                 [
-                    ( TopSymbol "con1"
+                    ( index "con1"
                     ,
                         [ equation -- con1(con2(f2(X))) => con1(X) , but f2 partial => not applied
                             Nothing
@@ -286,7 +289,7 @@ simplDef =
                         ]
                     )
                 ,
-                    ( TopSymbol "con3"
+                    ( index "con3"
                     ,
                         [ equation -- con3(X, X) => inj{sub,some}(con4(X, X))
                             Nothing
@@ -303,7 +306,7 @@ loopDef =
         { simplifications =
             mkTheory
                 [
-                    ( TopSymbol "f1"
+                    ( index "f1"
                     ,
                         [ equation
                             Nothing

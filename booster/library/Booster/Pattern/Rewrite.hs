@@ -63,7 +63,7 @@ import Booster.Pattern.ApplyEquations (
  )
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
-import Booster.Pattern.Index (TermIndex (..), kCellTermIndex, termIndexForCell)
+import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match (
     FailReason (ArgLengthsDiffer, SubsortingError),
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
@@ -140,19 +140,14 @@ rewriteStep ::
     RewriteT io (RewriteResult Pattern)
 rewriteStep cutLabels terminalLabels pat = do
     def <- getDefinition
-    let getIndex =
-            case def.attributes.indexCells of
-                Just (c : _) -> termIndexForCell c -- FIXME supports only one cell at the moment
-                _otherwise -> kCellTermIndex
+    let getIndex = maybe Idx.kCellTermIndex Idx.compositeTermIndex def.attributes.indexCells
         termIdx = getIndex pat.term
-    when (termIdx == None) $ throw (TermIndexIsNone pat.term)
-    let idxRules = fromMaybe Map.empty $ Map.lookup termIdx def.rewriteTheory
-        anyRules = fromMaybe Map.empty $ Map.lookup Anything def.rewriteTheory
+    when (Idx.hasNone termIdx) $ throw (TermIndexIsNone pat.term)
+    let
+        indexes = Set.toList $ Idx.coveringIndexes termIdx
+        rulesFor i = fromMaybe Map.empty $ Map.lookup i def.rewriteTheory
         rules =
-            map snd . Map.toAscList $
-                if termIdx == Anything
-                    then idxRules
-                    else Map.unionWith (<>) idxRules anyRules
+            map snd . Map.toAscList . Map.unionsWith (<>) $ map rulesFor indexes
 
     -- process one priority group at a time (descending priority),
     -- until a result is obtained or the entire rewrite fails.

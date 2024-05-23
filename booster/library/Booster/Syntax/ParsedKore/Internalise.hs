@@ -351,9 +351,7 @@ addModule
                 newSimplifications = mapMaybe retractSimplificationRule newAxioms
                 newCeils = mapMaybe retractCeilRule newAxioms
             let rewriteIndex =
-                    case defAttributes.indexCells of
-                        Just (c : _) -> Idx.termIndexForCell c -- FIXME supports only a single cell at the moment
-                        _otherwise -> Idx.kCellTermIndex
+                    maybe Idx.kCellTermIndex Idx.compositeTermIndex defAttributes.indexCells
                 rewriteTheory =
                     addToTheoryWith (rewriteIndex . (.lhs)) newRewriteRules currentRewriteTheory
                 functionEquations =

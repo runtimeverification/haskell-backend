@@ -23,7 +23,7 @@ import Test.Tasty.HUnit
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Pattern.Base
-import Booster.Pattern.Index (TermIndex (..))
+import Booster.Pattern.Index (TermIndex (..), CellIndex (..))
 import Booster.Pattern.Rewrite
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
@@ -58,14 +58,17 @@ test_performRewrite =
 
 ----------------------------------------
 
+index :: SymbolName -> TermIndex
+index = TermIndex . (:[]) . TopSymbol
+
 def :: KoreDefinition
 def =
     testDefinition
         { rewriteTheory =
             mkTheory
-                [ (TopSymbol "con1", [rule1, rule2, rule1'])
-                , (TopSymbol "con3", [rule3])
-                , (TopSymbol "con4", [rule4])
+                [ (index "con1", [rule1, rule2, rule1'])
+                , (index "con3", [rule3])
+                , (index "con4", [rule4])
                 ]
         }
 
