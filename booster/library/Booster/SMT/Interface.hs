@@ -309,7 +309,6 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Unknown, _) -> onUnknown
             (_, Unknown) -> onUnknown
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
-  where
 
     retryOnce smtGiven sexprsToCheck transState = do
         lift reinitSolver
