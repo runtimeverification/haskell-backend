@@ -298,21 +298,16 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> pack (show (positive, negative))
 
+        processSMTResult positive negative (retryOnce smtGiven sexprsToCheck transState)
+  where
+    processSMTResult positive negative onUnknown =
         case (positive, negative) of
             (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
             (Sat, Sat) -> fail "Implication not determined"
             (Sat, Unsat) -> pure True
             (Unsat, Sat) -> pure False
-            (Unknown, _) -> failBecauseUnknown
-            -- n <- lift . SMT $ gets retriesLeft
-            -- if (n > 0)
-            --     then do
-            --         lift $ checkPredicates ctxt givenPs givenSubst psToCheck
-            --     else failBecauseUnknown
-            (_, Unknown) -> do
-                smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+            (Unknown, _) -> onUnknown
+            (_, Unknown) -> onUnknown
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
   where
 
