@@ -92,7 +92,7 @@ coveringIndexes (TermIndex ixs) =
 means no match will be possible).
 -}
 hasNone :: TermIndex -> Bool
-hasNone (TermIndex ixs) = any (== None) ixs
+hasNone (TermIndex ixs) = None `elem` ixs
 
 -- | Indexes a term by the heads of K sequences in given cells.
 compositeTermIndex :: [SymbolName] -> Term -> TermIndex
