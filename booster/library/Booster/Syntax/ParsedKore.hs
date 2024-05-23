@@ -106,9 +106,17 @@ internalisation). The map of module names to definitions is returned
 so the main module can be changed.
 -}
 loadDefinition ::
-    FilePath -> IO (Either DefinitionError (Map Text KoreDefinition))
-loadDefinition file = runExceptT $ do
+    [Text] -> FilePath -> IO (Either DefinitionError (Map Text KoreDefinition))
+loadDefinition indexCells file = runExceptT $ do
     parsedDef <-
         liftIO (Text.readFile file)
             >>= except . first (ParseError . Text.pack) . parseKoreDefinition file
-    except $ runExcept $ Internalise.buildDefinitions parsedDef
+    let parsedDef'
+            | null indexCells =
+                parsedDef
+            | otherwise =
+                ParsedDefinition
+                    { modules = parsedDef.modules
+                    , attributes = [(Id "indexCells", indexCells)]
+                    }
+    except $ runExcept $ Internalise.buildDefinitions parsedDef'

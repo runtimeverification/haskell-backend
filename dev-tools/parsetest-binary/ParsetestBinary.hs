@@ -28,7 +28,7 @@ test :: Maybe (FilePath, Text.Text) -> FilePath -> IO Term
 test (Just (definitionFile, mainModuleName)) f = do
     definitionMap <-
         either (error . show) id
-            <$> loadDefinition definitionFile
+            <$> loadDefinition [] definitionFile
     let internalModule =
             fromMaybe (error $ Text.unpack mainModuleName <> ": No such module") $
                 Map.lookup mainModuleName definitionMap

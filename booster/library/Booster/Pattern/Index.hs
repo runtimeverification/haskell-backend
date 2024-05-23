@@ -68,20 +68,18 @@ instance Semigroup TermIndex where
   Only constructors are used, function symbols get index 'Anything'.
 -}
 kCellTermIndex :: Term -> TermIndex
-kCellTermIndex config = termIndexForCell "k" config
+kCellTermIndex config = termIndexForCell "Lbl'-LT-'k'-GT-'" config
 
 {- | Indexes a term by the head of a K sequence inside a given cell
-   (supplied name with prefix "Lbl'-LT-'" and suffix "'-GT-'").
+   (supplied name should have prefix "Lbl'-LT-'" and suffix "'-GT-'").
 -}
 termIndexForCell :: SymbolName -> Term -> TermIndex
 termIndexForCell name config = fromMaybe Anything $ do
-    inCell <- getCell cellSymbol config
+    inCell <- getCell name config
     cellArg1 <- firstArgument inCell
     seqHead <- getKSeqHead cellArg1
     pure $ termTopIndex seqHead
   where
-    cellSymbol = "Lbl'-LT-'" <> name <> "'-GT-'"
-
     firstArgument :: Term -> Maybe Term
     firstArgument = \case
         SymbolApplication _ _ (x : _) -> Just x
