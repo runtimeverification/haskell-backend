@@ -12,8 +12,6 @@ import Data.Set qualified as Set
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Booster.Definition.Attributes.Base
-import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Index qualified as Idx
