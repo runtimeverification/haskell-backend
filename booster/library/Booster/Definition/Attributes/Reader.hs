@@ -322,7 +322,7 @@ instance ReadT Text where
 
 -- read lists by reading each part as a singleton list
 instance ReadT a => ReadT [a] where
-    readT = mapM readT . (: [])
+    readT = mapM (readT . (: []))
 
 instance ReadT Position where
     readT [] = Left "empty position"
