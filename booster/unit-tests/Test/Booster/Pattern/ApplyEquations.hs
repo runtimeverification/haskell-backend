@@ -28,7 +28,7 @@ import Booster.Definition.Base
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
-import Booster.Pattern.Index (TermIndex (..), CellIndex (..))
+import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
@@ -252,7 +252,7 @@ test_errors =
 ----------------------------------------
 
 index :: SymbolName -> TermIndex
-index = TermIndex . (:[]) . TopSymbol
+index = TermIndex . (: []) . TopSymbol
 
 funDef, simplDef, loopDef :: KoreDefinition
 funDef =

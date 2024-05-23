@@ -23,7 +23,7 @@ import Test.Tasty.HUnit
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Pattern.Base
-import Booster.Pattern.Index (TermIndex (..), CellIndex (..))
+import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Rewrite
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
@@ -59,7 +59,7 @@ test_performRewrite =
 ----------------------------------------
 
 index :: SymbolName -> TermIndex
-index = TermIndex . (:[]) . TopSymbol
+index = TermIndex . (: []) . TopSymbol
 
 def :: KoreDefinition
 def =

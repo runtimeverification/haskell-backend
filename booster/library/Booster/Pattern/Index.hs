@@ -42,7 +42,6 @@ NB for technical reasons we derive 'Ord' instances but it does not
 reflect the fact that different symbols (and likewise different
 constructors) are incompatible (partial ordering).
 -}
-
 newtype TermIndex = TermIndex [CellIndex]
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
@@ -85,18 +84,19 @@ coveringIndexes (TermIndex ixs) =
   where
     orAnything :: [CellIndex] -> [[CellIndex]]
     orAnything [] = [[]]
-    orAnything (i:is) =
+    orAnything (i : is) =
         let rest = orAnything is
          in map (i :) rest <> map (Anything :) rest
 
--- | Check whether a @TermIndex@ has @None@ in any position (this
--- means no match will be possible).
+{- | Check whether a @TermIndex@ has @None@ in any position (this
+means no match will be possible).
+-}
 hasNone :: TermIndex -> Bool
 hasNone (TermIndex ixs) = any (== None) ixs
 
 -- | Indexes a term by the heads of K sequences in given cells.
 compositeTermIndex :: [SymbolName] -> Term -> TermIndex
-compositeTermIndex cells t = TermIndex [kCellIndexFor c t | c <- cells ]
+compositeTermIndex cells t = TermIndex [kCellIndexFor c t | c <- cells]
 
 -- | Indexes a term by the head of its <k>-cell.
 kCellTermIndex :: Term -> TermIndex
@@ -160,7 +160,7 @@ stripSortInjections = \case
 
 -- | indexes terms by their top symbol (combining '\and' branches)
 termTopIndex :: Term -> TermIndex
-termTopIndex = TermIndex . (:[]) . cellTopIndex
+termTopIndex = TermIndex . (: []) . cellTopIndex
 
 cellTopIndex :: Term -> CellIndex
 cellTopIndex = \case

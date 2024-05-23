@@ -30,7 +30,7 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Definition.Ceil (ComputeCeilSummary (..))
 import Booster.Pattern.Base
-import Booster.Pattern.Index (TermIndex (..), CellIndex (..))
+import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Prettyprinter
 import Booster.Util
 

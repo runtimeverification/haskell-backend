@@ -15,7 +15,7 @@ import Test.Tasty.HUnit
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Pattern.Base
-import Booster.Pattern.Index (TermIndex (..), CellIndex (..))
+import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Index qualified as Idx
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
@@ -99,15 +99,16 @@ testIndexCover =
                     , [Anything, TopSymbol "blu"]
                     , [Anything, Anything]
                     ]
-            cells ==> [ cells
-                      , [TopSymbol "bla", TopSymbol "blu", Anything]
-                      , [TopSymbol "bla", Anything, TopSymbol "bli"]
-                      , [TopSymbol "bla", Anything, Anything]
-                      , [Anything, TopSymbol "blu", TopSymbol "bli"]
-                      , [Anything, TopSymbol "blu", Anything]
-                      , [Anything, Anything, TopSymbol "bli"]
-                      , [Anything, Anything, Anything]
-                     ]
+            cells
+                ==> [ cells
+                    , [TopSymbol "bla", TopSymbol "blu", Anything]
+                    , [TopSymbol "bla", Anything, TopSymbol "bli"]
+                    , [TopSymbol "bla", Anything, Anything]
+                    , [Anything, TopSymbol "blu", TopSymbol "bli"]
+                    , [Anything, TopSymbol "blu", Anything]
+                    , [Anything, Anything, TopSymbol "bli"]
+                    , [Anything, Anything, Anything]
+                    ]
         ]
   where
     (==>) :: [CellIndex] -> [[CellIndex]] -> Assertion
