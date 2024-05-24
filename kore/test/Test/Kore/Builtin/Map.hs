@@ -205,11 +205,11 @@ test_updateAll =
             expect = OrPattern.fromTermLike aMap
         (===) expect =<< evaluateTermT update1
         (===) expect =<< evaluateTermT update2
-    -- , testCaseWithoutSMT "Empty maps should yield a result" $ do
-    --     let update1 = updateAllMap unitMap unitMap
-    --         expect = OrPattern.fromTermLike unitMap
-    --     result <- evaluateTermT update1
-    --     assertEqual "duh" expect result
+        -- , testCaseWithoutSMT "Empty maps should yield a result" $ do
+        --     let update1 = updateAllMap unitMap unitMap
+        --         expect = OrPattern.fromTermLike unitMap
+        --     result <- evaluateTermT update1
+        --     assertEqual "duh" expect result
     ]
 
 test_removeUnit :: TestTree
