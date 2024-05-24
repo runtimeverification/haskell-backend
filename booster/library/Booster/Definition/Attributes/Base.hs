@@ -67,7 +67,7 @@ import Booster.Util qualified as Util
 
 newtype DefinitionAttributes = DefinitionAttributes
     { indexCells :: [ByteString]
-    -- ^which cells to index for rewriting. Empty => default
+    -- ^ which cells to index for rewriting. Empty => default
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
