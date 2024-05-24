@@ -36,22 +36,43 @@ testKCellIndexing =
         [ testCase "An empty K cell is indexed as dotk" $
             [trm| kCell{}(dotk{}()) |] ==> TopSymbol "dotk"
         , testCase "A non-empty K cell is indexed as its head element without injections" $ do
+            [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}())) |]
+                ==> TopSymbol "f1"
             KSeq someSort [trm| X:SomeSort{} |]
                 ==> Anything
             [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(\dv{SomeSort{}}("X")), dotk{}())) |]
                 ==> Anything
-            [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}())) |]
+            [trm| kCell{}(X:SortK{}) |]
+                ==> Anything
+        , testCase "The K cell is found when nested under other cells" $ do
+            [trm|
+                topCell{}(
+                  nesting{}(
+                    kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}()))
+                  ),
+                  other{}(dotk{}())
+                )
+                |]
                 ==> TopSymbol "f1"
+            [trm|
+                topCell{}(
+                  nesting{}(
+                    kCell{}(dotk{}())
+                  ),
+                  other{}(X:SortK{})
+                )
+                |]
+                ==> TopSymbol "dotk"
         ]
   where
-    kCell :: Symbol
-    kCell =
-        [symb| symbol Lbl'-LT-'k'-GT-'{}(SortK{}) : SortKCell{} [constructor{}()] |]
-
     (==>) :: Term -> CellIndex -> Assertion
     t ==> result = Idx.kCellTermIndex t @=? TermIndex [result]
 
-inj :: Symbol
+kCell, other, topCell, nesting, inj :: Symbol
+kCell = [symb| symbol Lbl'-LT-'k'-GT-'{}(SortK{}) : SortKCell{} [constructor{}()] |]
+other = [symb| symbol Lbl'-LT-'other'-GT-'{}(SortK{}) : SomeSort{} [constructor{}()] |]
+topCell = [symb| symbol Lbl'-LT-'topCell'-GT-'{}(SomeSort{}, SomeSort{}) : SomeSort{} [constructor{}()] |]
+nesting = [symb| symbol Lbl'-LT-'nesting'-GT-'{}(SortKCell{}) : SomeSort{} [constructor{}()] |]
 inj = [symb| symbol inj{From, To}( From ) : To [sortInjection{}()] |]
 
 testCompositeIndexing :: TestTree
@@ -60,7 +81,101 @@ testCompositeIndexing =
         "Indexing with custom cells"
         [ testCase "No cells for indexing results in empty index" $
             Idx.compositeTermIndex [] undefined @?= TermIndex []
+        , testCase "The desired cell is found when nested under other cells" $ do
+            testWith
+                [other.name]
+                [trm|
+                    topCell{}(
+                      nesting{}(
+                        kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}()))
+                      ),
+                      other{}(dotk{}())
+                    )
+                    |]
+                [TopSymbol "dotk"]
+            testWith
+                [other.name]
+                [trm|
+                    topCell{}(
+                      nesting{}(
+                        kCell{}(dotk{}())
+                      ),
+                      other{}(
+                        kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}())
+                      )
+                    )
+                    |]
+                [TopSymbol "f1"]
+            testWith
+                [other.name]
+                [trm|
+                    topCell{}(
+                      nesting{}(
+                        kCell{}(dotk{}())
+                      ),
+                      other{}(X:SortK{})
+                    )
+                    |]
+                [Anything]
+        , testCase "Two cells can be chosen" $ do
+            testWith
+                [other.name, kCell.name]
+                [trm|
+                    topCell{}(
+                      nesting{}(
+                        kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}()))
+                      ),
+                      other{}(dotk{}())
+                    )
+                    |]
+                [TopSymbol "dotk", TopSymbol "f1"]
+            testWith
+                [other.name, kCell.name]
+                [trm|
+                    topCell{}(
+                      nesting{}(
+                        kCell{}(X:SortK{})
+                      ),
+                      other{}(
+                        kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}())
+                      )
+                    )
+                    |]
+                [TopSymbol "f1", Anything]
+            testWith
+                [other.name, kCell.name]
+                [trm|
+                    topCell{}(
+                      nesting{}(
+                        kCell{}(dotk{}())
+                      ),
+                      other{}(X:SortK{})
+                    )
+                    |]
+                [Anything, TopSymbol "dotk"]
+        , testCase "If a duplicated cell is chosen, the first occurrence counts" $ do
+            testWith
+                [other.name]
+                [trm|
+                    topCell{}(
+                      other{}(X:SortK{}),
+                      other{}(dotk{}())
+                    )
+                    |]
+                [Anything]
+            testWith
+                [other.name]
+                [trm|
+                    topCell{}(
+                      other{}(dotk{}()),
+                      other{}(X:SortK{})
+                    )
+                    |]
+                [TopSymbol "dotk"]
         ]
+  where
+    testWith :: [SymbolName] -> Term -> [CellIndex] -> Assertion
+    testWith cells term result = Idx.compositeTermIndex cells term @=? TermIndex result
 
 testTopTermIndexing :: TestTree
 testTopTermIndexing =

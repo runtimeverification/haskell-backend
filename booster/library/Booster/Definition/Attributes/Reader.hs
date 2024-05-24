@@ -49,7 +49,7 @@ instance HasAttributes ParsedDefinition where
 
     mkAttributes ParsedDefinition{attributes} =
         DefinitionAttributes
-            <$> (map encodeUtf8 . fromMaybe [] <$> attributes .:? "indexCells")
+            <$> (maybe [] (map encodeUtf8) <$> attributes .:? "indexCells")
 
 instance HasAttributes ParsedModule where
     type Attributes ParsedModule = ModuleAttributes
