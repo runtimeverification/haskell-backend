@@ -205,11 +205,29 @@ test_updateAll =
             expect = OrPattern.fromTermLike aMap
         (===) expect =<< evaluateTermT update1
         (===) expect =<< evaluateTermT update2
-        -- , testCaseWithoutSMT "Empty maps should yield a result" $ do
-        --     let update1 = updateAllMap unitMap unitMap
-        --         expect = OrPattern.fromTermLike unitMap
-        --     result <- evaluateTermT update1
-        --     assertEqual "duh" expect result
+    , testPropertyWithoutSolver "MAP.updateAll adds or updates map assocs" $ do
+        internalMap <- forAll $ genMapInteger genIntegerPattern
+        let theMap :: TermLike RewritingVariableName
+            theMap = asTermLike $ mapKeys Test.Int.asKey internalMap
+            existingKeys = HashMap.keys internalMap
+        -- may or may not collide with existing, but not empty (theMap might be empty)
+        newKeys <- forAll $ Gen.list (Range.linear 1 8) genInteger
+        let allKeys = List.nub $ existingKeys <> newKeys
+            newValues = map Test.Int.asInternal newKeys
+            updates = asTermLike . HashMap.fromList $ zip (map Test.Int.asKey newKeys) newValues
+            newMap = updateAllMap theMap updates
+        let check key = do
+                let keyTerm = Test.Int.asInternal key
+                    expect
+                        | key `elem` newKeys -- updated to key == value
+                            =
+                            OrPattern.fromTermLike keyTerm
+                        | otherwise -- still prior value
+                            =
+                            maybe (error "Prior key not found") OrPattern.fromTermLike $
+                                HashMap.lookup key internalMap
+                (===) expect =<< evaluateTermT (lookupMap newMap keyTerm)
+        mapM_ check allKeys
     ]
 
 test_removeUnit :: TestTree
