@@ -131,7 +131,6 @@ jobs:
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: Test
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
