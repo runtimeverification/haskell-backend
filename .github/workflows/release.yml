@@ -46,9 +46,6 @@ jobs:
           - runner: ubuntu-22.04
             os: ubuntu-22.04
             nix: x86_64-linux
-          - runner: macos-12
-            os: macos-12
-            nix: x86_64-darwin
           - runner: MacM1
             os: self-macos-12
             nix: aarch64-darwin
