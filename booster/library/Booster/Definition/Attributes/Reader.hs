@@ -47,14 +47,9 @@ class HasAttributes ty where
 instance HasAttributes ParsedDefinition where
     type Attributes ParsedDefinition = DefinitionAttributes
 
-    mkAttributes ParsedDefinition{attributes} = do
-        mbCells :: Maybe [Text] <- attributes .:? "indexCells"
-        let indexCells =
-                case mbCells of
-                    Nothing -> Nothing
-                    Just [] -> Nothing
-                    Just cs -> Just $ map Text.encodeUtf8 cs
-        pure DefinitionAttributes{indexCells}
+    mkAttributes ParsedDefinition{attributes} =
+        DefinitionAttributes
+            <$> (map encodeUtf8 . fromMaybe [] <$> attributes .:? "indexCells")
 
 instance HasAttributes ParsedModule where
     type Attributes ParsedModule = ModuleAttributes

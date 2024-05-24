@@ -140,7 +140,10 @@ rewriteStep ::
     RewriteT io (RewriteResult Pattern)
 rewriteStep cutLabels terminalLabels pat = do
     def <- getDefinition
-    let getIndex = maybe Idx.kCellTermIndex Idx.compositeTermIndex def.attributes.indexCells
+    let getIndex =
+            if null def.attributes.indexCells
+                then Idx.kCellTermIndex
+                else Idx.compositeTermIndex def.attributes.indexCells
         termIdx = getIndex pat.term
     when (Idx.hasNone termIdx) $ throw (TermIndexIsNone pat.term)
     let

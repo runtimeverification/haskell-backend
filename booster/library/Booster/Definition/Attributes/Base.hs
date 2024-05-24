@@ -66,13 +66,14 @@ import Booster.Util (Flag (..))
 import Booster.Util qualified as Util
 
 newtype DefinitionAttributes = DefinitionAttributes
-    { indexCells :: Maybe [ByteString] -- which cells to index for rewriting
+    { indexCells :: [ByteString]
+    -- ^which cells to index for rewriting. Empty => default
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
 
 defaultDefAttributes :: DefinitionAttributes
-defaultDefAttributes = DefinitionAttributes Nothing
+defaultDefAttributes = DefinitionAttributes []
 
 data ModuleAttributes = ModuleAttributes
     {

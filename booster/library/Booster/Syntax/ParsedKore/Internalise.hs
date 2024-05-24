@@ -107,7 +107,7 @@ addToDefinitions m prior = do
     priorDefAttributes :: DefinitionAttributes
     priorDefAttributes
         | (d : _) <- Map.elems prior = d.attributes
-        | otherwise = DefinitionAttributes Nothing -- should not happen
+        | otherwise = defaultDefAttributes -- should not happen
 
 lookupModule :: Text -> Map Text a -> Except DefinitionError a
 lookupModule k =
@@ -351,7 +351,9 @@ addModule
                 newSimplifications = mapMaybe retractSimplificationRule newAxioms
                 newCeils = mapMaybe retractCeilRule newAxioms
             let rewriteIndex =
-                    maybe Idx.kCellTermIndex Idx.compositeTermIndex defAttributes.indexCells
+                    if null defAttributes.indexCells
+                        then Idx.kCellTermIndex
+                        else Idx.compositeTermIndex defAttributes.indexCells
                 rewriteTheory =
                     addToTheoryWith (rewriteIndex . (.lhs)) newRewriteRules currentRewriteTheory
                 functionEquations =
