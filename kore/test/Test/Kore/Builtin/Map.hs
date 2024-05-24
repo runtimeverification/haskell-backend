@@ -1,6 +1,7 @@
 module Test.Kore.Builtin.Map (
     test_lookupUnit,
     test_lookupUpdate,
+    test_updateAll,
     test_removeUnit,
     test_sizeUnit,
     test_removeKeyNotIn,
@@ -193,6 +194,22 @@ test_lookupUpdate =
             expect = OrPattern.fromTermLike patVal
         (===) expect =<< evaluateTermT patLookup
         (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
+    ]
+
+test_updateAll :: [TestTree]
+test_updateAll =
+    [ testPropertyWithoutSolver "Empty maps are neutral elements for MAP.updateAll" $ do
+        aMap <- forAll genMapPattern
+        let update1 = updateAllMap aMap unitMap
+            update2 = updateAllMap unitMap aMap
+            expect = OrPattern.fromTermLike aMap
+        (===) expect =<< evaluateTermT update1
+        (===) expect =<< evaluateTermT update2
+    -- , testCaseWithoutSMT "Empty maps should yield a result" $ do
+    --     let update1 = updateAllMap unitMap unitMap
+    --         expect = OrPattern.fromTermLike unitMap
+    --     result <- evaluateTermT update1
+    --     assertEqual "duh" expect result
     ]
 
 test_removeUnit :: TestTree
