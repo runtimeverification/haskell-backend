@@ -5,7 +5,7 @@ set -euxo pipefail
 # must remove the prior freeze file to actually update
 rm -f cabal.project.freeze
 
-stack --test ls dependencies \
+stack --system-ghc --test ls dependencies \
     | sed -e 's/^\([a-zA-Z0-9.-]*\) \([0-9.]*\)/--constraint="\1 == \2"/' \
     | xargs -x cabal freeze --enable-tests
 
