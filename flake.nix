@@ -86,6 +86,7 @@
           # Additional packages that should be available for development.
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
             with ghcVersion final; [
+              stack
               cabal-install
               hpack
               fourmolu
