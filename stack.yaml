@@ -23,6 +23,14 @@ extra-deps:
   - github: goodlyrottenapple/tasty-test-reporter
     commit: b704130545aa3925a8487bd3e92f1dd5ce0512e2
 
+allow-newer: true
+
+allow-newer-deps: 
+  - data-fix
+  - semialign
+  - text-short
+  - these
+
 ghc-options:
   "$everything": -haddock
 

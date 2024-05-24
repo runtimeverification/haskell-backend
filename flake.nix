@@ -47,6 +47,7 @@
           additionalHaskellPkgSetOverrides = hfinal: hprev:
             with final.haskell.lib; {
               crypton-x509 = dontCheck hprev.crypton-x509;
+              data-fix = doJailbreak hprev.data-fix;
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
               fgl-arbitrary = dontCheck hprev.fgl-arbitrary;
@@ -54,8 +55,11 @@
               json-rpc = dontCheck hprev.json-rpc;
               lifted-base = dontCheck hprev.lifted-base;
               prettyprinter = dontCheck hprev.prettyprinter;
+              semialign = doJailbreak hprev.semialign;
               smtlib-backends-process = dontCheck hprev.smtlib-backends-process;
               tar = dontCheck hprev.tar;
+              text-short = doJailbreak hprev.text-short;
+              these = doJailbreak hprev.these;
               hs-backend-booster = overrideCabal hprev.hs-backend-booster
                 (drv: {
                   doCheck = false;
@@ -86,7 +90,6 @@
           # Additional packages that should be available for development.
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
             with ghcVersion final; [
-              stack
               cabal-install
               hpack
               fourmolu
