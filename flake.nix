@@ -28,7 +28,8 @@
             makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
           '';
         };
-      ghcVersion = pkgs: pkgs.haskell.packages.ghc964;
+      # This should based on the compiler version from the resolver in stack.yaml.
+      ghcVersion = pkgs: pkgs.haskell.packages.ghc965;
     in {
       overlay = final: prev: {
         haskell-backend = final.stacklock2nix {
@@ -89,7 +90,6 @@
               hpack
               fourmolu
               hlint
-              stacklockHaskellPkgSet.haskell-language-server
               final.haskell-language-server
               final.z3
               final.secp256k1
