@@ -274,6 +274,7 @@
               pkgs.nix
               pkgs.z3
               pkgs.lsof
+              pkgs.libffi
           ];
           shellHook = ''
             hpack booster && hpack dev-tools
