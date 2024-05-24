@@ -174,6 +174,8 @@ We use `stack.yaml` (and hence `stack.yaml.lock`) as the source of truth about t
 
 Any GHC or resolver upgrades must double-check the `ghcVersion` value in the [`flake.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L32) file.
 
+It may also be required to update [`all-cabal-hashes`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L101).
+
 ### Integration tests
 
 Haskell-backend provides an integration shell for running integration tests, which compile the K framework (of a specified version) against your current version of haskell backend and brings K into scope of your current shell. 
