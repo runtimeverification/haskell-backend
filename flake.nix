@@ -219,10 +219,13 @@
               final.z3
               final.secp256k1
             ];
+          # nix expects all inputs downloaded from the internet to have a hash,
+          # so hackage is periodically downloaded, hashed and the hashes stored in a map.
+          # this need to be bumped if changing the stack resolver
           all-cabal-hashes = final.fetchurl {
             url =
-              "https://github.com/commercialhaskell/all-cabal-hashes/archive/80fe3174b98134e50d4541c9c2a3803601f6fbb7.tar.gz";
-            sha256 = "sha256-b3E6JLu1tBpZnPXBJxNXfjkglY/du8k1l+WTS8Fetr4=";
+              "https://github.com/commercialhaskell/all-cabal-hashes/archive/8b0d7c881466c603de7975596cb203e3fd4890ad.tar.gz";
+            sha256 = "sha256-jTNSwG37bHY5vLMo5yqtk93sTUzlsp/jeYCfXJGaivU=";
           };
         };
       };
