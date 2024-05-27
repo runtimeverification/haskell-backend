@@ -11,14 +11,16 @@ module Booster.CLOptions (
     versionInfoParser,
 ) where
 
-import Booster.Trace (CustomUserEventType)
-import Booster.Util (Bound (..))
-import Booster.VersionInfo (VersionInfo (..), versionInfo)
 import Control.Monad.Logger (LogLevel (..))
 import Data.ByteString.Char8 qualified as BS (pack)
+import Data.Char (isAscii, isPrint)
 import Data.List (intercalate, partition)
+import Data.List.Extra (splitOn, trim)
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
+import Data.Text.Encoding (decodeASCII)
 import Options.Applicative
 import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
 import Text.Read (readMaybe)
@@ -27,8 +29,9 @@ import Booster.GlobalState (EquationOptions (..))
 import Booster.Log.Context (ContextFilter, ctxt, readContextFilter)
 import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
 import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
-import Data.Map (Map)
-import Data.Map qualified as Map
+import Booster.Trace (CustomUserEventType)
+import Booster.Util (Bound (..), encodeLabel)
+import Booster.VersionInfo (VersionInfo (..), versionInfo)
 
 data CLOptions = CLOptions
     { definitionFile :: FilePath
@@ -42,6 +45,7 @@ data CLOptions = CLOptions
     , logFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
+    , indexCells :: [Text]
     , -- developer options below
       eventlogEnabledUserEvents :: [CustomUserEventType]
     }
@@ -128,6 +132,13 @@ clOptionsParser =
             )
         <*> parseSMTOptions
         <*> parseEquationOptions
+        <*> option
+            (eitherReader $ mapM (readCellName . trim) . splitOn ",")
+            ( metavar "CELL-NAME[,CELL-NAME]"
+                <> long "index-cells"
+                <> help "Names of configuration cells to index rewrite rules with (default: 'k')"
+                <> value []
+            )
         -- developer options below
         <*> many
             ( option
@@ -166,6 +177,18 @@ clOptionsParser =
         "standard" -> Right Standard
         "json" -> Right Json
         other -> Left $ other <> ": Unsupported log format"
+
+    readCellName :: String -> Either String Text
+    readCellName input
+        | null input =
+            Left "Empty cell name"
+        | all isAscii input
+        , all isPrint input =
+            Right $ "Lbl'-LT-'" <> enquote input <> "'-GT-'"
+        | otherwise =
+            Left $ "Illegal non-ascii characters in `" <> input <> "'"
+
+    enquote = decodeASCII . encodeLabel . BS.pack
 
 -- custom log levels that can be selected
 allowedLogLevels :: [(String, String)]

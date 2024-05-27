@@ -5,42 +5,48 @@ License     : BSD-3-Clause
 Everything to do with term indexing.
 -}
 module Booster.Pattern.Index (
+    CellIndex (..),
     TermIndex (..),
+    compositeTermIndex,
     kCellTermIndex,
     termTopIndex,
-    predicateTopIndex,
+    coveringIndexes,
+    hasNone,
 ) where
 
 import Control.Applicative (Alternative (..), asum)
 import Control.DeepSeq (NFData)
 import Data.Functor.Foldable (embed, para)
+import Data.Maybe (fromMaybe)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import GHC.Generics (Generic)
 
-import Booster.Definition.Attributes.Base (SymbolAttributes (..), SymbolType (..))
 import Booster.Pattern.Base
 
 {- | Index data allowing for a quick lookup of potential axioms.
 
-A @Term@ is indexed by inspecting the top term component of the
-head of the K cell. Only constructor and (other) symbol
-applications are indexed, all other terms have index @Anything@.
+A @Term@ is indexed by inspecting the top term component of one or
+more given cells. A @TermIndex@ is a list of @CellIndex@es.
 
-In particular, function applications are treated as opaque, like
-variables.
-
-Also, non-free constructors won't get any index, any rules headed by
-those can be ignored.
+The @CellIndex@ of a cell containing a @SymbolApplication@ node is the
+symbol at the top. Other terms that are not symbol applications have
+index @Anything@.
 
 Rather than making the term indexing function partial, we introduce a
 unique bottom element @None@ to the index type (to make it a lattice).
 This can then handle @AndTerm@ by indexing both arguments and
 combining them.
 
-NB for technical reasons we derive an 'Ord' instance but it does not
+NB for technical reasons we derive 'Ord' instances but it does not
 reflect the fact that different symbols (and likewise different
 constructors) are incompatible (partial ordering).
 -}
-data TermIndex
+newtype TermIndex = TermIndex [CellIndex]
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
+
+data CellIndex
     = None -- bottom element
     | TopSymbol SymbolName
     | Anything -- top element
@@ -54,7 +60,7 @@ data TermIndex
   matches an 'AndTerm t1 t2' must match both 't1' and 't2', so 't1'
   and 't2' must have "compatible" indexes for this to be possible.
 -}
-instance Semigroup TermIndex where
+instance Semigroup CellIndex where
     None <> _ = None
     _ <> None = None
     x <> Anything = x
@@ -63,73 +69,104 @@ instance Semigroup TermIndex where
         | s1 == s2 = s
         | otherwise = None -- incompatible indexes
 
-{- | Indexes a term by the constructor inside the head of its <k>-cell.
+{- | Compute all indexes that cover the given index, for rule lookup.
 
-  Only constructors are used, function symbols get index 'Anything'.
+  An index B is said to "cover" another index A if all parts of B are
+  either equal to the respective parts of A, or 'Anything'.
+
+  When selecting candidate rules for a term, we must consider all
+  rules whose index has either the exact same @CellIndex@ or
+  @Anything@ at every position of their @TermIndex@.
 -}
-kCellTermIndex :: Term -> TermIndex
-kCellTermIndex config =
-    case lookForKCell config of
-        Just (SymbolApplication _ _ children) ->
-            maybe Anything getTermIndex (lookForTopTerm (getFirstKCellElem children))
-        _ -> Anything
+coveringIndexes :: TermIndex -> Set TermIndex
+coveringIndexes (TermIndex ixs) =
+    Set.fromList . map TermIndex $ orAnything ixs
   where
-    getTermIndex :: Term -> TermIndex
-    getTermIndex term =
-        case term of
-            SymbolApplication symbol _ _ ->
-                case symbol.attributes.symbolType of
-                    Constructor -> TopSymbol symbol.name
-                    _ -> Anything
-            AndTerm term1 term2 ->
-                getTermIndex term1 <> getTermIndex term2
-            _ -> Anything
+    orAnything :: [CellIndex] -> [[CellIndex]]
+    orAnything [] = [[]]
+    orAnything (i : is) =
+        let rest = orAnything is
+         in map (i :) rest <> map (Anything :) rest
 
-    -- it is assumed there is only one K cell
-    -- Note: para is variant of cata in which recursive positions also include the original sub-tree,
-    -- in addition to the result of folding that sub-tree.
-    lookForKCell :: Term -> Maybe Term
-    lookForKCell = para $ \case
-        kCell@(SymbolApplicationF symbol _ (children :: [(Term, Maybe Term)]))
-            | symbol.name == "Lbl'-LT-'k'-GT-'" -> Just $ embed $ fmap fst kCell
-            | otherwise -> asum $ map snd children
-        other -> foldr ((<|>) . snd) Nothing other
+{- | Check whether a @TermIndex@ has @None@ in any position (this
+means no match will be possible).
+-}
+hasNone :: TermIndex -> Bool
+hasNone (TermIndex ixs) = None `elem` ixs
 
-    -- this assumes that the top kseq is already normalized into right-assoc form
-    lookForTopTerm :: Term -> Maybe Term
-    lookForTopTerm =
-        \case
-            SymbolApplication symbol _ children
-                | symbol.name == "kseq" ->
-                    let firstChild = getKSeqFirst children
-                     in Just $ stripAwaySortInjections firstChild
-                | otherwise ->
-                    Nothing -- error ("lookForTopTerm: the first child of the K cell isn't a kseq" <> show symbol.name)
-            _other -> Nothing
+-- | Indexes a term by the heads of K sequences in given cells.
+compositeTermIndex :: [SymbolName] -> Term -> TermIndex
+compositeTermIndex cells t = TermIndex [kCellIndexFor c t | c <- cells]
 
-    stripAwaySortInjections :: Term -> Term
-    stripAwaySortInjections =
-        \case
-            Injection _ _ child ->
-                stripAwaySortInjections child --
-            term -> term
+-- | Indexes a term by the head of its <k>-cell.
+kCellTermIndex :: Term -> TermIndex
+kCellTermIndex config = TermIndex [kCellIndexFor "Lbl'-LT-'k'-GT-'" config]
 
-    getKSeqFirst [] = error "lookForTopTerm: empty KSeq"
-    getKSeqFirst (x : _) = x
+{- | Indexes a term by the head of a K sequence inside a given cell
+   (supplied name should have prefix "Lbl'-LT-'" and suffix "'-GT-'").
 
-    getFirstKCellElem [] = error "kCellTermIndex: empty K cell"
-    getFirstKCellElem (x : _) = x
+   Returns either the cell index of the head of the K sequence, or the
+   cell index of '.dotk' if the K sequence was empty.
+-}
+kCellIndexFor :: SymbolName -> Term -> CellIndex
+kCellIndexFor name config = fromMaybe Anything $ do
+    inCell <- getCell name config
+    cellArg1 <- firstArgument inCell
+    seqHead <- getKSeqHead cellArg1
+    pure $ cellTopIndex seqHead
+  where
+    firstArgument :: Term -> Maybe Term
+    firstArgument = \case
+        SymbolApplication _ _ (x : _) -> Just x
+        _otherwise -> Nothing --
+
+{- | Retrieve the cell contents of the cell with the given name.
+   It is assumed there is only one cell with this name
+-}
+getCell :: SymbolName -> Term -> Maybe Term
+getCell name = para $ \case
+    -- Note: para is a variant of cata in which recursive positions
+    -- also include the original sub-tree, in addition to the result
+    -- of folding that sub-tree.
+    targetCell@(SymbolApplicationF symbol _ (children :: [(Term, Maybe Term)]))
+        | symbol.name == name -> Just $ embed $ fmap fst targetCell
+        | otherwise -> asum $ map snd children
+    other -> foldr ((<|>) . snd) Nothing other
+
+{- | Given a term of sort 'K', constructed using 'dotk' and 'kseq'
+   (normalised K sequence), return:
+
+  * the head element, with the 'KItem' injection removed, in case of 'kseq'
+  * the 'dotk' element in case of 'dotk'
+  * @Nothing@ otherwise.
+-}
+getKSeqHead :: Term -> Maybe Term
+getKSeqHead = \case
+    app@(SymbolApplication symbol _ args)
+        | symbol.name == "kseq"
+        , [hd, _tl] <- args ->
+            Just $ stripSortInjections hd
+        | symbol.name == "dotk"
+        , null args ->
+            Just app
+    _ ->
+        Nothing
+
+stripSortInjections :: Term -> Term
+stripSortInjections = \case
+    Injection _ _ child ->
+        stripSortInjections child
+    term -> term
 
 -- | indexes terms by their top symbol (combining '\and' branches)
 termTopIndex :: Term -> TermIndex
-termTopIndex = \case
+termTopIndex = TermIndex . (: []) . cellTopIndex
+
+cellTopIndex :: Term -> CellIndex
+cellTopIndex = \case
     SymbolApplication symbol _ _ ->
         TopSymbol symbol.name
     AndTerm t1 t2 ->
-        termTopIndex t1 <> termTopIndex t2
+        cellTopIndex t1 <> cellTopIndex t2
     _other ->
         Anything
-
--- indexes predicates by the name of their top-level connective
-predicateTopIndex :: Predicate -> TermIndex
-predicateTopIndex (Predicate t) = termTopIndex t

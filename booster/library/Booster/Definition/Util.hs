@@ -30,7 +30,7 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Definition.Ceil (ComputeCeilSummary (..))
 import Booster.Pattern.Base
-import Booster.Pattern.Index (TermIndex (..))
+import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Prettyprinter
 import Booster.Util
 
@@ -138,9 +138,12 @@ instance Pretty Summary where
 
         prettyLabel = either error (pretty . BS.unpack) . decodeLabel
 
-        prettyTermIndex Anything = "Anything"
-        prettyTermIndex (TopSymbol sym) = prettyLabel sym
-        prettyTermIndex None = "None"
+        prettyTermIndex :: TermIndex -> Doc a
+        prettyTermIndex (TermIndex ixs) = Pretty.sep $ map prettyCellIndex ixs
+
+        prettyCellIndex Anything = "Anything"
+        prettyCellIndex (TopSymbol sym) = prettyLabel sym
+        prettyCellIndex None = "None"
 
         prettyCeilRule :: RewriteRule r -> Doc a
         prettyCeilRule RewriteRule{lhs, rhs} = "#Ceil(" <+> pretty lhs <+> ") =>" <+> pretty rhs
