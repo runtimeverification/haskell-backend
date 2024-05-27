@@ -5,6 +5,7 @@
 module Booster.Util (
     decodeLabel,
     decodeLabel',
+    encodeLabel,
     Flag (..),
     Bound (..),
     constructorName,
@@ -21,6 +22,7 @@ import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
 import System.Directory (removeFile)
@@ -113,6 +115,12 @@ decodeMap =
 decodeLabel' :: ByteString -> ByteString
 decodeLabel' orig =
     fromRight orig (decodeLabel orig)
+
+encodeLabel :: ByteString -> ByteString
+encodeLabel = BS.concatMap encodeChar
+  where
+    encodeMap = Map.fromList [(BS.head c, code) | (code, c) <- Map.assocs decodeMap]
+    encodeChar c = fromMaybe (BS.singleton c) $ Map.lookup c encodeMap
 
 -------------------------------------------------------------------
 -- logging helpers, some are adapted from monad-logger-aeson
