@@ -87,14 +87,17 @@ defaultSMTOptions =
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
 initSolver def smtOptions = Log.withContext "smt" $ do
     ctxt <- mkContext smtOptions.transcript
-    -- set timeout value before doing anything with the solver
-    runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
+    -- set timeout to be used when checking prelude, use the default (not use supplied) timeout value
+    runSMT ctxt $ runCmd_ $ SetTimeout defaultSMTOptions.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
     check <-
         runSMT ctxt $
             runPrelude def >> runCmd CheckSat
     case check of
-        Sat -> pure ctxt
+        Sat -> do
+            -- set timeout value for the general queries
+            runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
+            pure ctxt
         other -> do
             Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
             closeContext ctxt
