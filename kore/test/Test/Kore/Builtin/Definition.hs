@@ -460,6 +460,10 @@ updateMapSymbol :: Internal.Symbol
 updateMapSymbol =
     builtinSymbol "updateMap" mapSort [mapSort, intSort, intSort]
         & hook "MAP.update"
+updateAllMapSymbol :: Internal.Symbol
+updateAllMapSymbol =
+    builtinSymbol "updateAllMap" mapSort [mapSort, mapSort]
+        & hook "MAP.updateAll"
 lookupMapSymbol :: Internal.Symbol
 lookupMapSymbol =
     builtinSymbol "lookupMap" intSort [mapSort, intSort]
@@ -510,6 +514,11 @@ updateMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
+updateAllMap ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+updateAllMap map' updates = mkApplySymbol updateAllMapSymbol [map', updates]
 lookupMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -1553,6 +1562,7 @@ mapModule =
             , hookedSymbolDecl lookupMapSymbol
             , hookedSymbolDecl lookupOrDefaultMapSymbol
             , hookedSymbolDecl updateMapSymbol
+            , hookedSymbolDecl updateAllMapSymbol
             , hookedSymbolDecl inKeysMapSymbol
             , hookedSymbolDecl keysMapSymbol
             , hookedSymbolDecl keysListMapSymbol
