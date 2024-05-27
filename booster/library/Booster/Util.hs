@@ -162,9 +162,7 @@ withFastLogger mFormattedTime (Just fp) log' =
 
 {- |  Make 'IO' action which get cached formatted local time.
 Use this to avoid the cost of frequently time formatting by caching an
-auto updating formatted time, this cache update every 1 second.
-more detail in "Control.AutoUpdate"
-
+auto updating formatted time, this cache update every 100 microseconds.
 
 Borrowed almost verbatim from the fast-logger package: https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache, but the timestamp resolution and the action to get and format the time are tweaked
 -}
