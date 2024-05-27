@@ -361,6 +361,28 @@ evalUpdate _ resultSort [_map, _key, value] = do
         & lift
 evalUpdate _ _ _ = Builtin.wrongArity Map.updateKey
 
+evalUpdateAll :: Builtin.Function
+evalUpdateAll _ resultSort [original, updates] =
+    emptyOriginal <|> emptyUpdates <|> concreteUpdates
+  where
+    getHashmap = expectConcreteBuiltinMap Map.updateAllKey
+
+    emptyOriginal = do
+        original' <- getHashmap original
+        Monad.guard $ HashMap.null original'
+        pure $ from updates
+
+    emptyUpdates = do
+        updates' <- getHashmap updates
+        Monad.guard $ HashMap.null updates'
+        pure $ from original
+
+    concreteUpdates = do
+        original' <- getHashmap original
+        updates' <- getHashmap updates
+        lift . returnConcreteMap resultSort $ updates' <> original'
+evalUpdateAll _ _ _ = Builtin.wrongArity Map.updateAllKey
+
 evalInKeys :: Builtin.Function
 evalInKeys sideCondition resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
@@ -490,7 +512,7 @@ builtinFunctions key
     | key == Map.elementKey = Just $ Builtin.functionEvaluator evalElement
     | key == Map.unitKey = Just $ Builtin.functionEvaluator evalUnit
     | key == Map.updateKey = Just $ Builtin.functionEvaluator evalUpdate
-    | key == Map.updateAllKey = Just Builtin.notImplemented
+    | key == Map.updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll
     | key == Map.in_keysKey = Just $ Builtin.functionEvaluator evalInKeys
     | key == Map.keysKey = Just $ Builtin.functionEvaluator evalKeys
     | key == Map.keys_listKey = Just $ Builtin.functionEvaluator evalKeysList
