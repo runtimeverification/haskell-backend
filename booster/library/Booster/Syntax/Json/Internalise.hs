@@ -780,7 +780,7 @@ trm =
                         DisallowAlias
                         IgnoreSubsorts
                         Nothing
-                        (emptyKoreDefinition DefinitionAttributes{})
+                        (emptyKoreDefinition defaultDefAttributes)
                     . either error id
                     . parsePattern "INLINE"
                     . pack

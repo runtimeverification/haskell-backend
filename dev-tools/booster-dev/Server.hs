@@ -59,6 +59,7 @@ main = do
             , llvmLibraryFile
             , smtOptions
             , equationOptions
+            , indexCells
             , eventlogEnabledUserEvents
             , logFile
             } = options
@@ -74,7 +75,7 @@ main = do
 
     withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
         definitionMap <-
-            loadDefinition definitionFile
+            loadDefinition indexCells definitionFile
                 >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                 >>= evaluate . force . either (error . show) id
         -- ensure the (default) main module is present in the definition
