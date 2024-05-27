@@ -135,10 +135,11 @@ main = do
                     , logFormat
                     , logTimeStamps
                     , logContexts
+                    , logFile
                     , smtOptions
                     , equationOptions
+                    , indexCells
                     , eventlogEnabledUserEvents
-                    , logFile
                     }
             , proxyOptions =
                 ProxyOptions
@@ -244,7 +245,7 @@ main = do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                     definitionsWithCeilSummaries <-
                         liftIO $
-                            loadDefinition definitionFile
+                            loadDefinition indexCells definitionFile
                                 >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                                 >>= evaluate . force . either (error . show) id
                     unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
