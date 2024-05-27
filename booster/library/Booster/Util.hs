@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module Booster.Util (
     decodeLabel,
@@ -11,8 +12,11 @@ module Booster.Util (
     handleOutput,
     withFastLogger,
     newTimeCache,
+    pattern PrettyTimestamps,
+    pattern NoPrettyTimestamps
 ) where
 
+import Data.Coerce (coerce)
 import Control.AutoUpdate (defaultUpdateSettings, mkAutoUpdate, updateAction, updateFreq)
 import Control.DeepSeq (NFData (..))
 import Control.Exception (bracket, catch, throwIO)
@@ -23,7 +27,7 @@ import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.Map qualified as Map
-import Data.Time.Clock.System (SystemTime, getSystemTime, systemToUTCTime)
+import Data.Time.Clock.System (SystemTime (..), getSystemTime, systemToUTCTime)
 import Data.Time.Format
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
@@ -39,7 +43,7 @@ import System.Log.FastLogger (
     newTimedFastLogger,
     toLogStr,
  )
-import System.Log.FastLogger.Types (FormattedTime, TimeFormat)
+import System.Log.FastLogger.Types (FormattedTime)
 
 newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -166,12 +170,27 @@ auto updating formatted time, this cache update every 100 microseconds.
 
 Borrowed almost verbatim from the fast-logger package: https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache, but the timestamp resolution and the action to get and format the time are tweaked
 -}
-newTimeCache :: TimeFormat -> IO (IO FormattedTime)
-newTimeCache fmt =
+newTimeCache :: Flag "PrettyTimestamp" -> IO (IO FormattedTime)
+newTimeCache prettyTimestamp =
     mkAutoUpdate
         defaultUpdateSettings{updateFreq = 100}
-            { updateAction = formatSystemTime fmt <$> getSystemTime
+            { updateAction = formatSystemTime prettyTimestamp <$> getSystemTime
             }
 
-formatSystemTime :: TimeFormat -> SystemTime -> ByteString
-formatSystemTime fmt = BS.pack . formatTime defaultTimeLocale (BS.unpack fmt) . systemToUTCTime
+pattern PrettyTimestamps, NoPrettyTimestamps :: Flag "PrettyTimestamp"
+pattern PrettyTimestamps = Flag True
+pattern NoPrettyTimestamps = Flag False
+
+formatSystemTime :: Flag "PrettyTimestamp" -> SystemTime -> ByteString
+formatSystemTime prettyTimestamp  =
+    let formatString = BS.unpack "%Y-%m-%dT%H:%M:%S.%6Q"
+        formatter =
+            if coerce prettyTimestamp
+                then formatTime defaultTimeLocale formatString . systemToUTCTime
+                else show . toNanoSeconds
+     in BS.pack . formatter
+  where
+    toNanoSeconds :: SystemTime -> Integer
+    toNanoSeconds MkSystemTime{systemSeconds, systemNanoseconds} =
+        fromIntegral @_ @Integer systemSeconds * (10 :: Integer) ^ (9 :: Integer)
+            + fromIntegral @_ @Integer systemNanoseconds

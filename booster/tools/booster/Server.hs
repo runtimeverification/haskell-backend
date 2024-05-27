@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -161,7 +162,7 @@ main = do
         koreSolverOptions = translateSMTOpts smtOptions
 
     mTimeCache <-
-        if logTimeStamps then Just <$> Booster.newTimeCache "%Y-%m-%dT%H:%M:%S:%6Q" else pure Nothing
+        if logTimeStamps then Just <$> Booster.newTimeCache Booster.PrettyTimestamps else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
         flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
