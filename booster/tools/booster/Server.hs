@@ -134,6 +134,7 @@ main = do
                     , logLevels
                     , logFormat
                     , logTimeStamps
+                    , timeStampsFormat
                     , logContexts
                     , smtOptions
                     , equationOptions
@@ -160,9 +161,12 @@ main = do
             lvl `elem` customLevels
                 || lvl >= logLevel && lvl <= LevelError
         koreSolverOptions = translateSMTOpts smtOptions
+        timestampFlag = case timeStampsFormat of
+            Pretty -> Booster.PrettyTimestamps
+            Nanoseconds -> Booster.NoPrettyTimestamps
 
     mTimeCache <-
-        if logTimeStamps then Just <$> Booster.newTimeCache Booster.PrettyTimestamps else pure Nothing
+        if logTimeStamps then Just <$> Booster.newTimeCache timestampFlag else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
         flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do

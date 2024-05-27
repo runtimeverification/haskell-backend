@@ -34,7 +34,13 @@ import Booster.Log.Context qualified as Booster.Log
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Booster.Util (handleOutput, newTimeCache, withFastLogger, pattern PrettyTimestamps)
+import Booster.Util (
+    handleOutput,
+    newTimeCache,
+    withFastLogger,
+    pattern NoPrettyTimestamps,
+    pattern PrettyTimestamps,
+ )
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 
@@ -48,6 +54,7 @@ main = do
             , logLevels
             , logContexts
             , logTimeStamps
+            , timeStampsFormat
             , logFormat
             , llvmLibraryFile
             , smtOptions
@@ -88,6 +95,7 @@ main = do
             (adjustLogLevels logLevels)
             logContexts
             logTimeStamps
+            timeStampsFormat
             logFormat
   where
     withLlvmLib libFile m = case libFile of
@@ -117,11 +125,15 @@ runServer ::
     (LogLevel, [LogLevel]) ->
     [Booster.Log.ContextFilter] ->
     Bool ->
+    TimestampFormat ->
     LogFormat ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps logFormat =
+runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat =
     do
-        mTimeCache <- if logTimeStamps then Just <$> newTimeCache PrettyTimestamps else pure Nothing
+        let timestampFlag = case timeStampsFormat of
+                Pretty -> PrettyTimestamps
+                Nanoseconds -> NoPrettyTimestamps
+        mTimeCache <- if logTimeStamps then Just <$> newTimeCache timestampFlag else pure Nothing
 
         withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
             let boosterContextLogger = case logFormat of

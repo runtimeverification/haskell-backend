@@ -5,6 +5,7 @@ module Booster.CLOptions (
     CLOptions (..),
     EquationOptions (..),
     LogFormat (..),
+    TimestampFormat (..),
     clOptionsParser,
     adjustLogLevels,
     levelToContext,
@@ -37,6 +38,7 @@ data CLOptions = CLOptions
     , port :: Int
     , logLevels :: [LogLevel]
     , logTimeStamps :: Bool
+    , timeStampsFormat :: TimestampFormat
     , logFormat :: LogFormat
     , logContexts :: [ContextFilter]
     , logFile :: Maybe FilePath
@@ -58,6 +60,16 @@ instance Show LogFormat where
         OneLine -> "oneline"
         Standard -> "standard"
         Json -> "json"
+
+data TimestampFormat
+    = Pretty
+    | Nanoseconds
+    deriving (Eq, Enum)
+
+instance Show TimestampFormat where
+    show = \case
+        Pretty -> "pretty"
+        Nanoseconds -> "nanoseconds"
 
 clOptionsParser :: Parser CLOptions
 clOptionsParser =
@@ -100,6 +112,17 @@ clOptionsParser =
                 )
             )
         <*> switch (long "log-timestamps" <> help "Add timestamps to logs")
+        <*> option
+            (eitherReader readTimeStampFormat)
+            ( metavar "TIMESTAMPFORMAT"
+                <> value Pretty
+                <> long "timestamp-format"
+                <> help
+                    ( "Format to output log timestamps in. Available formats: "
+                        <> intercalate ", " (map show $ enumFrom (toEnum @TimestampFormat 0))
+                    )
+                <> showDefault
+            )
         <*> option
             (eitherReader readLogFormat)
             ( metavar "LOGFORMAT"
@@ -166,6 +189,12 @@ clOptionsParser =
         "standard" -> Right Standard
         "json" -> Right Json
         other -> Left $ other <> ": Unsupported log format"
+
+    readTimeStampFormat :: String -> Either String TimestampFormat
+    readTimeStampFormat = \case
+        "pretty" -> Right Pretty
+        "nanoseconds" -> Right Nanoseconds
+        other -> Left $ other <> ": Unsupported timestamp format"
 
 -- custom log levels that can be selected
 allowedLogLevels :: [(String, String)]
