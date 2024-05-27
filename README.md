@@ -176,6 +176,8 @@ Any GHC or resolver upgrades must double-check the `ghcVersion` value in the [`f
 
 It may also be required to update [`all-cabal-hashes`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L101).
 
+To support the scenario of building the project with `cabal-install` outside of Nix, We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using. The script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) should do most of that work, and [`scripts/check-cabal-stack-sync.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/check-cabal-stack-sync.sh) checks the result. Some manual adjustments will still be necessary for the `nix` builds in CI and locally to work.
+
 ### Integration tests
 
 Haskell-backend provides an integration shell for running integration tests, which compile the K framework (of a specified version) against your current version of haskell backend and brings K into scope of your current shell. 
