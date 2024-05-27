@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE PolyKinds #-}
 
 module Booster.Util (
     decodeLabel,
@@ -13,16 +13,16 @@ module Booster.Util (
     withFastLogger,
     newTimeCache,
     pattern PrettyTimestamps,
-    pattern NoPrettyTimestamps
+    pattern NoPrettyTimestamps,
 ) where
 
-import Data.Coerce (coerce)
 import Control.AutoUpdate (defaultUpdateSettings, mkAutoUpdate, updateAction, updateFreq)
 import Control.DeepSeq (NFData (..))
 import Control.Exception (bracket, catch, throwIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
+import Data.Coerce (coerce)
 import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
@@ -168,7 +168,7 @@ withFastLogger mFormattedTime (Just fp) log' =
 Use this to avoid the cost of frequently time formatting by caching an
 auto updating formatted time, this cache update every 100 microseconds.
 
-Borrowed almost verbatim from the fast-logger package: https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache, but the timestamp resolution and the action to get and format the time are tweaked
+Borrowed almost verbatim from the fast-logger package: https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache, but the timestamp resolution and the actions to get and format the time are tweaked.
 -}
 newTimeCache :: Flag "PrettyTimestamp" -> IO (IO FormattedTime)
 newTimeCache prettyTimestamp =
@@ -181,8 +181,9 @@ pattern PrettyTimestamps, NoPrettyTimestamps :: Flag "PrettyTimestamp"
 pattern PrettyTimestamps = Flag True
 pattern NoPrettyTimestamps = Flag False
 
+-- | Format time either as a human-readable date and time or as nanoseconds
 formatSystemTime :: Flag "PrettyTimestamp" -> SystemTime -> ByteString
-formatSystemTime prettyTimestamp  =
+formatSystemTime prettyTimestamp =
     let formatString = BS.unpack "%Y-%m-%dT%H:%M:%S.%6Q"
         formatter =
             if coerce prettyTimestamp
