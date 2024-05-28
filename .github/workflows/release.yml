@@ -5,9 +5,9 @@ on:
       - master
 
 env:
-  ghc_version: "9.6.4"
+  ghc_version: "9.6.5"
   stack_version: "2.15.1"
-  hpack_version: '0.34.2'
+  hpack_version: '0.36'
 
 jobs:
   release:
@@ -80,13 +80,13 @@ jobs:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
-          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
+          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
           restore-keys: |
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}
 
       - name: Test
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"

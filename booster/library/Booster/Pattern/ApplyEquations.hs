@@ -72,7 +72,7 @@ import Booster.LLVM qualified as LLVM
 import Booster.Log
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
-import Booster.Pattern.Index
+import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault, renderOneLineText)
@@ -749,13 +749,13 @@ applyEquations ::
     Term ->
     EquationT io Term
 applyEquations theory handler term = do
-    let index = termTopIndex term
-    when (index == None) $ do
-        withContext "abort" $ logMessage ("Index is 'None'" :: Text)
+    let index = Idx.termTopIndex term
+    when (Idx.hasNone index) $ do
+        withContext "abort" $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
-    let idxEquations, anyEquations :: Map Priority [RewriteRule tag]
-        idxEquations = fromMaybe Map.empty $ Map.lookup index theory
-        anyEquations = fromMaybe Map.empty $ Map.lookup Anything theory
+    let
+        indexes = Set.toList $ Idx.coveringIndexes index
+        equationsFor i = fromMaybe Map.empty $ Map.lookup i theory
         -- neither simplification nor function equations should need groups,
         -- since simplification priority is just a suggestion and function equations
         -- should not contain non-determinism except for the [owise] equation,
@@ -766,10 +766,8 @@ applyEquations theory handler term = do
         -- which is inefficient
         equations :: [RewriteRule tag]
         equations =
-            concatMap snd . Map.toAscList $
-                if index == Anything
-                    then idxEquations
-                    else Map.unionWith (<>) idxEquations anyEquations
+            concatMap snd . Map.toAscList . Map.unionsWith (<>) $
+                map equationsFor indexes
 
     processEquations equations
   where

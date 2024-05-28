@@ -60,6 +60,7 @@ library:
   - aeson-pretty
   - array
   - attoparsec
+  - auto-update
   - base
   - binary
   - bytestring
@@ -98,6 +99,7 @@ library:
   - text
   - transformers
   - unix
+  - time
   - unliftio
   - unordered-containers
   source-dirs: library
