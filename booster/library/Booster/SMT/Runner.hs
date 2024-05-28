@@ -53,7 +53,6 @@ data SMTContext = SMTContext
 {- TODO (later)
 - error handling and retries
   - retry counter in context
-    - Reader becomes State
 - (possibly) run `get-info` on Unknown responses and enhance Unknown constructor
   - smtlib2: reason-unknown = memout | incomplete | SExpr
 -}

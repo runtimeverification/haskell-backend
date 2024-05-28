@@ -171,12 +171,10 @@ getModelFor SMTOptions{timeout} def ctxt ps subst
         satResponse <- interactWithSolver smtAsserts transState
         processSMTResult transState satResponse (retryOnce smtAsserts transState)
   where
-    -- processSMTResult transState satResponse getReasonUnknown
-
     retryOnce ::
         [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
     retryOnce smtAsserts transState = do
-        _ <- restartSolver
+        restartSolver
         _ <- initSolver def defaultSMTOptions{timeout = 2 * timeout}
         satResponse <- interactWithSolver smtAsserts transState
         processSMTResult transState satResponse getReasonUnknown
