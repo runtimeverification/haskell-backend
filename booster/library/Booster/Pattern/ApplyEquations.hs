@@ -49,7 +49,7 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
 import Data.Foldable (toList, traverse_)
-import Data.List (intersperse, partition)
+import Data.List (foldl1', intersperse, partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
@@ -884,28 +884,57 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
                     renderOneLineText $
                         "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
 
-            unclearConditions' <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
+            unclear <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
 
-            case unclearConditions' of
-                [] -> do
-                    -- check ensured conditions, filter any
-                    -- true ones, prune if any is false
-                    let ensured =
-                            concatMap
-                                (splitBoolPredicates . substituteInPredicate subst)
-                                (Set.toList rule.ensures)
-                    ensuredConditions <-
-                        -- throws if an ensured condition found to be false
-                        catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
-                    lift $ pushConstraints $ Set.fromList ensuredConditions
-                    pure $ substituteInTerm subst rule.rhs
-                unclearConditions -> do
-                    withContext "failure" $
-                        logMessage $
-                            renderOneLineText $
-                                "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
-                    throwE $ IndeterminateCondition unclearConditions
+            mbSolver :: Maybe SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+
+            -- check unclear conditions (if any) in context of knownPredicates
+            unless (null unclear) $ do
+                let checkWithSmt :: SMT.SMTContext -> EquationT io (Maybe Bool)
+                    checkWithSmt smt =
+                        SMT.checkPredicates smt knownPredicates mempty (Set.fromList unclear)
+                 in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
+                        Nothing -> do
+                            -- no solver or still unclear: abort
+                            withContext "failure" $
+                                logMessage . renderOneLineText $
+                                    "Uncertain about a condition(s) in rule:"
+                                        <+> hsep (intersperse "," $ map pretty unclear)
+                            throwE $ IndeterminateCondition unclear
+                        Just False -> do
+                            -- actually false given path condition: fail
+                            throwE $ ConditionFalse $ combine unclear
+                        Just True -> do
+                            -- can proceed
+                            pure ()
+
+            -- case unclearConditions' of
+            --     [] -> do
+
+            -- check ensured conditions, filter any true ones, prune
+            -- if any is false
+            let ensured =
+                    concatMap
+                        (splitBoolPredicates . substituteInPredicate subst)
+                        (Set.toList rule.ensures)
+            ensuredConditions <-
+                -- throws if an ensured condition found to be false
+                catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
+
+            -- check all ensured conditions together with the path condition
+            whenJust mbSolver $ \solver -> do
+                lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+                    Just False -> do
+                        throwE $ EnsuresFalse $ combine ensuredConditions
+                    _other -> pure ()
+
+            lift $ pushConstraints $ Set.fromList ensuredConditions
+            pure $ substituteInTerm subst rule.rhs
   where
+    combine :: [Predicate] -> Predicate
+    combine [] = Predicate TrueBool
+    combine ps = Predicate $ foldl1' AndTerm $ map (\(Predicate p) -> p) ps
+
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
