@@ -121,7 +121,7 @@ main = do
         Env.lookupEnv envName >>= \case
             Nothing -> execParser clParser
             Just envArgs -> do
-                hPutStrLn stderr $ "Reading additional server options from " <> envName
+                hPutStrLn stderr $ "[proxy] Reading additional server options from " <> envName
                 args <- Env.getArgs
                 Env.withArgs (words envArgs <> args) $ execParser clParser
     let CLProxyOptions
@@ -163,20 +163,17 @@ main = do
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
+
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
-        flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
+        -- flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
+            let runMonadLogger :: LoggingT IO a -> IO a
+                runMonadLogger = flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter
+
+
             liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
                 putStrLn $ "Tracing " <> show t
                 enableCustomUserEvent t
 
-            Logger.logInfoNS "proxy" $
-                Text.pack $
-                    "Loading definition from "
-                        <> definitionFile
-                        <> ", main module "
-                        <> show mainModuleName
-
-            monadLogger <- askLoggerIO
 
             let koreLogRenderer = case logFormat of
                     Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
@@ -208,9 +205,12 @@ main = do
                     Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
                     _ -> Booster.Log.textLogger $ fromMaybe stderrLogger mFileLogger
                 filteredBoosterContextLogger =
-                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
+                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) -> alwaysDisplay ||
                         let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
                          in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
+                
+                runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
+                runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
 
                 koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
                 koreLogActions = [koreLogAction]
@@ -225,6 +225,15 @@ main = do
                                     Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
                                     Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
                             )
+
+
+            runBoosterLogger $
+                Booster.Log.withContext "proxy" $
+                    Booster.Log.logMessage' $ Text.pack $
+                        "Loading definition from "
+                            <> definitionFile
+                            <> ", main module "
+                            <> show mainModuleName
 
             liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
                 let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
@@ -248,14 +257,14 @@ main = do
                                 >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                                 >>= evaluate . force . either (error . show) id
                     unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
-                        flip runLoggingT monadLogger $
-                            Logger.logErrorNS "proxy" $
-                                "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
+                        runBoosterLogger $
+                            Booster.Log.withContext "proxy" $
+                                Booster.Log.logMessage' $ 
+                                    "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                         liftIO exitFailure
 
                     liftIO $
-                        flip runReaderT filteredBoosterContextLogger $
-                            Booster.Log.unLoggerT $
+                        runBoosterLogger $
                                 Booster.Log.withContext "ceil" $
                                     forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
                                         forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
@@ -317,14 +326,14 @@ main = do
 
                     writeGlobalEquationOptions equationOptions
 
-                    runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
+                    runBoosterLogger $
+                            Booster.Log.withContext "proxy" $
+                                Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
 
-                    let koreRespond, boosterRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
+                    let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
                         koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
                         boosterRespond =
-                            flip runReaderT filteredBoosterContextLogger
-                                . Booster.Log.unLoggerT
-                                . Booster.Log.withContext "booster"
+                                Booster.Log.withContext "booster"
                                 . Booster.respond boosterState
 
                         proxyConfig =
@@ -340,7 +349,7 @@ main = do
                         server =
                             jsonRpcServer
                                 srvSettings
-                                (const $ Proxy.respondEither proxyConfig boosterRespond koreRespond)
+                                (const $ runBoosterLogger . Proxy.respondEither proxyConfig boosterRespond koreRespond)
                                 [ Kore.handleDecidePredicateUnknown
                                 , Booster.handleSmtError
                                 , handleErrorCall
@@ -348,10 +357,10 @@ main = do
                                 ]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
-                                stderrLogger "[Info#proxy] Server shutting down\n"
+                                stderrLogger "[proxy] Server shutting down\n"
                             whenJust statsVar Stats.showStats
                             exitSuccess
-                    handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger
+                    handleJust isInterrupt interruptHandler $ runBoosterLogger server 
   where
     clParser =
         info

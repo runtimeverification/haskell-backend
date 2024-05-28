@@ -147,7 +147,7 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
         | otherwise = pure $ Just p
     simplifyCeil _ other = pure $ Just other
 
-computeCeil :: MonadLoggerIO io => Term -> EquationT io [Either Predicate Term]
+computeCeil :: LoggerMIO io => Term -> EquationT io [Either Predicate Term]
 computeCeil term@(SymbolApplication symbol _ args)
     | symbol.attributes.symbolType
         /= Booster.Definition.Attributes.Base.Function Booster.Definition.Attributes.Base.Partial =

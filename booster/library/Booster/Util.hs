@@ -36,6 +36,8 @@ import System.Log.FastLogger (
     toLogStr,
  )
 import System.Log.FastLogger.Types (FormattedTime)
+import Data.Char (toLower)
+import qualified Data.Text as Text
 
 newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -123,8 +125,14 @@ handleOutput ::
     Log.LogLevel ->
     Log.LogStr ->
     IO ()
-handleOutput stderrLogger loc src level msg =
-    stderrLogger $ Log.defaultLogStr loc src level msg
+handleOutput stderrLogger _loc src level msg =
+    stderrLogger $ prettySrc <> prettyLevel <> " " <> msg <> "\n"
+    where
+        prettySrc = if Text.null src then mempty else "[" <> toLogStr src <> "]"
+        prettyLevel = case level of
+            Log.LevelOther t -> "[" <> toLogStr t <> "]"
+            Log.LevelInfo -> mempty
+            _ -> "[" <> (toLogStr $ BS.pack $ map toLower $ drop 5 $ show level) <> "]"
 
 newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
 newFastLoggerMaybeWithTime = \case

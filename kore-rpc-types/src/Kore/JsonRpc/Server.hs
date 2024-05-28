@@ -76,15 +76,16 @@ runJSONRPCT encodeOpts ver ignore snk src f = do
 
 -- | TCP server transport for JSON-RPC.
 jsonRpcServer ::
-    (MonadLoggerIO m, MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
+    (MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
     -- | Connection settings
     ServerSettings ->
     -- | Action to perform on connecting client thread
-    (Request -> Respond q (Log.LoggingT IO) r) ->
+    (Request -> Respond q IO r) ->
     [JsonRpcHandler] ->
     m a
 jsonRpcServer serverSettings respond handlers =
     runGeneralTCPServer serverSettings $ \cl ->
+        Log.runNoLoggingT $
         runJSONRPCT
             -- we have to ensure that the returned messages contain no newlines
             -- inside the message and have a trailing newline, which is used as the delimiter
@@ -95,12 +96,12 @@ jsonRpcServer serverSettings respond handlers =
             (appSource cl)
             (srv respond handlers)
 
-data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
+data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> IO ErrorObj)
 
 srv ::
     forall m q r.
     (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) =>
-    (Request -> Respond q (Log.LoggingT IO) r) ->
+    (Request -> Respond q IO r) ->
     [JsonRpcHandler] ->
     JSONRPCT m ()
 srv respond handlers = do
@@ -111,13 +112,13 @@ srv respond handlers = do
                         Nothing -> do
                             return ()
                         Just (SingleRequest req) | Right True <- isCancel @q <$> fromRequest req -> do
-                            Log.logInfoN "Cancel request"
+                            -- Log.logInfoNS "rpc" "Cancel request"
                             liftIO $ throwTo tid CancelRequest
                             loop
                         Just req -> do
-                            forM_ (getRequests req) $ \r -> do
-                                Log.logInfoN $ "Process request " <> mReqId r <> " " <> getReqMethod r
-                                Log.logDebugN $ Text.pack $ show r
+                            -- forM_ (getRequests req) $ \r -> do
+                                -- Log.logInfoNS "rpc" $ "Process request " <> mReqId r <> " " <> getReqMethod r
+                                -- Log.logDebugNS "rpc" $ Text.pack $ show r
                             liftIO $ atomically $ writeTChan reqQueue req
                             loop
              in loop
@@ -140,17 +141,13 @@ srv respond handlers = do
 
     spawnWorker reqQueue = do
         rpcSession <- ask
-        logger <- Log.askLoggerIO
-        let withLog :: Log.LoggingT IO a -> IO a
-            withLog = flip Log.runLoggingT logger
+        let sendResponses :: BatchResponse -> IO ()
+            sendResponses r = Log.runNoLoggingT $ flip runReaderT rpcSession $ sendBatchResponse r
 
-            sendResponses :: BatchResponse -> Log.LoggingT IO ()
-            sendResponses r = flip runReaderT rpcSession $ sendBatchResponse r
-
-            respondTo :: Request -> Log.LoggingT IO (Maybe Response)
+            respondTo :: Request -> IO (Maybe Response)
             respondTo req = buildResponse (respond req) req
 
-            cancelReq :: ErrorObj -> BatchRequest -> Log.LoggingT IO ()
+            cancelReq :: ErrorObj -> BatchRequest -> IO ()
             cancelReq err = \case
                 SingleRequest req@Request{} -> do
                     let reqVersion = getReqVer req
@@ -162,7 +159,7 @@ srv respond handlers = do
                         BatchResponse $
                             [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
 
-            processReq :: BatchRequest -> Log.LoggingT IO ()
+            processReq :: BatchRequest -> IO ()
             processReq = \case
                 SingleRequest req -> do
                     rM <- respondTo req
@@ -176,7 +173,7 @@ srv respond handlers = do
                 tryHandler (JsonRpcHandler handler) res =
                     case fromException e of
                         Just e' ->
-                            withLog $ do
+                            do
                                 err <- handler e'
                                 cancelReq err a
                         Nothing -> res
@@ -191,4 +188,4 @@ srv respond handlers = do
                 forever $
                     bracketOnReqException
                         (atomically $ readTChan reqQueue)
-                        (withLog . processReq)
+                        (processReq)

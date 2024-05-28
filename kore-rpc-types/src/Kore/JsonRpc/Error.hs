@@ -115,11 +115,11 @@ backendError detail = ErrorObj (toSentence $ fromHumps nm) code (toJSON detail)
 handleErrorCall, handleSomeException :: JsonRpcHandler
 handleErrorCall = JsonRpcHandler $
     \(ErrorCallWithLocation msg loc) -> do
-        logWarnN $ Text.pack $ "Error in " <> loc <> ": " <> msg
+        -- logWarnN $ Text.pack $ "Error in " <> loc <> ": " <> msg
         pure $
             runtimeError $
                 object ["error" .= msg, "context" .= loc]
 handleSomeException = JsonRpcHandler $
     \(err :: SomeException) -> do
-        logWarnN $ Text.pack $ show err
+        -- logWarnN $ Text.pack $ show err
         pure $ runtimeError $ object ["error" .= show err]

@@ -113,9 +113,9 @@ instance Pretty FailReason where
         SubsortingError err ->
             pretty $ show err
         ArgLengthsDiffer t1 t2 ->
-            vsep ["Argument length differ", pretty t1, pretty t2]
+            hsep ["Argument length differ", pretty t1, pretty t2]
         SubjectVariableMatch t v ->
-            vsep ["Cannot match variable in subject:", pretty v, pretty t]
+            hsep ["Cannot match variable in subject:", pretty v, pretty t]
 
 type Substitution = Map Variable Term
 
