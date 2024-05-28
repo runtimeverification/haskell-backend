@@ -205,54 +205,59 @@ getModelFor ctxt ps subst
         Success -> do
             runCmd_ SMT.Pop
             throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-        Sat -> do
-            let freeVars =
-                    Set.unions $
-                        Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
+        Sat -> Right <$> extractModel transState
 
-                freeVarsMap =
-                    Map.map Atom . Map.mapKeys getVar $
-                        Map.filterWithKey
-                            (const . (`Set.member` Set.map Var freeVars))
-                            transState.mappings
-                getVar (Var v) = v
-                getVar other =
-                    smtTranslateError . pack $
-                        "Solver returned non-var in translation state: " <> show other
-                sortsToTranslate = Set.fromList [SortInt, SortBool]
+    extractModel ::
+        TranslationState ->
+        SMT io (Map Variable Term)
+    extractModel transState = do
+        let freeVars =
+                Set.unions $
+                    Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
 
-                (freeVarsToSExprs, untranslatableVars) =
-                    Map.partitionWithKey
-                        (const . ((`Set.member` sortsToTranslate) . (.variableSort)))
-                        freeVarsMap
-            unless (Map.null untranslatableVars) $
-                let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
-                 in Log.logMessage ("Untranslatable variables in model: " <> vars)
+            freeVarsMap =
+                Map.map Atom . Map.mapKeys getVar $
+                    Map.filterWithKey
+                        (const . (`Set.member` Set.map Var freeVars))
+                        transState.mappings
+            getVar (Var v) = v
+            getVar other =
+                smtTranslateError . pack $
+                    "Solver returned non-var in translation state: " <> show other
+            sortsToTranslate = Set.fromList [SortInt, SortBool]
 
-            response <-
-                if Map.null freeVarsMap
-                    then pure $ Values []
-                    else runCmd $ GetValue (Map.elems freeVarsMap)
-            runCmd_ SMT.Pop
-            case response of
-                Error msg ->
-                    throwSMT' $ BS.unpack msg
-                Values pairs ->
-                    let (errors, values) =
-                            Map.partition isLeft
-                                . Map.map (valueToTerm transState)
-                                $ Map.compose (Map.fromList pairs) freeVarsToSExprs
-                        untranslated =
-                            Map.mapWithKey (const . Var) untranslatableVars
-                     in if null errors
-                            then pure $ Right $ Map.map fromRight' values <> untranslated
-                            else
-                                throwSMT . Text.unlines $
-                                    ( "SMT errors while converting results: "
-                                        : map fromLeft' (Map.elems errors)
-                                    )
-                other ->
-                    throwSMT' $ "Unexpected SMT response to GetValue: " <> show other
+            (freeVarsToSExprs, untranslatableVars) =
+                Map.partitionWithKey
+                    (const . ((`Set.member` sortsToTranslate) . (.variableSort)))
+                    freeVarsMap
+        unless (Map.null untranslatableVars) $
+            let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
+             in Log.logMessage ("Untranslatable variables in model: " <> vars)
+
+        response <-
+            if Map.null freeVarsMap
+                then pure $ Values []
+                else runCmd $ GetValue (Map.elems freeVarsMap)
+        runCmd_ SMT.Pop
+        case response of
+            Error msg ->
+                throwSMT' $ BS.unpack msg
+            Values pairs ->
+                let (errors, values) =
+                        Map.partition isLeft
+                            . Map.map (valueToTerm transState)
+                            $ Map.compose (Map.fromList pairs) freeVarsToSExprs
+                    untranslated =
+                        Map.mapWithKey (const . Var) untranslatableVars
+                 in if null errors
+                        then pure $ Map.map fromRight' values <> untranslated
+                        else
+                            throwSMT . Text.unlines $
+                                ( "SMT errors while converting results: "
+                                    : map fromLeft' (Map.elems errors)
+                                )
+            other ->
+                throwSMT' $ "Unexpected SMT response to GetValue: " <> show other
 
 mkComment :: Pretty a => a -> BS.ByteString
 mkComment = BS.pack . Pretty.renderDefault . pretty
