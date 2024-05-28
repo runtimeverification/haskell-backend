@@ -9,7 +9,9 @@ module Booster.SMT.Runner (
     SMT (..),
     SMTEncode (..),
     mkContext,
+    connectToSolver,
     closeContext,
+    destroyContext,
     runSMT,
     evalSMT,
     declare,
@@ -65,8 +67,15 @@ mkContext ::
     io SMTContext
 mkContext prelude transcriptPath = do
     logMessage ("Starting SMT solver" :: Text)
-    (solver, handle) <- initSolver
-    mbTranscript <- initTranscript transcriptPath
+    (solver, handle) <- connectToSolver
+    mbTranscript <- forM transcriptPath $ \path -> do
+        logMessage $ "Transcript in file " <> pack path
+        liftIO $ do
+            h <- openFile path AppendMode
+            hSetBuffering h (BlockBuffering Nothing)
+            hSetBinaryMode h True
+            BS.hPutStrLn h "; starting solver process"
+            pure h
     whenJust mbTranscript $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
     pure
@@ -78,26 +87,21 @@ mkContext prelude transcriptPath = do
             , prelude
             }
 
-initTranscript :: forall io. LoggerMIO io => Maybe FilePath -> io (Maybe Handle)
-initTranscript transcriptPath = forM transcriptPath $ \path -> do
-    logMessage $ "Transcript in file " <> pack path
-    liftIO $ do
-        h <- openFile path AppendMode
-        hSetBuffering h (BlockBuffering Nothing)
-        hSetBinaryMode h True
-        BS.hPutStrLn h "; starting solver process"
-        pure h
-
 closeContext :: LoggerMIO io => SMTContext -> io ()
 closeContext ctxt = do
     logMessage ("Stopping SMT solver" :: Text)
+    liftIO ctxt.solverClose
+
+destroyContext :: LoggerMIO io => SMTContext -> io ()
+destroyContext ctxt = do
+    logMessage ("Permanently stopping SMT solver" :: Text)
     whenJust ctxt.mbTranscript $ \h -> liftIO $ do
-        BS.hPutStrLn h "; stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
+        BS.hPutStrLn h "; permanently stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
         hClose h
     liftIO ctxt.solverClose
 
-initSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
-initSolver = do
+connectToSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
+connectToSolver = do
     let config = Backend.defaultConfig
     handle <- liftIO $ Backend.new config
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle

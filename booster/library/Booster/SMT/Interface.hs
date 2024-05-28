@@ -28,6 +28,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
 import Prettyprinter (Pretty, hsep, pretty)
+import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
 import Booster.Log qualified as Log
@@ -91,7 +92,7 @@ defaultSMTOptions =
      - set user-specified timeout for queries
 -}
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
-initSolver def smtOptions = Log.withContext "smt" $ do
+initSolver def smtOptions = do
     prelude <- translatePrelude def
 
     Log.logMessage ("Starting new SMT solver" :: Text)
@@ -101,15 +102,16 @@ initSolver def smtOptions = Log.withContext "smt" $ do
         checkPrelude
         -- set timeout value for the general queries
         runCmd_ $ SetTimeout smtOptions.timeout
+    Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
-restartSolver :: Log.LoggerMIO io => SMTOptions -> SMT io ()
+restartSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 restartSolver smtOptions = do
     Log.logMessage ("Starting new SMT solver" :: Text)
     ctxt <- SMT get
-    closeContext ctxt
-    newCtxt <- mkContext ctxt.prelude ctxt.mbTranscriptPath
-    SMT $ put newCtxt
+    liftIO ctxt.solverClose
+    (solver, handle) <- connectToSolver
+    SMT $ put ctxt{solver, solverClose = Backend.close handle}
 
     checkPrelude
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
@@ -146,7 +148,7 @@ runPrelude = do
     mapM_ runCmd prelude
 
 finaliseSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
-finaliseSolver ctxt = Log.withContext "smt" $ do
+finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
     closeContext ctxt
 
