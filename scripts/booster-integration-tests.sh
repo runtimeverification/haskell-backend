@@ -52,7 +52,7 @@ for dir in $(ls -d test-*); do
         "compute-ceil" | "no-evaluator")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
-        "simplify")
+        "simplify" | "simplify-smt")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
         "log-simplify-json")

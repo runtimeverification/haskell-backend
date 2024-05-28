@@ -1,0 +1,29 @@
+{
+  "format": "KORE",
+  "version": 1,
+  "term": {
+  "tag": "App",
+  "name": "Lblunevaluated",
+  "sorts": [],
+  "args": [
+    {
+      "tag": "EVar",
+      "sort": {
+        "tag": "SortApp",
+        "name": "SortInt",
+        "args": []
+      },
+      "name": "X"
+    },
+    {
+      "tag": "EVar",
+      "sort": {
+        "tag": "SortApp",
+        "name": "SortInt",
+        "args": []
+      },
+      "name": "Y"
+    }
+  ]
+}
+}
