@@ -220,23 +220,25 @@ getModelFor SMTOptions{timeout} def ctxt ps subst
         Response ->
         SMT io (Either Response (Map Variable Term)) ->
         SMT io (Either Response (Map Variable Term))
-    processSMTResult transState satResponse onUnknown = case satResponse of
-        Error msg -> do
-            runCmd_ SMT.Pop
-            throwSMT' $ BS.unpack msg
-        Unsat -> do
-            runCmd_ SMT.Pop
-            pure $ Left Unsat
-        Unknown{} -> onUnknown
-        r@ReasonUnknown{} ->
-            pure $ Left r
-        Values{} -> do
-            runCmd_ SMT.Pop
-            throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-        Success -> do
-            runCmd_ SMT.Pop
-            throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-        Sat -> Right <$> extractModel transState
+    processSMTResult transState satResponse onUnknown = do
+        Log.logMessage ("Solver returned " <> (Text.pack $ show satResponse))
+        case satResponse of
+            Error msg -> do
+                runCmd_ SMT.Pop
+                throwSMT' $ BS.unpack msg
+            Unsat -> do
+                runCmd_ SMT.Pop
+                pure $ Left Unsat
+            Unknown{} -> onUnknown
+            r@ReasonUnknown{} ->
+                pure $ Left r
+            Values{} -> do
+                runCmd_ SMT.Pop
+                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
+            Success -> do
+                runCmd_ SMT.Pop
+                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
+            Sat -> Right <$> extractModel transState
 
     extractModel ::
         TranslationState ->
