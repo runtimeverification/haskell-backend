@@ -84,6 +84,12 @@ defaultSMTOptions =
         , tactic = Nothing
         }
 
+{- | Start and initialise an SMT solver instance for use in rewriting:
+     - translate the sort declarations from @KoreDefiniton@ to SMT
+     - start the solver process
+     - feed in the prelude and check it for consistency
+     - set user-specified timeout for queries
+-}
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
 initSolver def smtOptions = Log.withContext "smt" $ do
     prelude <- translatePrelude def
@@ -99,6 +105,8 @@ initSolver def smtOptions = Log.withContext "smt" $ do
         Sat -> do
             -- set timeout value for the general queries
             runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
+            Log.logMessage
+                ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
             pure ctxt
         other -> do
             Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
