@@ -238,12 +238,12 @@ checkForLoop t = do
                 logMessage $
                     renderOneLineText $
                         hsep
-                                ( intersperse "," $
-                                    map (\(Term attrs _) -> "term" <+> pretty (showHashHex attrs.hash)) $
-                                        reverse $
-                                            t : take (i + 1) (toList termStack)
-                                )
-        
+                            ( intersperse "," $
+                                map (\(Term attrs _) -> "term" <+> pretty (showHashHex attrs.hash)) $
+                                    reverse $
+                                        t : take (i + 1) (toList termStack)
+                            )
+
         throw (EquationLoop $ reverse $ t : take (i + 1) (toList termStack))
 
 data Direction = TopDown | BottomUp
@@ -291,7 +291,8 @@ iterateEquations direction preference startTerm = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
             withContext "abort" $ do
-                logWarn "Recursion limit exceeded. The limit can be increased by \
+                logWarn
+                    "Recursion limit exceeded. The limit can be increased by \
                     \ restarting the server with '--equation-max-recursion N'."
             throw . TooManyRecursions . (.recursionStack) =<< getState
 
@@ -303,7 +304,9 @@ iterateEquations direction preference startTerm = do
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
                 withContext "abort" $ do
-                    logWarn $ renderOneLineText $ "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                    logWarn $
+                        renderOneLineText $
+                            "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
                     withContext "detail" . logMessage . renderOneLineText $
                         "Final term:" <+> pretty currentTerm
                 throw $
@@ -339,13 +342,15 @@ llvmSimplify term = do
                 >>= \case
                     Left (LlvmError e) -> do
                         withContext "abort" $
-                            logWarn $ "LLVM backend error detected: " <> Text.decodeUtf8 e
+                            logWarn $
+                                "LLVM backend error detected: " <> Text.decodeUtf8 e
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> do
                         when (result /= t) $ do
                             setChanged
                             withContext "success" $
-                                withTermContext result $ pure ()
+                                withTermContext result $
+                                    pure ()
                         pure result
         | otherwise =
             cb t
@@ -514,7 +519,8 @@ cached cacheTag cb t@(Term attributes _)
                     setChanged
                     withContext "success" $
                         withContext "cached" $
-                            withTermContext cachedTerm $ pure ()
+                            withTermContext cachedTerm $
+                                pure ()
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
@@ -575,7 +581,6 @@ applyHooksAndEquations pref term = do
                         `elseApply` applyEquations def.functionEquations handleFunctionEquation
             )
             term
-
 
 data ApplyEquationFailure
     = FailedMatch FailReason
@@ -661,17 +666,23 @@ applyEquations theory handler term = do
     processEquations [] =
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
-            withRuleContext eq (applyEquation term eq) >>= \case
-                Right t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
-                Left (m, err) -> 
-                    handler 
-                        ((withContext (LogContext eq) $ m $ 
-                            withContext "failure" . withContext "continue") >> processEquations rest)
-                        (( withContext (LogContext eq) $ m $ 
-                            withContext "failure" . withContext "break") >> pure term
-                        ) 
-                        err
-
+        withRuleContext eq (applyEquation term eq) >>= \case
+            Right t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
+            Left (m, err) ->
+                handler
+                    ( ( withContext (LogContext eq) $
+                            m $
+                                withContext "failure" . withContext "continue"
+                      )
+                        >> processEquations rest
+                    )
+                    ( ( withContext (LogContext eq) $
+                            m $
+                                withContext "failure" . withContext "break"
+                      )
+                        >> pure term
+                    )
+                    err
 
 applyEquation ::
     forall io tag.
@@ -679,7 +690,9 @@ applyEquation ::
     LoggerMIO io =>
     Term ->
     RewriteRule tag ->
-    EquationT io (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
+    EquationT
+        io
+        (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
 applyEquation term rule = runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $ do
@@ -689,27 +702,43 @@ applyEquation term rule = runExceptT $ do
             "Equation with existentials: " <> Text.pack (show rule)
     -- immediately cancel if not preserving definedness
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        throwE 
-            (\ctxt -> ctxt $ logMessage $
-                renderOneLineText $
-                    "Uncertain about definedness of rule due to:"
-                        <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-            , RuleNotPreservingDefinedness)
+        throwE
+            ( \ctxt ->
+                ctxt $
+                    logMessage $
+                        renderOneLineText $
+                            "Uncertain about definedness of rule due to:"
+                                <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+            , RuleNotPreservingDefinedness
+            )
     -- immediately cancel if rule has concrete() flag and term has variables
     when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
-        throwE (\ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text) , MatchConstraintViolated Concrete "* (term has variables)")
+        throwE
+            ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
+            , MatchConstraintViolated Concrete "* (term has variables)"
+            )
     -- match lhs
     koreDef <- (.definition) <$> lift getConfig
     case matchTerms Eval koreDef rule.lhs term of
-        MatchFailed failReason -> throwE (\ctxt -> withContext "match" $ ctxt $ 
-            logPretty failReason
-            , FailedMatch failReason)
-        MatchIndeterminate remainder -> throwE (\ctxt -> withContext "match" $ ctxt $ 
-                    logMessage $
-                        WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                            renderOneLineText $
-                                "Uncertain about match with rule. Remainder:" <+> pretty remainder
-            , IndeterminateMatch)
+        MatchFailed failReason ->
+            throwE
+                ( \ctxt ->
+                    withContext "match" $
+                        ctxt $
+                            logPretty failReason
+                , FailedMatch failReason
+                )
+        MatchIndeterminate remainder ->
+            throwE
+                ( \ctxt ->
+                    withContext "match" $
+                        ctxt $
+                            logMessage $
+                                WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                    renderOneLineText $
+                                        "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                , IndeterminateMatch
+                )
         MatchSuccess subst -> do
             -- cancel if condition
             -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
@@ -741,7 +770,12 @@ applyEquation term rule = runExceptT $ do
                     renderOneLineText $
                         "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
 
-            unclearConditions' <- catMaybes <$> mapM (checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)) toCheck
+            unclearConditions' <-
+                catMaybes
+                    <$> mapM
+                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                        )
+                        toCheck
 
             case unclearConditions' of
                 [] -> do
@@ -753,22 +787,30 @@ applyEquation term rule = runExceptT $ do
                                 (Set.toList rule.ensures)
                     ensuredConditions <-
                         -- throws if an ensured condition found to be false
-                        catMaybes <$> mapM (checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)) ensured
+                        catMaybes
+                            <$> mapM
+                                ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                                )
+                                ensured
                     lift $ pushConstraints $ Set.fromList ensuredConditions
                     pure $ substituteInTerm subst rule.rhs
-                unclearConditions -> throwE (\ctxt -> ctxt $ 
-                    logMessage $
-                        renderOneLineText $
-                            "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
-                    , IndeterminateCondition unclearConditions)
+                unclearConditions ->
+                    throwE
+                        ( \ctxt ->
+                            ctxt $
+                                logMessage $
+                                    renderOneLineText $
+                                        "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
+                        , IndeterminateCondition unclearConditions
+                        )
   where
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
     -- checkConstraint ::
-        -- (Predicate -> ApplyEquationFailure) ->
-        -- Predicate ->
-        -- ExceptT ApplyEquationFailure (EquationT io) (Maybe Predicate)
+    -- (Predicate -> ApplyEquationFailure) ->
+    -- Predicate ->
+    -- ExceptT ApplyEquationFailure (EquationT io) (Maybe Predicate)
     checkConstraint whenBottom (Predicate p) = withContext "constraint" $ do
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
             fallBackToUnsimplifiedOrBottom = \case
@@ -790,10 +832,10 @@ applyEquation term rule = runExceptT $ do
     checkConcreteness ::
         Concreteness ->
         Map Variable Term ->
-       ExceptT
-        ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
-        (EquationT io)
-        ()
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
     checkConcreteness Unconstrained _ = pure ()
     checkConcreteness (AllConstrained constrained) subst =
         mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
@@ -810,19 +852,22 @@ applyEquation term rule = runExceptT $ do
         Constrained ->
         Term ->
         ExceptT
-            ((EquationT io () -> EquationT io ()) -> EquationT io (),  ApplyEquationFailure)
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
             (EquationT io)
             ()
     mkCheck (varName, _) constrained (Term attributes _)
-        | not test = throwE (\ctxt -> ctxt $
-                logMessage $
-                    renderOneLineText $
-                        hsep
-                            [ "Concreteness constraint violated: "
-                            , pretty $ show constrained <> " variable " <> show varName
-                            ]
-                
-                , MatchConstraintViolated constrained varName)
+        | not test =
+            throwE
+                ( \ctxt ->
+                    ctxt $
+                        logMessage $
+                            renderOneLineText $
+                                hsep
+                                    [ "Concreteness constraint violated: "
+                                    , pretty $ show constrained <> " variable " <> show varName
+                                    ]
+                , MatchConstraintViolated constrained varName
+                )
         | otherwise = pure ()
       where
         test = case constrained of
@@ -893,7 +938,8 @@ simplifyConstraint' recurseIntoEvalBool = \case
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
                                 withContext "abort" $
-                                    logWarn $ "LLVM backend error detected: " <> Text.decodeUtf8 e
+                                    logWarn $
+                                        "LLVM backend error detected: " <> Text.decodeUtf8 e
                                 throw $ UndefinedTerm t $ LlvmError e
                             Right res -> do
                                 let result =

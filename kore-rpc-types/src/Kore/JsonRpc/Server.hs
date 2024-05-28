@@ -86,15 +86,15 @@ jsonRpcServer ::
 jsonRpcServer serverSettings respond handlers =
     runGeneralTCPServer serverSettings $ \cl ->
         Log.runNoLoggingT $
-        runJSONRPCT
-            -- we have to ensure that the returned messages contain no newlines
-            -- inside the message and have a trailing newline, which is used as the delimiter
-            rpcJsonConfig{Json.confIndent = Spaces 0, Json.confTrailingNewline = True}
-            V2
-            False
-            (appSink cl)
-            (appSource cl)
-            (srv respond handlers)
+            runJSONRPCT
+                -- we have to ensure that the returned messages contain no newlines
+                -- inside the message and have a trailing newline, which is used as the delimiter
+                rpcJsonConfig{Json.confIndent = Spaces 0, Json.confTrailingNewline = True}
+                V2
+                False
+                (appSink cl)
+                (appSource cl)
+                (srv respond handlers)
 
 data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> IO ErrorObj)
 
@@ -117,8 +117,8 @@ srv respond handlers = do
                             loop
                         Just req -> do
                             -- forM_ (getRequests req) $ \r -> do
-                                -- Log.logInfoNS "rpc" $ "Process request " <> mReqId r <> " " <> getReqMethod r
-                                -- Log.logDebugNS "rpc" $ Text.pack $ show r
+                            -- Log.logInfoNS "rpc" $ "Process request " <> mReqId r <> " " <> getReqMethod r
+                            -- Log.logDebugNS "rpc" $ Text.pack $ show r
                             liftIO $ atomically $ writeTChan reqQueue req
                             loop
              in loop

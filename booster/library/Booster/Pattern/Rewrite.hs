@@ -49,10 +49,11 @@ import Booster.Log (
     LoggerMIO (..),
     WithJsonMessage (..),
     logMessage,
+    logMessage',
     logPretty,
     withContext,
     withPatternContext,
-    withRuleContext, logMessage',
+    withRuleContext,
  )
 import Booster.Pattern.ApplyEquations (
     EquationFailure (..),
@@ -255,7 +256,6 @@ instance Monad m => MonadFail (RewriteRuleAppT m) where
 instance MonadIO m => MonadIO (RewriteRuleAppT m) where
     liftIO = lift . liftIO
     {-# INLINE liftIO #-}
-
 
 instance LoggerMIO m => LoggerMIO (RewriteRuleAppT m) where
     withLogger l (RewriteRuleAppT m) = RewriteRuleAppT $ withLogger l m
@@ -594,7 +594,6 @@ mkDiffTerms = \case
                             $ zip xs ys
                  in (SymbolApplication s1 ss1 xs', SymbolApplication s2 ss2 ys')
     r -> r
-
 
 {- | Interface for RPC execute: Rewrite given term as long as there is
    exactly one result in each step.

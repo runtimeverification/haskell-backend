@@ -163,204 +163,202 @@ main = do
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
         -- flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
-            let runMonadLogger :: LoggingT IO a -> IO a
-                runMonadLogger = flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter
+        let runMonadLogger :: LoggingT IO a -> IO a
+            runMonadLogger = flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter
 
+        liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
+            putStrLn $ "Tracing " <> show t
+            enableCustomUserEvent t
 
-            liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
-                putStrLn $ "Tracing " <> show t
-                enableCustomUserEvent t
+        let koreLogRenderer = case logFormat of
+                Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
+            koreLogEarlyFilter = case logFormat of
+                Json -> \l@(Log.SomeEntry ctxt e) ->
+                    Log.oneLineJson e /= Null && koreFilterContext (ctxt <> [l])
+                OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
+                Standard -> const True
+            koreFilterContext ctxt =
+                not contextLoggingEnabled
+                    || ( let contextStrs =
+                                concatMap
+                                    ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
+                                    )
+                                    ctxt
+                          in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
+                       )
 
+            koreLogEntries =
+                if contextLoggingEnabled
+                    then -- context logging: enable all Proxy-required Kore log entries
+                        Set.unions . Map.elems $ koreExtraLogs
+                    else -- no context logging: only enable Kore log entries for the given Proxy log levels
+                        Set.unions . mapMaybe (`Map.lookup` koreExtraLogs) $ customLevels
 
-            let koreLogRenderer = case logFormat of
-                    Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                    OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                    Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                koreLogEarlyFilter = case logFormat of
-                    Json -> \l@(Log.SomeEntry ctxt e) ->
-                        Log.oneLineJson e /= Null && koreFilterContext (ctxt <> [l])
-                    OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
-                    Standard -> const True
-                koreFilterContext ctxt =
-                    not contextLoggingEnabled
-                        || ( let contextStrs =
-                                    concatMap
-                                        ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
-                                        )
-                                        ctxt
-                              in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
-                           )
+            boosterContextLogger = case logFormat of
+                Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
+                _ -> Booster.Log.textLogger $ fromMaybe stderrLogger mFileLogger
+            filteredBoosterContextLogger =
+                flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
+                    alwaysDisplay
+                        || let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
+                            in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
-                koreLogEntries =
-                    if contextLoggingEnabled
-                        then -- context logging: enable all Proxy-required Kore log entries
-                            Set.unions . Map.elems $ koreExtraLogs
-                        else -- no context logging: only enable Kore log entries for the given Proxy log levels
-                            Set.unions . mapMaybe (`Map.lookup` koreExtraLogs) $ customLevels
+            runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
+            runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
 
-                boosterContextLogger = case logFormat of
-                    Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
-                    _ -> Booster.Log.textLogger $ fromMaybe stderrLogger mFileLogger
-                filteredBoosterContextLogger =
-                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) -> alwaysDisplay ||
-                        let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
-                         in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
-                
-                runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
-                runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
+            koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
+            koreLogActions = [koreLogAction]
+              where
+                koreLogAction =
+                    koreSomeEntryLogAction
+                        koreLogRenderer
+                        koreLogEarlyFilter
+                        (const True)
+                        ( LogAction $ \txt -> liftIO $
+                            case mFileLogger of
+                                Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
+                                Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
+                        )
 
-                koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
-                koreLogActions = [koreLogAction]
-                  where
-                    koreLogAction =
-                        koreSomeEntryLogAction
-                            koreLogRenderer
-                            koreLogEarlyFilter
-                            (const True)
-                            ( LogAction $ \txt -> liftIO $
-                                case mFileLogger of
-                                    Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
-                                    Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
-                            )
-
-
-            runBoosterLogger $
-                Booster.Log.withContext "proxy" $
-                    Booster.Log.logMessage' $ Text.pack $
+        runBoosterLogger $
+            Booster.Log.withContext "proxy" $
+                Booster.Log.logMessage' $
+                    Text.pack $
                         "Loading definition from "
                             <> definitionFile
                             <> ", main module "
                             <> show mainModuleName
 
-            liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
-                let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
-                    koreLogOptions =
-                        (defaultKoreLogOptions (ExeName "") startTime)
-                            { Log.logLevel = coLogLevel
-                            , Log.logEntries = koreLogEntries
-                            , Log.timestampsSwitch = TimestampsDisable
-                            , Log.debugSolverOptions =
-                                Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                            , Log.logType = LogProxy (mconcat koreLogActions)
-                            , Log.logFormat = Log.Standard
-                            }
-                    srvSettings = serverSettings port "*"
+        liftIO $ void $ withBugReport (ExeName "kore-rpc-booster") BugReportOnError $ \_reportDirectory -> withMDLib llvmLibraryFile $ \mdl -> do
+            let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
+                koreLogOptions =
+                    (defaultKoreLogOptions (ExeName "") startTime)
+                        { Log.logLevel = coLogLevel
+                        , Log.logEntries = koreLogEntries
+                        , Log.timestampsSwitch = TimestampsDisable
+                        , Log.debugSolverOptions =
+                            Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
+                        , Log.logType = LogProxy (mconcat koreLogActions)
+                        , Log.logFormat = Log.Standard
+                        }
+                srvSettings = serverSettings port "*"
 
-                withLogger koreLogOptions $ \actualLogAction -> do
-                    mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
-                    definitionsWithCeilSummaries <-
-                        liftIO $
-                            loadDefinition definitionFile
-                                >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
-                                >>= evaluate . force . either (error . show) id
-                    unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
-                        runBoosterLogger $
-                            Booster.Log.withContext "proxy" $
-                                Booster.Log.logMessage' $ 
-                                    "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
-                        liftIO exitFailure
-
+            withLogger koreLogOptions $ \actualLogAction -> do
+                mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
+                definitionsWithCeilSummaries <-
                     liftIO $
-                        runBoosterLogger $
-                                Booster.Log.withContext "ceil" $
-                                    forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
-                                        forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
-                                            Booster.Log.withRuleContext rule $ do
-                                                Booster.Log.withContext "partial-symbols"
-                                                    $ Booster.Log.logMessage
-                                                    $ Booster.Log.WithJsonMessage
-                                                        (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
-                                                    $ renderOneLineText
-                                                    $ Pretty.hsep
-                                                    $ Pretty.punctuate Pretty.comma
-                                                    $ map
-                                                        (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
-                                                        rule.computedAttributes.notPreservesDefinednessReasons
-                                                unless (null ceils)
-                                                    $ Booster.Log.withContext "computed-ceils"
-                                                    $ Booster.Log.logMessage
-                                                    $ Booster.Log.WithJsonMessage
-                                                        ( JSON.object
-                                                            ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
-                                                        )
-                                                    $ renderOneLineText
-                                                    $ Pretty.hsep
-                                                    $ Pretty.punctuate Pretty.comma
-                                                    $ map
-                                                        (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
-                                                        (Set.toList ceils)
-
-                                        forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
-                                            unless (null s.computedAttributes.notPreservesDefinednessReasons)
-                                                $ Booster.Log.withRuleContext s
-                                                $ Booster.Log.withContext "partial-symbols"
-                                                $ Booster.Log.logMessage
-                                                $ Booster.Log.WithJsonMessage
-                                                    (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
-                                                $ renderOneLineText
-                                                $ Pretty.hsep
-                                                $ Pretty.punctuate Pretty.comma
-                                                $ map
-                                                    (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
-                                                    s.computedAttributes.notPreservesDefinednessReasons
-                    mvarLogAction <- newMVar actualLogAction
-                    let logAction = swappableLogger mvarLogAction
-
-                    kore@KoreServer{runSMT} <-
-                        mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
-
-                    boosterState <-
-                        liftIO $
-                            newMVar
-                                Booster.ServerState
-                                    { definitions = Map.map fst definitionsWithCeilSummaries
-                                    , defaultMain = mainModuleName
-                                    , mLlvmLibrary
-                                    , mSMTOptions = if boosterSMT then smtOptions else Nothing
-                                    , addedModules = mempty
-                                    }
-                    statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
-
-                    writeGlobalEquationOptions equationOptions
-
+                        loadDefinition definitionFile
+                            >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
+                            >>= evaluate . force . either (error . show) id
+                unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
                     runBoosterLogger $
-                            Booster.Log.withContext "proxy" $
-                                Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
+                        Booster.Log.withContext "proxy" $
+                            Booster.Log.logMessage' $
+                                "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
+                    liftIO exitFailure
 
-                    let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
-                        koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                        boosterRespond =
-                                Booster.Log.withContext "booster"
-                                . Booster.respond boosterState
+                liftIO $
+                    runBoosterLogger $
+                        Booster.Log.withContext "ceil" $
+                            forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
+                                forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
+                                    Booster.Log.withRuleContext rule $ do
+                                        Booster.Log.withContext "partial-symbols"
+                                            $ Booster.Log.logMessage
+                                            $ Booster.Log.WithJsonMessage
+                                                (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
+                                            $ renderOneLineText
+                                            $ Pretty.hsep
+                                            $ Pretty.punctuate Pretty.comma
+                                            $ map
+                                                (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
+                                                rule.computedAttributes.notPreservesDefinednessReasons
+                                        unless (null ceils)
+                                            $ Booster.Log.withContext "computed-ceils"
+                                            $ Booster.Log.logMessage
+                                            $ Booster.Log.WithJsonMessage
+                                                ( JSON.object
+                                                    ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
+                                                )
+                                            $ renderOneLineText
+                                            $ Pretty.hsep
+                                            $ Pretty.punctuate Pretty.comma
+                                            $ map
+                                                (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
+                                                (Set.toList ceils)
 
-                        proxyConfig =
-                            ProxyConfig
-                                { statsVar
-                                , forceFallback
-                                , boosterState
-                                , fallbackReasons
-                                , simplifyAtEnd
-                                , simplifyBeforeFallback
-                                , customLogLevels = customLevels
+                                forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
+                                    unless (null s.computedAttributes.notPreservesDefinednessReasons)
+                                        $ Booster.Log.withRuleContext s
+                                        $ Booster.Log.withContext "partial-symbols"
+                                        $ Booster.Log.logMessage
+                                        $ Booster.Log.WithJsonMessage
+                                            (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
+                                        $ renderOneLineText
+                                        $ Pretty.hsep
+                                        $ Pretty.punctuate Pretty.comma
+                                        $ map
+                                            (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
+                                            s.computedAttributes.notPreservesDefinednessReasons
+                mvarLogAction <- newMVar actualLogAction
+                let logAction = swappableLogger mvarLogAction
+
+                kore@KoreServer{runSMT} <-
+                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+
+                boosterState <-
+                    liftIO $
+                        newMVar
+                            Booster.ServerState
+                                { definitions = Map.map fst definitionsWithCeilSummaries
+                                , defaultMain = mainModuleName
+                                , mLlvmLibrary
+                                , mSMTOptions = if boosterSMT then smtOptions else Nothing
+                                , addedModules = mempty
                                 }
-                        server =
-                            jsonRpcServer
-                                srvSettings
-                                (const $ runBoosterLogger . Proxy.respondEither proxyConfig boosterRespond koreRespond)
-                                [ Kore.handleDecidePredicateUnknown
-                                , Booster.handleSmtError
-                                , handleErrorCall
-                                , handleSomeException
-                                ]
-                        interruptHandler _ = do
-                            when (logLevel >= LevelInfo) $
-                                stderrLogger "[proxy] Server shutting down\n"
-                            whenJust statsVar Stats.showStats
-                            exitSuccess
-                    handleJust isInterrupt interruptHandler $ runBoosterLogger server 
+                statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
+
+                writeGlobalEquationOptions equationOptions
+
+                runBoosterLogger $
+                    Booster.Log.withContext "proxy" $
+                        Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
+
+                let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
+                    koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
+                    boosterRespond =
+                        Booster.Log.withContext "booster"
+                            . Booster.respond boosterState
+
+                    proxyConfig =
+                        ProxyConfig
+                            { statsVar
+                            , forceFallback
+                            , boosterState
+                            , fallbackReasons
+                            , simplifyAtEnd
+                            , simplifyBeforeFallback
+                            , customLogLevels = customLevels
+                            }
+                    server =
+                        jsonRpcServer
+                            srvSettings
+                            (const $ runBoosterLogger . Proxy.respondEither proxyConfig boosterRespond koreRespond)
+                            [ Kore.handleDecidePredicateUnknown
+                            , Booster.handleSmtError
+                            , handleErrorCall
+                            , handleSomeException
+                            ]
+                    interruptHandler _ = do
+                        when (logLevel >= LevelInfo) $
+                            stderrLogger "[proxy] Server shutting down\n"
+                        whenJust statsVar Stats.showStats
+                        exitSuccess
+                handleJust isInterrupt interruptHandler $ runBoosterLogger server
   where
     clParser =
         info

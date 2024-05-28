@@ -17,10 +17,12 @@ import Control.Exception (bracket, catch, throwIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
+import Data.Char (toLower)
 import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.Map qualified as Map
+import Data.Text qualified as Text
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
 import System.Directory (removeFile)
@@ -36,8 +38,6 @@ import System.Log.FastLogger (
     toLogStr,
  )
 import System.Log.FastLogger.Types (FormattedTime)
-import Data.Char (toLower)
-import qualified Data.Text as Text
 
 newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -127,12 +127,12 @@ handleOutput ::
     IO ()
 handleOutput stderrLogger _loc src level msg =
     stderrLogger $ prettySrc <> prettyLevel <> " " <> msg <> "\n"
-    where
-        prettySrc = if Text.null src then mempty else "[" <> toLogStr src <> "]"
-        prettyLevel = case level of
-            Log.LevelOther t -> "[" <> toLogStr t <> "]"
-            Log.LevelInfo -> mempty
-            _ -> "[" <> (toLogStr $ BS.pack $ map toLower $ drop 5 $ show level) <> "]"
+  where
+    prettySrc = if Text.null src then mempty else "[" <> toLogStr src <> "]"
+    prettyLevel = case level of
+        Log.LevelOther t -> "[" <> toLogStr t <> "]"
+        Log.LevelInfo -> mempty
+        _ -> "[" <> (toLogStr $ BS.pack $ map toLower $ drop 5 $ show level) <> "]"
 
 newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
 newFastLoggerMaybeWithTime = \case

@@ -329,33 +329,34 @@ respond stateVar =
                                 TermAndPredicates pat substitution unsupported -> do
                                     withContext "get-model" $
                                         logMessage' ("ignoring supplied terms and only checking predicates" :: Text)
-                                    
+
                                     unless (null unsupported) $ do
                                         withContext "get-model" $ do
                                             logMessage' ("ignoring unsupported predicates" :: Text)
                                             withContext "detail" $
-                                              logMessage (Text.unwords $ map prettyPattern unsupported)
+                                                logMessage (Text.unwords $ map prettyPattern unsupported)
                                     pure (Set.toList pat.constraints, substitution)
                                 Predicates ps -> do
                                     unless (null ps.ceilPredicates && null ps.unsupported) $ do
                                         withContext "get-model" $ do
                                             logMessage' ("ignoring supplied ceils and unsupported predicates" :: Text)
                                             withContext "detail" $
-                                                logMessage 
-                                                ( Text.unlines $
-                                                    map
-                                                        (renderText . ("#Ceil:" <>) . pretty)
-                                                        (Set.toList ps.ceilPredicates)
-                                                        <> map prettyPattern ps.unsupported
-                                                )
+                                                logMessage
+                                                    ( Text.unlines $
+                                                        map
+                                                            (renderText . ("#Ceil:" <>) . pretty)
+                                                            (Set.toList ps.ceilPredicates)
+                                                            <> map prettyPattern ps.unsupported
+                                                    )
                                     pure (Set.toList ps.boolPredicates, ps.substitution)
 
                         smtResult <-
                             if null boolPs && Map.null suppliedSubst
                                 then do
                                     -- as per spec, no predicate, no answer
-                                    withContext "get-model" $ withContext "smt" $
-                                        logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
+                                    withContext "get-model" $
+                                        withContext "smt" $
+                                            logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
                                     pure $ Left SMT.Unknown
                                 else do
                                     solver <-
@@ -364,8 +365,10 @@ respond stateVar =
                                         SMT.getModelFor solver boolPs suppliedSubst
                                     SMT.closeSolver solver
                                     pure smtResult
-                        withContext "get-model" $ withContext "smt" $
-                            logMessage $ "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
+                        withContext "get-model" $
+                            withContext "smt" $
+                                logMessage $
+                                    "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
                         pure . Right . RpcTypes.GetModel $ case smtResult of
                             Left SMT.Unsat ->
                                 RpcTypes.GetModelResult
@@ -437,11 +440,13 @@ respond stateVar =
                         logMessage'
                             ("aborting due to unsupported predicate parts" :: Text)
                         unless (null unsupportedL) $
-                            withContext "detail" $ logMessage
-                                (Text.unwords $ map prettyPattern unsupportedL)
+                            withContext "detail" $
+                                logMessage
+                                    (Text.unwords $ map prettyPattern unsupportedL)
                         unless (null unsupportedR) $
-                            withContext "detail" $ logMessage
-                                (Text.unwords $ map prettyPattern unsupportedR)
+                            withContext "detail" $
+                                logMessage
+                                    (Text.unwords $ map prettyPattern unsupportedR)
                     let
                         -- apply the given substitution before doing anything else
                         substPatL =

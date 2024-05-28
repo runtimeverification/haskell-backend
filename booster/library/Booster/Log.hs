@@ -43,9 +43,9 @@ import Booster.Pattern.Base (
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (externaliseTerm)
+import Booster.Util (Flag (..))
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Util (showHashHex)
-import Booster.Util (Flag(..))
 import UnliftIO (MonadUnliftIO)
 
 newtype Logger a = Logger (a -> IO ())
@@ -95,12 +95,14 @@ logMessage' a =
     getLogger >>= \case
         (Logger l) -> liftIO $ l $ LogMessage (Flag True) [] a
 
-
 logPretty :: (LoggerMIO m, Pretty a) => a -> m ()
 logPretty = logMessage . renderOneLineText . pretty
 
 withContext :: LoggerMIO m => LogContext -> m a -> m a
-withContext c = withLogger (\(Logger l) -> Logger $ l . (\(LogMessage alwaysShown ctxt m) -> LogMessage alwaysShown (c : ctxt) m))
+withContext c =
+    withLogger
+        ( \(Logger l) -> Logger $ l . (\(LogMessage alwaysShown ctxt m) -> LogMessage alwaysShown (c : ctxt) m)
+        )
 
 newtype TermCtxt = TermCtxt Int
 
