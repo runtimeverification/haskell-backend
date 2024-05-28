@@ -151,10 +151,22 @@ getModelFor ctxt ps subst
         smtTranslateError errMsg
     | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ runSMT ctxt $ do
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
-        let freeVars =
-                Set.unions $
-                    Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
+        satResponse <- interactWithSolver smtAsserts transState
+        processSMTResult transState satResponse
+  where
+    translated :: Either Text ([DeclareCommand], TranslationState)
+    translated =
+        SMT.runTranslator $ do
+            let mkSMTEquation v t =
+                    SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
+            smtSubst <-
+                mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs subst
+            smtPs <-
+                mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) ps
+            pure $ smtSubst <> smtPs
 
+    interactWithSolver :: [DeclareCommand] -> TranslationState -> SMT io Response
+    interactWithSolver smtAsserts transState = do
         runCmd_ SMT.Push -- assuming the prelude has been run already,
 
         -- declare-const all introduced variables (free in predicates
@@ -168,27 +180,13 @@ getModelFor ctxt ps subst
         -- assert the given predicates
         mapM_ runCmd smtAsserts
 
-        satResponse <- runCmd CheckSat
-
-        processSMTResult transState freeVars satResponse
-  where
-    translated :: Either Text ([DeclareCommand], TranslationState)
-    translated =
-        SMT.runTranslator $ do
-            let mkSMTEquation v t =
-                    SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
-            smtSubst <-
-                mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs subst
-            smtPs <-
-                mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) ps
-            pure $ smtSubst <> smtPs
+        runCmd CheckSat
 
     processSMTResult ::
         TranslationState ->
-        Set Variable ->
         Response ->
         SMT io (Either Response (Map Variable Term))
-    processSMTResult transState freeVars satResponse = case satResponse of
+    processSMTResult transState satResponse = case satResponse of
         Error msg -> do
             runCmd_ SMT.Pop
             throwSMT' $ BS.unpack msg
@@ -208,7 +206,11 @@ getModelFor ctxt ps subst
             runCmd_ SMT.Pop
             throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
         Sat -> do
-            let freeVarsMap =
+            let freeVars =
+                    Set.unions $
+                        Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
+
+                freeVarsMap =
                     Map.map Atom . Map.mapKeys getVar $
                         Map.filterWithKey
                             (const . (`Set.member` Set.map Var freeVars))
