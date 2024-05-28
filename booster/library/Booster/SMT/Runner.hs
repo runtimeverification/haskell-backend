@@ -10,7 +10,7 @@ module Booster.SMT.Runner (
     SMTEncode (..),
     mkContext,
     closeContext,
-    reinitSolver,
+    restartSolver,
     runSMT,
     declare,
     runCmd,
@@ -99,13 +99,13 @@ initSolver = do
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
     pure (solver, handle)
 
--- | Re-initialise the solver, keep other parts of @SMTContext@ intact
-reinitSolver :: LoggerMIO io => SMT io ()
-reinitSolver = do
+-- | Restart the solver, keep other parts of @SMTContext@ intact
+restartSolver :: LoggerMIO io => SMT io ()
+restartSolver = do
     ctx <- SMT get
     liftIO ctx.solverClose
     (newSolver, newHandle) <- initSolver
-    logMessage ("Solver reinitialised, ready to use" :: Text)
+    logMessage ("Solver restarted, ready to use" :: Text)
     SMT $ put ctx{solver = newSolver, solverClose = Backend.close newHandle}
 
 newtype SMT m a = SMT (StateT SMTContext m a)

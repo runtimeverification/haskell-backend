@@ -158,8 +158,8 @@ getModelFor def ctxt ps subst
     retryOnce ::
         [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
     retryOnce smtAsserts transState = do
-        reinitSolver
         runPrelude def
+        _ <- restartSolver
         satResponse <- interactWithSolver smtAsserts transState
         processSMTResult transState satResponse getReasonUnknown
 
@@ -352,7 +352,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
 
     retryOnce :: [DeclareCommand] -> [SExpr] -> TranslationState -> MaybeT (SMT io) Bool
     retryOnce smtGiven sexprsToCheck transState = do
-        lift reinitSolver
+        lift restartSolver
         (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
         processSMTResult positive negative failBecauseUnknown
 
