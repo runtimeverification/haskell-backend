@@ -137,11 +137,12 @@ getModelFor ::
     forall io.
     Log.LoggerMIO io =>
     MonadLoggerIO io =>
+    KoreDefinition ->
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
     io (Either SMT.Response (Map Variable Term))
-getModelFor ctxt ps subst
+getModelFor def ctxt ps subst
     | null ps && Map.null subst = Log.withContext "smt" $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
@@ -152,8 +153,22 @@ getModelFor ctxt ps subst
     | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ runSMT ctxt $ do
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
         satResponse <- interactWithSolver smtAsserts transState
-        processSMTResult transState satResponse
+        processSMTResult transState satResponse (retryOnce smtAsserts transState)
   where
+    retryOnce ::
+        [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
+    retryOnce smtAsserts transState = do
+        reinitSolver
+        runPrelude def
+        satResponse <- interactWithSolver smtAsserts transState
+        processSMTResult transState satResponse getReasonUnknown
+
+    getReasonUnknown :: SMT io (Either Response (Map Variable Term))
+    getReasonUnknown = do
+        res <- runCmd SMT.GetReasonUnknown
+        runCmd_ SMT.Pop
+        pure . Left $ res
+
     translated :: Either Text ([DeclareCommand], TranslationState)
     translated =
         SMT.runTranslator $ do
@@ -185,18 +200,20 @@ getModelFor ctxt ps subst
     processSMTResult ::
         TranslationState ->
         Response ->
+        SMT io (Either Response (Map Variable Term)) ->
         SMT io (Either Response (Map Variable Term))
-    processSMTResult transState satResponse = case satResponse of
+    processSMTResult transState satResponse onUnknown = case satResponse of
         Error msg -> do
             runCmd_ SMT.Pop
             throwSMT' $ BS.unpack msg
         Unsat -> do
             runCmd_ SMT.Pop
             pure $ Left Unsat
-        Unknown{} -> do
-            res <- runCmd SMT.GetReasonUnknown
-            runCmd_ SMT.Pop
-            pure $ Left res
+        Unknown{} ->
+            onUnknown
+        -- res <- runCmd SMT.GetReasonUnknown
+        -- runCmd_ SMT.Pop
+        -- pure $ Left res
         r@ReasonUnknown{} ->
             pure $ Left r
         Values{} -> do

@@ -392,7 +392,7 @@ respond stateVar =
                                     solver <-
                                         SMT.initSolver def smtOptions
                                     smtResult <-
-                                        SMT.getModelFor solver boolPs suppliedSubst
+                                        SMT.getModelFor def solver boolPs suppliedSubst
                                     SMT.closeSolver solver
                                     pure smtResult
                         Log.logOtherNS "booster" (Log.LevelOther "SMT") $
