@@ -106,7 +106,7 @@ initSolver = do
 newtype SMT m a = SMT (StateT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
 
-runSMT :: Monad io => SMTContext -> SMT io a -> io (a, SMTContext)
+runSMT :: SMTContext -> SMT io a -> io (a, SMTContext)
 runSMT ctxt (SMT action) = runStateT action ctxt
 
 evalSMT :: Monad io => SMTContext -> SMT io a -> io a

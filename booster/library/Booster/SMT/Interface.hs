@@ -24,7 +24,6 @@ import Data.Either (isLeft)
 import Data.Either.Extra (fromLeft', fromRight')
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
@@ -98,7 +97,7 @@ initSolver def smtOptions = Log.withContext "smt" $ do
     Log.logMessage ("Starting new SMT solver" :: Text)
     ctxt <- mkContext prelude smtOptions.transcript
 
-    runSMT ctxt $ do
+    evalSMT ctxt $ do
         checkPrelude
         -- set timeout value for the general queries
         runCmd_ $ SetTimeout smtOptions.timeout
@@ -347,7 +346,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ evalSMT ctxt . runMaybeT $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ SMT.evalSMT ctxt . runMaybeT $ do
         Log.logMessage $
             Text.unwords
                 [ "Checking"
