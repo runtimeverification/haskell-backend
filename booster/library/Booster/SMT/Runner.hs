@@ -64,7 +64,6 @@ mkContext ::
     Maybe FilePath ->
     io SMTContext
 mkContext prelude transcriptPath = do
-    logMessage ("Starting new SMT solver" :: Text)
     mbTranscript <-
         forM transcriptPath $ \path -> do
             logMessage $ "Transcript in file " <> pack path
@@ -77,7 +76,6 @@ mkContext prelude transcriptPath = do
     (solver, handle) <- initSolver
     whenJust mbTranscript $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
-    logMessage ("Solver ready to use" :: Text)
     pure
         SMTContext
             { solver
@@ -105,9 +103,8 @@ initSolver = do
 restartSolver :: LoggerMIO io => SMT io ()
 restartSolver = do
     ctx <- SMT get
-    liftIO ctx.solverClose
+    closeContext ctx
     (newSolver, newHandle) <- initSolver
-    logMessage ("Solver restarted, ready to use" :: Text)
     SMT $ put ctx{solver = newSolver, solverClose = Backend.close newHandle}
 
 newtype SMT m a = SMT (StateT SMTContext m a)
