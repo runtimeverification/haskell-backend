@@ -148,7 +148,7 @@ respond stateVar =
                     solver <- traverse (SMT.initSolver def) mSMTOptions
                     result <-
                         performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
-                    whenJust solver SMT.closeSolver
+                    whenJust solver SMT.finaliseSolver
                     stop <- liftIO $ getTime Monotonic
                     let duration =
                             if fromMaybe False req.logTiming
@@ -309,7 +309,7 @@ respond stateVar =
                                         pure $ Right (addHeader $ Syntax.KJAnd predicateSort result)
                                     (Left something, _) ->
                                         pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty something
-            whenJust solver SMT.closeSolver
+            whenJust solver SMT.finaliseSolver
             stop <- liftIO $ getTime Monotonic
 
             let duration =
@@ -392,8 +392,8 @@ respond stateVar =
                                     solver <-
                                         SMT.initSolver def smtOptions
                                     smtResult <-
-                                        SMT.getModelFor def solver boolPs suppliedSubst
-                                    SMT.closeSolver solver
+                                        SMT.getModelFor smtOptions def solver boolPs suppliedSubst
+                                    SMT.finaliseSolver solver
                                     pure smtResult
                         Log.logOtherNS "booster" (Log.LevelOther "SMT") $
                             "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)

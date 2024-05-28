@@ -8,7 +8,7 @@ module Booster.SMT.Interface (
     SMTOptions (..),
     defaultSMTOptions,
     initSolver,
-    closeSolver,
+    finaliseSolver,
     getModelFor,
     checkPredicates,
 ) where
@@ -94,6 +94,7 @@ initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTCont
 initSolver def smtOptions = Log.withContext "smt" $ do
     prelude <- translatePrelude def
 
+    Log.logMessage ("Starting new SMT solver" :: Text)
     ctxt <- mkContext prelude smtOptions.transcript
     -- set timeout to be used when checking prelude, use the default (not user supplied) timeout value
     runSMT ctxt $ runCmd_ $ SetTimeout defaultSMTOptions.timeout
@@ -129,8 +130,8 @@ runPrelude = do
     prelude <- SMT $ gets prelude
     mapM_ runCmd prelude
 
-closeSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
-closeSolver ctxt = Log.withContext "smt" $ do
+finaliseSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
+finaliseSolver ctxt = Log.withContext "smt" $ do
     Log.logMessage ("Closing SMT solver" :: Text)
     closeContext ctxt
 
@@ -151,12 +152,13 @@ getModelFor ::
     forall io.
     Log.LoggerMIO io =>
     MonadLoggerIO io =>
+    SMTOptions ->
     KoreDefinition ->
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
     io (Either SMT.Response (Map Variable Term))
-getModelFor def ctxt ps subst
+getModelFor SMTOptions{timeout} def ctxt ps subst
     | null ps && Map.null subst = Log.withContext "smt" $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
@@ -169,11 +171,13 @@ getModelFor def ctxt ps subst
         satResponse <- interactWithSolver smtAsserts transState
         processSMTResult transState satResponse (retryOnce smtAsserts transState)
   where
+    -- processSMTResult transState satResponse getReasonUnknown
+
     retryOnce ::
         [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
     retryOnce smtAsserts transState = do
-        runPrelude def
         _ <- restartSolver
+        _ <- initSolver def defaultSMTOptions{timeout = 2 * timeout}
         satResponse <- interactWithSolver smtAsserts transState
         processSMTResult transState satResponse getReasonUnknown
 
@@ -223,11 +227,7 @@ getModelFor def ctxt ps subst
         Unsat -> do
             runCmd_ SMT.Pop
             pure $ Left Unsat
-        Unknown{} ->
-            onUnknown
-        -- res <- runCmd SMT.GetReasonUnknown
-        -- runCmd_ SMT.Pop
-        -- pure $ Left res
+        Unknown{} -> onUnknown
         r@ReasonUnknown{} ->
             pure $ Left r
         Values{} -> do
