@@ -172,6 +172,7 @@ getModelFor ctxt ps subst
 
         processSMTResult transState freeVars satResponse
   where
+    translated :: Either Text ([DeclareCommand], TranslationState)
     translated =
         SMT.runTranslator $ do
             let mkSMTEquation v t =
@@ -182,6 +183,11 @@ getModelFor ctxt ps subst
                 mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) ps
             pure $ smtSubst <> smtPs
 
+    processSMTResult ::
+        TranslationState ->
+        Set Variable ->
+        Response ->
+        SMT io (Either Response (Map Variable Term))
     processSMTResult transState freeVars satResponse = case satResponse of
         Error msg -> do
             runCmd_ SMT.Pop
@@ -309,6 +315,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
 
         processSMTResult positive negative (retryOnce smtGiven sexprsToCheck transState)
   where
+    processSMTResult :: Response -> Response -> MaybeT (SMT io) Bool -> MaybeT (SMT io) Bool
     processSMTResult positive negative onUnknown =
         case (positive, negative) of
             (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
@@ -319,6 +326,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (_, Unknown) -> onUnknown
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
 
+    retryOnce :: [DeclareCommand] -> [SExpr] -> TranslationState -> MaybeT (SMT io) Bool
     retryOnce smtGiven sexprsToCheck transState = do
         lift reinitSolver
         (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
@@ -329,6 +337,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     smtRun :: SMTEncode c => c -> MaybeT (SMT io) Response
     smtRun = lift . SMT.runCmd
 
+    translated :: Either Text (([DeclareCommand], [SExpr]), TranslationState)
     translated = SMT.runTranslator $ do
         let mkSMTEquation v t =
                 SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
@@ -340,11 +349,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
 
+    failBecauseUnknown :: MaybeT (SMT io) Bool
     failBecauseUnknown =
         smtRun GetReasonUnknown >>= \case
             ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
             other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
 
+    interactWihtSolver ::
+        [DeclareCommand] -> [SExpr] -> TranslationState -> MaybeT (SMT io) (Response, Response)
     interactWihtSolver smtGiven sexprsToCheck transState = do
         smtRun_ Push
 
