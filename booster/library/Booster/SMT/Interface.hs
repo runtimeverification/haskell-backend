@@ -24,6 +24,7 @@ import Data.Either (isLeft)
 import Data.Either.Extra (fromLeft', fromRight')
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
@@ -96,24 +97,26 @@ initSolver def smtOptions = Log.withContext "smt" $ do
 
     Log.logMessage ("Starting new SMT solver" :: Text)
     ctxt <- mkContext prelude smtOptions.transcript
-    -- set timeout to be used when checking prelude, use the default (not user supplied) timeout value
-    runSMT ctxt $ runCmd_ $ SetTimeout defaultSMTOptions.timeout
-    Log.logMessage ("Checking definition prelude" :: Text)
-    check <-
-        runSMT ctxt $
-            runPrelude >> runCmd CheckSat
-    case check of
-        Sat -> do
-            -- set timeout value for the general queries
-            runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
-            Log.logMessage
-                ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
-            pure ctxt
-        other -> do
-            Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
-            closeContext ctxt
-            throwSMT' $
-                "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
+
+    runSMT ctxt $ do
+        checkPrelude
+        -- set timeout value for the general queries
+        runCmd_ $ SetTimeout smtOptions.timeout
+    pure ctxt
+
+restartSolver :: Log.LoggerMIO io => SMTOptions -> SMT io ()
+restartSolver smtOptions = do
+    Log.logMessage ("Starting new SMT solver" :: Text)
+    ctxt <- SMT get
+    closeContext ctxt
+    newCtxt <- mkContext ctxt.prelude ctxt.mbTranscriptPath
+    SMT $ put newCtxt
+
+    checkPrelude
+    Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
+
+    -- set timeout value for the general queries
+    runCmd_ $ SetTimeout smtOptions.timeout
 
 translatePrelude :: Log.LoggerMIO io => KoreDefinition -> io [DeclareCommand]
 translatePrelude def =
@@ -123,6 +126,19 @@ translatePrelude def =
                 Log.logMessage $ "Error translating definition to SMT: " <> err
                 throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
             Right decls -> pure decls
+
+checkPrelude :: Log.LoggerMIO io => SMT io ()
+checkPrelude = do
+    runCmd_ $ SetTimeout defaultSMTOptions.timeout
+    Log.logMessage ("Checking definition prelude" :: Text)
+    check <- runPrelude >> runCmd CheckSat
+    case check of
+        Sat -> pure ()
+        other -> do
+            Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
+            SMT get >>= closeContext
+            throwSMT' $
+                "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
 -- | Send the commands from the definition's SMT prelude
 runPrelude :: Log.LoggerMIO io => SMT io ()
@@ -154,11 +170,10 @@ getModelFor ::
     MonadLoggerIO io =>
     SMTOptions ->
     KoreDefinition ->
-    SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
     io (Either SMT.Response (Map Variable Term))
-getModelFor SMTOptions{timeout} def ctxt ps subst
+getModelFor smtOptions def ps subst
     | null ps && Map.null subst = Log.withContext "smt" $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
@@ -166,18 +181,42 @@ getModelFor SMTOptions{timeout} def ctxt ps subst
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
-    | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ runSMT ctxt $ do
+    | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
+        ctxt <- initSolver def smtOptions
+        (result, newCtxt) <- runSMT ctxt $ do
+            solve smtOptions smtAsserts transState
+        finaliseSolver newCtxt
+        pure result
+  where
+    solve ::
+        SMTOptions -> [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
+    solve opts smtAsserts transState = do
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
         satResponse <- interactWithSolver smtAsserts transState
-        processSMTResult transState satResponse (retryOnce smtAsserts transState)
-  where
-    retryOnce ::
-        [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
-    retryOnce smtAsserts transState = do
-        restartSolver
-        _ <- initSolver def defaultSMTOptions{timeout = 2 * timeout}
-        satResponse <- interactWithSolver smtAsserts transState
-        processSMTResult transState satResponse getReasonUnknown
+        Log.logMessage ("Solver returned " <> (Text.pack $ show satResponse))
+        case satResponse of
+            Error msg -> do
+                runCmd_ SMT.Pop
+                throwSMT' $ BS.unpack msg
+            Unsat -> do
+                runCmd_ SMT.Pop
+                pure $ Left Unsat
+            Unknown{} -> do
+                case opts.retryLimit of
+                    Just x | x > 0 -> do
+                        let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
+                        restartSolver newOpts
+                        solve newOpts smtAsserts transState
+                    _ -> getReasonUnknown
+            r@ReasonUnknown{} ->
+                pure $ Left r
+            Values{} -> do
+                runCmd_ SMT.Pop
+                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
+            Success -> do
+                runCmd_ SMT.Pop
+                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
+            Sat -> Right <$> extractModel transState
 
     getReasonUnknown :: SMT io (Either Response (Map Variable Term))
     getReasonUnknown = do
@@ -213,35 +252,11 @@ getModelFor SMTOptions{timeout} def ctxt ps subst
 
         runCmd CheckSat
 
-    processSMTResult ::
-        TranslationState ->
-        Response ->
-        SMT io (Either Response (Map Variable Term)) ->
-        SMT io (Either Response (Map Variable Term))
-    processSMTResult transState satResponse onUnknown = do
-        Log.logMessage ("Solver returned " <> (Text.pack $ show satResponse))
-        case satResponse of
-            Error msg -> do
-                runCmd_ SMT.Pop
-                throwSMT' $ BS.unpack msg
-            Unsat -> do
-                runCmd_ SMT.Pop
-                pure $ Left Unsat
-            Unknown{} -> onUnknown
-            r@ReasonUnknown{} ->
-                pure $ Left r
-            Values{} -> do
-                runCmd_ SMT.Pop
-                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-            Success -> do
-                runCmd_ SMT.Pop
-                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-            Sat -> Right <$> extractModel transState
-
     extractModel ::
         TranslationState ->
         SMT io (Map Variable Term)
     extractModel transState = do
+        Log.logMessage ("Extracting model" :: Text)
         let freeVars =
                 Set.unions $
                     Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
@@ -332,7 +347,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runMaybeT $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ evalSMT ctxt . runMaybeT $ do
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -366,7 +381,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
 
     retryOnce :: [DeclareCommand] -> [SExpr] -> TranslationState -> MaybeT (SMT io) Bool
     retryOnce smtGiven sexprsToCheck transState = do
-        lift restartSolver
+        lift (restartSolver defaultSMTOptions)
         (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
         processSMTResult positive negative failBecauseUnknown
 

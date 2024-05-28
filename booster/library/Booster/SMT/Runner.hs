@@ -10,8 +10,8 @@ module Booster.SMT.Runner (
     SMTEncode (..),
     mkContext,
     closeContext,
-    restartSolver,
     runSMT,
+    evalSMT,
     declare,
     runCmd,
     runCmd_,
@@ -45,6 +45,7 @@ import Booster.SMT.LowLevelCodec
 data SMTContext = SMTContext
     { solver :: Backend.Solver
     , solverClose :: IO ()
+    , mbTranscriptPath :: Maybe FilePath
     , mbTranscript :: Maybe Handle
     , prelude :: [DeclareCommand]
     }
@@ -63,16 +64,9 @@ mkContext ::
     Maybe FilePath ->
     io SMTContext
 mkContext prelude transcriptPath = do
-    mbTranscript <-
-        forM transcriptPath $ \path -> do
-            logMessage $ "Transcript in file " <> pack path
-            liftIO $ do
-                h <- openFile path AppendMode
-                hSetBuffering h (BlockBuffering Nothing)
-                hSetBinaryMode h True
-                BS.hPutStrLn h "; starting solver process"
-                pure h
+    logMessage ("Starting SMT solver" :: Text)
     (solver, handle) <- initSolver
+    mbTranscript <- initTranscript transcriptPath
     whenJust mbTranscript $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
     pure
@@ -80,8 +74,19 @@ mkContext prelude transcriptPath = do
             { solver
             , solverClose = Backend.close handle
             , mbTranscript
+            , mbTranscriptPath = transcriptPath
             , prelude
             }
+
+initTranscript :: forall io. LoggerMIO io => Maybe FilePath -> io (Maybe Handle)
+initTranscript transcriptPath = forM transcriptPath $ \path -> do
+    logMessage $ "Transcript in file " <> pack path
+    liftIO $ do
+        h <- openFile path AppendMode
+        hSetBuffering h (BlockBuffering Nothing)
+        hSetBinaryMode h True
+        BS.hPutStrLn h "; starting solver process"
+        pure h
 
 closeContext :: LoggerMIO io => SMTContext -> io ()
 closeContext ctxt = do
@@ -98,20 +103,14 @@ initSolver = do
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
     pure (solver, handle)
 
--- | Restart the solver, keep other parts of @SMTContext@ intact
-restartSolver :: LoggerMIO io => SMT io ()
-restartSolver = do
-    ctx <- SMT get
-    closeContext ctx
-    (newSolver, newHandle) <- initSolver
-    SMT $ put ctx{solver = newSolver, solverClose = Backend.close newHandle}
-
 newtype SMT m a = SMT (StateT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
 
-runSMT :: Monad io => SMTContext -> SMT io a -> io a
-runSMT ctxt (SMT action) =
-    evalStateT action ctxt
+runSMT :: Monad io => SMTContext -> SMT io a -> io (a, SMTContext)
+runSMT ctxt (SMT action) = runStateT action ctxt
+
+evalSMT :: Monad io => SMTContext -> SMT io a -> io a
+evalSMT ctxt (SMT action) = evalStateT action ctxt
 
 declare :: LoggerMIO io => [DeclareCommand] -> SMT io ()
 declare = mapM_ runCmd
