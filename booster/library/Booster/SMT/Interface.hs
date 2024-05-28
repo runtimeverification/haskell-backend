@@ -86,13 +86,15 @@ defaultSMTOptions =
 
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
 initSolver def smtOptions = Log.withContext "smt" $ do
-    ctxt <- mkContext smtOptions.transcript
-    -- set timeout to be used when checking prelude, use the default (not use supplied) timeout value
+    prelude <- translatePrelude def
+
+    ctxt <- mkContext prelude smtOptions.transcript
+    -- set timeout to be used when checking prelude, use the default (not user supplied) timeout value
     runSMT ctxt $ runCmd_ $ SetTimeout defaultSMTOptions.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
     check <-
         runSMT ctxt $
-            runPrelude def >> runCmd CheckSat
+            runPrelude >> runCmd CheckSat
     case check of
         Sat -> do
             -- set timeout value for the general queries
@@ -104,16 +106,20 @@ initSolver def smtOptions = Log.withContext "smt" $ do
             throwSMT' $
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
--- | Send the commands from the definition's SMT prelude
-runPrelude :: Log.LoggerMIO io => KoreDefinition -> SMT io ()
-runPrelude def = do
+translatePrelude :: Log.LoggerMIO io => KoreDefinition -> io [DeclareCommand]
+translatePrelude def =
     let prelude = smtDeclarations def
-    case prelude of
-        Left err -> do
-            Log.logMessage $ "Error translating definition to SMT: " <> err
-            throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
-        Right{} -> pure ()
-    mapM_ runCmd (fromRight' prelude)
+     in case prelude of
+            Left err -> do
+                Log.logMessage $ "Error translating definition to SMT: " <> err
+                throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
+            Right decls -> pure decls
+
+-- | Send the commands from the definition's SMT prelude
+runPrelude :: Log.LoggerMIO io => SMT io ()
+runPrelude = do
+    prelude <- SMT $ gets prelude
+    mapM_ runCmd prelude
 
 closeSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
 closeSolver ctxt = Log.withContext "smt" $ do

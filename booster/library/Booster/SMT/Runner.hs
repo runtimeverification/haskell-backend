@@ -46,11 +46,11 @@ data SMTContext = SMTContext
     { solver :: Backend.Solver
     , solverClose :: IO ()
     , mbTranscript :: Maybe Handle
+    , prelude :: [DeclareCommand]
     }
 
 ----------------------------------------
 {- TODO (later)
-- store prelude of [DeclareCommand] in context (enables hard resets)
 - error handling and retries
   - retry counter in context
     - Reader becomes State
@@ -60,9 +60,10 @@ data SMTContext = SMTContext
 
 mkContext ::
     LoggerMIO io =>
+    [DeclareCommand] ->
     Maybe FilePath ->
     io SMTContext
-mkContext transcriptPath = do
+mkContext prelude transcriptPath = do
     logMessage ("Starting new SMT solver" :: Text)
     mbTranscript <-
         forM transcriptPath $ \path -> do
@@ -82,6 +83,7 @@ mkContext transcriptPath = do
             { solver
             , solverClose = Backend.close handle
             , mbTranscript
+            , prelude
             }
 
 closeContext :: LoggerMIO io => SMTContext -> io ()
