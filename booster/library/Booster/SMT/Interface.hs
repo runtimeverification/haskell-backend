@@ -357,7 +357,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             Just (Unknown, _) -> retry smtGiven sexprsToCheck transState
             Just (_, Unknown) -> retry smtGiven sexprsToCheck transState
             Just other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
-            Nothing -> pure Nothing
+            Nothing -> pure Nothing -- inconsistent ground truth
     retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> SMT io (Maybe Bool)
     retry smtGiven sexprsToCheck transState = do
         opts <- SMT $ gets (.options)
