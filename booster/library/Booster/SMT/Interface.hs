@@ -4,9 +4,9 @@ License     : BSD-3-Clause
 -}
 module Booster.SMT.Interface (
     SMTContext, -- re-export
+    SMTOptions (..), -- re-export
+    defaultSMTOptions, -- re-export
     SMTError (..),
-    SMTOptions (..),
-    defaultSMTOptions,
     initSolver,
     finaliseSolver,
     getModelFor,
@@ -41,21 +41,6 @@ import Booster.SMT.Translate as SMT
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
 
--- Includes all options from kore-rpc used by current clients. The
--- parser in CLOptions uses compatible names and we use the same
--- defaults. Not all options are supported in booster.
-data SMTOptions = SMTOptions
-    { transcript :: Maybe FilePath
-    -- ^ optional log file
-    , timeout :: Int
-    -- ^ optional timeout for requests, 0 for none
-    , retryLimit :: Maybe Int
-    -- ^ optional retry. Nothing for no retry, 0 for unlimited
-    , tactic :: Maybe SExpr
-    -- ^ optional tactic (used verbatim) to replace (check-sat)
-    }
-    deriving (Eq, Show)
-
 data SMTError
     = GeneralSMTError Text
     | SMTTranslationError Text
@@ -76,14 +61,6 @@ throwUnknown reason premises preds = throw $ SMTSolverUnknown reason premises pr
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
 
-defaultSMTOptions :: SMTOptions
-defaultSMTOptions =
-    SMTOptions
-        { transcript = Nothing
-        , timeout = 125
-        , retryLimit = Just 3
-        , tactic = Nothing
-        }
 
 {- | Start and initialise an SMT solver instance for use in rewriting:
      - translate the sort declarations from @KoreDefiniton@ to SMT

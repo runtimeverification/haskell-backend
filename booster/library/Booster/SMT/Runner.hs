@@ -5,6 +5,8 @@ Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
 -}
 module Booster.SMT.Runner (
+    SMTOptions (..),
+    defaultSMTOptions,
     SMTContext (..),
     SMT (..),
     SMTEncode (..),
@@ -43,6 +45,30 @@ import System.IO (
 import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
+
+-- Includes all options from kore-rpc used by current clients. The
+-- parser in CLOptions uses compatible names and we use the same
+-- defaults. Not all options are supported in booster.
+data SMTOptions = SMTOptions
+    { transcript :: Maybe FilePath
+    -- ^ optional log file
+    , timeout :: Int
+    -- ^ optional timeout for requests, 0 for none
+    , retryLimit :: Maybe Int
+    -- ^ optional retry. Nothing for no retry, 0 for unlimited
+    , tactic :: Maybe SExpr
+    -- ^ optional tactic (used verbatim) to replace (check-sat)
+    }
+    deriving (Eq, Show)
+
+defaultSMTOptions :: SMTOptions
+defaultSMTOptions =
+    SMTOptions
+        { transcript = Nothing
+        , timeout = 125
+        , retryLimit = Just 3
+        , tactic = Nothing
+        }
 
 data SMTContext = SMTContext
     { solver :: Backend.Solver
