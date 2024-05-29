@@ -69,7 +69,7 @@ declTests =
 -- otherwise they might just get queued.
 runSatAfter :: [SMTCommand] -> IO SMT.Response
 runSatAfter commands = runNoLoggingT $ do
-    ctxt <- mkContext [] Nothing
+    ctxt <- mkContext defaultSMTOptions []
     result <- evalSMT ctxt $ mapM_ runCmd commands >> runCmd CheckSat
     closeContext ctxt
     pure result
@@ -141,7 +141,7 @@ checkTests =
   where
     exec x =
         runNoLoggingT $
-            mkContext [] Nothing >>= \c -> evalSMT c x <* closeContext c
+            mkContext defaultSMTOptions [] >>= \c -> evalSMT c x <* closeContext c
     test name result decls =
         testCase name $ (result @=?) =<< exec (runCheck decls)
     returns = ($)
