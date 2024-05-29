@@ -11,6 +11,7 @@ module Booster.SMT.Interface (
     finaliseSolver,
     getModelFor,
     checkPredicates,
+    hardResetSolver,
 ) where
 
 import Control.Exception (Exception, throw)
@@ -82,19 +83,24 @@ initSolver def smtOptions = Log.withContext "smt" $ do
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
-restartSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
-restartSolver smtOptions = do
+-- | Hot-swap @SMTOptions@ in the active @SMTContext@, update the query timeout
+swapSmtOptions :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
+swapSmtOptions smtOptions = do
+    ctxt <- SMT get
+    Log.logMessage ("Updating solver options with " <> (Text.pack . show $ smtOptions))
+    SMT $ put ctxt{options = smtOptions}
+    runCmd_ $ SetTimeout smtOptions.timeout
+
+-- | Stop the solver, initialise a new one and put in the @SMTContext@
+hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
+hardResetSolver smtOptions = do
     Log.logMessage ("Starting new SMT solver" :: Text)
     ctxt <- SMT get
     liftIO ctxt.solverClose
     (solver, handle) <- connectToSolver
-    SMT $ put ctxt{solver, solverClose = Backend.close handle, options = smtOptions}
-
+    SMT $ put ctxt{solver, solverClose = Backend.close handle}
     checkPrelude
-    Log.logMessage ("Successfully re-initialised SMT solver with " <> (Text.pack . show $ smtOptions))
-
-    -- set timeout value for the general queries
-    runCmd_ $ SetTimeout smtOptions.timeout
+    swapSmtOptions smtOptions
 
 translatePrelude :: Log.LoggerMIO io => KoreDefinition -> io [DeclareCommand]
 translatePrelude def =
@@ -179,7 +185,7 @@ getModelFor ctxt ps subst
                 case opts.retryLimit of
                     Just x | x > 0 -> do
                         let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                        restartSolver newOpts
+                        swapSmtOptions newOpts
                         solve smtAsserts transState
                     _ -> getReasonUnknown
             r@ReasonUnknown{} ->
@@ -364,7 +370,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         case opts.retryLimit of
             Just x | x > 0 -> do
                 let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                restartSolver newOpts
+                swapSmtOptions newOpts
                 solve smtGiven sexprsToCheck transState
             _ -> runMaybeT failBecauseUnknown
 
