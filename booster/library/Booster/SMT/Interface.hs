@@ -327,11 +327,11 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Unsat, Sat) -> pure False
             (Unknown, _) -> do
                 smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason mempty mempty
+                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
                     other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             (_, Unknown) -> do
                 smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason mempty mempty
+                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
                     other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
   where
