@@ -1,4 +1,4 @@
-module TEST
+module NON-LINEAR-INT-REQUIRES
   imports INT
   imports BOOL
 
