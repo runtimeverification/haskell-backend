@@ -356,8 +356,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             Just (Unsat, Sat) -> pure . Just $ False
             Just (Unknown, _) -> retry smtGiven sexprsToCheck transState
             Just (_, Unknown) -> retry smtGiven sexprsToCheck transState
-            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
-
+            Just other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
+            Nothing -> pure Nothing
     retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> SMT io (Maybe Bool)
     retry smtGiven sexprsToCheck transState = do
         opts <- SMT $ gets (.options)
