@@ -62,7 +62,6 @@ throwUnknown reason premises preds = throw $ SMTSolverUnknown reason premises pr
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
 
-
 {- | Start and initialise an SMT solver instance for use in rewriting:
      - translate the sort declarations from @KoreDefiniton@ to SMT
      - start the solver process
