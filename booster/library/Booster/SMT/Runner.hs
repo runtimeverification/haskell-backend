@@ -71,10 +71,10 @@ defaultSMTOptions =
         }
 
 data SMTContext = SMTContext
-    { solver :: Backend.Solver
+    { options :: SMTOptions
+    , solver :: Backend.Solver
     , solverClose :: IO ()
-    , mbTranscriptPath :: Maybe FilePath
-    , mbTranscript :: Maybe Handle
+    , mbTranscriptHandle :: Maybe Handle
     , prelude :: [DeclareCommand]
     }
 
@@ -88,13 +88,13 @@ data SMTContext = SMTContext
 
 mkContext ::
     LoggerMIO io =>
+    SMTOptions ->
     [DeclareCommand] ->
-    Maybe FilePath ->
     io SMTContext
-mkContext prelude transcriptPath = do
+mkContext opts prelude = do
     logMessage ("Starting SMT solver" :: Text)
     (solver, handle) <- connectToSolver
-    mbTranscript <- forM transcriptPath $ \path -> do
+    mbTranscriptHandle <- forM opts.transcript $ \path -> do
         logMessage $ "Transcript in file " <> pack path
         liftIO $ do
             h <- openFile path AppendMode
@@ -102,15 +102,15 @@ mkContext prelude transcriptPath = do
             hSetBinaryMode h True
             BS.hPutStrLn h "; starting solver process"
             pure h
-    whenJust mbTranscript $ \h ->
+    whenJust mbTranscriptHandle $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
     pure
         SMTContext
             { solver
             , solverClose = Backend.close handle
-            , mbTranscript
-            , mbTranscriptPath = transcriptPath
+            , mbTranscriptHandle
             , prelude
+            , options = opts
             }
 
 closeContext :: LoggerMIO io => SMTContext -> io ()
@@ -121,7 +121,7 @@ closeContext ctxt = do
 destroyContext :: LoggerMIO io => SMTContext -> io ()
 destroyContext ctxt = do
     logMessage ("Permanently stopping SMT solver" :: Text)
-    whenJust ctxt.mbTranscript $ \h -> liftIO $ do
+    whenJust ctxt.mbTranscriptHandle $ \h -> liftIO $ do
         BS.hPutStrLn h "; permanently stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
         hClose h
     liftIO ctxt.solverClose
@@ -166,13 +166,13 @@ runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd cmd = do
     let cmdBS = encode cmd
     ctxt <- SMT get
-    whenJust ctxt.mbTranscript $ \h -> do
+    whenJust ctxt.mbTranscriptHandle $ \h -> do
         whenJust (comment cmd) $ \c ->
             liftIO (BS.hPutBuilder h c)
         liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
     output <- run_ cmd ctxt.solver cmdBS
     let result = readResponse output
-    whenJust ctxt.mbTranscript $
+    whenJust ctxt.mbTranscriptHandle $
         liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
     when (isError result) $
         logMessage $

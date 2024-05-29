@@ -74,7 +74,7 @@ initSolver def smtOptions = Log.withContext "smt" $ do
     prelude <- translatePrelude def
 
     Log.logMessage ("Starting new SMT solver" :: Text)
-    ctxt <- mkContext prelude smtOptions.transcript
+    ctxt <- mkContext smtOptions prelude
 
     evalSMT ctxt $ do
         checkPrelude
@@ -89,10 +89,10 @@ restartSolver smtOptions = do
     ctxt <- SMT get
     liftIO ctxt.solverClose
     (solver, handle) <- connectToSolver
-    SMT $ put ctxt{solver, solverClose = Backend.close handle}
+    SMT $ put ctxt{solver, solverClose = Backend.close handle, options = smtOptions}
 
     checkPrelude
-    Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
+    Log.logMessage ("Successfully re-initialised SMT solver with " <> (Text.pack . show $ smtOptions))
 
     -- set timeout value for the general queries
     runCmd_ $ SetTimeout smtOptions.timeout
@@ -147,12 +147,11 @@ getModelFor ::
     forall io.
     Log.LoggerMIO io =>
     MonadLoggerIO io =>
-    SMTOptions ->
-    KoreDefinition ->
+    SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
     io (Either SMT.Response (Map Variable Term))
-getModelFor smtOptions def ps subst
+getModelFor ctxt ps subst
     | null ps && Map.null subst = Log.withContext "smt" $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure $ Right Map.empty
@@ -161,15 +160,12 @@ getModelFor smtOptions def ps subst
         Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
     | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
-        ctxt <- initSolver def smtOptions
-        (result, newCtxt) <- runSMT ctxt $ do
-            solve smtOptions smtAsserts transState
-        finaliseSolver newCtxt
-        pure result
+        evalSMT ctxt $ solve smtAsserts transState
   where
     solve ::
-        SMTOptions -> [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
-    solve opts smtAsserts transState = do
+        [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
+    solve smtAsserts transState = do
+        opts <- SMT $ gets (.options)
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
         satResponse <- interactWithSolver smtAsserts transState
         Log.logMessage ("Solver returned " <> (Text.pack $ show satResponse))
@@ -185,7 +181,7 @@ getModelFor smtOptions def ps subst
                     Just x | x > 0 -> do
                         let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
                         restartSolver newOpts
-                        solve newOpts smtAsserts transState
+                        solve smtAsserts transState
                     _ -> getReasonUnknown
             r@ReasonUnknown{} ->
                 pure $ Left r
@@ -327,17 +323,15 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
-        let smtOptions = defaultSMTOptions
         evalSMT ctxt $ do
-            solve smtOptions smtGiven sexprsToCheck transState
+            solve smtGiven sexprsToCheck transState
   where
     solve ::
-        SMTOptions ->
         [DeclareCommand] ->
         [SExpr] ->
         TranslationState ->
         SMT io (Maybe Bool)
-    solve opts smtGiven sexprsToCheck transState = do
+    solve smtGiven sexprsToCheck transState = do
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -361,17 +355,19 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 pure Nothing
             Just (Sat, Unsat) -> pure . Just $ True
             Just (Unsat, Sat) -> pure . Just $ False
-            Just (Unknown, _) -> retry opts smtGiven sexprsToCheck transState
-            Just (_, Unknown) -> retry opts smtGiven sexprsToCheck transState
+            Just (Unknown, _) -> retry smtGiven sexprsToCheck transState
+            Just (_, Unknown) -> retry smtGiven sexprsToCheck transState
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
 
-    retry :: SMTOptions -> [DeclareCommand] -> [SExpr] -> TranslationState -> SMT io (Maybe Bool)
-    retry opts smtGiven sexprsToCheck transState = case opts.retryLimit of
-        Just x | x > 0 -> do
-            let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-            restartSolver newOpts
-            solve newOpts smtGiven sexprsToCheck transState
-        _ -> runMaybeT failBecauseUnknown
+    retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> SMT io (Maybe Bool)
+    retry smtGiven sexprsToCheck transState = do
+        opts <- SMT $ gets (.options)
+        case opts.retryLimit of
+            Just x | x > 0 -> do
+                let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
+                restartSolver newOpts
+                solve smtGiven sexprsToCheck transState
+            _ -> runMaybeT failBecauseUnknown
 
     smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
     smtRun_ = lift . SMT.runCmd_

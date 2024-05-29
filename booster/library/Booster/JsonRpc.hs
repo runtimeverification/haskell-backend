@@ -388,7 +388,11 @@ respond stateVar =
                                         (Log.LevelOther "SMT")
                                         "No predicates or substitutions given, returning Unknown"
                                     pure $ Left SMT.Unknown
-                                else SMT.getModelFor smtOptions def boolPs suppliedSubst
+                                else do
+                                    solver <- SMT.initSolver def smtOptions
+                                    result <- SMT.getModelFor solver boolPs suppliedSubst
+                                    SMT.finaliseSolver solver
+                                    pure result
                         Log.logOtherNS "booster" (Log.LevelOther "SMT") $
                             "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
                         pure . Right . RpcTypes.GetModel $ case smtResult of
