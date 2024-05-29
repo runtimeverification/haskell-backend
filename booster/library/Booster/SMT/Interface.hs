@@ -15,6 +15,7 @@ module Booster.SMT.Interface (
 
 import Control.Exception (Exception, throw)
 import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.State
