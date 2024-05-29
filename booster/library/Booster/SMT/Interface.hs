@@ -92,7 +92,7 @@ defaultSMTOptions =
      - set user-specified timeout for queries
 -}
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
-initSolver def smtOptions = do
+initSolver def smtOptions = Log.withContext "smt" $ do
     prelude <- translatePrelude def
 
     Log.logMessage ("Starting new SMT solver" :: Text)
@@ -150,7 +150,7 @@ runPrelude = do
 finaliseSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
 finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
-    closeContext ctxt
+    destroyContext ctxt
 
 {- |
 Implementation of get-model request
