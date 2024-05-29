@@ -88,12 +88,16 @@ translateTerm t =
         SymbolApplication sym _sorts args ->
             case sym.attributes.smt of
                 Nothing -> asSMTVar t
-                Just (SMTLib name) -> do
-                    smtArgs <- mapM translateTerm args
-                    pure . List $ Atom (SMTId name) : smtArgs
-                Just (SMTHook hook@Atom{}) -> do
-                    smtArgs <- mapM translateTerm args
-                    pure . List $ hook : smtArgs
+                Just (SMTLib name)
+                    | null args -> pure (Atom (SMTId name))
+                    | otherwise -> do
+                        smtArgs <- mapM translateTerm args
+                        pure . List $ Atom (SMTId name) : smtArgs
+                Just (SMTHook hook@Atom{})
+                    | null args -> pure hook
+                    | otherwise -> do
+                        smtArgs <- mapM translateTerm args
+                        pure . List $ hook : smtArgs
                 Just (SMTHook sexpr) -> do
                     smtArgs <- mapM translateTerm args
                     fillPlaceholders sexpr smtArgs
