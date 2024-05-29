@@ -177,12 +177,13 @@ getModelFor ctxt ps subst
         smtTranslateError errMsg
     | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
         evalSMT ctxt $ do
-            declareVariables transState
+            hardResetSolver ctxt.options
             solve smtAsserts transState
   where
     solve ::
         [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
     solve smtAsserts transState = do
+        declareVariables transState
         opts <- SMT $ gets (.options)
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
         satResponse <- interactWithSolver smtAsserts
@@ -198,7 +199,7 @@ getModelFor ctxt ps subst
                 case opts.retryLimit of
                     Just x | x > 0 -> do
                         let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                        swapSmtOptions newOpts
+                        hardResetSolver newOpts
                         solve smtAsserts transState
                     _ -> getReasonUnknown
             r@ReasonUnknown{} ->
@@ -334,7 +335,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         pure Nothing
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
         evalSMT ctxt $ do
-            declareVariables transState
+            hardResetSolver ctxt.options
             solve smtGiven sexprsToCheck transState
   where
     solve ::
@@ -343,6 +344,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         TranslationState ->
         SMT io (Maybe Bool)
     solve smtGiven sexprsToCheck transState = do
+        declareVariables transState
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -376,7 +378,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         case opts.retryLimit of
             Just x | x > 0 -> do
                 let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                swapSmtOptions newOpts
+                hardResetSolver newOpts
                 solve smtGiven sexprsToCheck transState
             _ -> runMaybeT failBecauseUnknown
 
