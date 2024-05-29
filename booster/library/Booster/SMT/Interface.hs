@@ -63,6 +63,17 @@ throwUnknown reason premises preds = throw $ SMTSolverUnknown reason premises pr
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
 
+{- | declare-const all introduced variables (free in predicates
+  as well as abstraction variables) before sending assertions
+-}
+declareVariables :: Log.LoggerMIO io => TranslationState -> SMT io ()
+declareVariables transState = do
+    mapM_
+        SMT.runCmd
+        [ DeclareConst (mkComment trm) smtId (SMT.smtSort $ sortOfTerm trm)
+        | (trm, smtId) <- Map.assocs transState.mappings
+        ]
+
 {- | Start and initialise an SMT solver instance for use in rewriting:
      - translate the sort declarations from @KoreDefiniton@ to SMT
      - start the solver process
@@ -165,14 +176,16 @@ getModelFor ctxt ps subst
         Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
     | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
-        evalSMT ctxt $ solve smtAsserts transState
+        evalSMT ctxt $ do
+            declareVariables transState
+            solve smtAsserts transState
   where
     solve ::
         [DeclareCommand] -> TranslationState -> SMT io (Either Response (Map Variable Term))
     solve smtAsserts transState = do
         opts <- SMT $ gets (.options)
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
-        satResponse <- interactWithSolver smtAsserts transState
+        satResponse <- interactWithSolver smtAsserts
         Log.logMessage ("Solver returned " <> (Text.pack $ show satResponse))
         case satResponse of
             Error msg -> do
@@ -215,17 +228,9 @@ getModelFor ctxt ps subst
                 mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) ps
             pure $ smtSubst <> smtPs
 
-    interactWithSolver :: [DeclareCommand] -> TranslationState -> SMT io Response
-    interactWithSolver smtAsserts transState = do
+    interactWithSolver :: [DeclareCommand] -> SMT io Response
+    interactWithSolver smtAsserts = do
         runCmd_ SMT.Push -- assuming the prelude has been run already,
-
-        -- declare-const all introduced variables (free in predicates
-        -- as well as abstraction variables) before sending assertions
-        mapM_
-            runCmd
-            [ DeclareConst (mkComment trm) smtId (SMT.smtSort $ sortOfTerm trm)
-            | (trm, smtId) <- Map.assocs transState.mappings
-            ]
 
         -- assert the given predicates
         mapM_ runCmd smtAsserts
@@ -329,6 +334,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         pure Nothing
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
         evalSMT ctxt $ do
+            declareVariables transState
             solve smtGiven sexprsToCheck transState
   where
     solve ::
@@ -348,7 +354,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 ]
         Log.logMessage . Pretty.renderOneLineText $
             hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
-        result <- runMaybeT $ interactWihtSolver smtGiven sexprsToCheck transState
+        result <- runMaybeT $ interactWihtSolver smtGiven sexprsToCheck
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> (Text.pack $ show result)
@@ -398,17 +404,9 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
 
     interactWihtSolver ::
-        [DeclareCommand] -> [SExpr] -> TranslationState -> MaybeT (SMT io) (Response, Response)
-    interactWihtSolver smtGiven sexprsToCheck transState = do
+        [DeclareCommand] -> [SExpr] -> MaybeT (SMT io) (Response, Response)
+    interactWihtSolver smtGiven sexprsToCheck = do
         smtRun_ Push
-
-        -- declare-const all introduced variables (free in predicates
-        -- as well as abstraction variables) before sending assertions
-        mapM_
-            smtRun
-            [ DeclareConst (mkComment trm) smtId (SMT.smtSort $ sortOfTerm trm)
-            | (trm, smtId) <- Map.assocs transState.mappings
-            ]
 
         -- assert ground truth
         mapM_ smtRun smtGiven
