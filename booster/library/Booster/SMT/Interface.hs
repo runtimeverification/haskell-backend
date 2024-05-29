@@ -348,7 +348,18 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ SMT.evalSMT ctxt . runMaybeT $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
+        let smtOptions = defaultSMTOptions
+        evalSMT ctxt $ do
+            solve smtOptions smtGiven sexprsToCheck transState
+  where
+    solve ::
+        SMTOptions ->
+        [DeclareCommand] ->
+        [SExpr] ->
+        TranslationState ->
+        SMT io (Maybe Bool)
+    solve opts smtGiven sexprsToCheck transState = do
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -360,31 +371,29 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 ]
         Log.logMessage . Pretty.renderOneLineText $
             hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
-
-        (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
-
+        result <- runMaybeT $ interactWihtSolver smtGiven sexprsToCheck transState
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
-                <> pack (show (positive, negative))
+                <> (Text.pack $ show result)
 
-        processSMTResult positive negative (retryOnce smtGiven sexprsToCheck transState)
-  where
-    processSMTResult :: Response -> Response -> MaybeT (SMT io) Bool -> MaybeT (SMT io) Bool
-    processSMTResult positive negative onUnknown =
-        case (positive, negative) of
-            (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
-            (Sat, Sat) -> fail "Implication not determined"
-            (Sat, Unsat) -> pure True
-            (Unsat, Sat) -> pure False
-            (Unknown, _) -> onUnknown
-            (_, Unknown) -> onUnknown
+        case result of
+            Just (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
+            Just (Sat, Sat) -> do
+                Log.logMessage ("Implication not determined" :: Text)
+                pure Nothing
+            Just (Sat, Unsat) -> pure . Just $ True
+            Just (Unsat, Sat) -> pure . Just $ False
+            Just (Unknown, _) -> retry opts smtGiven sexprsToCheck transState
+            Just (_, Unknown) -> retry opts smtGiven sexprsToCheck transState
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
 
-    retryOnce :: [DeclareCommand] -> [SExpr] -> TranslationState -> MaybeT (SMT io) Bool
-    retryOnce smtGiven sexprsToCheck transState = do
-        lift (restartSolver defaultSMTOptions)
-        (positive, negative) <- interactWihtSolver smtGiven sexprsToCheck transState
-        processSMTResult positive negative failBecauseUnknown
+    retry :: SMTOptions -> [DeclareCommand] -> [SExpr] -> TranslationState -> SMT io (Maybe Bool)
+    retry opts smtGiven sexprsToCheck transState = case opts.retryLimit of
+        Just x | x > 0 -> do
+            let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
+            restartSolver newOpts
+            solve newOpts smtGiven sexprsToCheck transState
+        _ -> runMaybeT failBecauseUnknown
 
     smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
     smtRun_ = lift . SMT.runCmd_
