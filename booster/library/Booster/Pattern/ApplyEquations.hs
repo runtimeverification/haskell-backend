@@ -28,6 +28,7 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
+-- import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -892,7 +893,14 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
             unless (null unclear) $ do
                 let checkWithSmt :: SMT.SMTContext -> EquationT io (Maybe Bool)
                     checkWithSmt smt =
-                        SMT.checkPredicates smt knownPredicates mempty (Set.fromList unclear)
+                        SMT.checkPredicates smt knownPredicates mempty (Set.fromList unclear) >>= \case
+                            Left SMT.SMTSolverUnknown{} -> do
+                                -- FIXME logging?
+                                pure Nothing
+                            Left _other ->
+                                pure Nothing -- liftIO $ Exception.throw other
+                            Right result ->
+                                pure $ Just result
                  in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
                         Nothing -> do
                             -- no solver or still unclear: abort
@@ -924,9 +932,14 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
             -- check all ensured conditions together with the path condition
             whenJust mbSolver $ \solver -> do
                 lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                    Just False -> do
+                    Right False -> do
                         throwE $ EnsuresFalse $ combine ensuredConditions
-                    _other -> pure ()
+                    Right _other ->
+                        pure ()
+                    Left SMT.SMTSolverUnknown{} ->
+                        pure ()
+                    Left _other ->
+                        pure () -- liftIO $ Exception.throw other
 
             lift $ pushConstraints $ Set.fromList ensuredConditions
             pure $ substituteInTerm subst rule.rhs
