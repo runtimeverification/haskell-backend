@@ -17,7 +17,7 @@ module Kore.JsonRpc.Server (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
-import Control.Monad (forM_, forever)
+import Control.Monad (forever)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -31,7 +31,6 @@ import Data.Conduit.List qualified as CL
 import Data.Conduit.Network (ServerSettings, appSink, appSource, runGeneralTCPServer)
 import Data.Conduit.TMChan (closeTBMChan, sinkTBMChan, sourceTBMChan)
 import Data.Maybe (catMaybes)
-import Data.Text qualified as Text
 import Kore.JsonRpc.Types (FromRequestCancellable (isCancel), ReqException (..), rpcJsonConfig)
 import Network.JSONRPC hiding (encodeConduit, runJSONRPCT)
 import UnliftIO (MonadUnliftIO, atomically, wait, withAsync)
@@ -112,13 +111,9 @@ srv respond handlers = do
                         Nothing -> do
                             return ()
                         Just (SingleRequest req) | Right True <- isCancel @q <$> fromRequest req -> do
-                            -- Log.logInfoNS "rpc" "Cancel request"
                             liftIO $ throwTo tid CancelRequest
                             loop
                         Just req -> do
-                            -- forM_ (getRequests req) $ \r -> do
-                            -- Log.logInfoNS "rpc" $ "Process request " <> mReqId r <> " " <> getReqMethod r
-                            -- Log.logDebugNS "rpc" $ Text.pack $ show r
                             liftIO $ atomically $ writeTChan reqQueue req
                             loop
              in loop
@@ -127,15 +122,6 @@ srv respond handlers = do
     isRequest = \case
         Request{} -> True
         _ -> False
-
-    getRequests = \case
-        SingleRequest r -> [r]
-        BatchRequest rs -> rs
-
-    mReqId = \case
-        Request _ _ _ (IdTxt i) -> i
-        Request _ _ _ (IdInt i) -> Text.pack $ show i
-        Notif{} -> ""
 
     cancelError = ErrorObj "Request cancelled" (-32000) Null
 

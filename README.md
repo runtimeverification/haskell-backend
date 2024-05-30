@@ -170,11 +170,13 @@ Note that only `cabal` currently works within the nix shell and since it does no
 
 ### Upgrading dependencies
 
-When one of the package description files (`kore.cabal`, `kore-rpc-types.cabal`) changes, or when upgrading to a newer `stack` resolver, the dependencies need to be consolidated to avoid accidental breakage from incompatible up-stream updates. We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using.
+We use `stack.yaml` (and hence `stack.yaml.lock`) as the source of truth about the Haskell package set the project is built with. The Nix flake uses [stacklock2nix](https://github.com/cdepillabout/stacklock2nix) to make the packages specified by the lock file available to `cabal-install` inside Nix.
 
-The script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) should do most of that work (the existing `freeze` file must be removed before running it), and [`scripts/check-cabal-stack-sync.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/check-cabal-stack-sync.sh) checks the result. Some manual adjustments will still be necessary for the `nix` builds in CI and locally to work.
+Any GHC or resolver upgrades must double-check the `ghcVersion` value in the [`flake.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L32) file.
 
-In addition, any GHC or resolver upgrades must double-check the `compiler-nix-name` and `index-state` values in the [`flake.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L41-L42) file.
+It may also be required to update [`all-cabal-hashes`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L101).
+
+To support the scenario of building the project with `cabal-install` outside of Nix, We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using. The script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) should do most of that work, and [`scripts/check-cabal-stack-sync.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/check-cabal-stack-sync.sh) checks the result. Some manual adjustments will still be necessary for the `nix` builds in CI and locally to work.
 
 ### Integration tests
 

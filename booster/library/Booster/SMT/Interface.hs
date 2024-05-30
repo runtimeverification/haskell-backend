@@ -16,7 +16,7 @@ module Booster.SMT.Interface (
 import Control.Exception (Exception, throw)
 import Control.Monad
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Except
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
 import Data.Either (isLeft)
@@ -65,9 +65,6 @@ throwSMT = throw . GeneralSMTError
 
 throwSMT' :: String -> a
 throwSMT' = throwSMT . pack
-
-throwUnknown :: Text -> Set Predicate -> Set Predicate -> a
-throwUnknown reason premises preds = throw $ SMTSolverUnknown reason premises preds
 
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
@@ -263,13 +260,13 @@ checkPredicates ::
     Set Predicate ->
     Map Variable Term ->
     Set Predicate ->
-    io (Maybe Bool)
+    io (Either SMTError (Maybe Bool))
 checkPredicates ctxt givenPs givenSubst psToCheck
-    | null psToCheck = pure $ Just True -- or Nothing?
+    | null psToCheck = pure . Right $ Just True
     | Left errMsg <- translated = Log.withContext "smt" $ do
         Log.logMessage $ "SMT translation error: " <> errMsg
-        pure Nothing
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runMaybeT $ do
+        pure . Left . SMTTranslationError $ errMsg
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runExceptT $ do
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -296,10 +293,10 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         mapM_ smtRun smtGiven
 
         consistent <- smtRun CheckSat
-        when (consistent /= Sat) $ do
-            void $ smtRun Pop
-            Log.logMessage ("Inconsistent ground truth, check returns Nothing" :: Text)
-            fail "returns nothing"
+        unless (consistent == Sat) $ do
+            let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
+            Log.logMessage errMsg
+        let ifConsistent check = if (consistent == Sat) then check else pure Unsat
 
         -- save ground truth for 2nd check
         smtRun_ Push
@@ -307,35 +304,37 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         -- run check for K ∧ P and then for K ∧ !P
         let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
 
-        smtRun_ $ Assert "P" allToCheck
-        positive <- smtRun CheckSat
+        positive <- ifConsistent $ do
+            smtRun_ $ Assert "P" allToCheck
+            smtRun CheckSat
         smtRun_ Pop
-        smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
-        negative <- smtRun CheckSat
-        void $ smtRun Pop
+        negative <- ifConsistent $ do
+            smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
+            smtRun CheckSat
+        smtRun_ Pop
 
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> pack (show (positive, negative))
 
         case (positive, negative) of
-            (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
-            (Sat, Sat) -> fail "Implication not determined"
-            (Sat, Unsat) -> pure True
-            (Unsat, Sat) -> pure False
+            (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
+            (Sat, Sat) -> pure Nothing -- implication not determined
+            (Sat, Unsat) -> pure $ Just True
+            (Unsat, Sat) -> pure $ Just False
             (Unknown, _) -> do
                 smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
                     other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             (_, Unknown) -> do
                 smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
                     other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
   where
-    smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
+    smtRun_ :: SMTEncode c => c -> ExceptT SMTError (SMT io) ()
     smtRun_ = lift . SMT.runCmd_
-    smtRun :: SMTEncode c => c -> MaybeT (SMT io) Response
+    smtRun :: SMTEncode c => c -> ExceptT SMTError (SMT io) Response
     smtRun = lift . SMT.runCmd
 
     translated = SMT.runTranslator $ do

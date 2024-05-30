@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -19,7 +21,6 @@ import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text, unpack)
 import Data.Text.Encoding qualified as Text
 import Options.Applicative
-import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Base (KoreDefinition (..))
@@ -33,7 +34,13 @@ import Booster.Log.Context qualified as Booster.Log
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Booster.Util (handleOutput, withFastLogger)
+import Booster.Util (
+    handleOutput,
+    newTimeCache,
+    withFastLogger,
+    pattern NoPrettyTimestamps,
+    pattern PrettyTimestamps,
+ )
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 
@@ -47,10 +54,12 @@ main = do
             , logLevels
             , logContexts
             , logTimeStamps
+            , timeStampsFormat
             , logFormat
             , llvmLibraryFile
             , smtOptions
             , equationOptions
+            , indexCells
             , eventlogEnabledUserEvents
             , logFile
             } = options
@@ -66,7 +75,7 @@ main = do
 
     withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
         definitionMap <-
-            loadDefinition definitionFile
+            loadDefinition indexCells definitionFile
                 >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                 >>= evaluate . force . either (error . show) id
         -- ensure the (default) main module is present in the definition
@@ -87,6 +96,7 @@ main = do
             (adjustLogLevels logLevels)
             logContexts
             logTimeStamps
+            timeStampsFormat
             logFormat
   where
     withLlvmLib libFile m = case libFile of
@@ -116,11 +126,15 @@ runServer ::
     (LogLevel, [LogLevel]) ->
     [Booster.Log.ContextFilter] ->
     Bool ->
+    TimestampFormat ->
     LogFormat ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps logFormat =
+runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat =
     do
-        mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
+        let timestampFlag = case timeStampsFormat of
+                Pretty -> PrettyTimestamps
+                Nanoseconds -> NoPrettyTimestamps
+        mTimeCache <- if logTimeStamps then Just <$> newTimeCache timestampFlag else pure Nothing
 
         withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
             let boosterContextLogger = case logFormat of
@@ -147,6 +161,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLeve
                     ( const $
                         flip runReaderT filteredBoosterContextLogger
                             . Booster.Log.unLoggerT
+                            . Booster.Log.withContext "booster"
                             . respond stateVar
                     )
                     [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]

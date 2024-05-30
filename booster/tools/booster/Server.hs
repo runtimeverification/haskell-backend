@@ -48,7 +48,6 @@ import System.Clock (
 import System.Environment qualified as Env
 import System.Exit
 import System.IO (hPutStrLn, stderr)
-import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
 import Booster.Definition.Attributes.Base (
@@ -134,11 +133,13 @@ main = do
                     , logLevels
                     , logFormat
                     , logTimeStamps
+                    , timeStampsFormat
                     , logContexts
+                    , logFile
                     , smtOptions
                     , equationOptions
+                    , indexCells
                     , eventlogEnabledUserEvents
-                    , logFile
                     }
             , proxyOptions =
                 ProxyOptions
@@ -160,14 +161,14 @@ main = do
             lvl `elem` customLevels
                 || lvl >= logLevel && lvl <= LevelError
         koreSolverOptions = translateSMTOpts smtOptions
+        timestampFlag = case timeStampsFormat of
+            Pretty -> Booster.PrettyTimestamps
+            Nanoseconds -> Booster.NoPrettyTimestamps
 
-    mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
+    mTimeCache <-
+        if logTimeStamps then Just <$> Booster.newTimeCache timestampFlag else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
-        -- flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
-        let runMonadLogger :: LoggingT IO a -> IO a
-            runMonadLogger = flip runLoggingT (handleOutput stderrLogger) . Logger.filterLogger levelFilter
-
         liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
             putStrLn $ "Tracing " <> show t
             enableCustomUserEvent t
@@ -246,12 +247,11 @@ main = do
                         , Log.logFormat = Log.Standard
                         }
                 srvSettings = serverSettings port "*"
-
             withLogger koreLogOptions $ \actualLogAction -> do
                 mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                 definitionsWithCeilSummaries <-
                     liftIO $
-                        loadDefinition definitionFile
+                        loadDefinition indexCells definitionFile
                             >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
@@ -260,6 +260,7 @@ main = do
                             Booster.Log.logMessage' $
                                 "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                     liftIO exitFailure
+
 
                 liftIO $
                     runBoosterLogger $
