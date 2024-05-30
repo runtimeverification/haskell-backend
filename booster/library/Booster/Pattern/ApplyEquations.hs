@@ -916,9 +916,6 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
                             -- can proceed
                             pure ()
 
-            -- case unclearConditions' of
-            --     [] -> do
-
             -- check ensured conditions, filter any true ones, prune
             -- if any is false
             let ensured =
