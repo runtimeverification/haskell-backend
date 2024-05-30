@@ -29,8 +29,8 @@ import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.Map qualified as Map
-import Data.Text qualified as Text
 import Data.Maybe (fromMaybe)
+import Data.Text qualified as Text
 import Data.Time.Clock.System (SystemTime (..), getSystemTime, systemToUTCTime)
 import Data.Time.Format
 import GHC.Generics (Generic)

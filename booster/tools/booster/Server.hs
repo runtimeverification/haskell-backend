@@ -261,7 +261,6 @@ main = do
                                 "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                     liftIO exitFailure
 
-
                 liftIO $
                     runBoosterLogger $
                         Booster.Log.withContext "ceil" $
