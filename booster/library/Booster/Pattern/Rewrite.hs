@@ -18,6 +18,7 @@ module Booster.Pattern.Rewrite (
 ) where
 
 import Control.Applicative ((<|>))
+import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -354,28 +355,30 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     -- check unclear requires-clauses in the context of known constraints (prior)
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
+    let smtUnclear = do
+            withContext "abort" . logMessage . renderOneLineText $
+                "Uncertain about condition(s) in a rule:" <+> pretty unclearRequires
+            failRewrite $
+                RuleConditionUnclear rule . coerce . foldl1 AndTerm $
+                    map coerce unclearRequires
     case mbSolver of
         Just solver -> do
-            checkAllRequires <- SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
+            checkAllRequires <-
+                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
 
             case checkAllRequires of
-                Nothing -> do
-                    -- unclear even with the prior
-                    withContext "abort" $
-                        logMessage $
-                            renderOneLineText $
-                                "Uncertain about a condition(s) in rule:" <+> pretty unclearRequires
-                    failRewrite $
-                        RuleConditionUnclear rule . coerce $
-                            foldl1 AndTerm $
-                                map coerce unclearRequires
-                Just False -> do
+                Left SMT.SMTSolverUnknown{} ->
+                    smtUnclear -- abort rewrite if a solver result was Unknown
+                Left other ->
+                    liftIO $ Exception.throw other -- fail hard on other SMT errors
+                Right (Just False) -> do
                     -- requires is actually false given the prior
                     withContext "failure" $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                     RewriteRuleAppT $ pure NotApplied
-                Just True ->
-                    -- can proceed
-                    pure ()
+                Right (Just True) ->
+                    pure () -- can proceed
+                Right Nothing ->
+                    smtUnclear -- no implication could be determined
         Nothing ->
             unless (null unclearRequires) $ do
                 withContext "abort" $
@@ -397,10 +400,15 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     -- check all new constraints together with the known side constraints
     whenJust mbSolver $ \solver ->
         (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-            Just False -> do
+            Right (Just False) -> do
                 withContext "success" $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
-            _other -> pure ()
+            Right _other ->
+                pure ()
+            Left SMT.SMTSolverUnknown{} ->
+                pure ()
+            Left other ->
+                liftIO $ Exception.throw other
 
     -- existential variables may be present in rule.rhs and rule.ensures,
     -- need to strip prefixes and freshen their names with respect to variables already
