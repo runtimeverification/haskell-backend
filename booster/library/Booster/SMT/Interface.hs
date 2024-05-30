@@ -263,9 +263,9 @@ checkPredicates ::
     Set Predicate ->
     Map Variable Term ->
     Set Predicate ->
-    io (Either SMTError Bool)
+    io (Either SMTError (Maybe Bool))
 checkPredicates ctxt givenPs givenSubst psToCheck
-    | null psToCheck = pure $ Right True
+    | null psToCheck = pure . Right $ Just True
     | Left errMsg <- translated = Log.withContext "smt" $ do
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
@@ -297,11 +297,10 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         mapM_ smtRun smtGiven
 
         consistent <- smtRun CheckSat
-        when (consistent /= Sat) $ do
-            void $ smtRun Pop
+        unless (consistent == Sat) $ do
             let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
             Log.logMessage errMsg
-            throwE $ GeneralSMTError errMsg
+        let ifConsistent check = if (consistent == Sat) then check else pure Unsat
 
         -- save ground truth for 2nd check
         smtRun_ Push
@@ -309,22 +308,24 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         -- run check for K ∧ P and then for K ∧ !P
         let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
 
-        smtRun_ $ Assert "P" allToCheck
-        positive <- smtRun CheckSat
+        positive <- ifConsistent $ do
+            smtRun_ $ Assert "P" allToCheck
+            smtRun CheckSat
         smtRun_ Pop
-        smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
-        negative <- smtRun CheckSat
-        void $ smtRun Pop
+        negative <- ifConsistent $ do
+            smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
+            smtRun CheckSat
+        smtRun_ Pop
 
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> pack (show (positive, negative))
 
         case (positive, negative) of
-            (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
-            (Sat, Sat) -> throwE $ GeneralSMTError "Implication not determined"
-            (Sat, Unsat) -> pure True
-            (Unsat, Sat) -> pure False
+            (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
+            (Sat, Sat) -> pure Nothing -- implication not determined
+            (Sat, Unsat) -> pure $ Just True
+            (Unsat, Sat) -> pure $ Just False
             (Unknown, _) -> do
                 smtRun GetReasonUnknown >>= \case
                     ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
