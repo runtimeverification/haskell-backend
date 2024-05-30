@@ -940,7 +940,6 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
                         pure ()
                     Left _other ->
                         pure () -- liftIO $ Exception.throw other
-
             lift $ pushConstraints $ Set.fromList ensuredConditions
             pure $ substituteInTerm subst rule.rhs
   where
