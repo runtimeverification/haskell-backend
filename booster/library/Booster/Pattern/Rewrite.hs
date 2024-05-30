@@ -359,7 +359,8 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
             checkAllRequires <- SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
 
             case checkAllRequires of
-                Nothing -> do
+                Left _ -> do
+                    -- TODO: we could process SMTError here
                     -- unclear even with the prior
                     withContext "abort" $
                         logMessage $
@@ -369,11 +370,11 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                         RuleConditionUnclear rule . coerce $
                             foldl1 AndTerm $
                                 map coerce unclearRequires
-                Just False -> do
+                Right False -> do
                     -- requires is actually false given the prior
                     withContext "failure" $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                     RewriteRuleAppT $ pure NotApplied
-                Just True ->
+                Right True ->
                     -- can proceed
                     pure ()
         Nothing ->
@@ -397,7 +398,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     -- check all new constraints together with the known side constraints
     whenJust mbSolver $ \solver ->
         (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-            Just False -> do
+            Right False -> do
                 withContext "success" $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
             _other -> pure ()
