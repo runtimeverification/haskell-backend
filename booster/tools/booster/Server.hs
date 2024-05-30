@@ -17,12 +17,9 @@ import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
     LogLevel (..),
-    LoggingT (runLoggingT),
-    MonadLoggerIO (askLoggerIO),
     ToLogStr (toLogStr),
     runNoLoggingT,
  )
-import Control.Monad.Logger qualified as Logger
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson (Value (Null))
 import Data.Aeson qualified as JSON
@@ -71,7 +68,6 @@ import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Booster.Util (handleOutput)
 import Booster.Util qualified as Booster
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
@@ -156,10 +152,6 @@ main = do
             logContexts
                 <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
         contextLoggingEnabled = not (null logContextsWithcustomLevelContexts)
-        levelFilter :: Logger.LogSource -> LogLevel -> Bool
-        levelFilter _source lvl =
-            lvl `elem` customLevels
-                || lvl >= logLevel && lvl <= LevelError
         koreSolverOptions = translateSMTOpts smtOptions
         timestampFlag = case timeStampsFormat of
             Pretty -> Booster.PrettyTimestamps

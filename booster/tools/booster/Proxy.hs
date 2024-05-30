@@ -14,7 +14,7 @@ module Proxy (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad (when)
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Trans.Except (runExcept)
 import Data.Aeson (ToJSON (..))
@@ -37,7 +37,6 @@ import Booster.JsonRpc as Booster (ServerState (..), execStateToKoreJson, toExec
 import Booster.JsonRpc.Utils
 import Booster.Log qualified
 import Booster.Syntax.Json.Internalise
-import Foreign qualified as Booster.Log
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
@@ -80,7 +79,6 @@ serverError detail = ErrorObj ("Server error: " <> detail) (-32032)
 respondEither ::
     forall m.
     Booster.Log.LoggerMIO m =>
-    MonadIO m =>
     ProxyConfig ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->

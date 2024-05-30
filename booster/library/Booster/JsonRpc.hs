@@ -20,7 +20,6 @@ import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
-import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (second)
@@ -542,8 +541,6 @@ handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
     SMT.SMTSolverUnknown reason premises preds -> do
-        -- Log.logErrorNS "booster" "SMT returned `Unknown'"
-
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
             allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
@@ -551,7 +548,6 @@ handleSmtError = JsonRpcHandler $ \case
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err
-        -- Log.logErrorNS "booster" msg
         pure $ RpcError.runtimeError msg
 
 data ServerState = ServerState

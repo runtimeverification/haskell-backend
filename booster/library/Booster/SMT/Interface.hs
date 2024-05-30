@@ -264,7 +264,7 @@ checkPredicates ::
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure . Right $ Just True
     | Left errMsg <- translated = Log.withContext "smt" $ do
-        Log.logMessage $ "SMT translation error: " <> errMsg
+        Log.withContext "abort" $ Log.logMessage $ "SMT translation error: " <> errMsg
         pure . Left . SMTTranslationError $ errMsg
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runExceptT $ do
         Log.logMessage $
@@ -324,13 +324,30 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Unsat, Sat) -> pure $ Just False
             (Unknown, _) -> do
                 smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+                    ReasonUnknown reason -> do
+                        Log.withContext "abort" $
+                            Log.logMessage $
+                                "Returned Unknown. Reason: " <> reason
+                        throwE $ SMTSolverUnknown reason givenPs psToCheck
+                    other -> do
+                        let msg = "Unexpected result while calling ':reason-unknown': " <> show other
+                        Log.withContext "abort" $ Log.logMessage $ Text.pack msg
+                        throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             (_, Unknown) -> do
                 smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
-            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
+                    ReasonUnknown reason -> do
+                        Log.withContext "abort" $
+                            Log.logMessage $
+                                "Returned Unknown. Reason: " <> reason
+                        throwE $ SMTSolverUnknown reason givenPs psToCheck
+                    other -> do
+                        let msg = "Unexpected result while calling ':reason-unknown': " <> show other
+                        Log.withContext "abort" $ Log.logMessage $ Text.pack msg
+                        throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+            other -> do
+                let msg = "Unexpected result while checking a condition: " <> show other
+                Log.withContext "abort" $ Log.logMessage $ Text.pack msg
+                throwSMT' msg
   where
     smtRun_ :: SMTEncode c => c -> ExceptT SMTError (SMT io) ()
     smtRun_ = lift . SMT.runCmd_

@@ -41,6 +41,7 @@ import Booster.Util (
     pattern NoPrettyTimestamps,
     pattern PrettyTimestamps,
  )
+import Booster.Util qualified as Booster
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 
@@ -141,11 +142,12 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLeve
                     Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
                     _ -> Booster.Log.textLogger stderrLogger
                 filteredBoosterContextLogger =
-                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage ctxts _) ->
-                        let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
-                         in any (flip Booster.Log.mustMatch ctxt) $
-                                logContexts
-                                    <> concatMap (\case Log.LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
+                    flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
+                        alwaysDisplay
+                            || let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
+                                in any (flip Booster.Log.mustMatch ctxt) $
+                                    logContexts
+                                        <> concatMap (\case Log.LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
             stateVar <-
                 newMVar
                     ServerState
