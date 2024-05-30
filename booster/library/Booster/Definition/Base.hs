@@ -55,9 +55,7 @@ data KoreDefinition = KoreDefinition
 -- | Axiom store, optimized for lookup by term-index and priority
 type Theory axiomType = Map TermIndex (Map Priority [axiomType])
 
-{- | The starting point for building up the definition. Could be
- 'Monoid' instance if the attributes had a Default.
--}
+-- | The starting point for building up the definition.
 emptyKoreDefinition :: DefinitionAttributes -> KoreDefinition
 emptyKoreDefinition attributes =
     KoreDefinition
