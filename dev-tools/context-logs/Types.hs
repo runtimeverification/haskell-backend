@@ -1,4 +1,4 @@
-module Types where
+module Types (module Types) where
 
 import Data.Aeson (FromJSON (..), ToJSON (..), Value (..), object, (.=))
 import Data.Aeson.Key (fromText, toString)
