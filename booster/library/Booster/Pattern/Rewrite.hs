@@ -50,7 +50,6 @@ import Booster.Log (
     LoggerMIO (..),
     WithJsonMessage (..),
     logMessage,
-    logMessage',
     logPretty,
     withContext,
     withPatternContext,

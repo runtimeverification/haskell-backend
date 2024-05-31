@@ -45,7 +45,7 @@ import Data.Sequence (Seq (..), pattern (:<|))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.TypeLits (KnownSymbol)
@@ -63,7 +63,7 @@ import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
 import Booster.Pattern.Util
-import Booster.Prettyprinter (renderDefault, renderOneLineText)
+import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..))

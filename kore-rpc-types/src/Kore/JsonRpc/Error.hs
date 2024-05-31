@@ -6,7 +6,6 @@
 module Kore.JsonRpc.Error (module Kore.JsonRpc.Error) where
 
 import Control.Exception (ErrorCall (..), SomeException)
-import Control.Monad.Logger (logWarnN)
 import Data.Aeson
 import Data.Char (toLower)
 import Data.Kind (Type)
