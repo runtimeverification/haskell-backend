@@ -57,9 +57,6 @@ throwSMT = throw . GeneralSMTError
 throwSMT' :: String -> a
 throwSMT' = throwSMT . pack
 
-throwUnknown :: Text -> Set Predicate -> Set Predicate -> a
-throwUnknown reason premises preds = throw $ SMTSolverUnknown reason premises preds
-
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
 
@@ -401,7 +398,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     failBecauseUnknown :: ExceptT SMTError (SMT io) (Maybe Bool)
     failBecauseUnknown =
         smtRun GetReasonUnknown >>= \case
-            ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+            ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
             other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
 
     interactWihtSolver ::

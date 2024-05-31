@@ -361,10 +361,10 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
             failRewrite $
                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
                     map coerce unclearRequires
-
     case mbSolver of
         Just solver -> do
-            checkAllRequires <- SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
+            checkAllRequires <-
+                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
 
             case checkAllRequires of
                 Left SMT.SMTSolverUnknown{} ->
