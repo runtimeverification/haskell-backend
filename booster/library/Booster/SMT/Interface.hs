@@ -18,7 +18,7 @@ import Control.Exception (Exception, throw)
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
@@ -326,25 +326,25 @@ checkPredicates ::
     Set Predicate ->
     Map Variable Term ->
     Set Predicate ->
-    io (Maybe Bool)
+    io (Either SMTError (Maybe Bool))
 checkPredicates ctxt givenPs givenSubst psToCheck
-    | null psToCheck = pure $ Just True -- or Nothing?
+    | null psToCheck = pure . Right $ Just True
     | Left errMsg <- translated = Log.withContext "smt" $ do
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
-        pure Nothing
+        pure . Left . SMTTranslationError $ errMsg
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
-        evalSMT ctxt $ do
-            hardResetSolver ctxt.options
+        evalSMT ctxt . runExceptT $ do
+            lift $ hardResetSolver ctxt.options
             solve smtGiven sexprsToCheck transState
   where
     solve ::
         [DeclareCommand] ->
         [SExpr] ->
         TranslationState ->
-        SMT io (Maybe Bool)
+        ExceptT SMTError (SMT io) (Maybe Bool)
     solve smtGiven sexprsToCheck transState = do
-        declareVariables transState
+        lift $ declareVariables transState
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -356,35 +356,34 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 ]
         Log.logMessage . Pretty.renderOneLineText $
             hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
-        result <- runMaybeT $ interactWihtSolver smtGiven sexprsToCheck
+        result <- interactWihtSolver smtGiven sexprsToCheck
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> (Text.pack $ show result)
 
         case result of
-            Just (Unsat, Unsat) -> throwSMT "Inconsistent ground truth: should have been caught above"
-            Just (Sat, Sat) -> do
+            (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
+            (Sat, Sat) -> do
                 Log.logMessage ("Implication not determined" :: Text)
                 pure Nothing
-            Just (Sat, Unsat) -> pure . Just $ True
-            Just (Unsat, Sat) -> pure . Just $ False
-            Just (Unknown, _) -> retry smtGiven sexprsToCheck transState
-            Just (_, Unknown) -> retry smtGiven sexprsToCheck transState
-            Just other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
-            Nothing -> pure Nothing -- inconsistent ground truth
-    retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> SMT io (Maybe Bool)
+            (Sat, Unsat) -> pure . Just $ True
+            (Unsat, Sat) -> pure . Just $ False
+            (Unknown, _) -> retry smtGiven sexprsToCheck transState
+            (_, Unknown) -> retry smtGiven sexprsToCheck transState
+            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
+    retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> ExceptT SMTError (SMT io) (Maybe Bool)
     retry smtGiven sexprsToCheck transState = do
-        opts <- SMT $ gets (.options)
+        opts <- lift . SMT $ gets (.options)
         case opts.retryLimit of
             Just x | x > 0 -> do
                 let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                hardResetSolver newOpts
+                lift $ hardResetSolver newOpts
                 solve smtGiven sexprsToCheck transState
-            _ -> runMaybeT failBecauseUnknown
+            _ -> failBecauseUnknown
 
-    smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()
+    smtRun_ :: SMTEncode c => c -> ExceptT SMTError (SMT io) ()
     smtRun_ = lift . SMT.runCmd_
-    smtRun :: SMTEncode c => c -> MaybeT (SMT io) Response
+    smtRun :: SMTEncode c => c -> ExceptT SMTError (SMT io) Response
     smtRun = lift . SMT.runCmd
 
     translated :: Either Text (([DeclareCommand], [SExpr]), TranslationState)
@@ -399,14 +398,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
 
-    failBecauseUnknown :: MaybeT (SMT io) Bool
+    failBecauseUnknown :: ExceptT SMTError (SMT io) (Maybe Bool)
     failBecauseUnknown =
         smtRun GetReasonUnknown >>= \case
             ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
             other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
 
     interactWihtSolver ::
-        [DeclareCommand] -> [SExpr] -> MaybeT (SMT io) (Response, Response)
+        [DeclareCommand] -> [SExpr] -> ExceptT SMTError (SMT io) (Response, Response)
     interactWihtSolver smtGiven sexprsToCheck = do
         smtRun_ Push
 
@@ -414,10 +413,10 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         mapM_ smtRun smtGiven
 
         consistent <- smtRun CheckSat
-        when (consistent /= Sat) $ do
-            void $ smtRun Pop
-            Log.logMessage ("Inconsistent ground truth, check returns Nothing" :: Text)
-            fail "returns nothing"
+        unless (consistent == Sat) $ do
+            let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
+            Log.logMessage errMsg
+        let ifConsistent check = if (consistent == Sat) then check else pure Unsat
 
         -- save ground truth for 2nd check
         smtRun_ Push
@@ -425,11 +424,13 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         -- run check for K ∧ P and then for K ∧ !P
         let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
 
-        smtRun_ $ Assert "P" allToCheck
-        positive <- smtRun CheckSat
+        positive <- ifConsistent $ do
+            smtRun_ $ Assert "P" allToCheck
+            smtRun CheckSat
         smtRun_ Pop
-        smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
-        negative <- smtRun CheckSat
-        void $ smtRun Pop
+        negative <- ifConsistent $ do
+            smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
+            smtRun CheckSat
+        smtRun_ Pop
 
         pure (positive, negative)
