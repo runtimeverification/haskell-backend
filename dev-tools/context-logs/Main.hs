@@ -13,10 +13,10 @@ import Data.Aeson.Encode.Pretty
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List (foldl')
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text (unpack)
 import System.Environment (getArgs)
 import Types
-import Data.Maybe (fromMaybe)
 
 {- | Tests textual kore parser with given arguments and reports
    internalisation results.
@@ -34,6 +34,6 @@ main =
         "aborts" : files -> do
             let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
             (counts, rIdTorLoc) <- foldM countContexts mempty files
-            forM_ (Map.toList counts) $ \(k, v) -> 
+            forM_ (Map.toList counts) $ \(k, v) ->
                 putStrLn $ unpack k <> " | " <> unpack (fromMaybe "-" $ Map.lookup k rIdTorLoc) <> " | " <> show v
         _ -> error "invalid option"
