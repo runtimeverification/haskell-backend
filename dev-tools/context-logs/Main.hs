@@ -16,6 +16,7 @@ import Data.Map qualified as Map
 import Data.Text (unpack)
 import System.Environment (getArgs)
 import Types
+import Data.Maybe (fromMaybe)
 
 {- | Tests textual kore parser with given arguments and reports
    internalisation results.
@@ -31,7 +32,8 @@ main =
             nested <- foldl' (foldl' toNested) (Nested mempty) . map decode . BS.lines <$> BS.readFile file
             BS.putStrLn $ encodePretty' defConfig{confIndent = Spaces 2} $ toJSON nested
         "aborts" : files -> do
-            let countContexts m f = foldl' (foldl' countAborts) m . map ((context <$>) . decode) . BS.lines <$> BS.readFile f
-            counts <- foldM countContexts mempty files
-            forM_ (Map.toList counts) $ \(k, v) -> putStrLn $ unpack k <> " " <> show v
+            let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
+            (counts, rIdTorLoc) <- foldM countContexts mempty files
+            forM_ (Map.toList counts) $ \(k, v) -> 
+                putStrLn $ unpack k <> " | " <> unpack (fromMaybe "-" $ Map.lookup k rIdTorLoc) <> " | " <> show v
         _ -> error "invalid option"

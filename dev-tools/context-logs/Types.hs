@@ -52,10 +52,11 @@ toNested :: Nested -> LogMessage -> Nested
 toNested n LogMessage{context, message} =
     insertAt context message n
 
-countAborts :: Map Text Int -> Seq Context -> Map Text Int
-countAborts m = \case
+countAborts :: (Map Text Int, Map Text Text) -> LogMessage -> (Map Text Int, Map Text Text)
+countAborts maps@(countMap, ruleMap) LogMessage{context, message} = case context of
     (_ :|> Ref "rewrite" ruleId :|> Plain "match" :|> Plain "abort") -> increment ruleId
     (_ :|> Ref "rewrite" ruleId :|> Plain "abort") -> increment ruleId
-    _ -> m
+    (_ :|> Ref "rewrite" ruleId :|> Plain "detail") | String ruleLoc <- message -> (countMap, Map.insert ruleId ruleLoc ruleMap)
+    _ -> maps
   where
-    increment rid = Map.alter (maybe (Just 1) (Just . (+ 1))) rid m
+    increment rid = (Map.alter (maybe (Just 1) (Just . (+ 1))) rid countMap, ruleMap)
