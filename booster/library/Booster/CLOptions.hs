@@ -272,7 +272,8 @@ levelToContext =
         ,
             ( "Aborts"
             ,
-                [ [ctxt| booster>function*|simplification*|rewrite*,abort |]
+                [ [ctxt| booster>function*|simplification*|rewrite*,detail |]
+                , [ctxt| booster>function*|simplification*|rewrite*,abort |]
                 , [ctxt| booster>function*|simplification*|rewrite*,match,abort |]
                 , [ctxt| booster>failure,abort |]
                 ]
