@@ -427,7 +427,6 @@ llvmSimplify term = do
     case config.llvmApi of
         Nothing -> pure term
         Just api -> do
-            logOtherNS "booster" (LevelOther "Simplify") "Calling LLVM simplification"
             let simp = cached LLVM $ evalLlvm config.definition api $ traverseTerm BottomUp simp pure
              in simp term
   where
@@ -808,7 +807,6 @@ emitEquationTrace t loc lbl uid res = do
                 Success rewritten -> EquationApplied t (EquationMetadata loc lbl uid) rewritten
                 Failure failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
         prettyItem = pack . renderDefault . pretty $ newTraceItem
-    logOther (LevelOther "Simplify") prettyItem
     case res of
         Success{} -> logOther (LevelOther "SimplifySuccess") prettyItem
         _ -> pure ()
@@ -916,13 +914,9 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
     checkConstraint whenBottom (Predicate p) = withContext "constraint" $ do
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
             fallBackToUnsimplifiedOrBottom = \case
-                e@UndefinedTerm{} -> do
-                    logOther (LevelOther "Simplify") . pack . renderDefault $ pretty e
+                UndefinedTerm{} ->
                     pure FalseBool
-                e -> do
-                    logOther (LevelOther "Simplify") . pack . renderDefault $
-                        "Aborting recursive simplification:" <> pretty e
-                    pure p
+                _ -> pure p
         -- exceptions need to be handled differently in the recursion,
         -- falling back to the unsimplified constraint instead of aborting.
         simplified <-
