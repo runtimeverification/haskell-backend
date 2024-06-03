@@ -89,6 +89,19 @@ executables:
       - transformers
     ghc-options:
       - -rtsopts
+  count-aborts:
+    source-dirs: count-aborts
+    main: Main.hs
+    dependencies:
+      - aeson
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - text
+    ghc-options:
+      - -rtsopts
   parsetest-binary:
     source-dirs: parsetest-binary
     main: ParsetestBinary.hs
