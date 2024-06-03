@@ -108,10 +108,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.stack
-          key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
-            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
+            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell-actions/setup@v2.7
         id: setup-haskell-stack

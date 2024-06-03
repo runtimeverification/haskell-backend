@@ -11,9 +11,6 @@ copyright:      2018-2021 Runtime Verification Inc
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-extra-source-files:
-  README.md
-  CHANGELOG.md
 
 source-repository head
   type: git
