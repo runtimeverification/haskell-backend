@@ -17,7 +17,7 @@ import Data.Text (unpack)
 import System.Environment (getArgs)
 import Types
 
-{- | Utility for parsing and extracting information from context logs, 
+{- | Utility for parsing and extracting information from context logs,
    produced by running the booster binary with `--log-format json --log-file <path>`.
    This tool collects the number of aborts for each rewrite rule and displays the infromation in a table.
    Call via `count-aborts <path_1> ...  <path_n>`

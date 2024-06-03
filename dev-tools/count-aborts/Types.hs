@@ -22,8 +22,8 @@ data LogMessage = LogMessage
     }
     deriving (Generic, FromJSON)
 
-
-countAborts :: (Map Text Int, Map Text (Text, Text)) -> LogMessage -> (Map Text Int, Map Text (Text, Text))
+countAborts ::
+    (Map Text Int, Map Text (Text, Text)) -> LogMessage -> (Map Text Int, Map Text (Text, Text))
 countAborts maps@(countMap, ruleMap) LogMessage{context, message} = case context of
     (_ :|> Ref "rewrite" ruleId :|> Plain "match" :|> Plain "abort") -> increment ruleId
     (_ :|> Ref "rewrite" ruleId :|> Plain "abort") -> increment ruleId
