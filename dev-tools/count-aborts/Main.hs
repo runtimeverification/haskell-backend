@@ -19,15 +19,22 @@ import Types
 
 {- | Utility for parsing and extracting information from context logs,
    produced by running the booster binary with `--log-format json --log-file <path>`.
-   This tool collects the number of aborts for each rewrite rule and displays the infromation in a table.
-   Call via `count-aborts <path_1> ...  <path_n>`
+   This tool collects the number of aborts for each rewrite rule and displays the informantion in a table.
+   Call via `count-aborts <path_1> ... <path_n>`
 -}
 main :: IO ()
 main =
     getArgs >>= \case
-        files -> do
-            let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
-            (counts, rIdTorLoc) <- foldM countContexts mempty files
-            forM_ (reverse $ sortOn snd $ Map.toList counts) $ \(k, v) -> do
-                let (rType, rLoc) = fromMaybe ("-", "-") $ Map.lookup k rIdTorLoc
-                putStrLn $ unpack rType <> " " <> unpack k <> " | " <> unpack rLoc <> " | " <> show v
+        files
+            | any (== "-h") files || any (== "--help") files -> do
+                putStrLn $
+                    "This tool parses the JSON contextual logs, collects the number of aborts for each rewrite rule and displays the informantion in a table."
+                putStrLn $ "Call via `count-aborts <path_1> ... <path_n>`"
+                putStrLn $
+                    "To produce the correct context logs, run kore-rpc-booster with `--log-format json --log-file <file>`"
+            | otherwise -> do
+                let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
+                (counts, rIdTorLoc) <- foldM countContexts mempty files
+                forM_ (reverse $ sortOn snd $ Map.toList counts) $ \(k, v) -> do
+                    let (rType, rLoc) = fromMaybe ("-", "-") $ Map.lookup k rIdTorLoc
+                    putStrLn $ unpack rType <> " " <> unpack k <> " | " <> unpack rLoc <> " | " <> show v
