@@ -275,6 +275,7 @@ levelToContext =
                 [ [ctxt| booster>function*|simplification*|rewrite*,detail |]
                 , [ctxt| booster>function*|simplification*|rewrite*,abort |]
                 , [ctxt| booster>function*|simplification*|rewrite*,match,abort |]
+                , [ctxt| booster>function*|simplification*|rewrite*>failure,break |]
                 , [ctxt| booster>failure,abort |]
                 ]
             )
