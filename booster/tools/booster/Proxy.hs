@@ -236,7 +236,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
 
                 Booster.Log.withContext "proxy" $
                     Booster.Log.logMessage' $
-                        Text.unwords $
+                        Text.unwords
                             ["Problem with simplify request: ", Text.pack getErrMsg, "-", boosterError]
                 -- NB the timing information for booster execution is lost here.
                 loggedKore SimplifyM req
@@ -372,7 +372,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     -- simplify Booster's state with Kore's simplifier
                     Booster.Log.withContext "proxy" $
                         Booster.Log.logMessage $
-                            Text.pack $
+                            Text.pack
                                 "Simplifying booster state and falling back to Kore "
                     simplifyResult <-
                         if cfg.simplifyBeforeFallback
