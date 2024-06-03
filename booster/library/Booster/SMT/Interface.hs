@@ -353,7 +353,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 ]
         Log.logMessage . Pretty.renderOneLineText $
             hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
-        result <- interactWihtSolver smtGiven sexprsToCheck
+        result <- interactWithSolver smtGiven sexprsToCheck
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
                 <> (Text.pack $ show result)
@@ -367,7 +367,10 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Unsat, Sat) -> pure . Just $ False
             (Unknown, _) -> retry smtGiven sexprsToCheck transState
             (_, Unknown) -> retry smtGiven sexprsToCheck transState
-            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
+            other ->
+                throwE . GeneralSMTError $
+                    ("Unexpected result while checking a condition: " :: Text) <> Text.pack (show other)
+
     retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> ExceptT SMTError (SMT io) (Maybe Bool)
     retry smtGiven sexprsToCheck transState = do
         opts <- lift . SMT $ gets (.options)
@@ -401,9 +404,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
             other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
 
-    interactWihtSolver ::
+    -- Given the known truth and the expressions to check,
+    -- interact with the solver to establish the validity of the  expressions.
+    --
+    -- the solver effects are localised to this function:
+    -- - pushing and popping of the assertion context
+    interactWithSolver ::
         [DeclareCommand] -> [SExpr] -> ExceptT SMTError (SMT io) (Response, Response)
-    interactWihtSolver smtGiven sexprsToCheck = do
+    interactWithSolver smtGiven sexprsToCheck = do
         smtRun_ Push
 
         -- assert ground truth
