@@ -26,11 +26,11 @@ main :: IO ()
 main =
     getArgs >>= \case
         files
-            | any (== "-h") files || any (== "--help") files -> do
-                putStrLn $
+            | "-h" `elem` files || "--help" `elem` files -> do
+                putStrLn
                     "This tool parses the JSON contextual logs, collects the number of aborts for each rewrite rule and displays the informantion in a table."
-                putStrLn $ "Call via `count-aborts <path_1> ... <path_n>`"
-                putStrLn $
+                putStrLn "Call via `count-aborts <path_1> ... <path_n>`"
+                putStrLn
                     "To produce the correct context logs, run kore-rpc-booster with `--log-format json --log-file <file>`"
             | otherwise -> do
                 let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
