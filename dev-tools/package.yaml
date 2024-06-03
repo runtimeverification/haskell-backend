@@ -89,19 +89,17 @@ executables:
       - transformers
     ghc-options:
       - -rtsopts
-  context-logs:
-    source-dirs: context-logs
+  count-aborts:
+    source-dirs: count-aborts
     main: Main.hs
     dependencies:
       - aeson
-      - aeson-pretty
       - base
       - bytestring
       - containers
       - directory
       - filepath
       - text
-      - transformers
     ghc-options:
       - -rtsopts
   parsetest-binary:
