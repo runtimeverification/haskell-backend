@@ -17,6 +17,7 @@ module Booster.JsonRpc (
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
+import Control.Exception qualified as Exception
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
@@ -392,7 +393,9 @@ respond stateVar =
                                     solver <- SMT.initSolver def smtOptions
                                     result <- SMT.getModelFor solver boolPs suppliedSubst
                                     SMT.finaliseSolver solver
-                                    pure result
+                                    case result of
+                                        Left err -> liftIO $ Exception.throw err -- fail hard on SMT errors
+                                        Right response -> pure response
                         Log.logOtherNS "booster" (Log.LevelOther "SMT") $
                             "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
                         pure . Right . RpcTypes.GetModel $ case smtResult of
