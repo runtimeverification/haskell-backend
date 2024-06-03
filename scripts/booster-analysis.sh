@@ -28,6 +28,10 @@ nix_shell "cabal build kore-rpc-client"
 
 export CLIENT=$(nix_shell "cabal exec which kore-rpc-client" | tail -1)
 
+nix_shell "cabal build count-aborts"
+
+COUNT=$(nix_shell "cabal exec which count-aborts" | tail -1)
+
 # removes trailing "/" from BUG_REPORT_DIR
 export LOG_DIR=${LOG_DIR:-"$(dirname "$BUG_REPORT_DIR/.")-logs"}
 
@@ -48,12 +52,10 @@ run_tarball(){
 export -f run_tarball
 export SCRIPT_DIR
 
-find $BUG_REPORT_DIR -name \*.tar -or -name \*.tar.gz -print0 | xargs -0 -t -I {} -P $PARALLEL bash -c 'run_tarball "$@"' $(basename {}) {}
+# Mac is always special and for some reason, passing `-print0`` as the last argument breaks the find command if there is an `-or`
+find $BUG_REPORT_DIR -print0 -name \*.tar -or -name \*.tar.gz | xargs -0 -t -I {} -P $PARALLEL bash -c 'run_tarball "$@"' $(basename {}) {}
 
 cd $LOG_DIR
 
 # Counting abort reasons
-grep -e "Uncertain about" *log | sed -e 's,/tmp/tmp.[^/]*/evm-semantics/kevm-pyk/src/kevm_pyk/kproj/evm-semantics/,,' -e "s/.*Uncertain about \(.*\)$/\1/" -e "s/jumpi.true :.*/jumpi.true/" | nix_shell "runghc --ghc-arg='-package extra' --ghc-arg='-package containers' $SCRIPT_DIR/Count.hs" > abort_reasons.count
-
-# Counting uncertain conditions by rule and actual outcome in kore-rpc
-grep -E -e "^\[Aborts.*Uncertain about a condition| Booster aborted, kore yields"  *log | sed -n -e '/Uncertain about/,/yields/{/yields/{!p};p}' | sed  -e 's/\(jumpi\.true\) :.*$/\1/' | sed -n -e 'N;s/.*Uncertain about a condition in \(.*\)\n.*kore yields \(.*\)/ \1 -- \2 /g;p' | less | nix_shell "runghc --ghc-arg='-package extra' --ghc-arg='-package containers' $SCRIPT_DIR/Count.hs" > uncertain_conditions.count
+find . -name \*.json.log | xargs $COUNT > abort_reasons.count
