@@ -113,11 +113,18 @@ mkContext opts prelude = do
             , options = opts
             }
 
+{- | Close the connection to the SMT solver process, but hold on to the other resources in @SMTContext@,
+such as the transcript handle. This function is used in 'Booster.SMT.Interface.hardResetSolver'
+to reset the solver connection while keeping the same transcript handle.
+-}
 closeContext :: LoggerMIO io => SMTContext -> io ()
 closeContext ctxt = do
     logMessage ("Stopping SMT solver" :: Text)
     liftIO ctxt.solverClose
 
+{- | Close the connection to the SMT solver process and all other resources in  @SMTContext@.
+ Using this function means completely stopping the solver with no intention of using it any more.
+-}
 destroyContext :: LoggerMIO io => SMTContext -> io ()
 destroyContext ctxt = do
     logMessage ("Permanently stopping SMT solver" :: Text)
