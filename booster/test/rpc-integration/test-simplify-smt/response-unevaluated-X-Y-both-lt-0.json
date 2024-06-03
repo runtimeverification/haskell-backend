@@ -1,0 +1,140 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "state": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "And",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortThing",
+                    "args": []
+                },
+                "patterns": [
+                    {
+                        "tag": "App",
+                        "name": "Lblevaluated",
+                        "sorts": [],
+                        "args": [
+                            {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortString",
+                                    "args": []
+                                },
+                                "value": "A and B have the same sign and are not zero"
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "And",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortThing",
+                            "args": []
+                        },
+                        "patterns": [
+                            {
+                                "tag": "Equals",
+                                "argSort": {
+                                    "tag": "SortApp",
+                                    "name": "SortBool",
+                                    "args": []
+                                },
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortThing",
+                                    "args": []
+                                },
+                                "first": {
+                                    "tag": "DV",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortBool",
+                                        "args": []
+                                    },
+                                    "value": "true"
+                                },
+                                "second": {
+                                    "tag": "App",
+                                    "name": "Lbl'Unds-LT-'Int'Unds'",
+                                    "sorts": [],
+                                    "args": [
+                                        {
+                                            "tag": "EVar",
+                                            "name": "X",
+                                            "sort": {
+                                                "tag": "SortApp",
+                                                "name": "SortInt",
+                                                "args": []
+                                            }
+                                        },
+                                        {
+                                            "tag": "DV",
+                                            "sort": {
+                                                "tag": "SortApp",
+                                                "name": "SortInt",
+                                                "args": []
+                                            },
+                                            "value": "0"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "tag": "Equals",
+                                "argSort": {
+                                    "tag": "SortApp",
+                                    "name": "SortBool",
+                                    "args": []
+                                },
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortThing",
+                                    "args": []
+                                },
+                                "first": {
+                                    "tag": "DV",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortBool",
+                                        "args": []
+                                    },
+                                    "value": "true"
+                                },
+                                "second": {
+                                    "tag": "App",
+                                    "name": "Lbl'Unds-LT-'Int'Unds'",
+                                    "sorts": [],
+                                    "args": [
+                                        {
+                                            "tag": "EVar",
+                                            "name": "Y",
+                                            "sort": {
+                                                "tag": "SortApp",
+                                                "name": "SortInt",
+                                                "args": []
+                                            }
+                                        },
+                                        {
+                                            "tag": "DV",
+                                            "sort": {
+                                                "tag": "SortApp",
+                                                "name": "SortInt",
+                                                "args": []
+                                            },
+                                            "value": "0"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}
