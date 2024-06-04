@@ -71,6 +71,10 @@ instance HasAttributes ParsedAxiom where
             <*> readConcreteness attributes
             <*> (attributes .! "smt-lemma")
       where
+        -- Some rewrite rules are dynamically generated and injected into
+        -- a running server using the RPC "add-module" endpoint.
+        -- These rules, for historical reasons, are not given unique ids. Hopefully they will be in future.
+        -- Until then, we use the rule label, if available, in place of the ID.
         uniqueIdWithFallback :: Maybe Text -> Maybe Label -> UniqueId
         uniqueIdWithFallback mbUniqueId mbLabel = UniqueId $
             case mbUniqueId of
