@@ -864,6 +864,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     logMessage ("Rewrite stuck after simplification." :: Text)
                     pure $ RewriteStuck p
                 Just simplifiedPat -> do
+                    logMessage msg
                     cont simplifiedPat
 
 data RewriteStepsState = RewriteStepsState
