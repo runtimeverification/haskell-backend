@@ -1,0 +1,3 @@
+kompile --backend haskell non-linear-int-requires.k --syntax-module NON-LINEAR-INT-REQUIRES
+cp non-linear-int-requires-kompiled/definition.kore ./non-linear-int-requires.kore
+rm -r non-linear-int-requires-kompiled
