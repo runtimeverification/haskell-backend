@@ -40,8 +40,6 @@ import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
-import Control.Monad.Logger (MonadLoggerIO)
-import Control.Monad.Logger qualified as Log
 
 data SMTError
     = GeneralSMTError Text
@@ -165,7 +163,6 @@ the solver could determine 'Unsat'.
 getModelFor ::
     forall io.
     Log.LoggerMIO io =>
-    MonadLoggerIO io =>
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
@@ -175,7 +172,6 @@ getModelFor ctxt ps subst
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure . Right . Right $ Map.empty
     | Left errMsg <- translated = Log.withContext "smt" $ do
-        Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
     | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
@@ -327,7 +323,6 @@ themselves (together, without constraints in K).
 checkPredicates ::
     forall io.
     Log.LoggerMIO io =>
-    MonadLoggerIO io =>
     SMT.SMTContext ->
     Set Predicate ->
     Map Variable Term ->
@@ -336,8 +331,7 @@ checkPredicates ::
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure . Right $ Just True
     | Left errMsg <- translated = Log.withContext "smt" $ do
-        Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
-        Log.logMessage $ "SMT translation error: " <> errMsg
+        Log.withContext "abort" $ Log.logMessage $ "SMT translation error: " <> errMsg
         pure . Left . SMTTranslationError $ errMsg
     | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
         evalSMT ctxt . runExceptT $ do
@@ -405,8 +399,15 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     failBecauseUnknown :: ExceptT SMTError (SMT io) (Maybe Bool)
     failBecauseUnknown =
         smtRun GetReasonUnknown >>= \case
-            ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
-            other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+            ReasonUnknown reason -> do
+                Log.withContext "abort" $
+                    Log.logMessage $
+                        "Returned Unknown. Reason: " <> reason
+                throwE $ SMTSolverUnknown reason givenPs psToCheck
+            other -> do
+                let msg = "Unexpected result while calling ':reason-unknown': " <> show other
+                Log.withContext "abort" $ Log.logMessage $ Text.pack msg
+                throwSMT' msg
 
     -- Given the known truth and the expressions to check,
     -- interact with the solver to establish the validity of the  expressions.
@@ -441,5 +442,9 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
             smtRun CheckSat
         smtRun_ Pop
+
+        Log.logMessage $
+            "Check of Given ∧ P and Given ∧ !P produced "
+                <> pack (show (positive, negative))
 
         pure (positive, negative)

@@ -204,6 +204,7 @@ executables:
       - monad-logger
       - optparse-applicative
       - text
+      - transformers
     ghc-options:
     - -rtsopts
     - -threaded

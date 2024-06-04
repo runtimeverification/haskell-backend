@@ -22,7 +22,6 @@ import Control.DeepSeq (NFData)
 import Control.Monad (foldM)
 import Control.Monad.Extra (concatMapM)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Writer (runWriterT, tell)
 import Data.ByteString.Char8 (isPrefixOf)
@@ -75,7 +74,6 @@ instance Pretty ComputeCeilSummary where
 
 computeCeilsDefinition ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     io (KoreDefinition, [ComputeCeilSummary])
@@ -93,7 +91,6 @@ computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
 
 computeCeilRule ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     RewriteRule.RewriteRule "Rewrite" ->
@@ -147,7 +144,7 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
         | otherwise = pure $ Just p
     simplifyCeil _ other = pure $ Just other
 
-computeCeil :: MonadLoggerIO io => Term -> EquationT io [Either Predicate Term]
+computeCeil :: LoggerMIO io => Term -> EquationT io [Either Predicate Term]
 computeCeil term@(SymbolApplication symbol _ args)
     | symbol.attributes.symbolType
         /= Booster.Definition.Attributes.Base.Function Booster.Definition.Attributes.Base.Partial =
