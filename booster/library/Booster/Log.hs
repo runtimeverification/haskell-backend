@@ -43,8 +43,10 @@ import Booster.Pattern.Base (
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (externaliseTerm)
+import Booster.Util (Flag (..))
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Util (showHashHex)
+import UnliftIO (MonadUnliftIO)
 
 newtype Logger a = Logger (a -> IO ())
 
@@ -58,7 +60,7 @@ instance IsString LogContext where
     fromString = LogContext . pack
 
 data LogMessage where
-    LogMessage :: ToLogFormat a => [LogContext] -> a -> LogMessage
+    LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [LogContext] -> a -> LogMessage
 
 class MonadIO m => LoggerMIO m where
     getLogger :: m (Logger LogMessage)
@@ -85,13 +87,22 @@ instance MonadIO m => LoggerMIO (Control.Monad.Logger.NoLoggingT m) where
 logMessage :: (LoggerMIO m, ToLogFormat a) => a -> m ()
 logMessage a =
     getLogger >>= \case
-        (Logger l) -> liftIO $ l $ LogMessage [] a
+        (Logger l) -> liftIO $ l $ LogMessage (Flag False) [] a
+
+{- Log message which is always shown even when context filters are applied -}
+logMessage' :: (LoggerMIO m, ToLogFormat a) => a -> m ()
+logMessage' a =
+    getLogger >>= \case
+        (Logger l) -> liftIO $ l $ LogMessage (Flag True) [] a
 
 logPretty :: (LoggerMIO m, Pretty a) => a -> m ()
 logPretty = logMessage . renderOneLineText . pretty
 
 withContext :: LoggerMIO m => LogContext -> m a -> m a
-withContext c = withLogger (\(Logger l) -> Logger $ l . (\(LogMessage ctxt m) -> LogMessage (c : ctxt) m))
+withContext c =
+    withLogger
+        ( \(Logger l) -> Logger $ l . (\(LogMessage alwaysShown ctxt m) -> LogMessage alwaysShown (c : ctxt) m)
+        )
 
 newtype TermCtxt = TermCtxt Int
 
@@ -174,6 +185,7 @@ newtype LoggerT m a = LoggerT {unLoggerT :: ReaderT (Logger LogMessage) m a}
         , MonadIO
         , Control.Monad.Logger.MonadLogger
         , Control.Monad.Logger.MonadLoggerIO
+        , MonadUnliftIO
         )
 
 instance MonadIO m => LoggerMIO (LoggerT m) where
@@ -181,7 +193,7 @@ instance MonadIO m => LoggerMIO (LoggerT m) where
     withLogger modL (LoggerT m) = LoggerT $ withReaderT modL m
 
 textLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
-textLogger l = Logger $ \(LogMessage ctxts msg) ->
+textLogger l = Logger $ \(LogMessage _ ctxts msg) ->
     let logLevel = mconcat $ intersperse "][" $ map (\(LogContext lc) -> toTextualLog lc) ctxts
      in l $
             "["
@@ -191,7 +203,7 @@ textLogger l = Logger $ \(LogMessage ctxts msg) ->
                 <> "\n"
 
 jsonLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
-jsonLogger l = Logger $ \(LogMessage ctxts msg) ->
+jsonLogger l = Logger $ \(LogMessage _ ctxts msg) ->
     let ctxt = toJSON $ map (\(LogContext lc) -> toJSONLog lc) ctxts
      in liftIO $
             l $

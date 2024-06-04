@@ -15,13 +15,9 @@ module Booster.Pattern.ApplyEquations (
     getConfig,
     EquationPreference (..),
     EquationFailure (..),
-    EquationMetadata (..),
-    ApplyEquationResult (..),
     ApplyEquationFailure (..),
     applyEquations,
     handleSimplificationEquation,
-    isMatchFailure,
-    isSuccess,
     simplifyConstraint,
     simplifyConstraints,
     SimplifierCache,
@@ -31,14 +27,6 @@ module Booster.Pattern.ApplyEquations (
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.Logger.CallStack (
-    LogLevel (..),
-    MonadLogger,
-    MonadLoggerIO,
-    logOther,
-    logOtherNS,
-    logWarnNS,
- )
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
@@ -57,7 +45,7 @@ import Data.Sequence (Seq (..), pattern (:<|))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.TypeLits (KnownSymbol)
@@ -75,7 +63,7 @@ import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
 import Booster.Pattern.Util
-import Booster.Prettyprinter (renderDefault, renderOneLineText)
+import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..))
@@ -84,17 +72,17 @@ import Kore.Util (showHashHex)
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
     -- ~ EquationConfig -> EquationState -> io (Either EquationFailure a, EquationState)
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO)
 
-instance MonadLoggerIO io => LoggerMIO (EquationT io) where
+instance MonadIO io => LoggerMIO (EquationT io) where
     getLogger = EquationT $ asks logger
     withLogger modL (EquationT m) = EquationT $ withReaderT (\cfg@EquationConfig{logger} -> cfg{logger = modL logger}) m
 
-throw :: MonadLoggerIO io => EquationFailure -> EquationT io a
+throw :: Monad io => EquationFailure -> EquationT io a
 throw = EquationT . lift . throwE
 
 catch_ ::
-    MonadLoggerIO io => EquationT io a -> (EquationFailure -> EquationT io a) -> EquationT io a
+    Monad io => EquationT io a -> (EquationFailure -> EquationT io a) -> EquationT io a
 catch_ (EquationT op) hdlr = EquationT $ do
     cfg <- ask
     lift (runReaderT op cfg `catchE` (\e -> let EquationT fallBack = hdlr e in runReaderT fallBack cfg))
@@ -170,86 +158,6 @@ instance Monoid SimplifierCache where
 data CacheTag = LLVM | Equations
     deriving stock (Show)
 
-data EquationMetadata = EquationMetadata
-    { location :: Maybe Location
-    , label :: Maybe Label
-    , ruleId :: Maybe UniqueId
-    }
-    deriving stock (Eq, Show)
-
-data EquationTrace term
-    = EquationApplied term EquationMetadata term
-    | EquationNotApplied term EquationMetadata ApplyEquationFailure
-    deriving stock (Eq, Show)
-
-instance Pretty (EquationTrace Term) where
-    pretty (EquationApplied subjectTerm metadata rewritten) =
-        vsep
-            [ "Simplifying term"
-            , prettyTerm
-            , "to"
-            , pretty rewritten
-            , "using " <> locationInfo
-            ]
-      where
-        locationInfo = pretty metadata.location <> " - " <> pretty metadata.label
-        prettyTerm = pretty subjectTerm
-    pretty (EquationNotApplied subjectTerm metadata result) = case result of
-        FailedMatch reason ->
-            vsep ["Term did not match rule " <> locationInfo, prettyTerm, pretty reason]
-        IndeterminateMatch ->
-            vsep ["Term had indeterminate match for rule " <> locationInfo, prettyTerm]
-        RuleNotPreservingDefinedness ->
-            vsep
-                [ "Simplifying term"
-                , prettyTerm
-                , "failed because the rule at"
-                , locationInfo
-                , "does not preserve definedness"
-                ]
-        IndeterminateCondition cs ->
-            vsep $
-                [ "Simplifying term"
-                , prettyTerm
-                , "failed with indeterminate condition(s):"
-                ]
-                    ++ map pretty cs
-                    ++ ["using " <> locationInfo]
-        ConditionFalse p ->
-            vsep
-                [ "Simplifying term"
-                , prettyTerm
-                , "failed with false condition"
-                , pretty p
-                , "using " <> locationInfo
-                ]
-        EnsuresFalse p ->
-            vsep
-                [ "Simplifying term"
-                , prettyTerm
-                , "using " <> locationInfo
-                , "resulted in ensuring false condition"
-                , pretty p
-                ]
-        MatchConstraintViolated constrained varName ->
-            vsep
-                [ "Concreteness constraint violated: "
-                , pretty $ show constrained <> " variable " <> show varName
-                , " in rule " <> locationInfo
-                , "Term:"
-                , prettyTerm
-                ]
-      where
-        locationInfo = pretty metadata.location <> " - " <> pretty metadata.label
-        prettyTerm = pretty subjectTerm
-
-isMatchFailure, isSuccess :: EquationTrace Term -> Bool
-isMatchFailure (EquationNotApplied _ _ FailedMatch{}) = True
-isMatchFailure (EquationNotApplied _ _ IndeterminateMatch{}) = True
-isMatchFailure _ = False
-isSuccess EquationApplied{} = True
-isSuccess _ = False
-
 startState :: SimplifierCache -> EquationState
 startState cache =
     EquationState
@@ -260,38 +168,38 @@ startState cache =
         , cache
         }
 
-eqState :: MonadLoggerIO io => StateT EquationState io a -> EquationT io a
+eqState :: Monad io => StateT EquationState io a -> EquationT io a
 eqState = EquationT . lift . lift
 
-getState :: MonadLoggerIO io => EquationT io EquationState
+getState :: Monad io => EquationT io EquationState
 getState = eqState get
 
-getConfig :: MonadLoggerIO io => EquationT io EquationConfig
+getConfig :: Monad io => EquationT io EquationConfig
 getConfig = EquationT ask
 
-countSteps :: MonadLoggerIO io => EquationT io Int
+countSteps :: Monad io => EquationT io Int
 countSteps = length . (.termStack) <$> getState
 
-pushTerm :: MonadLoggerIO io => Term -> EquationT io ()
+pushTerm :: Monad io => Term -> EquationT io ()
 pushTerm t = eqState . modify $ \s -> s{termStack = t :<| s.termStack}
 
-pushConstraints :: MonadLoggerIO io => Set Predicate -> EquationT io ()
+pushConstraints :: Monad io => Set Predicate -> EquationT io ()
 pushConstraints ps = eqState . modify $ \s -> s{predicates = s.predicates <> ps}
 
-setChanged, resetChanged :: MonadLoggerIO io => EquationT io ()
+setChanged, resetChanged :: Monad io => EquationT io ()
 setChanged = eqState . modify $ \s -> s{changed = True}
 resetChanged = eqState . modify $ \s -> s{changed = False}
 
-getChanged :: MonadLoggerIO io => EquationT io Bool
+getChanged :: Monad io => EquationT io Bool
 getChanged = eqState $ gets (.changed)
 
-pushRecursion :: MonadLoggerIO io => Term -> EquationT io (Bound "Recursion")
+pushRecursion :: Monad io => Term -> EquationT io (Bound "Recursion")
 pushRecursion t = eqState $ do
     stk <- gets (.recursionStack)
     modify $ \s -> s{recursionStack = t : stk}
     pure (coerce $ 1 + length stk)
 
-popRecursion :: MonadLoggerIO io => EquationT io ()
+popRecursion :: LoggerMIO io => EquationT io ()
 popRecursion = do
     s <- getState
     if null s.recursionStack
@@ -301,40 +209,41 @@ popRecursion = do
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
-toCache :: MonadLoggerIO io => CacheTag -> Term -> Term -> EquationT io ()
+toCache :: Monad io => CacheTag -> Term -> Term -> EquationT io ()
 toCache tag orig result = eqState . modify $ \s -> s{cache = updateCache tag s.cache}
   where
     insertInto = Map.insert orig result
     updateCache LLVM cache = cache{llvm = insertInto cache.llvm}
     updateCache Equations cache = cache{equations = insertInto cache.equations}
 
-fromCache :: MonadLoggerIO io => CacheTag -> Term -> EquationT io (Maybe Term)
+fromCache :: Monad io => CacheTag -> Term -> EquationT io (Maybe Term)
 fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
   where
     select :: CacheTag -> SimplifierCache -> Map Term Term
     select LLVM = (.llvm)
     select Equations = (.equations)
 
-logWarn :: MonadLogger m => Text -> m ()
+logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
-    logWarnNS "booster" $
-        msg <> " For more details, enable context logging '--log-context \"*>abort,detail\"'"
+    logMessage' $
+        msg <> " For more details, enable full context logging '--log-context \"*\"'"
 
-checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
+checkForLoop :: LoggerMIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
-        withContext "abort" . withContext "detail" $
-            logMessage $
-                renderOneLineText $
-                    "Equation loop detected:"
-                        <+> hsep
+        withContext "abort" $ do
+            logWarn "Equation loop detected."
+            withContext "detail" $
+                logMessage $
+                    renderOneLineText $
+                        hsep
                             ( intersperse "," $
                                 map (\(Term attrs _) -> "term" <+> pretty (showHashHex attrs.hash)) $
                                     reverse $
                                         t : take (i + 1) (toList termStack)
                             )
-        logWarn "Equation loop detected."
+
         throw (EquationLoop $ reverse $ t : take (i + 1) (toList termStack))
 
 data Direction = TopDown | BottomUp
@@ -370,7 +279,7 @@ runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
     pure (res, endState.cache)
 
 iterateEquations ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Direction ->
     EquationPreference ->
     Term ->
@@ -381,29 +290,25 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            let msg, details :: Text
-                msg =
+            withContext "abort" $ do
+                logWarn
                     "Recursion limit exceeded. The limit can be increased by \
                     \ restarting the server with '--equation-max-recursion N'."
-                details =
-                    "Recursion limit exceeded. \
-                    \Previous \"term*detail\" messages show the terms involved."
-            withContext "abort" . withContext "detail" $ logMessage details
-            logWarn msg
             throw . TooManyRecursions . (.recursionStack) =<< getState
 
-    go :: MonadLoggerIO io => Term -> EquationT io Term
+    go :: LoggerMIO io => Term -> EquationT io Term
     go currentTerm
         | (getAttributes currentTerm).isEvaluated = pure currentTerm
         | otherwise = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                let msg =
-                        "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                withContext "abort" . withContext "detail" . logMessage . renderOneLineText $
-                    msg <+> "Final term:" <+> pretty currentTerm
-                logWarn $ renderOneLineText msg
+                withContext "abort" $ do
+                    logWarn $
+                        renderOneLineText $
+                            "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                    withContext "detail" . logMessage . renderOneLineText $
+                        "Final term:" <+> pretty currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -421,13 +326,12 @@ iterateEquations direction preference startTerm = do
                 then checkForLoop newTerm >> resetChanged >> go newTerm
                 else pure llvmResult
 
-llvmSimplify :: forall io. MonadLoggerIO io => Term -> EquationT io Term
+llvmSimplify :: forall io. LoggerMIO io => Term -> EquationT io Term
 llvmSimplify term = do
     config <- getConfig
     case config.llvmApi of
         Nothing -> pure term
         Just api -> do
-            logOtherNS "booster" (LevelOther "Simplify") "Calling LLVM simplification"
             let simp = cached LLVM $ evalLlvm config.definition api $ traverseTerm BottomUp simp pure
              in simp term
   where
@@ -437,18 +341,16 @@ llvmSimplify term = do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
-                        let msg = "LLVM backend error detected: " <> Text.decodeUtf8 e
-                            details = msg <> " while evaluating " <> renderOneLineText (pretty t)
-                        withContext "abort" . withContext "detail" $ logMessage details
-                        logWarn msg
+                        withContext "abort" $
+                            logWarn $
+                                "LLVM backend error detected: " <> Text.decodeUtf8 e
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> do
                         when (result /= t) $ do
                             setChanged
                             withContext "success" $
                                 withTermContext result $
-                                    emitEquationTrace t Nothing (Just "LLVM") Nothing $
-                                        Success result
+                                    pure ()
                         pure result
         | otherwise =
             cb t
@@ -459,7 +361,6 @@ llvmSimplify term = do
 -- | Evaluate and simplify a term.
 evaluateTerm ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -472,7 +373,7 @@ evaluateTerm direction def llvmApi smtSolver =
 
 -- version for internal nested evaluation
 evaluateTerm' ::
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Direction ->
     Term ->
     EquationT io Term
@@ -483,7 +384,6 @@ evaluateTerm' direction = iterateEquations direction PreferFunctions
 -}
 evaluatePattern ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -496,7 +396,6 @@ evaluatePattern def mLlvmLibrary smtSolver cache =
 -- version for internal nested evaluation
 evaluatePattern' ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Pattern ->
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
@@ -510,7 +409,7 @@ evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternCon
     pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
 
 -- evaluate the given predicate assuming all others
-simplifyAssumedPredicate :: LoggerMIO io => MonadLoggerIO io => Predicate -> EquationT io ()
+simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
     allPs <- predicates <$> getState
     let otherPs = Set.delete p allPs
@@ -520,7 +419,6 @@ simplifyAssumedPredicate p = do
 
 evaluateConstraints ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -532,7 +430,6 @@ evaluateConstraints def mLlvmLibrary smtSolver cache =
 
 evaluateConstraints' ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Set Predicate ->
     EquationT io (Set Predicate)
 evaluateConstraints' constraints = do
@@ -551,7 +448,7 @@ evaluateConstraints' constraints = do
   one equation will be applied per level (if any).
 -}
 traverseTerm ::
-    MonadLoggerIO m => Direction -> (Term -> m Term) -> (Term -> m Term) -> Term -> m Term
+    LoggerMIO m => Direction -> (Term -> m Term) -> (Term -> m Term) -> Term -> m Term
 traverseTerm direction onRecurse onEval trm = do
     case trm of
         dv@DomainValue{} ->
@@ -608,7 +505,7 @@ traverseTerm direction onRecurse onEval trm = do
                 <$> mapM onRecurse keyVals
                 <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
 
-cached :: MonadLoggerIO io => CacheTag -> (Term -> EquationT io Term) -> Term -> EquationT io Term
+cached :: LoggerMIO io => CacheTag -> (Term -> EquationT io Term) -> Term -> EquationT io Term
 cached cacheTag cb t@(Term attributes _)
     | attributes.isEvaluated = pure t
     | otherwise =
@@ -623,8 +520,7 @@ cached cacheTag cb t@(Term attributes _)
                     withContext "success" $
                         withContext "cached" $
                             withTermContext cachedTerm $
-                                emitEquationTrace t Nothing (Just ("Cache" <> Text.pack (show cacheTag))) Nothing $
-                                    Success cachedTerm
+                                pure ()
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
@@ -639,7 +535,7 @@ elseApply cb1 cb2 term = do
 -}
 applyHooksAndEquations ::
     forall io.
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     EquationPreference ->
     Term ->
     EquationT io Term
@@ -655,9 +551,8 @@ applyHooksAndEquations pref term = do
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
                     let hookName = maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook
                         onError e = do
-                            withContext "abort" . withContext "detail" . logMessage $
-                                e <> " while evaluating " <> renderOneLineText (pretty term)
-                            logWarn e
+                            withContext "abort" $
+                                logWarn e
                             throw (InternalError e)
                     withContext (LogContext $ HookCtxt hookName) $
                         either onError checkChanged $
@@ -687,11 +582,6 @@ applyHooksAndEquations pref term = do
             )
             term
 
-data ApplyEquationResult
-    = Success Term
-    | Failure ApplyEquationFailure
-    deriving stock (Eq, Show)
-
 data ApplyEquationFailure
     = FailedMatch FailReason
     | IndeterminateMatch
@@ -703,47 +593,43 @@ data ApplyEquationFailure
     deriving stock (Eq, Show)
 
 type ResultHandler io =
-    -- | action on successful equation application
-    (Term -> EquationT io Term) ->
     -- | action on failed match
     EquationT io Term ->
     -- | action on aborted equation application
     EquationT io Term ->
-    ApplyEquationResult ->
+    ApplyEquationFailure ->
     EquationT io Term
 
-handleFunctionEquation :: MonadLoggerIO io => ResultHandler io
-handleFunctionEquation success continue abort = \case
-    Success rewritten -> success rewritten
-    Failure (FailedMatch _) -> continue
-    Failure IndeterminateMatch{} -> abort
-    Failure (IndeterminateCondition{}) -> abort
-    Failure (ConditionFalse _) -> continue
-    Failure (EnsuresFalse p) -> do
+handleFunctionEquation :: LoggerMIO io => ResultHandler io
+handleFunctionEquation continue abort = \case
+    FailedMatch _ -> continue
+    IndeterminateMatch{} -> abort
+    IndeterminateCondition{} -> abort
+    ConditionFalse _ -> continue
+    EnsuresFalse p -> do
         withContext "abort" $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
-    Failure RuleNotPreservingDefinedness -> abort
-    Failure (MatchConstraintViolated{}) -> continue
+    RuleNotPreservingDefinedness -> abort
+    MatchConstraintViolated{} -> continue
 
-handleSimplificationEquation :: MonadLoggerIO io => ResultHandler io
-handleSimplificationEquation success continue _abort = \case
-    Success rewritten -> success rewritten
-    Failure (FailedMatch _) -> continue
-    Failure IndeterminateMatch{} -> continue
-    Failure (IndeterminateCondition{}) -> continue
-    Failure (ConditionFalse _) -> continue
-    Failure (EnsuresFalse p) -> do
-        withContext "failure" $
+handleSimplificationEquation :: LoggerMIO io => ResultHandler io
+handleSimplificationEquation continue _abort = \case
+    FailedMatch _ -> continue
+    IndeterminateMatch{} -> continue
+    IndeterminateCondition{} -> continue
+    ConditionFalse _ -> continue
+    EnsuresFalse p -> do
+        withContext "abort" $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
-    Failure RuleNotPreservingDefinedness -> continue
-    Failure (MatchConstraintViolated{}) -> continue
+    RuleNotPreservingDefinedness -> continue
+    MatchConstraintViolated{} -> continue
 
 applyEquations ::
     forall io tag.
     KnownSymbol tag =>
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Theory (RewriteRule tag) ->
     ResultHandler io ->
     Term ->
@@ -778,49 +664,34 @@ applyEquations theory handler term = do
     processEquations [] =
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
-        res <- withRuleContext eq $ applyEquation term eq
-        emitEquationTrace term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
-        handler
-            ( \t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
-            )
-            (processEquations rest)
-            ( withContext (LogContext eq) $
-                withContext "abort" $
-                    logMessage ("Aborting simplification/function evaluation" :: Text) >> pure term
-            )
-            res
-
-{- | Trace application or failure to apply an equation
-     * log into stderr
-     * accumulate the trace into the state
--}
-emitEquationTrace ::
-    MonadLoggerIO io =>
-    Term ->
-    Maybe Location ->
-    Maybe Label ->
-    Maybe UniqueId ->
-    ApplyEquationResult ->
-    EquationT io ()
-emitEquationTrace t loc lbl uid res = do
-    let newTraceItem =
-            case res of
-                Success rewritten -> EquationApplied t (EquationMetadata loc lbl uid) rewritten
-                Failure failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
-        prettyItem = pack . renderDefault . pretty $ newTraceItem
-    logOther (LevelOther "Simplify") prettyItem
-    case res of
-        Success{} -> logOther (LevelOther "SimplifySuccess") prettyItem
-        _ -> pure ()
+        withRuleContext eq (applyEquation term eq) >>= \case
+            Right t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
+            Left (m, err) ->
+                handler
+                    ( ( withContext (LogContext eq) $
+                            m $
+                                withContext "failure" . withContext "continue"
+                      )
+                        >> processEquations rest
+                    )
+                    ( ( withContext (LogContext eq) $
+                            m $
+                                withContext "failure" . withContext "break"
+                      )
+                        >> pure term
+                    )
+                    err
 
 applyEquation ::
     forall io tag.
     KnownSymbol tag =>
-    MonadLoggerIO io =>
+    LoggerMIO io =>
     Term ->
     RewriteRule tag ->
-    EquationT io ApplyEquationResult
-applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
+    EquationT
+        io
+        (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
+applyEquation term rule = runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $ do
         withContext "abort" $
@@ -829,30 +700,43 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
             "Equation with existentials: " <> Text.pack (show rule)
     -- immediately cancel if not preserving definedness
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext "failure" $
-            logMessage $
-                renderOneLineText $
-                    "Uncertain about definedness of rule due to:"
-                        <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-        throwE RuleNotPreservingDefinedness
+        throwE
+            ( \ctxt ->
+                ctxt $
+                    logMessage $
+                        renderOneLineText $
+                            "Uncertain about definedness of rule due to:"
+                                <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+            , RuleNotPreservingDefinedness
+            )
     -- immediately cancel if rule has concrete() flag and term has variables
     when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
-        withContext "failure" $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
-        throwE (MatchConstraintViolated Concrete "* (term has variables)")
+        throwE
+            ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
+            , MatchConstraintViolated Concrete "* (term has variables)"
+            )
     -- match lhs
     koreDef <- (.definition) <$> lift getConfig
     case matchTerms Eval koreDef rule.lhs term of
-        MatchFailed failReason -> do
-            withContext "match" $ withContext "failure" $ logPretty failReason
-            throwE $ FailedMatch failReason
-        MatchIndeterminate remainder -> do
-            withContext "match" $
-                withContext "failure" $
-                    logMessage $
-                        WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                            renderOneLineText $
-                                "Uncertain about match with rule. Remainder:" <+> pretty remainder
-            throwE IndeterminateMatch
+        MatchFailed failReason ->
+            throwE
+                ( \ctxt ->
+                    withContext "match" $
+                        ctxt $
+                            logPretty failReason
+                , FailedMatch failReason
+                )
+        MatchIndeterminate remainder ->
+            throwE
+                ( \ctxt ->
+                    withContext "match" $
+                        ctxt $
+                            logMessage $
+                                WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                    renderOneLineText $
+                                        "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                , IndeterminateMatch
+                )
         MatchSuccess subst -> do
             -- cancel if condition
             -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
@@ -881,19 +765,27 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
             toCheck <- lift $ filterOutKnownConstraints knownPredicates required
 
             -- check the filtered requires clause conditions
-            unclearConditions <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
+            unclearConditions <-
+                catMaybes
+                    <$> mapM
+                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                        )
+                        toCheck
 
             -- unclear conditions may have been simplified and
             -- could now be syntactically present in the path constraints, filter again
             stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
 
             -- abort if any of the conditions is still unclear at that point
-            unless (null stillUnclear) $ do
-                withContext "failure" $
-                    logMessage $
-                        renderOneLineText $
-                            "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty stillUnclear)
-                throwE $ IndeterminateCondition unclearConditions
+            unless (null stillUnclear) $
+                throwE
+                    ( \ctxt ->
+                        ctxt $
+                            logMessage $
+                                renderOneLineText $
+                                    "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
+                    , IndeterminateCondition unclearConditions
+                    )
 
             -- check ensured conditions, filter any
             -- true ones, prune if any is false
@@ -903,7 +795,11 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
                         (Set.toList rule.ensures)
             ensuredConditions <-
                 -- throws if an ensured condition found to be false
-                catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
+                catMaybes
+                    <$> mapM
+                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                        )
+                        ensured
             lift $ pushConstraints $ Set.fromList ensuredConditions
             pure $ substituteInTerm subst rule.rhs
   where
@@ -919,27 +815,17 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
-    checkConstraint ::
-        (Predicate -> ApplyEquationFailure) ->
-        Predicate ->
-        ExceptT ApplyEquationFailure (EquationT io) (Maybe Predicate)
     checkConstraint whenBottom (Predicate p) = withContext "constraint" $ do
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
             fallBackToUnsimplifiedOrBottom = \case
-                e@UndefinedTerm{} -> do
-                    logOther (LevelOther "Simplify") . pack . renderDefault $ pretty e
-                    pure FalseBool
-                e -> do
-                    logOther (LevelOther "Simplify") . pack . renderDefault $
-                        "Aborting recursive simplification:" <> pretty e
-                    pure p
+                UndefinedTerm{} -> pure FalseBool
+                _ -> pure p
         -- exceptions need to be handled differently in the recursion,
         -- falling back to the unsimplified constraint instead of aborting.
         simplified <-
             lift $ simplifyConstraint' True p `catch_` fallBackToUnsimplifiedOrBottom
         case simplified of
             FalseBool -> do
-                withContext "failure" $ logMessage ("Simplified to #Bottom." :: Text)
                 throwE . whenBottom $ coerce p
             TrueBool -> pure Nothing
             other -> pure . Just $ coerce other
@@ -950,7 +836,10 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
     checkConcreteness ::
         Concreteness ->
         Map Variable Term ->
-        ExceptT ApplyEquationFailure (EquationT io) ()
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
     checkConcreteness Unconstrained _ = pure ()
     checkConcreteness (AllConstrained constrained) subst =
         mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
@@ -966,28 +855,29 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
         (VarName, SortName) ->
         Constrained ->
         Term ->
-        ExceptT ApplyEquationFailure (EquationT io) ()
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
     mkCheck (varName, _) constrained (Term attributes _)
-        | not test = do
-            withContext "failure" $
-                logMessage $
-                    renderOneLineText $
-                        hsep
-                            [ "Concreteness constraint violated: "
-                            , pretty $ show constrained <> " variable " <> show varName
-                            ]
-            throwE $ MatchConstraintViolated constrained varName
+        | not test =
+            throwE
+                ( \ctxt ->
+                    ctxt $
+                        logMessage $
+                            renderOneLineText $
+                                hsep
+                                    [ "Concreteness constraint violated: "
+                                    , pretty $ show constrained <> " variable " <> show varName
+                                    ]
+                , MatchConstraintViolated constrained varName
+                )
         | otherwise = pure ()
       where
         test = case constrained of
             Concrete -> attributes.isConstructorLike
             Symbolic -> not attributes.isConstructorLike
 
-    verifyVar ::
-        Map Variable Term ->
-        (VarName, SortName) ->
-        (Term -> ExceptT ApplyEquationFailure (EquationT io) ()) ->
-        ExceptT ApplyEquationFailure (EquationT io) ()
     verifyVar subst (variableName, sortName) check =
         maybe
             ( lift . throw . InternalError . Text.pack $
@@ -1010,7 +900,6 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
 -}
 simplifyConstraint ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -1022,7 +911,6 @@ simplifyConstraint def mbApi mbSMT cache (Predicate p) = do
 
 simplifyConstraints ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -1035,7 +923,7 @@ simplifyConstraints def mbApi mbSMT cache ps =
             <$> mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
 -- version for internal nested evaluation
-simplifyConstraint' :: MonadLoggerIO io => Bool -> Term -> EquationT io Term
+simplifyConstraint' :: LoggerMIO io => Bool -> Term -> EquationT io Term
 -- Evaluates terms of boolean sort (coming from predicates of the form
 -- 'true \equals P' using simplifyBool if they are concrete, or using
 -- evaluateTerm.
@@ -1048,12 +936,9 @@ simplifyConstraint' recurseIntoEvalBool = \case
                     withContext "llvm" $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
-                                let msg =
+                                withContext "abort" $
+                                    logWarn $
                                         "LLVM backend error detected: " <> Text.decodeUtf8 e
-                                    details =
-                                        msg <> " while evaluating " <> renderOneLineText (pretty t)
-                                withContext "abort" . withContext "detail" $ logMessage details
-                                logWarn msg
                                 throw $ UndefinedTerm t $ LlvmError e
                             Right res -> do
                                 let result =
@@ -1068,7 +953,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
             withTermContext t $
                 if recurseIntoEvalBool then evalBool t else pure t
   where
-    evalBool :: MonadLoggerIO io => Term -> EquationT io Term
+    evalBool :: LoggerMIO io => Term -> EquationT io Term
     evalBool t = do
         prior <- getState -- save prior state so we can revert
         eqState $ put prior{termStack = mempty, changed = False}

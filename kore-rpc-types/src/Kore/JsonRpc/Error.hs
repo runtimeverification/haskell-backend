@@ -6,7 +6,6 @@
 module Kore.JsonRpc.Error (module Kore.JsonRpc.Error) where
 
 import Control.Exception (ErrorCall (..), SomeException)
-import Control.Monad.Logger (logWarnN)
 import Data.Aeson
 import Data.Char (toLower)
 import Data.Kind (Type)
@@ -114,12 +113,10 @@ backendError detail = ErrorObj (toSentence $ fromHumps nm) code (toJSON detail)
 
 handleErrorCall, handleSomeException :: JsonRpcHandler
 handleErrorCall = JsonRpcHandler $
-    \(ErrorCallWithLocation msg loc) -> do
-        logWarnN $ Text.pack $ "Error in " <> loc <> ": " <> msg
+    \(ErrorCallWithLocation msg loc) ->
         pure $
             runtimeError $
                 object ["error" .= msg, "context" .= loc]
 handleSomeException = JsonRpcHandler $
-    \(err :: SomeException) -> do
-        logWarnN $ Text.pack $ show err
+    \(err :: SomeException) ->
         pure $ runtimeError $ object ["error" .= show err]

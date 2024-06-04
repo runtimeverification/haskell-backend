@@ -269,6 +269,16 @@ levelToContext =
                 [ [ctxt| booster|kore>smt |]
                 ]
             )
+        ,
+            ( "Aborts"
+            ,
+                [ [ctxt| booster>function*|simplification*|rewrite*,detail |]
+                , [ctxt| booster>function*|simplification*|rewrite*,abort |]
+                , [ctxt| booster>function*|simplification*|rewrite*,match,abort |]
+                , [ctxt| booster>function*|simplification*|rewrite*>failure,break |]
+                , [ctxt| booster>failure,abort |]
+                ]
+            )
         ]
 
 -- Partition provided log levels into standard and custom ones, and
