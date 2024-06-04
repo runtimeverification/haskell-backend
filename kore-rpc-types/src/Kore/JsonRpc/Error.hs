@@ -119,5 +119,5 @@ handleErrorCall = JsonRpcHandler $
             runtimeError $
                 object ["error" .= msg, "context" .= loc]
 handleSomeException = JsonRpcHandler $
-    \(err :: SomeException) -> do
+    \(err :: SomeException) ->
         pure $ runtimeError $ object ["error" .= show err]
