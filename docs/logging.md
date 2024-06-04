@@ -82,8 +82,10 @@ nested context, for  running the matching algorithm. usual logs include:
 ...[match][abort] Uncertain about match with rule. Remainder: [(PUSH(_)_EVM_PushOp_Int(Rule#VarN:SortInt{})...
 ```
 
-### `[failure]`/`[abort]`
-both nested contexts indicate a failure. roughly speaking, `[failure]` is an indicator that a rule does not apply, whereas an `[abort]` is usually indicative of the booster being unable/unsure about proceeding and often falls back to the old backend, tho this is more complicated in equation application, where `aborts` may be recoverable from. perhaps we need slightly different labels, tho it will be obvious that a failure/abort happened inside a function/simplification application from the preceeding context(s).
+### `[failure]`/`[failure][continue]`/`[failure][break]`/`[abort]`
+All of the above contexts indicate some for of a failure. Roughly speaking, `[failure]` is an indicator that a rewrite rule does not apply, whereas an `[abort]` is usually indicative of the booster being unable/unsure about proceeding and often falls back to the old backend. 
+
+Things get more complicated in equation application, where some failures are recoverable from depending on the type of equation being applied. We indicate these with a nested `[failure][continue]` context, indicating that the backend will proceed applying further rules in the same priority group. If a failure to apply an equation leads to simplification aborting entirely, we use the `[failure][break]` context to show the reason.
 
 ### `[success]`
 context used for printing successful match or rewrite. will usually have the following shapes:

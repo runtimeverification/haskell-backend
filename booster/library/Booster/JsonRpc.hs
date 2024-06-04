@@ -21,7 +21,6 @@ import Control.Exception qualified as Exception
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
-import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (second)
@@ -96,7 +95,6 @@ import Kore.Syntax.Json.Types qualified as Syntax
 respond ::
     forall m.
     LoggerMIO m =>
-    Log.MonadLoggerIO m =>
     MVar ServerState ->
     Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
 respond stateVar =
@@ -123,10 +121,6 @@ respond stateVar =
                     unless (null unsupported) $ do
                         withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
                             logMessage ("ignoring unsupported predicate parts" :: Text)
-                        Log.logWarnNS
-                            "booster"
-                            "Execute: ignoring unsupported predicate parts"
-
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap RpcTypes.getNat req.maxDepth
@@ -235,10 +229,6 @@ respond stateVar =
                 Left patternErrors -> do
                     forM_ patternErrors $ \patternError ->
                         void $ Booster.Log.withContext "internalise" $ logPatternError patternError
-                    Log.logOtherNS
-                        "booster"
-                        (Log.LevelOther "ErrorDetails")
-                        (prettyPattern req.state.term)
                     pure $
                         Left $
                             RpcError.backendError $
@@ -249,9 +239,6 @@ respond stateVar =
                     unless (null unsupported) $ do
                         withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $ do
                             logMessage ("ignoring unsupported predicate parts" :: Text)
-                        Log.logWarnNS
-                            "booster"
-                            "Simplify: ignoring unsupported predicate parts"
                     -- apply the given substitution before doing anything else
                     let substPat =
                             Pattern
@@ -284,9 +271,6 @@ respond stateVar =
                         unless (null ps.unsupported) $ do
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
-                                Log.logWarnNS
-                                    "booster"
-                                    "Simplify: ignoring unsupported predicate parts"
                         -- apply the given substitution before doing anything else
                         let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
                         withContext "constraint" $
@@ -321,7 +305,8 @@ respond stateVar =
             pure $ second mkSimplifyResponse result
         RpcTypes.GetModel req -> withModule req._module $ \case
             (_, _, Nothing) -> do
-                Log.logErrorNS "booster" "get-model request, not supported without SMT solver"
+                withContext "get-model" $
+                    logMessage' ("get-model request, not supported without SMT solver" :: Text)
                 pure $ Left RpcError.notImplemented
             (def, _, Just smtOptions) -> do
                 let internalised =
@@ -330,12 +315,7 @@ respond stateVar =
                 case internalised of
                     Left patternErrors -> do
                         forM_ patternErrors $ \patternError ->
-                            Log.logErrorNS "booster" $
-                                "Error internalising cterm: " <> pack (show patternError)
-                        Log.logOtherNS
-                            "booster"
-                            (Log.LevelOther "ErrorDetails")
-                            (prettyPattern req.state.term)
+                            void $ Booster.Log.withContext "internalise" $ logPatternError patternError
                         pure $
                             Left $
                                 RpcError.backendError $
@@ -343,51 +323,40 @@ respond stateVar =
                                         map patternErrorToRpcError patternErrors
                     -- various predicates obtained
                     Right things -> do
-                        Log.logInfoNS "booster" "get-model request"
                         -- term and predicates were sent. Only work on predicates
                         (boolPs, suppliedSubst) <-
                             case things of
                                 TermAndPredicates pat substitution unsupported -> do
-                                    Log.logWarnNS
-                                        "booster"
-                                        "get-model ignores supplied terms and only checks predicates"
-                                    Log.logOtherNS
-                                        "booster"
-                                        (Log.LevelOther "ErrorDetails")
-                                        (renderText $ pretty pat.term)
+                                    withContext "get-model" $
+                                        logMessage' ("ignoring supplied terms and only checking predicates" :: Text)
+
                                     unless (null unsupported) $ do
-                                        Log.logWarnNS
-                                            "booster"
-                                            " get-model: ignoring unsupported predicates"
-                                        Log.logOtherNS
-                                            "booster"
-                                            (Log.LevelOther "ErrorDetails")
-                                            (Text.unlines $ map prettyPattern unsupported)
+                                        withContext "get-model" $ do
+                                            logMessage' ("ignoring unsupported predicates" :: Text)
+                                            withContext "detail" $
+                                                logMessage (Text.unwords $ map prettyPattern unsupported)
                                     pure (Set.toList pat.constraints, substitution)
                                 Predicates ps -> do
                                     unless (null ps.ceilPredicates && null ps.unsupported) $ do
-                                        Log.logWarnNS
-                                            "booster"
-                                            "get-model: ignoring supplied ceils and unsupported predicates"
-                                        Log.logOtherNS
-                                            "booster"
-                                            (Log.LevelOther "ErrorDetails")
-                                            ( Text.unlines $
-                                                map
-                                                    (renderText . ("#Ceil:" <>) . pretty)
-                                                    (Set.toList ps.ceilPredicates)
-                                                    <> map prettyPattern ps.unsupported
-                                            )
+                                        withContext "get-model" $ do
+                                            logMessage' ("ignoring supplied ceils and unsupported predicates" :: Text)
+                                            withContext "detail" $
+                                                logMessage
+                                                    ( Text.unlines $
+                                                        map
+                                                            (renderText . ("#Ceil:" <>) . pretty)
+                                                            (Set.toList ps.ceilPredicates)
+                                                            <> map prettyPattern ps.unsupported
+                                                    )
                                     pure (Set.toList ps.boolPredicates, ps.substitution)
 
                         smtResult <-
                             if null boolPs && Map.null suppliedSubst
                                 then do
                                     -- as per spec, no predicate, no answer
-                                    Log.logOtherNS
-                                        "booster"
-                                        (Log.LevelOther "SMT")
-                                        "No predicates or substitutions given, returning Unknown"
+                                    withContext "get-model" $
+                                        withContext "smt" $
+                                            logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
                                     pure $ Left SMT.Unknown
                                 else do
                                     solver <- SMT.initSolver def smtOptions
@@ -396,8 +365,10 @@ respond stateVar =
                                     case result of
                                         Left err -> liftIO $ Exception.throw err -- fail hard on SMT errors
                                         Right response -> pure response
-                        Log.logOtherNS "booster" (Log.LevelOther "SMT") $
-                            "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
+                        withContext "get-model" $
+                            withContext "smt" $
+                                logMessage $
+                                    "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
                         pure . Right . RpcTypes.GetModel $ case smtResult of
                             Left SMT.Unsat ->
                                 RpcTypes.GetModelResult
@@ -449,7 +420,7 @@ respond stateVar =
 
             case (internalised req.antecedent.term, internalised req.consequent.term) of
                 (Left patternError, _) -> do
-                    Log.logDebug $ "Error internalising antecedent" <> Text.pack (show patternError)
+                    void $ Booster.Log.withContext "internalise" $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -457,7 +428,7 @@ respond stateVar =
                                     [ patternErrorToRpcError patternError
                                     ]
                 (_, Left patternError) -> do
-                    Log.logDebug $ "Error internalising consequent" <> Text.pack (show patternError)
+                    void $ Booster.Log.withContext "internalise" $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -466,19 +437,16 @@ respond stateVar =
                                     ]
                 (Right (patL, substitutionL, unsupportedL), Right (patR, substitutionR, unsupportedR)) -> do
                     unless (null unsupportedL && null unsupportedR) $ do
-                        Log.logWarnNS
-                            "booster"
-                            "Implies: aborting due to unsupported predicate parts"
+                        logMessage'
+                            ("aborting due to unsupported predicate parts" :: Text)
                         unless (null unsupportedL) $
-                            Log.logOtherNS
-                                "booster"
-                                (Log.LevelOther "ErrorDetails")
-                                (Text.unlines $ map prettyPattern unsupportedL)
+                            withContext "detail" $
+                                logMessage
+                                    (Text.unwords $ map prettyPattern unsupportedL)
                         unless (null unsupportedR) $
-                            Log.logOtherNS
-                                "booster"
-                                (Log.LevelOther "ErrorDetails")
-                                (Text.unlines $ map prettyPattern unsupportedR)
+                            withContext "detail" $
+                                logMessage
+                                    (Text.unwords $ map prettyPattern unsupportedR)
                     let
                         -- apply the given substitution before doing anything else
                         substPatL =
@@ -574,8 +542,6 @@ handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
     SMT.SMTSolverUnknown reason premises preds -> do
-        Log.logErrorNS "booster" ("SMT returned `Unknown' with reason " <> reason)
-
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
             allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
@@ -583,7 +549,6 @@ handleSmtError = JsonRpcHandler $ \case
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err
-        Log.logErrorNS "booster" msg
         pure $ RpcError.runtimeError msg
 
 data ServerState = ServerState

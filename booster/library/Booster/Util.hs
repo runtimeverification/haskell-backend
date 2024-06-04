@@ -23,12 +23,14 @@ import Control.Exception (bracket, catch, throwIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
+import Data.Char (toLower)
 import Data.Coerce (coerce)
 import Data.Data
 import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Text qualified as Text
 import Data.Time.Clock.System (SystemTime (..), getSystemTime, systemToUTCTime)
 import Data.Time.Format
 import GHC.Generics (Generic)
@@ -139,8 +141,14 @@ handleOutput ::
     Log.LogLevel ->
     Log.LogStr ->
     IO ()
-handleOutput stderrLogger loc src level msg =
-    stderrLogger $ Log.defaultLogStr loc src level msg
+handleOutput stderrLogger _loc src level msg =
+    stderrLogger $ prettySrc <> prettyLevel <> " " <> msg <> "\n"
+  where
+    prettySrc = if Text.null src then mempty else "[" <> toLogStr src <> "]"
+    prettyLevel = case level of
+        Log.LevelOther t -> "[" <> toLogStr t <> "]"
+        Log.LevelInfo -> mempty
+        _ -> "[" <> (toLogStr $ BS.pack $ map toLower $ drop 5 $ show level) <> "]"
 
 newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
 newFastLoggerMaybeWithTime = \case

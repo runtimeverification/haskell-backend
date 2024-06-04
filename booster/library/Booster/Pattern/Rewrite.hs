@@ -22,7 +22,6 @@ import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.Logger.CallStack
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
@@ -38,7 +37,7 @@ import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
-import Data.Text as Text (Text, pack, unlines)
+import Data.Text as Text (Text, pack)
 import Numeric.Natural
 import Prettyprinter
 
@@ -76,13 +75,13 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
-import Booster.Util (Flag (..), constructorName)
+import Booster.Util (Flag (..))
 
 newtype RewriteT io a = RewriteT
     { unRewriteT ::
         ReaderT RewriteConfig (StateT SimplifierCache (ExceptT (RewriteFailed "Rewrite") io)) a
     }
-    deriving newtype (Functor, Applicative, Monad, MonadLogger, MonadIO, MonadLoggerIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO)
 
 data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
@@ -92,7 +91,7 @@ data RewriteConfig = RewriteConfig
     , logger :: Logger LogMessage
     }
 
-instance MonadLoggerIO io => LoggerMIO (RewriteT io) where
+instance MonadIO io => LoggerMIO (RewriteT io) where
     getLogger = RewriteT $ asks logger
     withLogger modL (RewriteT m) = RewriteT $ withReaderT (\cfg@RewriteConfig{logger} -> cfg{logger = modL logger}) m
 
@@ -134,7 +133,6 @@ getDefinition = RewriteT $ definition <$> ask
 -}
 rewriteStep ::
     LoggerMIO io =>
-    MonadLoggerIO io =>
     [Text] ->
     [Text] ->
     Pattern ->
@@ -159,7 +157,6 @@ rewriteStep cutLabels terminalLabels pat = do
   where
     processGroups ::
         LoggerMIO io =>
-        MonadLoggerIO io =>
         Pattern ->
         [[RewriteRule "Rewrite"]] ->
         RewriteT io (RewriteResult Pattern)
@@ -262,11 +259,6 @@ instance MonadIO m => MonadIO (RewriteRuleAppT m) where
     liftIO = lift . liftIO
     {-# INLINE liftIO #-}
 
-instance MonadLogger m => MonadLogger (RewriteRuleAppT m) where
-    monadLoggerLog a b c d = lift $ monadLoggerLog a b c d
-
-instance MonadLoggerIO m => MonadLoggerIO (RewriteRuleAppT m)
-
 instance LoggerMIO m => LoggerMIO (RewriteRuleAppT m) where
     withLogger l (RewriteRuleAppT m) = RewriteRuleAppT $ withLogger l m
 
@@ -284,7 +276,6 @@ abort the entire rewrite).
 applyRule ::
     forall io.
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Pattern ->
     RewriteRule "Rewrite" ->
     RewriteT io (RewriteRuleAppResult (RewriteRule "Rewrite", Pattern))
@@ -613,9 +604,6 @@ mkDiffTerms = \case
                  in (SymbolApplication s1 ss1 xs', SymbolApplication s2 ss2 ys')
     r -> r
 
-showPattern :: Doc a -> Pattern -> Doc a
-showPattern title pat = hang 4 $ vsep [title, pretty pat.term]
-
 {- | Interface for RPC execute: Rewrite given term as long as there is
    exactly one result in each step.
 
@@ -689,7 +677,6 @@ showPattern title pat = hang 4 $ vsep [title, pretty pat.term]
 performRewrite ::
     forall io.
     LoggerMIO io =>
-    MonadLoggerIO io =>
     Flag "CollectRewriteTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -707,14 +694,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
-    logDepth = logOther (LevelOther "Depth")
-    logRewrite = logOther (LevelOther "Rewrite")
-    logRewriteSuccess = logOther (LevelOther "RewriteSuccess")
-    logSimplify = logOther (LevelOther "Simplify")
-    logAborts = logOther (LevelOther "Aborts")
-
-    prettyText :: Pretty a => a -> Text
-    prettyText = renderText . pretty
+    logDepth = withContext "depth" . logMessage
 
     depthReached n = maybe False (n >=) mbMaxDepth
 
@@ -722,12 +702,6 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
 
     emitRewriteTrace :: RewriteTrace Pattern -> StateT RewriteStepsState io ()
     emitRewriteTrace t = do
-        let prettyT = pack $ renderDefault $ pretty t
-        logRewrite prettyT
-        case t of
-            RewriteSingleStep{} -> logRewriteSuccess prettyT
-            RewriteBranchingStep{} -> logRewriteSuccess prettyT
-            _other -> pure ()
         when (coerce doTracing) $
             modify $
                 \rss@RewriteStepsState{traces} -> rss{traces = traces |> eraseStates t}
@@ -747,36 +721,13 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                 Right newPattern -> do
                     emitRewriteTrace $ RewriteSimplified Nothing
                     pure $ Just newPattern
-                Left r@(SideConditionFalse _p) -> do
-                    logSimplify "A side condition was found to be false, pruning"
+                Left r@SideConditionFalse{} -> do
                     emitRewriteTrace $ RewriteSimplified (Just r)
                     pure Nothing
                 Left r@UndefinedTerm{} -> do
-                    logSimplify "Term is undefined, pruning"
                     emitRewriteTrace $ RewriteSimplified (Just r)
                     pure Nothing
-                Left r@(TooManyIterations n _start _result) -> do
-                    logSimplify $
-                        "Unable to simplify in " <> Text.pack (show n) <> " iterations, returning original"
-                    -- warning has been printed inside ApplyEquation.evaluatePattern
-                    emitRewriteTrace $ RewriteSimplified (Just r)
-                    -- NB start/result in this error are terms and might come
-                    -- from simplifying one of the constraints. Therefore, the
-                    -- original pattern must be returned.
-                    pure $ Just p
-                Left r@(EquationLoop (t : ts)) -> do
-                    logError "Equation evaluation loop"
-                    logOtherNS "booster" (LevelOther "ErrorDetails") $
-                        let termDiffs = zipWith (curry mkDiffTerms) (t : ts) ts
-                            l = length ts
-                         in "Evaluation loop of length "
-                                <> prettyText l
-                                <> ": \n"
-                                <> Text.unlines (map (prettyText . fst) termDiffs)
-                    emitRewriteTrace $ RewriteSimplified (Just r)
-                    pure $ Just p
                 Left other -> do
-                    logError $ "Simplification error during rewrite: " <> (Text.pack . constructorName $ other)
                     emitRewriteTrace $ RewriteSimplified (Just other)
                     pure $ Just p
 
@@ -824,9 +775,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         logDepth $ showCounter counter
         if depthReached counter
             then do
-                let title =
-                        pretty $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
-                logRewrite $ pack $ renderDefault $ showPattern title pat'
+                logDepth $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
                 (if wasSimplified then pure else simplifyResult pat') $ RewriteFinished Nothing Nothing pat'
             else
                 runRewriteT
@@ -845,23 +794,23 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             doSteps False single
                         Right (terminal@(RewriteTerminal lbl uniqueId single), _cache) -> withPatternContext pat' $ do
                             emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
-                            logRewrite $
+                            logMessage $
                                 "Terminal rule after " <> showCounter (counter + 1)
                             incrementCounter
                             simplifyResult pat' terminal
                         Right (branching@RewriteBranch{}, cache) -> do
-                            logRewrite $ "Stopped due to branching after " <> showCounter counter
+                            logMessage $ "Stopped due to branching after " <> showCounter counter
                             updateCache cache
                             simplified <- withPatternContext pat' $ simplifyResult pat' branching
                             case simplified of
                                 RewriteStuck{} -> withPatternContext pat' $ do
-                                    logRewrite "Rewrite stuck after pruning branches"
+                                    logMessage ("Rewrite stuck after pruning branches" :: Text)
                                     pure simplified
                                 RewriteTrivial{} -> withPatternContext pat' $ do
-                                    logRewrite $ "Simplified to bottom after " <> showCounter counter
+                                    logMessage $ "Simplified to bottom after " <> showCounter counter
                                     pure simplified
                                 RewriteFinished mlbl uniqueId single -> do
-                                    logRewrite "All but one branch pruned, continuing"
+                                    logMessage ("All but one branch pruned, continuing" :: Text)
                                     whenJust mlbl $ \lbl ->
                                         emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                                     incrementCounter
@@ -874,25 +823,25 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             simplified <- simplifyResult pat' cutPoint
                             case simplified of
                                 RewriteCutPoint{} ->
-                                    logRewrite $ "Cut point " <> lbl <> " after " <> showCounter counter
+                                    logMessage $ "Cut point " <> lbl <> " after " <> showCounter counter
                                 RewriteStuck{} ->
-                                    logRewrite $ "Stuck after " <> showCounter counter
+                                    logMessage $ "Stuck after " <> showCounter counter
                                 RewriteTrivial{} ->
-                                    logRewrite $ "Simplified to bottom after " <> showCounter counter
+                                    logMessage $ "Simplified to bottom after " <> showCounter counter
                                 _other -> error "simplifyResult: Unexpected return value"
                             pure simplified
                         Right (stuck@RewriteStuck{}, cache) -> do
-                            logRewrite $ "Stopped after " <> showCounter counter
+                            logMessage $ "Stopped after " <> showCounter counter
                             updateCache cache
                             emitRewriteTrace $ RewriteStepFailed $ NoApplicableRules pat'
                             if wasSimplified
                                 then pure stuck
                                 else withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                         Right (trivial@RewriteTrivial{}, _) -> withPatternContext pat' $ do
-                            logRewrite $ "Simplified to bottom after " <> showCounter counter
+                            logMessage $ "Simplified to bottom after " <> showCounter counter
                             pure trivial
                         Right (aborted@RewriteAborted{}, _) -> withPatternContext pat' $ do
-                            logRewrite $ "Aborted after " <> showCounter counter
+                            logMessage $ "Aborted after " <> showCounter counter
                             simplifyResult pat' aborted
                         -- if unification was unclear and the pattern was
                         -- unsimplified, simplify and retry rewriting once
@@ -904,19 +853,18 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                         Left failure -> do
                             emitRewriteTrace $ RewriteStepFailed failure
-                            logAborts . renderText $ pretty failure
                             let msg = "Aborted after " <> showCounter counter
                             if wasSimplified
-                                then logRewrite msg >> pure (RewriteAborted failure pat')
+                                then logMessage msg >> pure (RewriteAborted failure pat')
                                 else withSimplified pat' msg (pure . RewriteAborted failure)
       where
         withSimplified p msg cont = do
             (withPatternContext p $ simplifyP p) >>= \case
                 Nothing -> do
-                    logRewrite "Rewrite stuck after simplification."
+                    logMessage ("Rewrite stuck after simplification." :: Text)
                     pure $ RewriteStuck p
                 Just simplifiedPat -> do
-                    logRewrite msg
+                    logMessage msg
                     cont simplifiedPat
 
 data RewriteStepsState = RewriteStepsState
