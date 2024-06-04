@@ -147,7 +147,7 @@ rule ruleLabel lhs rhs priority =
                 , simplification = Flag False
                 , preserving = Flag False
                 , concreteness = Unconstrained
-                , uniqueId = Nothing
+                , uniqueId = mockUniqueId
                 , smtLemma = Flag False
                 }
         , computedAttributes = ComputedAxiomAttributes False []
@@ -250,7 +250,7 @@ runWith t =
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
-    runWith t1 @?= Right (RewriteFinished (Just lbl) Nothing $ Pattern_ t2)
+    runWith t1 @?= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
@@ -260,7 +260,7 @@ branchesTo :: Term -> [(Text, Term)] -> IO ()
 t `branchesTo` ts =
     runWith t
         @?= Right
-            (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, Nothing, Pattern_ t')) ts)
+            (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t')) ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
@@ -301,12 +301,12 @@ canRewrite =
         , testCase "Rewrites con3 twice, branching on con1" $ do
             let branch1 =
                     ( "con1-f2"
-                    , Nothing
+                    , mockUniqueId
                     , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
                     )
                 branch2 =
                     ( "con1-f1'"
-                    , Nothing
+                    , mockUniqueId
                     , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
                     )
 
@@ -394,12 +394,12 @@ supportsDepthControl =
         , testCase "prefers reporting branches to stopping at depth" $ do
             let branch1 =
                     ( "con1-f2"
-                    , Nothing
+                    , mockUniqueId
                     , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
                     )
                 branch2 =
                     ( "con1-f1'"
-                    , Nothing
+                    , mockUniqueId
                     , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
                     )
 
@@ -431,7 +431,7 @@ supportsCutPoints =
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 ( RewriteCutPoint
                     "con1-f1"
-                    Nothing
+                    mockUniqueId
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 )
         , testCase "ignores non-matching cut-point labels" $
@@ -448,12 +448,12 @@ supportsCutPoints =
         , testCase "prefers reporting branches to stopping at label in one branch" $ do
             let branch1 =
                     ( "con1-f2"
-                    , Nothing
+                    , mockUniqueId
                     , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
                     )
                 branch2 =
                     ( "con1-f1'"
-                    , Nothing
+                    , mockUniqueId
                     , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
                     )
 
@@ -483,7 +483,7 @@ supportsTerminalRules =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
-                (RewriteTerminal "con1-f1" Nothing)
+                (RewriteTerminal "con1-f1" mockUniqueId)
         , testCase "ignores non-matching labels" $
             let startTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]

@@ -19,6 +19,9 @@ import Booster.SMT.Base
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 
+mockUniqueId :: UniqueId
+mockUniqueId = UniqueId "MOCK"
+
 someSort, aSubsort, differentSort, kSort, kItemSort, listSort, setSort, boolSort :: Sort
 someSort = SortApp "SomeSort" []
 aSubsort = SortApp "AnotherSort" []

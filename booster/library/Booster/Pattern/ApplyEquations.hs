@@ -173,7 +173,7 @@ data CacheTag = LLVM | Equations
 data EquationMetadata = EquationMetadata
     { location :: Maybe Location
     , label :: Maybe Label
-    , ruleId :: Maybe UniqueId
+    , ruleId :: UniqueId
     }
     deriving stock (Eq, Show)
 
@@ -447,7 +447,7 @@ llvmSimplify term = do
                             setChanged
                             withContext "success" $
                                 withTermContext result $
-                                    emitEquationTrace t Nothing (Just "LLVM") Nothing $
+                                    emitEquationTrace t Nothing (Just "LLVM") (UniqueId "LLVM") $
                                         Success result
                         pure result
         | otherwise =
@@ -623,8 +623,9 @@ cached cacheTag cb t@(Term attributes _)
                     withContext "success" $
                         withContext "cached" $
                             withTermContext cachedTerm $
-                                emitEquationTrace t Nothing (Just ("Cache" <> Text.pack (show cacheTag))) Nothing $
-                                    Success cachedTerm
+                                let cacheId = "Cache" <> Text.pack (show cacheTag)
+                                 in emitEquationTrace t Nothing (Just cacheId) (UniqueId cacheId) $
+                                        Success cachedTerm
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
@@ -799,7 +800,7 @@ emitEquationTrace ::
     Term ->
     Maybe Location ->
     Maybe Label ->
-    Maybe UniqueId ->
+    UniqueId ->
     ApplyEquationResult ->
     EquationT io ()
 emitEquationTrace t loc lbl uid res = do

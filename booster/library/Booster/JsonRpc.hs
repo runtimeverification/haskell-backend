@@ -631,7 +631,9 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     , logs
                     , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates =
-                        Just $ map (\(_, muid, p') -> toExecState p' originalSubstitution unsupported muid) $ toList nexts
+                        Just $
+                            map (\(_, muid, p') -> toExecState p' originalSubstitution unsupported (Just muid)) $
+                                toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
                     }
@@ -783,22 +785,22 @@ mkLogRewriteTrace
                                     RuleApplicationUnclear r _ _ ->
                                         Failure
                                             { reason = "Uncertain about unification of rule"
-                                            , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
+                                            , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes r)
                                             }
                                     RuleConditionUnclear r _ ->
                                         Failure
                                             { reason = "Uncertain about a condition in rule"
-                                            , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
+                                            , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes r)
                                             }
                                     DefinednessUnclear r _ undefReasons ->
                                         Failure
                                             { reason = "Uncertain about definedness of rule because of: " <> pack (show undefReasons)
-                                            , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
+                                            , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes r)
                                             }
                                     RewriteSortError r _ _ ->
                                         Failure
                                             { reason = "Sort error while unifying"
-                                            , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
+                                            , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes r)
                                             }
                                     InternalMatchError{} ->
                                         Failure

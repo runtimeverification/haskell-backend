@@ -64,12 +64,18 @@ instance HasAttributes ParsedAxiom where
         AxiomAttributes
             <$> readLocation attributes
             <*> readPriority attributes
-            <*> (attributes .:? "label")
-            <*> (fmap UniqueId <$> (attributes .:? uniqueIdName))
+            <*> attributes .:? "label"
+            <*> (uniqueIdWithFallback <$> attributes .:? uniqueIdName <*> attributes .:? "label")
             <*> (attributes .! "simplification")
             <*> (attributes .! "preserves-definedness")
             <*> readConcreteness attributes
             <*> (attributes .! "smt-lemma")
+      where
+        uniqueIdWithFallback :: Maybe Text -> Maybe Label -> UniqueId
+        uniqueIdWithFallback mbUniqueId mbLabel = UniqueId $
+            case mbUniqueId of
+                Just uid -> uid
+                Nothing -> fromMaybe "UNKNOWN" mbLabel
 
 sourceName
     , locationName
