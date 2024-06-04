@@ -282,7 +282,11 @@ deriveResults Result.Results{results, remainders} =
             addRule (RewriteRule rulePattern, simplifyRules)
             pure $
                 Rewritten
-                    (RuleInfo (predicate appliedRule) (substitution appliedRule) (uniqueIdWithFallback ruleUniqueId ruleLabel))
+                    ( RuleInfo
+                        (predicate appliedRule)
+                        (substitution appliedRule)
+                        (uniqueIdWithFallback ruleUniqueId ruleLabel)
+                    )
                     result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
