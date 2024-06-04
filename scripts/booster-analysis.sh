@@ -38,7 +38,7 @@ export LOG_DIR=${LOG_DIR:-"$(dirname "$BUG_REPORT_DIR/.")-logs"}
 mkdir -p $LOG_DIR
 
 K_VERSION=${K_VERSION:-$(cat $SCRIPT_DIR/../deps/k_release)}
-export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps.secp256k1 --no-link  --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
+export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps.secp256k1 --no-link --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
 PLUGIN_VERSION=$(cat $SCRIPT_DIR/../deps/blockchain-k-plugin_release)
 export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PLUGIN_VERSION --no-link --json | jq -r '.[].outputs | to_entries[].value')
 
@@ -46,7 +46,7 @@ export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PL
 
 run_tarball(){
   echo "######## $1 ########";
-  $SCRIPT_DIR/run-with-tarball.sh "$1" -l Aborts --log-format json --log-file "$LOG_DIR/$(basename "$1").json.log" ${SERVER_OPTS} 2>&1 | tee "$LOG_DIR/$(basename "$1").out";
+  $SCRIPT_DIR/run-with-tarball.sh "$1" -l Aborts --log-format json --log-file "$LOG_DIR/$(basename "$1").json.log" --print-stats ${SERVER_OPTS} 2>&1 | tee "$LOG_DIR/$(basename "$1").out";
 }
 
 export -f run_tarball
