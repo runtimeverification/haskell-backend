@@ -870,7 +870,7 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
                     $ "Substitution:"
                         <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
 
-            -- check required conditions, using substitution
+            -- instantiate the requires clause with the obtained substitution
             let required =
                     concatMap
                         (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
@@ -878,34 +878,44 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
             -- If the required condition is _syntactically_ present in
             -- the prior (known constraints), we don't check it.
             knownPredicates <- (.predicates) <$> lift getState
-            let (knownTrue, toCheck) = partition (`Set.member` knownPredicates) required
-            unless (null knownTrue) $
-                logMessage $
-                    renderOneLineText $
-                        "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
+            toCheck <- lift $ filterOutKnownConstraints knownPredicates required
 
-            unclearConditions' <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
+            -- check the filtered requires clause conditions
+            unclearConditions <- catMaybes <$> mapM (checkConstraint ConditionFalse) toCheck
 
-            case unclearConditions' of
-                [] -> do
-                    -- check ensured conditions, filter any
-                    -- true ones, prune if any is false
-                    let ensured =
-                            concatMap
-                                (splitBoolPredicates . substituteInPredicate subst)
-                                (Set.toList rule.ensures)
-                    ensuredConditions <-
-                        -- throws if an ensured condition found to be false
-                        catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
-                    lift $ pushConstraints $ Set.fromList ensuredConditions
-                    pure $ substituteInTerm subst rule.rhs
-                unclearConditions -> do
-                    withContext "failure" $
-                        logMessage $
-                            renderOneLineText $
-                                "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
-                    throwE $ IndeterminateCondition unclearConditions
+            -- unclear conditions may have been simplified and
+            -- could now be syntactically present in the path constraints, filter again
+            stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
+
+            -- abort if any of the conditions is still unclear at that point
+            unless (null stillUnclear) $ do
+                withContext "failure" $
+                    logMessage $
+                        renderOneLineText $
+                            "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty stillUnclear)
+                throwE $ IndeterminateCondition unclearConditions
+
+            -- check ensured conditions, filter any
+            -- true ones, prune if any is false
+            let ensured =
+                    concatMap
+                        (splitBoolPredicates . substituteInPredicate subst)
+                        (Set.toList rule.ensures)
+            ensuredConditions <-
+                -- throws if an ensured condition found to be false
+                catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
+            lift $ pushConstraints $ Set.fromList ensuredConditions
+            pure $ substituteInTerm subst rule.rhs
   where
+    filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
+    filterOutKnownConstraints priorKnowledge constraitns = do
+        let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
+        unless (null knownTrue) $
+            logMessage $
+                renderOneLineText $
+                    "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
+        pure toCheck
+
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
