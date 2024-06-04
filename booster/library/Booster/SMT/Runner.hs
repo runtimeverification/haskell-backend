@@ -120,6 +120,8 @@ to reset the solver connection while keeping the same transcript handle.
 closeContext :: LoggerMIO io => SMTContext -> io ()
 closeContext ctxt = do
     logMessage ("Stopping SMT solver" :: Text)
+    whenJust ctxt.mbTranscriptHandle $ \h -> liftIO $ do
+        BS.hPutStrLn h "; stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
     liftIO ctxt.solverClose
 
 {- | Close the connection to the SMT solver process and all other resources in  @SMTContext@.
