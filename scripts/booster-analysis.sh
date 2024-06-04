@@ -52,8 +52,7 @@ run_tarball(){
 export -f run_tarball
 export SCRIPT_DIR
 
-# Mac is always special and for some reason, passing `-print0`` as the last argument breaks the find command if there is an `-or`
-find $BUG_REPORT_DIR -print0 -name \*.tar -or -name \*.tar.gz | xargs -0 -t -I {} -P $PARALLEL bash -c 'run_tarball "$@"' $(basename {}) {}
+find $BUG_REPORT_DIR -name \*.tar -print0 -or -name \*.tar.gz -print0 | xargs -0 -t -I {} -P $PARALLEL bash -c 'run_tarball "$@"' $(basename {}) {}
 
 cd $LOG_DIR
 
