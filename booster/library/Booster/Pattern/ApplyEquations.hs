@@ -878,11 +878,6 @@ applyEquation term rule = runExceptT $ do
             Concrete -> attributes.isConstructorLike
             Symbolic -> not attributes.isConstructorLike
 
-    -- verifyVar ::
-    --     Map Variable Term ->
-    --     (VarName, SortName) ->
-    --     (Term -> ExceptT ApplyEquationFailure (EquationT io) ()) ->
-    --     ExceptT ApplyEquationFailure (EquationT io) ()
     verifyVar subst (variableName, sortName) check =
         maybe
             ( lift . throw . InternalError . Text.pack $
