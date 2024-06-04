@@ -89,6 +89,7 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DebugContext (inContext)
 import Kore.Log.DecidePredicateUnknown (
     OnDecidePredicateUnknown (..),
     srcLoc,
@@ -360,7 +361,7 @@ checkRequires ::
     -- | requires from 'Equation'
     Predicate RewritingVariableName ->
     ExceptT (CheckRequiresError RewritingVariableName) Simplifier ()
-checkRequires onUnknown sideCondition predicate requires =
+checkRequires onUnknown sideCondition predicate requires = inContext "requires" $
     do
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:

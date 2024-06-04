@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Log.DebugContext (
     DebugContext (..),
+    inContext,
 ) where
 
 import Data.Aeson qualified as JSON
@@ -27,3 +28,6 @@ instance Entry DebugContext where
     oneLineContextDoc DebugContext{msg} = [msg]
     oneLineJson DebugContext{} = JSON.Null
     oneLineContextJson DebugContext{msg} = JSON.String msg
+
+inContext :: MonadLog log => Text.Text -> log a -> log a
+inContext = logWhile . DebugContext
