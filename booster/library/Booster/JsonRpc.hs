@@ -17,6 +17,7 @@ module Booster.JsonRpc (
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
+import Control.Exception qualified as Exception
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
@@ -148,7 +149,7 @@ respond stateVar =
                     solver <- traverse (SMT.initSolver def) mSMTOptions
                     result <-
                         performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
-                    whenJust solver SMT.closeSolver
+                    whenJust solver SMT.finaliseSolver
                     stop <- liftIO $ getTime Monotonic
                     let duration =
                             if fromMaybe False req.logTiming
@@ -309,7 +310,7 @@ respond stateVar =
                                         pure $ Right (addHeader $ Syntax.KJAnd predicateSort result)
                                     (Left something, _) ->
                                         pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty something
-            whenJust solver SMT.closeSolver
+            whenJust solver SMT.finaliseSolver
             stop <- liftIO $ getTime Monotonic
 
             let duration =
@@ -389,12 +390,12 @@ respond stateVar =
                                         "No predicates or substitutions given, returning Unknown"
                                     pure $ Left SMT.Unknown
                                 else do
-                                    solver <-
-                                        SMT.initSolver def smtOptions
-                                    smtResult <-
-                                        SMT.getModelFor solver boolPs suppliedSubst
-                                    SMT.closeSolver solver
-                                    pure smtResult
+                                    solver <- SMT.initSolver def smtOptions
+                                    result <- SMT.getModelFor solver boolPs suppliedSubst
+                                    SMT.finaliseSolver solver
+                                    case result of
+                                        Left err -> liftIO $ Exception.throw err -- fail hard on SMT errors
+                                        Right response -> pure response
                         Log.logOtherNS "booster" (Log.LevelOther "SMT") $
                             "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
                         pure . Right . RpcTypes.GetModel $ case smtResult of
@@ -573,7 +574,7 @@ handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
     SMT.SMTSolverUnknown reason premises preds -> do
-        Log.logErrorNS "booster" "SMT returned `Unknown'"
+        Log.logErrorNS "booster" ("SMT returned `Unknown' with reason " <> reason)
 
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList

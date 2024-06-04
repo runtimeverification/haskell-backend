@@ -4,19 +4,22 @@ License     : BSD-3-Clause
 -}
 module Booster.SMT.Interface (
     SMTContext, -- re-export
+    SMTOptions (..), -- re-export
+    defaultSMTOptions, -- re-export
     SMTError (..),
-    SMTOptions (..),
-    defaultSMTOptions,
     initSolver,
-    closeSolver,
+    finaliseSolver,
     getModelFor,
     checkPredicates,
+    hardResetSolver,
 ) where
 
 import Control.Exception (Exception, throw)
 import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
+import Control.Monad.Trans.State
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
 import Data.Either (isLeft)
@@ -27,6 +30,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
 import Prettyprinter (Pretty, hsep, pretty)
+import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
 import Booster.Log qualified as Log
@@ -38,21 +42,6 @@ import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
-
--- Includes all options from kore-rpc used by current clients. The
--- parser in CLOptions uses compatible names and we use the same
--- defaults. Not all options are supported in booster.
-data SMTOptions = SMTOptions
-    { transcript :: Maybe FilePath
-    -- ^ optional log file
-    , timeout :: Int
-    -- ^ optional timeout for requests, 0 for none
-    , retryLimit :: Maybe Int
-    -- ^ optional retry. Nothing for no retry, 0 for unlimited
-    , tactic :: Maybe SExpr
-    -- ^ optional tactic (used verbatim) to replace (check-sat)
-    }
-    deriving (Eq, Show)
 
 data SMTError
     = GeneralSMTError Text
@@ -71,42 +60,94 @@ throwSMT' = throwSMT . pack
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
 
-defaultSMTOptions :: SMTOptions
-defaultSMTOptions =
-    SMTOptions
-        { transcript = Nothing
-        , timeout = 125
-        , retryLimit = Just 3
-        , tactic = Nothing
-        }
+smtRun_ :: Log.LoggerMIO io => SMTEncode c => c -> ExceptT SMTError (SMT io) ()
+smtRun_ = lift . SMT.runCmd_
 
+smtRun :: Log.LoggerMIO io => SMTEncode c => c -> ExceptT SMTError (SMT io) Response
+smtRun = lift . SMT.runCmd
+
+{- | declare-const all introduced variables (free in predicates
+  as well as abstraction variables) before sending assertions
+-}
+declareVariables :: Log.LoggerMIO io => TranslationState -> SMT io ()
+declareVariables transState = do
+    mapM_
+        SMT.runCmd
+        [ DeclareConst (mkComment trm) smtId (SMT.smtSort $ sortOfTerm trm)
+        | (trm, smtId) <- Map.assocs transState.mappings
+        ]
+
+{- | Start and initialise an SMT solver instance for use in rewriting:
+     - translate the sort declarations from @KoreDefiniton@ to SMT
+     - start the solver process
+     - feed in the prelude and check it for consistency
+     - set user-specified timeout for queries
+-}
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
 initSolver def smtOptions = Log.withContext "smt" $ do
-    ctxt <- mkContext smtOptions.transcript
-    -- set timeout value before doing anything with the solver
-    runSMT ctxt $ runCmd_ $ SetTimeout smtOptions.timeout
-    Log.logMessage ("Checking definition prelude" :: Text)
+    prelude <- translatePrelude def
+
+    Log.logMessage ("Starting new SMT solver" :: Text)
+    ctxt <- mkContext smtOptions prelude
+
+    evalSMT ctxt $ do
+        checkPrelude
+        -- set timeout value for the general queries
+        runCmd_ $ SetTimeout smtOptions.timeout
+    Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
+    pure ctxt
+
+-- | Hot-swap @SMTOptions@ in the active @SMTContext@, update the query timeout
+swapSmtOptions :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
+swapSmtOptions smtOptions = do
+    ctxt <- SMT get
+    Log.logMessage ("Updating solver options with " <> (Text.pack . show $ smtOptions))
+    SMT $ put ctxt{options = smtOptions}
+    runCmd_ $ SetTimeout smtOptions.timeout
+
+-- | Stop the solver, initialise a new one and put in the @SMTContext@
+hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
+hardResetSolver smtOptions = do
+    Log.logMessage ("Starting new SMT solver" :: Text)
+    ctxt <- SMT get
+    liftIO ctxt.solverClose
+    (solver, handle) <- connectToSolver
+    SMT $ put ctxt{solver, solverClose = Backend.close handle}
+    checkPrelude
+    swapSmtOptions smtOptions
+
+translatePrelude :: Log.LoggerMIO io => KoreDefinition -> io [DeclareCommand]
+translatePrelude def =
     let prelude = smtDeclarations def
-    case prelude of
-        Left err -> do
-            Log.logMessage $ "Error translating definition to SMT: " <> err
-            throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
-        Right{} -> pure ()
-    check <-
-        runSMT ctxt $
-            mapM_ runCmd (fromRight' prelude) >> runCmd CheckSat
+     in case prelude of
+            Left err -> do
+                Log.logMessage $ "Error translating definition to SMT: " <> err
+                throwSMT $ "Unable to translate elements of the definition to SMT: " <> err
+            Right decls -> pure decls
+
+checkPrelude :: Log.LoggerMIO io => SMT io ()
+checkPrelude = do
+    runCmd_ $ SetTimeout defaultSMTOptions.timeout
+    Log.logMessage ("Checking definition prelude" :: Text)
+    check <- runPrelude >> runCmd CheckSat
     case check of
-        Sat -> pure ctxt
+        Sat -> pure ()
         other -> do
             Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
-            closeContext ctxt
+            SMT get >>= closeContext
             throwSMT' $
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
-closeSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
-closeSolver ctxt = Log.withContext "smt" $ do
+-- | Send the commands from the definition's SMT prelude
+runPrelude :: Log.LoggerMIO io => SMT io ()
+runPrelude = do
+    prelude <- SMT $ gets prelude
+    mapM_ runCmd prelude
+
+finaliseSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
+finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
-    closeContext ctxt
+    destroyContext ctxt
 
 {- |
 Implementation of get-model request
@@ -122,111 +163,139 @@ Returns either 'Unsat' or 'Unknown' otherwise, depending on whether
 the solver could determine 'Unsat'.
 -}
 getModelFor ::
+    forall io.
     Log.LoggerMIO io =>
+    MonadLoggerIO io =>
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
-    io (Either SMT.Response (Map Variable Term))
+    io (Either SMTError (Either SMT.Response (Map Variable Term)))
 getModelFor ctxt ps subst
     | null ps && Map.null subst = Log.withContext "smt" $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
-        pure $ Right Map.empty
-    | otherwise = runSMT ctxt $ do
+        pure . Right . Right $ Map.empty
+    | Left errMsg <- translated = Log.withContext "smt" $ do
+        Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
+        Log.logMessage $ "SMT translation error: " <> errMsg
+        smtTranslateError errMsg
+    | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
+        evalSMT ctxt . runExceptT $ do
+            lift $ hardResetSolver ctxt.options
+            solve smtAsserts transState
+  where
+    solve ::
+        [DeclareCommand] ->
+        TranslationState ->
+        ExceptT SMTError (SMT io) (Either Response (Map Variable Term))
+    solve smtAsserts transState = do
+        lift $ declareVariables transState
+        opts <- lift . SMT $ gets (.options)
         Log.logMessage $ "Checking, constraint count " <> pack (show $ Map.size subst + length ps)
-        let translated =
-                SMT.runTranslator $ do
-                    let mkSMTEquation v t =
-                            SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
-                    smtSubst <-
-                        mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs subst
-                    smtPs <-
-                        mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) ps
-                    pure $ smtSubst <> smtPs
-            freeVars =
-                Set.unions $
-                    Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
-        when (isLeft translated) $
-            smtTranslateError (fromLeft' translated)
-        let (smtAsserts, transState) = fromRight' translated
+        interactWithSolver transState smtAsserts >>= \case
+            Left response ->
+                case response of
+                    -- note that 'Unknown' will never be returned by 'interactWithSolver', as it will always be
+                    -- converted to 'ReasonUnknown{}'.
+                    ReasonUnknown{} -> do
+                        case opts.retryLimit of
+                            Just x | x > 0 -> do
+                                let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
+                                lift $ hardResetSolver newOpts
+                                solve smtAsserts transState
+                            _ -> pure . Left $ response
+                    _ -> pure . Left $ response
+            Right model -> pure . Right $ model
 
-        runCmd_ SMT.Push -- assuming the prelude has been run already,
+    translated :: Either Text ([DeclareCommand], TranslationState)
+    translated =
+        SMT.runTranslator $ do
+            let mkSMTEquation v t =
+                    SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
+            smtSubst <-
+                mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs subst
+            smtPs <-
+                mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) ps
+            pure $ smtSubst <> smtPs
 
-        -- declare-const all introduced variables (free in predicates
-        -- as well as abstraction variables) before sending assertions
-        mapM_
-            runCmd
-            [ DeclareConst (mkComment trm) smtId (SMT.smtSort $ sortOfTerm trm)
-            | (trm, smtId) <- Map.assocs transState.mappings
-            ]
+    interactWithSolver ::
+        TranslationState ->
+        [DeclareCommand] ->
+        ExceptT SMTError (SMT io) (Either Response (Map Variable Term))
+    interactWithSolver transState smtAsserts = do
+        smtRun_ SMT.Push -- assuming the prelude has been run already,
 
         -- assert the given predicates
-        mapM_ runCmd smtAsserts
+        mapM_ smtRun smtAsserts
 
-        satResponse <- runCmd CheckSat
+        satResponse <- smtRun CheckSat
+        Log.logMessage ("Solver returned " <> (Text.pack $ show satResponse))
 
-        case satResponse of
-            Error msg -> do
-                runCmd_ SMT.Pop
-                throwSMT' $ BS.unpack msg
-            Unsat -> do
-                runCmd_ SMT.Pop
-                pure $ Left Unsat
+        result <- case satResponse of
+            Error msg -> throwSMT' $ BS.unpack msg
+            Unsat -> pure $ Left Unsat
             Unknown{} -> do
-                res <- runCmd SMT.GetReasonUnknown
-                runCmd_ SMT.Pop
-                pure $ Left res
-            r@ReasonUnknown{} ->
-                pure $ Left r
-            Values{} -> do
-                runCmd_ SMT.Pop
-                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-            Success -> do
-                runCmd_ SMT.Pop
-                throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
-            Sat -> do
-                let freeVarsMap =
-                        Map.map Atom . Map.mapKeys getVar $
-                            Map.filterWithKey
-                                (const . (`Set.member` Set.map Var freeVars))
-                                transState.mappings
-                    getVar (Var v) = v
-                    getVar other =
-                        smtTranslateError . pack $
-                            "Solver returned non-var in translation state: " <> show other
-                    sortsToTranslate = Set.fromList [SortInt, SortBool]
+                -- we always request the reason, even if we later retry,
+                -- to avoid delayed popping from the assertion stack in 'solve'
+                reasonUnknown <- smtRun SMT.GetReasonUnknown
+                pure $ Left reasonUnknown
+            r@ReasonUnknown{} -> pure $ Left r
+            Values{} -> throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
+            Success -> throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
+            Sat -> Right <$> extractModel transState
+        smtRun_ SMT.Pop
+        pure result
 
-                    (freeVarsToSExprs, untranslatableVars) =
-                        Map.partitionWithKey
-                            (const . ((`Set.member` sortsToTranslate) . (.variableSort)))
-                            freeVarsMap
-                unless (Map.null untranslatableVars) $
-                    let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
-                     in Log.logMessage ("Untranslatable variables in model: " <> vars)
+    extractModel ::
+        TranslationState ->
+        ExceptT SMTError (SMT io) (Map Variable Term)
+    extractModel transState = do
+        Log.logMessage ("Extracting model" :: Text)
+        let freeVars =
+                Set.unions $
+                    Map.keysSet subst : map ((.variables) . getAttributes . coerce) ps
 
-                response <-
-                    if Map.null freeVarsMap
-                        then pure $ Values []
-                        else runCmd $ GetValue (Map.elems freeVarsMap)
-                runCmd_ SMT.Pop
-                case response of
-                    Error msg ->
-                        throwSMT' $ BS.unpack msg
-                    Values pairs ->
-                        let (errors, values) =
-                                Map.partition isLeft
-                                    . Map.map (valueToTerm transState)
-                                    $ Map.compose (Map.fromList pairs) freeVarsToSExprs
-                            untranslated =
-                                Map.mapWithKey (const . Var) untranslatableVars
-                         in if null errors
-                                then pure $ Right $ Map.map fromRight' values <> untranslated
-                                else
-                                    throwSMT . Text.unlines $
-                                        ( "SMT errors while converting results: "
-                                            : map fromLeft' (Map.elems errors)
-                                        )
-                    other ->
-                        throwSMT' $ "Unexpected SMT response to GetValue: " <> show other
+            freeVarsMap =
+                Map.map Atom . Map.mapKeys getVar $
+                    Map.filterWithKey
+                        (const . (`Set.member` Set.map Var freeVars))
+                        transState.mappings
+            getVar (Var v) = v
+            getVar other =
+                smtTranslateError . pack $
+                    "Solver returned non-var in translation state: " <> show other
+            sortsToTranslate = Set.fromList [SortInt, SortBool]
+
+            (freeVarsToSExprs, untranslatableVars) =
+                Map.partitionWithKey
+                    (const . ((`Set.member` sortsToTranslate) . (.variableSort)))
+                    freeVarsMap
+        unless (Map.null untranslatableVars) $
+            let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
+             in Log.logMessage ("Untranslatable variables in model: " <> vars)
+
+        response <-
+            if Map.null freeVarsMap
+                then pure $ Values []
+                else smtRun $ GetValue (Map.elems freeVarsMap)
+        case response of
+            Error msg ->
+                throwSMT' $ BS.unpack msg
+            Values pairs ->
+                let (errors, values) =
+                        Map.partition isLeft
+                            . Map.map (valueToTerm transState)
+                            $ Map.compose (Map.fromList pairs) freeVarsToSExprs
+                    untranslated =
+                        Map.mapWithKey (const . Var) untranslatableVars
+                 in if null errors
+                        then pure $ Map.map fromRight' values <> untranslated
+                        else
+                            throwSMT . Text.unlines $
+                                ( "SMT errors while converting results: "
+                                    : map fromLeft' (Map.elems errors)
+                                )
+            other ->
+                throwSMT' $ "Unexpected SMT response to GetValue: " <> show other
 
 mkComment :: Pretty a => a -> BS.ByteString
 mkComment = BS.pack . Pretty.renderDefault . pretty
@@ -270,7 +339,18 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         Log.logErrorNS "booster" $ "SMT translation error: " <> errMsg
         Log.logMessage $ "SMT translation error: " <> errMsg
         pure . Left . SMTTranslationError $ errMsg
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ runSMT ctxt . runExceptT $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
+        evalSMT ctxt . runExceptT $ do
+            lift $ hardResetSolver ctxt.options
+            solve smtGiven sexprsToCheck transState
+  where
+    solve ::
+        [DeclareCommand] ->
+        [SExpr] ->
+        TranslationState ->
+        ExceptT SMTError (SMT io) (Maybe Bool)
+    solve smtGiven sexprsToCheck transState = do
+        lift $ declareVariables transState
         Log.logMessage $
             Text.unwords
                 [ "Checking"
@@ -282,16 +362,61 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 ]
         Log.logMessage . Pretty.renderOneLineText $
             hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
+        result <- interactWithSolver smtGiven sexprsToCheck
+        Log.logMessage $
+            "Check of Given ∧ P and Given ∧ !P produced "
+                <> (Text.pack $ show result)
 
+        case result of
+            (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
+            (Sat, Sat) -> do
+                Log.logMessage ("Implication not determined" :: Text)
+                pure Nothing
+            (Sat, Unsat) -> pure . Just $ True
+            (Unsat, Sat) -> pure . Just $ False
+            (Unknown, _) -> retry smtGiven sexprsToCheck transState
+            (_, Unknown) -> retry smtGiven sexprsToCheck transState
+            other ->
+                throwE . GeneralSMTError $
+                    ("Unexpected result while checking a condition: " :: Text) <> Text.pack (show other)
+
+    retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> ExceptT SMTError (SMT io) (Maybe Bool)
+    retry smtGiven sexprsToCheck transState = do
+        opts <- lift . SMT $ gets (.options)
+        case opts.retryLimit of
+            Just x | x > 0 -> do
+                let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
+                lift $ hardResetSolver newOpts
+                solve smtGiven sexprsToCheck transState
+            _ -> failBecauseUnknown
+
+    translated :: Either Text (([DeclareCommand], [SExpr]), TranslationState)
+    translated = SMT.runTranslator $ do
+        let mkSMTEquation v t =
+                SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
+        smtSubst <-
+            mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs givenSubst
+        smtPs <-
+            mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) $ Set.toList givenPs
+        toCheck <-
+            mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
+        pure (smtSubst <> smtPs, toCheck)
+
+    failBecauseUnknown :: ExceptT SMTError (SMT io) (Maybe Bool)
+    failBecauseUnknown =
+        smtRun GetReasonUnknown >>= \case
+            ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
+            other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+
+    -- Given the known truth and the expressions to check,
+    -- interact with the solver to establish the validity of the  expressions.
+    --
+    -- the solver effects are localised to this function:
+    -- - pushing and popping of the assertion context
+    interactWithSolver ::
+        [DeclareCommand] -> [SExpr] -> ExceptT SMTError (SMT io) (Response, Response)
+    interactWithSolver smtGiven sexprsToCheck = do
         smtRun_ Push
-
-        -- declare-const all introduced variables (free in predicates
-        -- as well as abstraction variables) before sending assertions
-        mapM_
-            smtRun
-            [ DeclareConst (mkComment trm) smtId (SMT.smtSort $ sortOfTerm trm)
-            | (trm, smtId) <- Map.assocs transState.mappings
-            ]
 
         -- assert ground truth
         mapM_ smtRun smtGiven
@@ -317,37 +442,4 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             smtRun CheckSat
         smtRun_ Pop
 
-        Log.logMessage $
-            "Check of Given ∧ P and Given ∧ !P produced "
-                <> pack (show (positive, negative))
-
-        case (positive, negative) of
-            (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
-            (Sat, Sat) -> pure Nothing -- implication not determined
-            (Sat, Unsat) -> pure $ Just True
-            (Unsat, Sat) -> pure $ Just False
-            (Unknown, _) -> do
-                smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
-            (_, Unknown) -> do
-                smtRun GetReasonUnknown >>= \case
-                    ReasonUnknown reason -> throwE $ SMTSolverUnknown reason givenPs psToCheck
-                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
-            other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
-  where
-    smtRun_ :: SMTEncode c => c -> ExceptT SMTError (SMT io) ()
-    smtRun_ = lift . SMT.runCmd_
-    smtRun :: SMTEncode c => c -> ExceptT SMTError (SMT io) Response
-    smtRun = lift . SMT.runCmd
-
-    translated = SMT.runTranslator $ do
-        let mkSMTEquation v t =
-                SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
-        smtSubst <-
-            mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs givenSubst
-        smtPs <-
-            mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) $ Set.toList givenPs
-        toCheck <-
-            mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
-        pure (smtSubst <> smtPs, toCheck)
+        pure (positive, negative)
