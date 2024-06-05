@@ -104,10 +104,6 @@ translateTerm t =
                 pure $ Atom (SMTId value)
             | otherwise ->
                 asSMTVar t
-        Var{} ->
-            asSMTVar t
-        Injection _s1 _s2 t' ->
-            translateTerm t'
         _other ->
             asSMTVar t
 
