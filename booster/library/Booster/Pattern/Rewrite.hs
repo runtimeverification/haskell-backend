@@ -347,7 +347,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
     let smtUnclear = do
-            withContext "condition" . withContext "abort" . logMessage . renderOneLineText $
+            withContext "constraint" . withContext "abort" . logMessage . renderOneLineText $
                 "Uncertain about condition(s) in a rule:" <+> pretty unclearRequires
             failRewrite $
                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
@@ -372,7 +372,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                     smtUnclear -- no implication could be determined
         Nothing ->
             unless (null unclearRequires) $ do
-                withContext "condition" . withContext "abort" $
+                withContext "constraint" . withContext "abort" $
                     logMessage $
                         renderOneLineText $
                             "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
