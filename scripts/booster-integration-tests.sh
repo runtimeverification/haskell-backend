@@ -37,7 +37,7 @@ for dir in $(ls -d test-*); do
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
-        "get-model" | "get-model-subsorts" | "collectiontest")
+        "get-model" | "collectiontest")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
@@ -49,10 +49,7 @@ for dir in $(ls -d test-*); do
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
             ;;
-        "compute-ceil" | "no-evaluator" | "non-linear-int-requires")
-            SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
-            ;;
-        "simplify")
+        "compute-ceil" | "no-evaluator" | "non-linear-int-requires" | "get-model-subsorts" | "simplify")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
         "log-simplify-json")
