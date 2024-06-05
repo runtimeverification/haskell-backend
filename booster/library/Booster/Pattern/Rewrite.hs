@@ -860,8 +860,6 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 emitRewriteTrace $ RewriteStepFailed failure
                                 logMessage $ "Aborted after " <> showCounter counter
                                 pure (RewriteAborted failure pat')
-
-
                         Left failure -> do
                             emitRewriteTrace $ RewriteStepFailed failure
                             let msg = "Aborted after " <> showCounter counter

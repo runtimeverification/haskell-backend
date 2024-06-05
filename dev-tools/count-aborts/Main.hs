@@ -37,7 +37,7 @@ main =
             | otherwise -> do
                 let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
                 (counts, rIdTorLoc) <- foldM countContexts mempty files
-                forM_ (sortOn (Down . snd) $ Map.toList counts) $ \(k@(rule,reason), count) -> do
+                forM_ (sortOn (Down . snd) $ Map.toList counts) $ \(k@(rule, reason), count) -> do
                     let (rType, rLoc) = fromMaybe ("-", "-") $ Map.lookup rule rIdTorLoc
                     T.putStrLn . T.unwords $
                         map ("| " <>) [rType <> " " <> rule, rLoc, reason, T.pack (show count)]
