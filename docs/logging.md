@@ -128,6 +128,8 @@ log any calls to the llvm simplifier here. usually it will be of the form:
 ...[constraint][term 585d8c3][llvm][success][term 98b0892][kore-term] "true"
 ```
 
+### `[error]`
+log any internal errors (usually aborts a request with an error message).
 
 ## Context filtering
 
