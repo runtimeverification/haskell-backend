@@ -12,9 +12,10 @@ module Kore.Log.DebugAttemptedRewriteRules (
     whileDebugAttemptRewriteRule,
 ) where
 
-import Data.Aeson (toJSON, object, (.=))
+import Data.Aeson (Value (Array), object, toJSON, (.=))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Vector (fromList)
 import Kore.Attribute.Axiom (
     SourceLocation,
     UniqueId (..),
@@ -76,10 +77,15 @@ instance Entry DebugAttemptedRewriteRules where
             ]
     oneLineContextJson
         DebugAttemptedRewriteRules{configuration, ruleId} =
-            object
-                [ "term" .= showHashHex (hash configuration)
-                , "rewrite" .= shortRuleIdTxt ruleId
-                ]
+            Array $
+                fromList
+                    [ object
+                        [ "term" .= showHashHex (hash configuration)
+                        ]
+                    , object
+                        [ "rewrite" .= shortRuleIdTxt ruleId
+                        ]
+                    ]
 
     oneLineDoc entry@(DebugAttemptedRewriteRules{configuration, label, ruleId, attemptedRewriteRule}) =
         let context = map Pretty.brackets (pretty <$> oneLineContextDoc entry <> ["detail"])

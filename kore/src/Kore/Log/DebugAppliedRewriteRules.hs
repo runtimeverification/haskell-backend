@@ -14,6 +14,7 @@ module Kore.Log.DebugAppliedRewriteRules (
 ) where
 
 import Data.Aeson (toJSON)
+import Data.Aeson qualified as Json
 import Data.Text (Text)
 import Kore.Attribute.Axiom (
     SourceLocation,
@@ -62,10 +63,14 @@ instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
     oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules}
-        | null appliedRewriteRules =
-            ""
+        | null appliedRewriteRules = mempty
         | otherwise =
             "applied " <> pretty (length appliedRewriteRules) <> " rewrite rules"
+    oneLineJson DebugAppliedRewriteRules{appliedRewriteRules}
+        | null appliedRewriteRules = Json.Null
+        | otherwise =
+            Json.toJSON $
+                "applied " <> show (length appliedRewriteRules) <> " rewrite rules"
     oneLineContextDoc DebugAppliedRewriteRules{appliedRewriteRules}
         | null appliedRewriteRules =
             ["failure"]
@@ -119,7 +124,6 @@ instance Entry DebugAppliedLabeledRewriteRule where
     oneLineJson = toJSON . renderDefault . oneLineDoc
     oneLineContextDoc DebugAppliedLabeledRewriteRule{} = ["success"]
     oneLineContextJson DebugAppliedLabeledRewriteRule{} = toJSON ("success" :: Text)
-
 
 debugAppliedLabeledRewriteRule ::
     MonadLog log =>

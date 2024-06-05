@@ -180,10 +180,11 @@ unifyRule sideCondition initial rule = do
         ruleMarker "CheckSide"
         let ruleRequires = precondition rule
             requires' = Condition.fromPredicate ruleRequires
-        unification' <- inContext "constraint" $
-            Simplifier.simplifyCondition
-                sideCondition'
-                (unification <> requires')
+        unification' <-
+            inContext "constraint" $
+                Simplifier.simplifyCondition
+                    sideCondition'
+                    (unification <> requires')
         debugAppliedLabeledRewriteRule initial maybeLabel location
         ruleMarker "Success"
         return (rule `Conditional.withCondition` unification')
