@@ -284,16 +284,16 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     -- unify terms
     subst <- withContext "match" $ case matchTerms Rewrite def rule.lhs pat.term of
         MatchFailed (SubsortingError sortError) -> do
-            withContext "abort" $ logPretty sortError
+            withContext "error" $ logPretty sortError
             failRewrite $ RewriteSortError rule pat.term sortError
         MatchFailed err@ArgLengthsDiffer{} -> do
-            withContext "abort" $ logPretty err
+            withContext "error" $ logPretty err
             failRewrite $ InternalMatchError $ renderText $ pretty err
         MatchFailed reason -> do
             withContext "failure" $ logPretty reason
             fail "Rule matching failed"
         MatchIndeterminate remainder -> do
-            withContext "abort" $
+            withContext "indeterminate" $
                 logMessage $
                     WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
                         renderOneLineText $
@@ -316,7 +316,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext "abort" $
+        withContext "definedness" . withContext "abort" $
             logMessage $
                 renderOneLineText $
                     "Uncertain about definedness of rule due to:"
@@ -347,7 +347,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
     let smtUnclear = do
-            withContext "abort" . logMessage . renderOneLineText $
+            withContext "condition" . withContext "abort" . logMessage . renderOneLineText $
                 "Uncertain about condition(s) in a rule:" <+> pretty unclearRequires
             failRewrite $
                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
@@ -372,7 +372,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                     smtUnclear -- no implication could be determined
         Nothing ->
             unless (null unclearRequires) $ do
-                withContext "abort" $
+                withContext "condition" . withContext "abort" $
                     logMessage $
                         renderOneLineText $
                             "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
@@ -845,12 +845,23 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             simplifyResult pat' aborted
                         -- if unification was unclear and the pattern was
                         -- unsimplified, simplify and retry rewriting once
-                        Left failure@RuleApplicationUnclear{}
+                        Left failure@(RuleApplicationUnclear rule _ remainder)
                             | not wasSimplified -> do
                                 emitRewriteTrace $ RewriteStepFailed failure
                                 -- simplify remainders, substitute and rerun.
                                 -- If failed, do the pattern-wide simplfication and rerun again
                                 withSimplified pat' "Retrying with simplified pattern" (doSteps True)
+                            | otherwise -> do
+                                -- was already simplified, emit an abort log entry
+                                withRuleContext rule . withContext "match" . withContext "abort" . logMessage $
+                                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                        renderOneLineText $
+                                            "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                                emitRewriteTrace $ RewriteStepFailed failure
+                                logMessage $ "Aborted after " <> showCounter counter
+                                pure (RewriteAborted failure pat')
+
+
                         Left failure -> do
                             emitRewriteTrace $ RewriteStepFailed failure
                             let msg = "Aborted after " <> showCounter counter

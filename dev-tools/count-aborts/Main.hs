@@ -14,7 +14,8 @@ import Data.List (foldl', sortOn)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
-import Data.Text (unpack)
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
 import System.Environment (getArgs)
 import Types
 
@@ -32,10 +33,11 @@ main =
                     "This tool parses the JSON contextual logs, collects the number of aborts for each rewrite rule and displays the informantion in a table."
                 putStrLn "Call via `count-aborts <path_1> ... <path_n>`"
                 putStrLn
-                    "To produce the correct context logs, run kore-rpc-booster with `--log-format json --log-file <file>`"
+                    "To produce the correct context logs, run kore-rpc-booster with `-l Aborts --log-format json --log-file <file>`"
             | otherwise -> do
                 let countContexts m f = foldl' (foldl' countAborts) m . map decode . BS.lines <$> BS.readFile f
                 (counts, rIdTorLoc) <- foldM countContexts mempty files
-                forM_ (sortOn (Down . snd) $ Map.toList counts) $ \(k, v) -> do
-                    let (rType, rLoc) = fromMaybe ("-", "-") $ Map.lookup k rIdTorLoc
-                    putStrLn $ unpack rType <> " " <> unpack k <> " | " <> unpack rLoc <> " | " <> show v
+                forM_ (sortOn (Down . snd) $ Map.toList counts) $ \(k@(rule,reason), count) -> do
+                    let (rType, rLoc) = fromMaybe ("-", "-") $ Map.lookup rule rIdTorLoc
+                    T.putStrLn . T.unwords $
+                        map ("| " <>) [rType <> " " <> rule, rLoc, reason, T.pack (show count)]
