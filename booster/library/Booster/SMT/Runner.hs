@@ -5,12 +5,17 @@ Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
 -}
 module Booster.SMT.Runner (
+    SMTOptions (..),
+    defaultSMTOptions,
     SMTContext (..),
     SMT (..),
     SMTEncode (..),
     mkContext,
+    connectToSolver,
     closeContext,
+    destroyContext,
     runSMT,
+    evalSMT,
     declare,
     runCmd,
     runCmd_,
@@ -21,7 +26,7 @@ import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import Control.Monad.Trans.Reader
+import Control.Monad.Trans.State
 import Data.ByteString.Builder qualified as BS
 import Data.ByteString.Char8 qualified as BS
 import Data.Text (Text, pack)
@@ -41,64 +46,110 @@ import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
 
+-- Includes all options from kore-rpc used by current clients. The
+-- parser in CLOptions uses compatible names and we use the same
+-- defaults. Not all options are supported in booster.
+data SMTOptions = SMTOptions
+    { transcript :: Maybe FilePath
+    -- ^ optional log file
+    , timeout :: Int
+    -- ^ optional timeout for requests, 0 for none
+    , retryLimit :: Maybe Int
+    -- ^ optional retry. Nothing for no retry, 0 for unlimited
+    , tactic :: Maybe SExpr
+    -- ^ optional tactic (used verbatim) to replace (check-sat)
+    }
+    deriving (Eq, Show)
+
+defaultSMTOptions :: SMTOptions
+defaultSMTOptions =
+    SMTOptions
+        { transcript = Nothing
+        , timeout = 125
+        , retryLimit = Just 3
+        , tactic = Nothing
+        }
+
 data SMTContext = SMTContext
-    { solver :: Backend.Solver
+    { options :: SMTOptions
+    , solver :: Backend.Solver
     , solverClose :: IO ()
-    , mbTranscript :: Maybe Handle
+    , mbTranscriptHandle :: Maybe Handle
+    , prelude :: [DeclareCommand]
     }
 
 ----------------------------------------
 {- TODO (later)
-- store prelude of [DeclareCommand] in context (enables hard resets)
 - error handling and retries
   - retry counter in context
-    - Reader becomes State
 - (possibly) run `get-info` on Unknown responses and enhance Unknown constructor
   - smtlib2: reason-unknown = memout | incomplete | SExpr
 -}
 
 mkContext ::
     LoggerMIO io =>
-    Maybe FilePath ->
+    SMTOptions ->
+    [DeclareCommand] ->
     io SMTContext
-mkContext transcriptPath = do
-    logMessage ("Starting new SMT solver" :: Text)
-    mbTranscript <-
-        forM transcriptPath $ \path -> do
-            logMessage $ "Transcript in file " <> pack path
-            liftIO $ do
-                h <- openFile path AppendMode
-                hSetBuffering h (BlockBuffering Nothing)
-                hSetBinaryMode h True
-                BS.hPutStrLn h "; starting solver process"
-                pure h
-    let config = Backend.defaultConfig
-    handle <- liftIO $ Backend.new config
-    solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
-    whenJust mbTranscript $ \h ->
+mkContext opts prelude = do
+    logMessage ("Starting SMT solver" :: Text)
+    (solver, handle) <- connectToSolver
+    mbTranscriptHandle <- forM opts.transcript $ \path -> do
+        logMessage $ "Transcript in file " <> pack path
+        liftIO $ do
+            h <- openFile path AppendMode
+            hSetBuffering h (BlockBuffering Nothing)
+            hSetBinaryMode h True
+            BS.hPutStrLn h "; starting solver process"
+            pure h
+    whenJust mbTranscriptHandle $ \h ->
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
-    logMessage ("Solver ready to use" :: Text)
     pure
         SMTContext
             { solver
             , solverClose = Backend.close handle
-            , mbTranscript
+            , mbTranscriptHandle
+            , prelude
+            , options = opts
             }
 
+{- | Close the connection to the SMT solver process, but hold on to the other resources in @SMTContext@,
+such as the transcript handle. This function is used in 'Booster.SMT.Interface.hardResetSolver'
+to reset the solver connection while keeping the same transcript handle.
+-}
 closeContext :: LoggerMIO io => SMTContext -> io ()
 closeContext ctxt = do
     logMessage ("Stopping SMT solver" :: Text)
-    whenJust ctxt.mbTranscript $ \h -> liftIO $ do
+    whenJust ctxt.mbTranscriptHandle $ \h -> liftIO $ do
         BS.hPutStrLn h "; stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
+    liftIO ctxt.solverClose
+
+{- | Close the connection to the SMT solver process and all other resources in  @SMTContext@.
+ Using this function means completely stopping the solver with no intention of using it any more.
+-}
+destroyContext :: LoggerMIO io => SMTContext -> io ()
+destroyContext ctxt = do
+    logMessage ("Permanently stopping SMT solver" :: Text)
+    whenJust ctxt.mbTranscriptHandle $ \h -> liftIO $ do
+        BS.hPutStrLn h "; permanently stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
         hClose h
     liftIO ctxt.solverClose
 
-newtype SMT m a = SMT (ReaderT SMTContext m a)
+connectToSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
+connectToSolver = do
+    let config = Backend.defaultConfig
+    handle <- liftIO $ Backend.new config
+    solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
+    pure (solver, handle)
+
+newtype SMT m a = SMT (StateT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
 
-runSMT :: SMTContext -> SMT io a -> io a
-runSMT ctxt (SMT action) =
-    runReaderT action ctxt
+runSMT :: SMTContext -> SMT io a -> io (a, SMTContext)
+runSMT ctxt (SMT action) = runStateT action ctxt
+
+evalSMT :: Monad io => SMTContext -> SMT io a -> io a
+evalSMT ctxt (SMT action) = evalStateT action ctxt
 
 declare :: LoggerMIO io => [DeclareCommand] -> SMT io ()
 declare = mapM_ runCmd
@@ -123,14 +174,14 @@ runCmd_ = void . runCmd
 runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd cmd = do
     let cmdBS = encode cmd
-    ctxt <- SMT ask
-    whenJust ctxt.mbTranscript $ \h -> do
+    ctxt <- SMT get
+    whenJust ctxt.mbTranscriptHandle $ \h -> do
         whenJust (comment cmd) $ \c ->
             liftIO (BS.hPutBuilder h c)
         liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
     output <- run_ cmd ctxt.solver cmdBS
     let result = readResponse output
-    whenJust ctxt.mbTranscript $
+    whenJust ctxt.mbTranscriptHandle $
         liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
     when (isError result) $
         logMessage $
