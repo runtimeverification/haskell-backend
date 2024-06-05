@@ -2,7 +2,6 @@ module Stats (
     newStats,
     addStats,
     finaliseStats,
-    showStats,
     timed,
     microsWithUnit,
     RequestStats (..),
@@ -11,12 +10,16 @@ module Stats (
 
 import Control.Concurrent.MVar (MVar, modifyMVar_, newMVar, readMVar)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Aeson
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Deriving.Aeson
+import GHC.Generics ()
 import Prettyprinter
 import System.Clock
 import Text.Printf
 
+import Booster.Log
 import Booster.Prettyprinter
 import Kore.JsonRpc.Types (APIMethod)
 
@@ -32,7 +35,10 @@ data RequestStats a = RequestStats
     , koreAverage :: a
     , koreMax :: a
     }
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Generic)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[FieldLabelModifier '[CamelToKebab]] (RequestStats a)
 
 instance (Floating a, PrintfArg a, Ord a) => Pretty (RequestStats a) where
     pretty stats =
@@ -124,34 +130,39 @@ timed action = do
     let time = fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1000.0
     pure (result, time)
 
-finaliseStats :: Floating a => Stats' a -> RequestStats a
-finaliseStats Stats'{count, total, squares, maxVal, minVal, koreTotal, koreMax} =
-    RequestStats
-        { count
-        , total
-        , average
-        , stddev
-        , maxVal
-        , minVal
-        , koreTotal
-        , koreAverage
-        , koreMax
-        }
-  where
-    average = total / fromIntegral count
-    stddev = sqrt $ squares / fromIntegral count - average * average
-    koreAverage = koreTotal / fromIntegral count
+newtype FinalStats = FinalStats (Map APIMethod (RequestStats Double))
+    deriving stock (Eq, Show)
+    deriving newtype (FromJSON, ToJSON)
 
-showStats :: MVar (Map APIMethod (Stats' Double)) -> IO ()
-showStats var = do
-    statMap <- readMVar var
-    let finalStats =
-            Map.elems . Map.mapWithKey prettyAssoc . Map.map finaliseStats $ statMap
-    putStrLn . renderDefault . vsep $
-        [ "---------------------------"
-        , "RPC request time statistics"
-        , "---------------------------"
-        ]
-            <> finalStats
+instance Pretty FinalStats where
+    pretty (FinalStats stats) =
+        vsep $
+            [ "---------------------------"
+            , "RPC request time statistics"
+            , "---------------------------"
+            ]
+                <> map (\(k, v) -> hang 4 $ vsep [pretty $ show k <> ": ", pretty v]) (Map.assocs stats)
+
+instance ToLogFormat FinalStats where
+    toTextualLog = renderText . pretty
+    toJSONLog = toJSON
+
+finaliseStats :: MVar (Map APIMethod (Stats' Double)) -> IO FinalStats
+finaliseStats var = FinalStats . Map.map finalise <$> readMVar var
   where
-    prettyAssoc key value = hang 4 $ vsep [pretty $ show key <> ": ", pretty value]
+    finalise :: Floating a => Stats' a -> RequestStats a
+    finalise Stats'{count, total, squares, maxVal, minVal, koreTotal, koreMax} =
+        let average = total / fromIntegral count
+            stddev = sqrt $ squares / fromIntegral count - average * average
+            koreAverage = koreTotal / fromIntegral count
+         in RequestStats
+                { count
+                , total
+                , average
+                , stddev
+                , maxVal
+                , minVal
+                , koreTotal
+                , koreAverage
+                , koreMax
+                }
