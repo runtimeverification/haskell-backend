@@ -60,13 +60,13 @@ then we can have e.g.
 ```
 
 ### `[simplify]`
-top-level or nested context signfying the simplification phase of the whole configuration, either when a simplify request is received i.e. context `[booster][simplify]` or inside the execute request when unification is unclear and the booster attempts to simplify the configuration before re-trying to apply rewrite rules: 
+top-level or nested context signifying the simplification phase of the whole configuration, either when a simplify request is received i.e. context `[booster][simplify]` or inside the execute request when unification is unclear and the booster attempts to simplify the configuration before re-trying to apply rewrite rules: 
 ```
 [booster][execute][term 58b79a1][simplify]...
 ```
 
 ### `[rewrite <hash>]`/`[simplification <hash>]`/`[function <hash>]`
-signifies we are in a context of attemitng to apply a rewrite/simplification/function rule. The `<hash>` used is the rule's unique id, truncated to the first 7 letters. We also emit a nested `[detail]` context, specifying the rule label/location for convenience: 
+signifies we are in a context of attempting to apply a rewrite/simplification/function rule. The `<hash>` used is the rule's unique id, truncated to the first 7 letters. We also emit a nested `[detail]` context, specifying the rule label/location for convenience: 
 ```
 [simplification b67b7ce][detail] ...evm-semantics/lemmas/lemmas.k :  (217, 10)
 ```
@@ -74,17 +74,20 @@ signifies we are in a context of attemitng to apply a rewrite/simplification/fun
 ### `[constraint]`
 nested context, signifying evaluation/simplification of a constraint, usually a `requires` clause of a rule.
 
-### `[match]`
-nested context, for  running the matching algorithm. usual logs include:
+### `[match]`/`[match][RESULT]`
+nested context, for  running the matching algorithm. `RESULT` can be `success`, `failure`, or `indeterminate`. Typical log lines:
 ```
 ...[match][success] Substitution: Eq#VarB:SortBool{} -> _==Int_("1997931255"...
 ...[match][failure] Uncertain about match with rule. Remainder: [(_==Int_(Eq#VarX:SortInt{}, "0"), ...
-...[match][abort] Uncertain about match with rule. Remainder: [(PUSH(_)_EVM_PushOp_Int(Rule#VarN:SortInt{})...
+...[match][indeterminate] Uncertain about match with rule. Remainder: [(PUSH(_)_EVM_PushOp_Int(Rule#VarN:SortInt{}),#next(...))...
+...[match][abort] Uncertain about match with rule. Remainder: [(PUSH(_)_EVM_PushOp_Int(Rule#VarN:SortInt{}),...)...
 ```
 
-### `[failure]`/`[failure][continue]`/`[failure][break]`/`[abort]`
-All of the above contexts indicate some for of a failure. Roughly speaking, `[failure]` is an indicator that a rewrite rule does not apply, whereas an `[abort]` is usually indicative of the booster being unable/unsure about proceeding and often falls back to the old backend. 
+### `[failure]`/`[STAGE][abort]` (for `rewrite` rules)
+All of the above contexts indicate some for of a failure. Roughly speaking, `[failure]` is an indicator that a rewrite rule does not apply, whereas an `[abort]` is usually indicative of the booster being unable/unsure about proceeding and falls back to the old backend.  
+The reason to abort is usually indicated by a `STAGE` context before `abort`, which can be `match`, `definedness`, or `constraint`.
 
+### `[failure][continue]`/`[failure][break]` (for equations)
 Things get more complicated in equation application, where some failures are recoverable from depending on the type of equation being applied. We indicate these with a nested `[failure][continue]` context, indicating that the backend will proceed applying further rules in the same priority group. If a failure to apply an equation leads to simplification aborting entirely, we use the `[failure][break]` context to show the reason.
 
 ### `[success]`
@@ -125,6 +128,8 @@ log any calls to the llvm simplifier here. usually it will be of the form:
 ...[constraint][term 585d8c3][llvm][success][term 98b0892][kore-term] "true"
 ```
 
+### `[error]`
+log any internal errors (usually aborts a request with an error message).
 
 ## Context filtering
 

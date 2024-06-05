@@ -148,6 +148,7 @@ executables:
       - conduit-extra
       - containers
       - deepseq
+      - deriving-aeson
       - exceptions
       - extra
       - fast-logger
