@@ -22,18 +22,21 @@ data LogMessage = LogMessage
     }
     deriving (Generic, FromJSON)
 
+type AbortKey = (Text, Text)
+
 countAborts ::
-    (Map Text Int, Map Text (Text, Text)) -> LogMessage -> (Map Text Int, Map Text (Text, Text))
+    (Map AbortKey Int, Map Text (Text, Text)) ->
+    LogMessage ->
+    (Map AbortKey Int, Map Text (Text, Text))
 countAborts maps@(countMap, ruleMap) LogMessage{context, message} = case context of
-    (_ :|> Ref "rewrite" ruleId :|> Plain "match" :|> Plain "abort") -> increment ruleId
-    (_ :|> Ref "rewrite" ruleId :|> Plain "abort") -> increment ruleId
-    (_ :|> Ref "function" ruleId :|> Plain "failure" :|> Plain "break") -> increment ruleId
-    (_ :|> Ref "simplification" ruleId :|> Plain "failure" :|> Plain "break") -> increment ruleId
-    (_ :|> Ref "function" ruleId :|> Plain "match" :|> Plain "failure" :|> Plain "break") -> increment ruleId
-    (_ :|> Ref "simplification" ruleId :|> Plain "match" :|> Plain "failure" :|> Plain "break") -> increment ruleId
+    (_ :|> Ref "rewrite" ruleId :|> Plain reason :|> Plain "abort") -> increment reason ruleId
+    (_ :|> Ref "function" ruleId :|> Plain "failure" :|> Plain "break") -> increment "failure" ruleId
+    (_ :|> Ref "simplification" ruleId :|> Plain "failure" :|> Plain "break") -> increment "failure" ruleId
+    (_ :|> Ref "function" ruleId :|> Plain "match" :|> Plain "failure" :|> Plain "break") -> increment "failure" ruleId
+    (_ :|> Ref "simplification" ruleId :|> Plain "match" :|> Plain "failure" :|> Plain "break") -> increment "failure" ruleId
     (_ :|> Ref "rewrite" ruleId :|> Plain "detail") | String ruleLoc <- message -> (countMap, Map.insert ruleId ("rewrite", ruleLoc) ruleMap)
     (_ :|> Ref "function" ruleId :|> Plain "detail") | String ruleLoc <- message -> (countMap, Map.insert ruleId ("function", ruleLoc) ruleMap)
     (_ :|> Ref "simplification" ruleId :|> Plain "detail") | String ruleLoc <- message -> (countMap, Map.insert ruleId ("simplification", ruleLoc) ruleMap)
     _ -> maps
   where
-    increment rid = (Map.alter (maybe (Just 1) (Just . (+ 1))) rid countMap, ruleMap)
+    increment rsn rid = (Map.alter (maybe (Just 1) (Just . (+ 1))) (rid, rsn) countMap, ruleMap)

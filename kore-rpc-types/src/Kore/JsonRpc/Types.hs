@@ -1,3 +1,5 @@
+{-# LANGUAGE PolyKinds #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -9,7 +11,10 @@ module Kore.JsonRpc.Types (
 
 import Control.Exception (Exception)
 import Data.Aeson.Encode.Pretty qualified as PrettyJson
-import Data.Aeson.Types (FromJSON (..), ToJSON (..))
+import Data.Aeson.Types (FromJSON (..), FromJSONKey (..), ToJSON (..), ToJSONKey (..))
+import Data.List.Extra (stripSuffix)
+import Data.Maybe (fromMaybe)
+import Data.Proxy
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
@@ -17,9 +22,11 @@ import Deriving.Aeson (
     CustomJSON (..),
     FieldLabelModifier,
     OmitNothingFields,
+    StringModifier (..),
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import GHC.TypeLits
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
@@ -202,7 +209,17 @@ data APIMethod
     | SimplifyM
     | AddModuleM
     | GetModelM
-    deriving stock (Eq, Ord, Show, Enum, Read)
+    deriving stock (Eq, Ord, Show, Generic, Enum, Read)
+    deriving anyclass (FromJSONKey, ToJSONKey)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[FieldLabelModifier '[CamelToKebab, StripSuffix "M"]] APIMethod
+
+-- see StripPrefix in deriving-aeson
+data StripSuffix t
+
+instance KnownSymbol k => StringModifier (StripSuffix k) where
+    getStringModifier = fromMaybe <*> stripSuffix (symbolVal (Proxy @k))
 
 type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
