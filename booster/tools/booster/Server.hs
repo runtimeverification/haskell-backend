@@ -11,7 +11,7 @@ import Control.Concurrent.MVar (newMVar)
 import Control.Concurrent.MVar qualified as MVar
 import Control.DeepSeq (force)
 import Control.Exception (AsyncException (UserInterrupt), evaluate, handleJust)
-import Control.Monad (forM_, unless, void, when)
+import Control.Monad (forM_, unless, void)
 import Control.Monad.Catch (bracket)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -34,6 +34,7 @@ import Data.List.Extra (splitOn)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
 import Options.Applicative
@@ -318,7 +319,7 @@ main = do
 
                 runBoosterLogger $
                     Booster.Log.withContext "proxy" $
-                        Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
+                        Booster.Log.logMessage' ("Starting RPC server" :: Text)
 
                 let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
                     koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
@@ -345,11 +346,12 @@ main = do
                             , handleErrorCall
                             , handleSomeException
                             ]
-                    interruptHandler _ = do
-                        when (logLevel >= LevelInfo) $
-                            stderrLogger "[proxy] Server shutting down\n"
-                        whenJust statsVar Stats.showStats
-                        exitSuccess
+                    interruptHandler _ =
+                        runBoosterLogger . Booster.Log.withContext "proxy" $ do
+                            Booster.Log.logMessage' @_ @Text "Server shutting down"
+                            whenJust statsVar $ \var ->
+                                liftIO (Stats.finaliseStats var) >>= Booster.Log.logMessage'
+                            liftIO exitSuccess
                 handleJust isInterrupt interruptHandler $ runBoosterLogger server
   where
     clParser =
@@ -377,7 +379,7 @@ koreExtraLogs =
         (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry))
         logLevelToKoreLogEntryMap
 
-logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text.Text]
+logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text]
 logLevelToKoreLogEntryMap =
     Map.fromList
         [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugTerm"])

@@ -1,3 +1,5 @@
+DEF_KORE =
+
 include $(CURDIR)/../include.mk
 
 .PHONY: test
