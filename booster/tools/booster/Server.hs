@@ -341,7 +341,11 @@ main = do
                     server =
                         jsonRpcServer
                             srvSettings
-                            (\rawReq req -> runBoosterLogger $ logRequestId (fromId $ getReqId rawReq) >> Proxy.respondEither proxyConfig boosterRespond koreRespond req)
+                            ( \rawReq req ->
+                                runBoosterLogger $
+                                    logRequestId (fromId $ getReqId rawReq)
+                                        >> Proxy.respondEither proxyConfig boosterRespond koreRespond req
+                            )
                             [ Kore.handleDecidePredicateUnknown
                             , Booster.handleSmtError
                             , handleErrorCall
@@ -362,9 +366,12 @@ main = do
 
     withMDLib Nothing f = f Nothing
     withMDLib (Just fp) f = withDLib fp $ \dl -> f (Just dl)
-    
-    logRequestId rid = Booster.Log.withContext "proxy" $
-        Booster.Log.logMessage' $ Text.pack $ "Processing request " <> rid
+
+    logRequestId rid =
+        Booster.Log.withContext "proxy" $
+            Booster.Log.logMessage' $
+                Text.pack $
+                    "Processing request " <> rid
 
     isInterrupt :: AsyncException -> Maybe ()
     isInterrupt UserInterrupt = Just ()
