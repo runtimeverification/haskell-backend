@@ -153,7 +153,7 @@ instance KnownSymbol k => ToLogFormat (RewriteRule k) where
     toJSONLog RewriteRule{attributes} =
         object
             [ (Key.fromText $ LazyText.toStrict $ LazyText.toLower $ LazyText.pack $ symbolVal (Proxy :: Proxy k))
-                .= Just (coerce attributes.uniqueId :: Text)
+                .= (coerce attributes.uniqueId :: Text)
             ]
 
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a

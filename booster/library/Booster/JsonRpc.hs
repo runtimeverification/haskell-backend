@@ -734,7 +734,7 @@ mkLogRewriteTrace
                                     Success
                                         { rewrittenTerm = Nothing
                                         , substitution = Nothing
-                                        , ruleId = maybe "UNKNOWN" getUniqueId uid
+                                        , ruleId = getUniqueId uid
                                         }
                                 , origin = Booster
                                 }

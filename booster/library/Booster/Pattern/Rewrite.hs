@@ -524,7 +524,7 @@ data RewriteResult pat
       RewriteCutPoint Text UniqueId pat pat
     | -- | terminal rule, return rhs (final state reached)
       RewriteTerminal Text UniqueId pat
-    | -- | stopping because maximum depth has been reached
+    | -- | stopping because maximum depth has been reached (label and unique id may be empty if no steps were taken)
       RewriteFinished (Maybe Text) (Maybe UniqueId) pat
     | -- | unable to handle the current case with this rewriter
       -- (signalled by exceptions)
@@ -537,7 +537,7 @@ data RewriteResult pat
 
 data RewriteTrace pat
     = -- | single step of execution
-      RewriteSingleStep Text (Maybe UniqueId) pat pat
+      RewriteSingleStep Text UniqueId pat pat
     | -- | branching step of execution
       RewriteBranchingStep pat (NonEmpty (Text, UniqueId))
     | -- | attempted rewrite failed
@@ -786,14 +786,15 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     simplifierCache
                     (withPatternContext pat' $ rewriteStep cutLabels terminalLabels pat')
                     >>= \case
-                        Right (RewriteFinished mlbl uniqueId single, cache) -> do
+                        Right (RewriteFinished mlbl mUniqueId single, cache) -> do
                             whenJust mlbl $ \lbl ->
-                                emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
+                                whenJust mUniqueId $ \uniqueId ->
+                                    emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                             updateCache cache
                             incrementCounter
                             doSteps False single
                         Right (terminal@(RewriteTerminal lbl uniqueId single), _cache) -> withPatternContext pat' $ do
-                            emitRewriteTrace $ RewriteSingleStep lbl (Just uniqueId) pat' single
+                            emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                             incrementCounter
                             simplifyResult pat' terminal
                         Right (branching@RewriteBranch{}, cache) -> do
@@ -807,10 +808,11 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 RewriteTrivial{} -> withPatternContext pat' $ do
                                     logMessage $ "Simplified to bottom after " <> showCounter counter
                                     pure simplified
-                                RewriteFinished mlbl uniqueId single -> do
+                                RewriteFinished mlbl mUniqueId single -> do
                                     logMessage ("All but one branch pruned, continuing" :: Text)
                                     whenJust mlbl $ \lbl ->
-                                        emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
+                                        whenJust mUniqueId $ \uniqueId ->
+                                            emitRewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                                     incrementCounter
                                     doSteps False single
                                 RewriteBranch pat'' branches -> withPatternContext pat' $ do
