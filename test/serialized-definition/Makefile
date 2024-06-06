@@ -1,3 +1,5 @@
+DEF_KORE = $(KORE_FILES)
+
 include $(CURDIR)/../include.mk
 
 KORE_FILES=$(wildcard [a-z]*definition.kore)
