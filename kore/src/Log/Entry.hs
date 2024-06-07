@@ -78,6 +78,10 @@ class (Show entry, Typeable entry) => Entry entry where
     helpDoc :: Proxy entry -> Pretty.Doc ann
     helpDoc _ = Pretty.emptyDoc
 
+    isEmpty :: entry -> Bool
+    default isEmpty :: entry -> Bool
+    isEmpty _ = False
+
 data SomeEntry where
     SomeEntry :: Entry entry => [SomeEntry] -> entry -> SomeEntry
 

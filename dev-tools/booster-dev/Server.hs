@@ -35,7 +35,6 @@ import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
 import Booster.Util (
-    handleOutput,
     newTimeCache,
     withFastLogger,
     pattern NoPrettyTimestamps,
@@ -157,16 +156,15 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLeve
                         , mSMTOptions
                         , addedModules = mempty
                         }
-            flip Log.runLoggingT (handleOutput stderrLogger) . Log.filterLogger levelFilter $
-                jsonRpcServer
-                    srvSettings
-                    ( const $
-                        flip runReaderT filteredBoosterContextLogger
-                            . Booster.Log.unLoggerT
-                            . Booster.Log.withContext "booster"
-                            . respond stateVar
-                    )
-                    [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
+            jsonRpcServer
+                srvSettings
+                ( const $
+                    flip runReaderT filteredBoosterContextLogger
+                        . Booster.Log.unLoggerT
+                        . Booster.Log.withContext "booster"
+                        . respond stateVar
+                )
+                [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
     levelFilter :: Log.LogSource -> LogLevel -> Bool
     levelFilter _source lvl =
