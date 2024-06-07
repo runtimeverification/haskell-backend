@@ -2,7 +2,7 @@ name: "Release"
 on:
   push:
     branches:
-      - master
+      - release
 
 env:
   ghc_version: "9.6.5"
@@ -10,8 +10,27 @@ env:
   hpack_version: '0.36'
 
 jobs:
+  draft-release:
+    name: 'Draft Release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+      - name: 'Make release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          VERSION=v$(cat package/version)
+          gh release create ${VERSION}                  \
+            --repo runtimeverification/haskell-backend  \
+            --draft                                     \
+            --title ${VERSION}                          \
+            --target ${{ github.sha }}
+
   release:
     name: 'Release'
+    needs: draft-release
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
@@ -39,6 +58,7 @@ jobs:
 
   cache-cabal:
     name: 'Cache Cabal'
+    needs: draft-release
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +114,7 @@ jobs:
   cache-stack:
     name: 'Cache Stack'
     runs-on: ubuntu-22.04
+    needs: draft-release
     steps:
       - name: Install prerequisites
         run: |
@@ -134,12 +155,22 @@ jobs:
     environment: production
     needs: [release, cache-cabal, cache-stack]
     steps:
+      - name: 'Finalise release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          VERSION=v$(cat package/version)
+          gh release edit ${VERSION}                    \
+            --repo runtimeverification/haskell-backend  \
+            --draft=false
+
       - name: 'Update dependents'
         env:
           GITHUB_TOKEN: ${{ secrets.JENKINS_GITHUB_PAT }}
         run: |
           set -x
-          version="${GITHUB_SHA}"
+          version="$(cat package/version)"
           curl --fail                                                          \
             -X POST                                                            \
             -H "Accept: application/vnd.github+json"                           \
