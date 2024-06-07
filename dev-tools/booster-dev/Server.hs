@@ -12,7 +12,7 @@ import Control.Exception (evaluate)
 import Control.Monad (forM_, when)
 import Control.Monad.Logger (runNoLoggingT)
 import Control.Monad.Logger qualified as Log
-import Control.Monad.Logger.CallStack (LogLevel (LevelError))
+import Control.Monad.Logger.CallStack (LogLevel)
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
@@ -129,7 +129,7 @@ runServer ::
     TimestampFormat ->
     LogFormat ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat =
+runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat =
     do
         let timestampFlag = case timeStampsFormat of
                 Pretty -> PrettyTimestamps
@@ -157,7 +157,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLeve
                         , addedModules = mempty
                         }
             jsonRpcServer
-                srvSettings
+                (serverSettings port "*")
                 ( const $
                     flip runReaderT filteredBoosterContextLogger
                         . Booster.Log.unLoggerT
@@ -165,9 +165,3 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (logLeve
                         . respond stateVar
                 )
                 [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
-  where
-    levelFilter :: Log.LogSource -> LogLevel -> Bool
-    levelFilter _source lvl =
-        lvl `elem` customLevels
-            || lvl >= logLevel && lvl <= LevelError
-    srvSettings = serverSettings port "*"

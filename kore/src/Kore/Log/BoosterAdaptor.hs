@@ -74,7 +74,7 @@ koreSomeEntryLogAction renderer earlyFilter logger =
     LogAction $ \se -> liftIO $
         when (earlyFilter se) $
             logger $
-                \mTime -> renderer mTime se
+                \mTime -> renderer mTime se <> "\n"
 
 renderJson :: Maybe ByteString -> SomeEntry -> LogStr
 renderJson mTime e@(SomeEntry context actualEntry) =
