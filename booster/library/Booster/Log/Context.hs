@@ -52,7 +52,7 @@ singleP =
 -- orP = singleP `A.sepBy` (A.char '|')
 
 parens :: A.Parser a -> A.Parser a
-parens p = A.char '(' *> A.skipSpace *> p <* A.skipSpace <* A.char ')'
+parens p = A.char '(' *> A.skipSpace *> p <* A.skipSpace <* A.char ')' <* A.skipSpace
 
 chainl1 :: (Alternative m, Monad m) => m b -> m (b -> b -> b) -> m b
 chainl1 p op = do x <- p; rest x
