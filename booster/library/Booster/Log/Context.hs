@@ -61,6 +61,7 @@ chainl1 p op = do x <- p; rest x
             rest (f x y)
             <|> return x
 
+-- adapted from https://gist.github.com/pedrominicz/6867c298608a96e6db4dedd798f49e60
 expression :: A.Parser ContextFilterBoolean
 expression =
     orExpr
