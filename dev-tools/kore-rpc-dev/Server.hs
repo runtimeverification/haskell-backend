@@ -178,7 +178,7 @@ main = do
             koreLogActions = [koreLogAction]
               where
                 koreLogRenderer = case logFormat of
-                    Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
+                    Standard -> Just . renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
                     OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
                     Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
                 koreLogEarlyFilter = case logFormat of
