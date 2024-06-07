@@ -378,7 +378,7 @@ equation ruleLabel lhs rhs priority =
                 , simplification = Flag False
                 , preserving = Flag False
                 , concreteness = Unconstrained
-                , uniqueId = Nothing
+                , uniqueId = mockUniqueId
                 , smtLemma = Flag False
                 }
         , computedAttributes = ComputedAxiomAttributes False []

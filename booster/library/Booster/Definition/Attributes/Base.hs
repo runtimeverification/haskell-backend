@@ -92,7 +92,7 @@ data AxiomAttributes = AxiomAttributes
     { location :: Maybe Location
     , priority :: Priority -- priorities are <= 200
     , ruleLabel :: Maybe Label
-    , uniqueId :: Maybe UniqueId
+    , uniqueId :: UniqueId
     , simplification :: Flag "isSimplification"
     , preserving :: Flag "preservingDefinedness" -- this will override the computed attribute
     , concreteness :: Concreteness
