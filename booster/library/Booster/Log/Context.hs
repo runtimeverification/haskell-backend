@@ -48,9 +48,6 @@ singleP =
         <|> Prefix . BS.dropWhile isSpace <$> stringP <* A.char '*'
         <|> Exact . BS.strip <$> stringP
 
--- orP :: A.Parser [ContextFilterSingle]
--- orP = singleP `A.sepBy` (A.char '|')
-
 parens :: A.Parser a -> A.Parser a
 parens p = A.char '(' *> A.skipSpace *> p <* A.skipSpace <* A.char ')' <* A.skipSpace
 
