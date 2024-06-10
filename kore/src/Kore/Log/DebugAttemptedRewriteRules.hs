@@ -12,8 +12,10 @@ module Kore.Log.DebugAttemptedRewriteRules (
     whileDebugAttemptRewriteRule,
 ) where
 
+import Data.Aeson (Value (Array), object, toJSON, (.=))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Vector (fromList)
 import Kore.Attribute.Axiom (
     SourceLocation,
     UniqueId (..),
@@ -69,10 +71,21 @@ instance Entry DebugAttemptedRewriteRules where
     helpDoc _ = "log attempted rewrite rules"
 
     oneLineContextDoc = \case
-        (DebugAttemptedRewriteRules{configuration, ruleId, label}) ->
+        DebugAttemptedRewriteRules{configuration, ruleId} ->
             [ "term " <> (showHashHex $ hash configuration)
-            , "rewrite" <> shortRuleIdTxt ruleId <> fromMaybe "" label
+            , "rewrite " <> shortRuleIdTxt ruleId
             ]
+    oneLineContextJson
+        DebugAttemptedRewriteRules{configuration, ruleId} =
+            Array $
+                fromList
+                    [ object
+                        [ "term" .= showHashHex (hash configuration)
+                        ]
+                    , object
+                        [ "rewrite" .= shortRuleIdTxt ruleId
+                        ]
+                    ]
 
     oneLineDoc entry@(DebugAttemptedRewriteRules{configuration, label, ruleId, attemptedRewriteRule}) =
         let context = map Pretty.brackets (pretty <$> oneLineContextDoc entry <> ["detail"])
@@ -84,6 +97,9 @@ instance Entry DebugAttemptedRewriteRules where
                     ]
                 )
          in mconcat context <> logMsg
+
+    oneLineJson DebugAttemptedRewriteRules{label, attemptedRewriteRule} =
+        toJSON $ renderDefault $ maybe (Pretty.pretty attemptedRewriteRule) Pretty.pretty label
 
 whileDebugAttemptRewriteRule ::
     MonadLog log =>

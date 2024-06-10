@@ -13,6 +13,8 @@ module Kore.Log.DebugAppliedRewriteRules (
     debugAppliedLabeledRewriteRule,
 ) where
 
+import Data.Aeson (toJSON)
+import Data.Aeson qualified as Json
 import Data.Text (Text)
 import Kore.Attribute.Axiom (
     SourceLocation,
@@ -60,7 +62,20 @@ instance Pretty DebugAppliedRewriteRules where
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
-    oneLineDoc (DebugAppliedRewriteRules{}) = "success"
+    oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules}
+        | null appliedRewriteRules = mempty
+        | otherwise =
+            "applied " <> pretty (length appliedRewriteRules) <> " rewrite rules"
+    oneLineJson DebugAppliedRewriteRules{appliedRewriteRules}
+        | null appliedRewriteRules = Json.Null
+        | otherwise =
+            Json.toJSON $
+                "applied " <> show (length appliedRewriteRules) <> " rewrite rules"
+    oneLineContextDoc DebugAppliedRewriteRules{appliedRewriteRules}
+        | null appliedRewriteRules =
+            ["failure"]
+        | otherwise =
+            ["success"]
 
 debugAppliedRewriteRules ::
     MonadLog log =>
@@ -104,7 +119,11 @@ instance Pretty DebugAppliedLabeledRewriteRule where
 instance Entry DebugAppliedLabeledRewriteRule where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rule with label"
-    oneLineDoc (DebugAppliedLabeledRewriteRule{}) = "[success]"
+    oneLineDoc DebugAppliedLabeledRewriteRule{label, sourceLocation} =
+        maybe (pretty sourceLocation) pretty label
+    oneLineJson = toJSON . renderDefault . oneLineDoc
+    oneLineContextDoc DebugAppliedLabeledRewriteRule{} = ["success"]
+    oneLineContextJson DebugAppliedLabeledRewriteRule{} = toJSON ("success" :: Text)
 
 debugAppliedLabeledRewriteRule ::
     MonadLog log =>

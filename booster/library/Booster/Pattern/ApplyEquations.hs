@@ -158,6 +158,13 @@ instance Monoid SimplifierCache where
 data CacheTag = LLVM | Equations
     deriving stock (Show)
 
+data EquationMetadata = EquationMetadata
+    { location :: Maybe Location
+    , label :: Maybe Label
+    , ruleId :: UniqueId
+    }
+    deriving stock (Eq, Show)
+
 startState :: SimplifierCache -> EquationState
 startState cache =
     EquationState

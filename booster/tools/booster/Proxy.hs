@@ -371,9 +371,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                 "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
                     -- simplify Booster's state with Kore's simplifier
                     Booster.Log.withContext "proxy" $
-                        Booster.Log.logMessage $
-                            Text.pack
-                                "Simplifying booster state and falling back to Kore "
+                        Booster.Log.logMessage ("Simplifying booster state and falling back to Kore" :: Text)
                     simplifyResult <-
                         if cfg.simplifyBeforeFallback
                             then simplifyExecuteState logSettings r._module def boosterResult.state
@@ -387,6 +385,8 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                             pure . Right . Execute $ makeVacuous (postProcessLogs <$> logsOnly) boosterResult
                         Right (simplifiedBoosterState, boosterStateSimplificationLogs) -> do
                             -- attempt to do one step in the old backend
+                            Booster.Log.withContext "proxy" $
+                                Booster.Log.logMessage ("Executing fall-back request" :: Text)
                             (kResult, kTime) <-
                                 Stats.timed $
                                     kore
