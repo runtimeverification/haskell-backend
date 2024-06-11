@@ -28,6 +28,10 @@ version_bump() {
 version_sub() {
     local version
     version="$(cat $version_file)"
+    sed -i "s/^version: '.*'$/version: '${version}'/" dev-tools/package.yaml
+    sed -i "s/^version: '.*'$/version: '${version}'/" booster/package.yaml
+    sed -i "s/^version:        .*$/version:        ${version}/" kore/kore.cabal
+    sed -i "s/^version:        .*$/version:        ${version}/" ./kore-rpc-types/kore-rpc-types.cabal
 }
 
 version_command="$1" ; shift
