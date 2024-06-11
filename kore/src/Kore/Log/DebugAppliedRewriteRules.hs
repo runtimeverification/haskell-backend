@@ -62,6 +62,10 @@ instance Pretty DebugAppliedRewriteRules where
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
     helpDoc _ = "log applied rewrite rules"
+
+    isEmpty DebugAppliedRewriteRules{appliedRewriteRules}
+        | null appliedRewriteRules = True
+        | otherwise = False
     oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules}
         | null appliedRewriteRules = mempty
         | otherwise =

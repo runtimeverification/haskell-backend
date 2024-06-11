@@ -2,7 +2,7 @@ name: "Release"
 on:
   push:
     branches:
-      - master
+      - release
 
 env:
   ghc_version: "9.6.5"
@@ -10,8 +10,31 @@ env:
   hpack_version: '0.36'
 
 jobs:
+  draft-release:
+    name: 'Draft Release'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.make-release.outputs.version }}
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+      - name: 'Make release'
+        id: 'make-release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          VERSION=v$(cat package/version)
+          gh release create ${VERSION}                  \
+            --repo runtimeverification/haskell-backend  \
+            --draft                                     \
+            --title ${VERSION}                          \
+            --target ${{ github.sha }}
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
   release:
     name: 'Release'
+    needs: draft-release
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
@@ -37,113 +60,31 @@ jobs:
       - name: Build
         run: nix build .#kore-exec .#kore-rpc-booster
 
-  cache-cabal:
-    name: 'Cache Cabal'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-22.04
-            os: ubuntu-22.04
-            nix: x86_64-linux
-          - runner: MacM1
-            os: self-macos-12
-            nix: aarch64-darwin
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      # Do the Following only on Public Runners; Mac Runner is pre-installed with build tools
-      - name: 'Install Nix'
-        if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/install-nix-action@v25
-        with:
-          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-
-      - name: 'Install Cachix'
-        if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/cachix-action@v14
-        with:
-          name: k-framework
-          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
-
-      - name: Cache Cabal package database and store
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
-          restore-keys: |
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}
-
-      - name: Test
-        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
-
-  cache-stack:
-    name: 'Cache Stack'
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Install prerequisites
-        run: |
-          sudo apt install --yes z3 libsecp256k1-dev
-
-      - name: Check out code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Cache Stack root
-        uses: actions/cache@v4
-        with:
-          path: ~/.stack
-          key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
-          restore-keys: |
-            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
-            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
-
-      - uses: haskell-actions/setup@v2.7
-        id: setup-haskell-stack
-        with:
-          ghc-version: ${{ env.ghc_version }}
-          stack-version: ${{ env.stack_version }}
-          enable-stack: true
-          stack-setup-ghc: true
-
-      - name: Build all
-        run: |
-          stack build --test --no-run-tests --pedantic
-
-      - name: Run unit tests
-        run: stack test kore:kore-test hs-backend-booster:unit-tests
-
   update-dependents:
     name: 'Publish Release'
     runs-on: ubuntu-latest
     environment: production
-    needs: [release, cache-cabal, cache-stack]
+    needs: [draft-release, release]
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.draft-release.outputs.version }}
     steps:
+      - name: 'Finalise release'
+        run: |
+          set -x
+          gh release edit ${VERSION}                    \
+            --repo runtimeverification/haskell-backend  \
+            --draft=false
+
       - name: 'Update dependents'
         env:
           GITHUB_TOKEN: ${{ secrets.JENKINS_GITHUB_PAT }}
         run: |
           set -x
-          version="${GITHUB_SHA}"
           curl --fail                                                          \
             -X POST                                                            \
             -H "Accept: application/vnd.github+json"                           \
             -H "Authorization: Bearer ${GITHUB_TOKEN}"                         \
             -H "X-GitHub-Api-Version: 2022-11-28"                              \
             https://api.github.com/repos/runtimeverification/devops/dispatches \
-            -d '{"event_type":"on-demand-test","client_payload":{"repo":"runtimeverification/haskell-backend","version":"'${version}'"}}'
+            -d '{"event_type":"on-demand-test","client_payload":{"repo":"runtimeverification/haskell-backend","version":"'${VERSION}'"}}'

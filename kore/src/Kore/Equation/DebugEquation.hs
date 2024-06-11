@@ -345,6 +345,8 @@ newtype DebugEquation = DebugEquation (Equation RewritingVariableName)
 instance Entry DebugTermContext where
     entrySeverity _ = Debug
 
+    isEmpty DebugTermContext{} = True
+
     oneLineDoc DebugTermContext{} = mempty
 
     oneLineContextDoc (DebugTermContext term) =
@@ -355,6 +357,7 @@ instance Entry DebugTermContext where
             [ "term" JSON..= showHashHex (hash term)
             ]
 
+    oneLineJson :: DebugTermContext -> JSON.Value
     oneLineJson DebugTermContext{} =
         JSON.Null
 
