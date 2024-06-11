@@ -303,6 +303,7 @@ rpcJsonConfig =
                 , "moving-average-step-timeout"
                 , "code"
                 , "data"
+                , "timestamp"
                 , "context"
                 , "message"
                 ]

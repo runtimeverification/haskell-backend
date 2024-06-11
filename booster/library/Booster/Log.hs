@@ -44,8 +44,10 @@ import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..))
+import Data.Text.Encoding (decodeUtf8)
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Util (showHashHex)
+import System.Log.FastLogger (FormattedTime)
 import UnliftIO (MonadUnliftIO)
 
 newtype Logger a = Logger (a -> IO ())
@@ -192,24 +194,32 @@ instance MonadIO m => LoggerMIO (LoggerT m) where
     getLogger = LoggerT ask
     withLogger modL (LoggerT m) = LoggerT $ withReaderT modL m
 
-textLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
+textLogger :: ((Maybe FormattedTime -> Control.Monad.Logger.LogStr) -> IO ()) -> Logger LogMessage
 textLogger l = Logger $ \(LogMessage _ ctxts msg) ->
     let logLevel = mconcat $ intersperse "][" $ map (\(LogContext lc) -> toTextualLog lc) ctxts
-     in l $
-            "["
+     in l $ \mTime ->
+            ( case mTime of
+                Nothing -> mempty
+                Just t -> Control.Monad.Logger.toLogStr t <> " "
+            )
+                <> "["
                 <> (Control.Monad.Logger.toLogStr logLevel)
                 <> "] "
                 <> (Control.Monad.Logger.toLogStr $ toTextualLog msg)
                 <> "\n"
 
-jsonLogger :: (Control.Monad.Logger.LogStr -> IO ()) -> Logger LogMessage
+jsonLogger :: ((Maybe FormattedTime -> Control.Monad.Logger.LogStr) -> IO ()) -> Logger LogMessage
 jsonLogger l = Logger $ \(LogMessage _ ctxts msg) ->
     let ctxt = toJSON $ map (\(LogContext lc) -> toJSONLog lc) ctxts
      in liftIO $
-            l $
+            l $ \mTime ->
                 ( Control.Monad.Logger.toLogStr $
                     encodePretty' rpcJsonConfig{confIndent = Spaces 0} $
-                        object ["context" .= ctxt, "message" .= toJSONLog msg]
+                        object $
+                            ["context" .= ctxt, "message" .= toJSONLog msg]
+                                <> case mTime of
+                                    Nothing -> []
+                                    Just t -> ["timestamp" .= decodeUtf8 t]
                 )
                     <> "\n"
 
