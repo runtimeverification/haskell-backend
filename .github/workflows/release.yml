@@ -13,10 +13,13 @@ jobs:
   draft-release:
     name: 'Draft Release'
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps make-release.outputs.version }}
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
       - name: 'Make release'
+        id: 'make-release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -66,9 +69,9 @@ jobs:
       - name: 'Finalise release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.draft-release.outputs.version }}
         run: |
           set -x
-          VERSION=${{ steps.draft-release.outputs.version }}
           gh release edit ${VERSION}                    \
             --repo runtimeverification/haskell-backend  \
             --draft=false
