@@ -84,8 +84,15 @@ throw = EquationT . lift . throwE
 catch_ ::
     Monad io => EquationT io a -> (EquationFailure -> EquationT io a) -> EquationT io a
 catch_ (EquationT op) hdlr = EquationT $ do
+    prior <- lift . lift $ get
     cfg <- ask
-    lift (runReaderT op cfg `catchE` (\e -> let EquationT fallBack = hdlr e in runReaderT fallBack cfg))
+    lift
+        ( runReaderT op cfg
+            `catchE` ( \e -> do
+                        let EquationT fallBack = hdlr e
+                        runReaderT (lift (lift (put prior)) >> fallBack) cfg
+                     )
+        )
 
 data EquationFailure
     = IndexIsNone Term
@@ -965,5 +972,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
         prior <- getState -- save prior state so we can revert
         eqState $ put prior{termStack = mempty, changed = False}
         result <- iterateEquations BottomUp PreferFunctions t
-        eqState $ put prior
+        -- reset change flag and term stack to prior values
+        -- (keep the updated cache and added predicates, if any)
+        eqState $ modify $ \s -> s{changed = prior.changed, termStack = prior.termStack}
         pure result
