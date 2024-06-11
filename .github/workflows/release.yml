@@ -14,7 +14,7 @@ jobs:
     name: 'Draft Release'
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps make-release.outputs.version }}
+      version: ${{ steps.make-release.outputs.version }}
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
