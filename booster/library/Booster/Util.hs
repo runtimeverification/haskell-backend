@@ -185,7 +185,7 @@ pattern NoPrettyTimestamps = Flag False
 -- | Format time either as a human-readable date and time or as nanoseconds
 formatSystemTime :: Flag "PrettyTimestamp" -> SystemTime -> ByteString
 formatSystemTime prettyTimestamp =
-    let formatString = BS.unpack "%Y-%m-%dT%H:%M:%S.%6Q"
+    let formatString = "%Y-%m-%dT%H:%M:%S%6Q"
         formatter =
             if coerce prettyTimestamp
                 then formatTime defaultTimeLocale formatString . systemToUTCTime
