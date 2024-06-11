@@ -64,7 +64,7 @@ jobs:
     name: 'Publish Release'
     runs-on: ubuntu-latest
     environment: production
-    needs: release
+    needs: [draft-release, release]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ needs.draft-release.outputs.version }}
