@@ -142,15 +142,21 @@ To turn on context logging, use the `--log-context` flag to select which of the 
 * `*foo*` - match context with the infix `foo`
 * `!foo*` - don't match `foo`
 * `foo|bar` - match `foo` or `bar` context, e.g. `kore|booster`
+* `foo&bar` - match `foo` and `bar` context, most likely used with negation e.g. `!kore&!proxy`
 * `foo,bar` - match a context `foo` with an immediately nested context `bar`
 * `foo>bar` - match a context `foo` with a child context `bar`
 * `foo>bar.` - match a context `foo` with a child context `bar` which is the last context, e.g. the context `[foo][baz][bar]` would match but `[foo][bar][baz]` does not.
+
+Other allowed expressions:
+
+* `(foo|bar)&!baz`
+* `!(foo|bar)`
 
 
 Here are some common patterns we may want to use:
 
 * `kore|booster` - log everything from kore and booster
-* `kore|booster>!kore-term.` - log everything from kore and booster except for the innermost `kore-term` contexts, which contain the pretty printed terms
+* `kore|booster>!(kore-term|detail).` - log everything from kore and booster except for the innermost `kore-term` or `detail` contexts, which contain the pretty printed terms and extra details about e.g. rule locations which may be too noisy.
 * `kore|booster>simplification*` - log every simplification rule attempt from kore and booster
 * `kore|booster>simplification*|equation*` - log every simplification and function application attempt from kore and booster
 * `ceil>partial-symbols.` - log a minimal ceil analysis showing all the rules which contain partial symbols on the RHS and aren't marked as preserving definedness
