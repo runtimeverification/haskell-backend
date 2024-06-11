@@ -65,11 +65,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     needs: release
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.draft-release.outputs.version }}
     steps:
       - name: 'Finalise release'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.draft-release.outputs.version }}
         run: |
           set -x
           gh release edit ${VERSION}                    \
@@ -81,11 +81,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.JENKINS_GITHUB_PAT }}
         run: |
           set -x
-          version="$(cat package/version)"
           curl --fail                                                          \
             -X POST                                                            \
             -H "Accept: application/vnd.github+json"                           \
             -H "Authorization: Bearer ${GITHUB_TOKEN}"                         \
             -H "X-GitHub-Api-Version: 2022-11-28"                              \
             https://api.github.com/repos/runtimeverification/devops/dispatches \
-            -d '{"event_type":"on-demand-test","client_payload":{"repo":"runtimeverification/haskell-backend","version":"'${version}'"}}'
+            -d '{"event_type":"on-demand-test","client_payload":{"repo":"runtimeverification/haskell-backend","version":"'${VERSION}'"}}'
