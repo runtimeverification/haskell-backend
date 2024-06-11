@@ -16,7 +16,6 @@ import Control.Monad.Catch (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
     LogLevel (..),
-    ToLogStr (toLogStr),
  )
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson.Types (Value (..))
@@ -33,7 +32,6 @@ import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
     Clock (..),
-    TimeSpec (..),
     getTime,
  )
 import System.Exit
@@ -61,7 +59,6 @@ import Kore.JsonRpc.Types
 import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
-    LogAction (LogAction),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
@@ -174,18 +171,16 @@ main = do
         let koreLogActions ::
                 forall m.
                 MonadIO m =>
-                [LogAction m Log.SomeEntry]
+                [Log.LogAction m Log.SomeEntry]
             koreLogActions = [koreLogAction]
               where
                 koreLogRenderer = case logFormat of
-                    Standard -> Just . renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                    OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                    Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                koreLogEarlyFilter = case logFormat of
-                    Json -> \l@(Log.SomeEntry ctxt e) ->
-                        Log.oneLineJson e /= Null && koreFilterContext (ctxt <> [l])
-                    OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
+                    Standard -> renderStandardPretty
+                    OneLine -> renderOnelinePretty
+                    Json -> renderJson
+                koreLogFilter = case logFormat of
                     Standard -> const True
+                    _ -> \l@(Log.SomeEntry ctxt _) -> not (Log.isEmpty l) && koreFilterContext (ctxt <> [l])
                 koreFilterContext ctxt =
                     null logContextsWithcustomLevelContexts
                         || ( let contextStrs =
@@ -199,13 +194,8 @@ main = do
                 koreLogAction =
                     koreSomeEntryLogAction
                         koreLogRenderer
-                        koreLogEarlyFilter
-                        (const True)
-                        ( LogAction $ \txt -> liftIO $
-                            case mFileLogger of
-                                Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
-                                Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
-                        )
+                        koreLogFilter
+                        (fromMaybe stderrLogger mFileLogger)
 
             coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
             koreLogOptions =
