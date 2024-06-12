@@ -24,6 +24,7 @@ import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Either.Extra hiding (Left, Right)
+import Data.Set qualified as Set
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.Predicate qualified as Predicate
@@ -124,6 +125,8 @@ fromSubstitution sort subst
             . fromTermLike
             . foldl1 TermLike.mkAnd
             . map toEquals
+            . Set.toList
+            . Set.fromList
             . Substitution.unwrap
             $ subst
   where
