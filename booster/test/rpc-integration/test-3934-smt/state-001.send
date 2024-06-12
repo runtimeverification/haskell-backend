@@ -1,0 +1,1 @@
+{"jsonrpc": "2.0", "id": 1, "method": "add-module", "params": {"module": "module M-SUM-TO-N-FOUNDRY-SPEC-FOUNDRY-SUM-TO-N-LOOP-INVARIANT-DEPENDS-MODULE\n    import VERIFICATION []\nendmodule []", "name-as-id": true}}
