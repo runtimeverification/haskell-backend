@@ -8,14 +8,14 @@ if [ -z "$PLUGIN_DIR" ]; then
     echo "PLUGIN_DIR required to link in a crypto plugin dependency"
     exit 1
 else
-    for lib in libff libcryptopp; do
+    for lib in libff libcryptopp blake2; do
         LIBFILE=$(find ${PLUGIN_DIR} -name "${lib}.a" | head -1)
         [ -z "$LIBFILE" ] && (echo "[Error] Unable to locate ${lib}.a"; exit 1)
         PLUGIN_LIBS+="$LIBFILE "
-        PLUGIN_INCLUDE+="-I$(dirname $LIBFILE)/../include "
+        PLUGIN_INCLUDE+="-I$(dirname $LIBFILE) -I$(dirname $LIBFILE)/../include "
     done
     #PLUGIN_CPP=$(find ${PLUGIN_DIR}/plugin-c -name "*.cpp")
-    PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/blake2.cpp ${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
+    PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
 fi
 
 NAME=$(basename ${0%.tar.gz.kompile})
@@ -39,7 +39,7 @@ esac
 llvm-kompile 3934-smt.llvm.kore ./dt c -- \
              -fPIC -std=c++17 -o interpreter \
              $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
-             -lcrypto -lssl -lsecp256k1 $LPROCPS
+             -lcrypto -lssl $LPROCPS ${SECP_OPTS}
 
 mv interpreter.* 3934-smt.dylib
 
