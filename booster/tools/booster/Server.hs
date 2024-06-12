@@ -17,11 +17,9 @@ import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
     LogLevel (..),
-    ToLogStr (toLogStr),
     runNoLoggingT,
  )
 import Control.Monad.Trans.Reader (runReaderT)
-import Data.Aeson (Value (Null))
 import Data.Aeson qualified as JSON
 import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
@@ -40,7 +38,6 @@ import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
 import Options.Applicative
 import System.Clock (
     Clock (..),
-    TimeSpec (..),
     getTime,
  )
 import System.Environment qualified as Env
@@ -84,7 +81,6 @@ import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
-    LogAction (LogAction),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
@@ -168,14 +164,12 @@ main = do
             enableCustomUserEvent t
 
         let koreLogRenderer = case logFormat of
-                Standard -> Just . renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
-            koreLogEarlyFilter = case logFormat of
-                Json -> \l@(Log.SomeEntry ctxt e) ->
-                    Log.oneLineJson e /= Null && koreFilterContext (ctxt <> [l])
-                OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
+                Standard -> renderStandardPretty
+                OneLine -> renderOnelinePretty
+                Json -> renderJson
+            koreLogFilter = case logFormat of
                 Standard -> const True
+                _ -> \l@(Log.SomeEntry ctxt _) -> not (Log.isEmpty l) && koreFilterContext (ctxt <> [l])
             koreFilterContext ctxt =
                 not contextLoggingEnabled
                     || ( let contextStrs =
@@ -205,19 +199,14 @@ main = do
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
             runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
 
-            koreLogActions :: forall m. MonadIO m => [LogAction m Log.SomeEntry]
+            koreLogActions :: forall m. MonadIO m => [Log.LogAction m Log.SomeEntry]
             koreLogActions = [koreLogAction]
               where
                 koreLogAction =
                     koreSomeEntryLogAction
                         koreLogRenderer
-                        koreLogEarlyFilter
-                        (const True)
-                        ( LogAction $ \txt -> liftIO $
-                            case mFileLogger of
-                                Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
-                                Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
-                        )
+                        koreLogFilter
+                        (fromMaybe stderrLogger mFileLogger)
 
         runBoosterLogger $
             Booster.Log.withContext "proxy" $
