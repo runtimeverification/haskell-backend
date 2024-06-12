@@ -232,6 +232,10 @@ allowedLogLevels =
     , ("Depth", "Log the current depth of the state")
     , ("SMT", "Log the SMT-solver interactions")
     , ("ErrorDetails", "Log error conditions with extensive details")
+    ,
+        ( "EquationWarnings"
+        , "Log warnings indicating soft-violations of conditions, i.e. exceeding the equation recursion/iteration limit "
+        )
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -277,6 +281,12 @@ levelToContext =
                 , [ctxt| proxy. |]
                 , [ctxt| proxy,abort. |]
                 , [ctxt| booster>failure,abort |]
+                ]
+            )
+        ,
+            ( "EquationWarnings"
+            ,
+                [ [ctxt| booster>(simplification *|function *)>warning |]
                 ]
             )
         ]
