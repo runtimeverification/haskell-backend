@@ -232,9 +232,8 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
-    withContext "warning" $ do
-        logMessage $
-            msg <> " For more details, enable full context logging '--log-context \"*\"'"
+    withContext "warning" $
+        logMessage msg
 
 checkForLoop :: LoggerMIO io => Term -> EquationT io ()
 checkForLoop t = do
