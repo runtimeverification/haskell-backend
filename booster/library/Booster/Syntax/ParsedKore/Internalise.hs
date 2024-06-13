@@ -24,7 +24,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Bifunctor (first, second)
-import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 as BS (ByteString, pack)
 import Data.Coerce (Coercible, coerce)
 import Data.Function (on)
 import Data.Generics (extQ)
@@ -44,6 +44,7 @@ import Language.Haskell.TH.Quote (QuasiQuoter (..), dataToExpQ)
 import Prettyprinter as Pretty
 
 import Booster.Definition.Attributes.Base hiding (Partial)
+import Booster.Definition.Attributes.Base qualified as Def
 import Booster.Definition.Attributes.Reader as Attributes (
     HasAttributes (mkAttributes),
     readLocation,
@@ -280,7 +281,9 @@ addModule
                     DuplicateSymbols symCollisions
             let sorts' = currentSorts <> newSorts'
             newSymbols' <- traverse (internaliseSymbol sorts') parsedSymbols
-            symbols <- (<> currentSymbols) <$> addKmapSymbols newSorts' (Map.fromList newSymbols')
+            symbols' <- (<> currentSymbols) <$> addKmapSymbols newSorts' (Map.fromList newSymbols')
+            let symbols =
+                    renameSmtLibDuplicates symbols'
 
             let defWithNewSortsAndSymbols =
                     Partial
@@ -362,8 +365,9 @@ addModule
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newSimplifications currentSimpls
                 ceils =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newCeils currentCeils
-                -- addToTheoryWith (Idx.termTopIndex . (\InternalCeil t -> t) . (.lhs)) newCeils currentCeils
-                sorts = subsortClosure sorts' subsortPairs
+                sorts =
+                    subsortClosure sorts' subsortPairs
+
             pure $
                 defWithAliases.partial
                     { sorts
@@ -388,6 +392,34 @@ addModule
              in ( Map.fromAscList [(getKey a, a) | [a] <- good]
                 , [(getKey $ head d, d) | d <- dups]
                 )
+
+        -- if two symbols have the same smtlib attribute, they get renamed
+        renameSmtLibDuplicates ::
+            Map Def.SymbolName Def.Symbol -> Map Def.SymbolName Def.Symbol
+        renameSmtLibDuplicates original =
+            let retractSMTLib sym
+                    | Just smt@SMTLib{} <- sym.attributes.smt = Just smt
+                    | otherwise = Nothing
+
+                smtNamePairs = Map.assocs $ Map.mapMaybe retractSMTLib original
+
+                duplicates :: [(Def.SMTType, [Def.SymbolName])]
+                duplicates = map (second $ map fst) . snd $ smtNamePairs `mappedBy` snd
+
+                -- lookup map with 1..N appended to the conflicting smtlib names
+                newSMTLibs =
+                    Map.fromList $
+                        concat
+                            [ zip symNames (map (Def.SMTLib . (smtName <>) . BS.pack . show) [(1 :: Int) ..])
+                            | (Def.SMTLib smtName, symNames) <- duplicates
+                            ]
+
+                rename symName sym@Def.Symbol{attributes}
+                    | Just smtLib <- Map.lookup symName newSMTLibs =
+                        sym{Def.Symbol.attributes = attributes{smt = Just smtLib}}
+                    | otherwise =
+                        sym
+             in Map.mapWithKey rename original
 
         subsortClosure ::
             Map Def.SortName (SortAttributes, Set Def.SortName) ->

@@ -4,11 +4,6 @@ on:
     branches:
       - release
 
-env:
-  ghc_version: "9.6.5"
-  stack_version: "2.15.1"
-  hpack_version: '0.36'
-
 jobs:
   draft-release:
     name: 'Draft Release'
