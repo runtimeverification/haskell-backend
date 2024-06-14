@@ -52,12 +52,14 @@ import Text.Read (readMaybe)
 
 import Booster.JsonRpc (rpcJsonConfig)
 import Booster.JsonRpc.Utils (
+    DiffResult (DifferentType),
     KoreRpcJson (RpcRequest),
     decodeKoreRpc,
     diffJson,
     isIdentical,
     methodOfRpcCall,
     renderResult,
+    rpcTypeOf,
  )
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json qualified as Syntax
@@ -85,8 +87,8 @@ handleRunOptions common@CommonOptions{dryRun} s = \case
     [] -> case s of
         Just sock -> shutdown sock ShutdownReceive
         Nothing -> pure ()
-    (RunTarball tarFile keepGoing runOnly : xs) -> do
-        runTarball common s tarFile keepGoing runOnly
+    (RunTarball tarFile keepGoing runOnly noDetails : xs) -> do
+        runTarball common s tarFile keepGoing runOnly (not noDetails)
         handleRunOptions common s xs
     (RunSingle mode optionFile options processingOptions : xs) -> do
         let ProcessingOptions{postProcessing, prettify, time} = processingOptions
@@ -246,7 +248,8 @@ data RunOptions
       RunTarball
         FilePath -- tar file
         Bool -- do not stop on first diff if set to true
-        [Kore.JsonRpc.Types.APIMethod] -- only run specified types of requests. run all if empty
+        [Kore.JsonRpc.Types.APIMethod] -- only run specified types of requests. Run all if empty.
+        Bool -- omit detailed comparison with expected output
     deriving stock (Show)
 
 data ProcessingOptions = ProcessingOptions
@@ -448,6 +451,10 @@ parseMode =
                             ( long "run-only"
                                 <> help "Only run the specified request(s), e.g. --run-only \"add-module implies\""
                             )
+                        <*> switch
+                            ( long "omit-details"
+                                <> help "only compare response types, not contents"
+                            )
                         <**> helper
                     )
                     (progDesc "Run all requests and compare responses from a bug report tarball")
@@ -479,9 +486,15 @@ parseMode =
 -- Running all requests contained in the `rpc_*` directory of a tarball
 
 runTarball ::
-    CommonOptions -> Maybe Socket -> FilePath -> Bool -> [Kore.JsonRpc.Types.APIMethod] -> IO ()
-runTarball _ Nothing _ _ _ = pure ()
-runTarball common (Just sock) tarFile keepGoing runOnly = do
+    CommonOptions ->
+    Maybe Socket ->
+    FilePath ->
+    Bool ->
+    [Kore.JsonRpc.Types.APIMethod] ->
+    Bool ->
+    IO ()
+runTarball _ Nothing _ _ _ _ = pure ()
+runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
     -- unpack tar files, determining type from extension(s)
     let unpackTar
             | ".tar" == takeExtension tarFile = Tar.read
@@ -569,13 +582,22 @@ runTarball common (Just sock) tarFile keepGoing runOnly = do
             request <- liftIO . BS.readFile $ tmpDir </> basename <> "_request.json"
             expected <- liftIO . BS.readFile $ tmpDir </> basename <> "_response.json"
 
+            let showResult =
+                    renderResult "expected response" "actual response"
             makeRequest False basename (Just skt) request pure runOnly >>= \case
                 Nothing -> pure Nothing -- should not be reachable
-                Just actual -> do
-                    let diff = diffJson expected actual
-                    if isIdentical diff
-                        then pure Nothing
-                        else pure . Just $ renderResult "expected response" "actual response" diff
+                Just actual
+                    | compareDetails -> do
+                        let diff = diffJson expected actual
+                        if isIdentical diff
+                            then pure Nothing
+                            else pure . Just $ showResult diff
+                    | otherwise -> do
+                        let expectedType = rpcTypeOf (decodeKoreRpc expected)
+                            actualType = rpcTypeOf (decodeKoreRpc actual)
+                        if expectedType == actualType
+                            then pure Nothing
+                            else pure . Just $ showResult (DifferentType expectedType actualType)
 
 noServerError :: MonadLoggerIO m => CommonOptions -> IOException -> m ()
 noServerError common e@IOError{ioe_type = NoSuchThing} = do
