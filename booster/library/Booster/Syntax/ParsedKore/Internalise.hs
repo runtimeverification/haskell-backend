@@ -181,6 +181,7 @@ mergeDefs k1 k2
                 <*> pure (mergeTheories rewriteTheory k1 k2)
                 <*> pure (mergeTheories functionEquations k1 k2)
                 <*> pure (mergeTheories simplifications k1 k2)
+                <*> pure (mergeTheories existentialSimplifications k1 k2)
                 <*> pure (mergeTheories ceils k1 k2)
   where
     mergeTheories ::
@@ -235,6 +236,7 @@ addModule
                     , rewriteTheory = currentRewriteTheory
                     , functionEquations = currentFctEqs
                     , simplifications = currentSimpls
+                    , existentialSimplifications = currentExistentialSimplifications
                     , ceils = currentCeils
                     }
                 )
@@ -296,6 +298,7 @@ addModule
                             , rewriteTheory = currentRewriteTheory -- no rules yet
                             , functionEquations = Map.empty
                             , simplifications = Map.empty
+                            , existentialSimplifications = Map.empty
                             , ceils = Map.empty
                             }
 
@@ -352,6 +355,7 @@ addModule
                 subsortPairs = mapMaybe retractSubsortRule newAxioms
                 newFunctionEquations = mapMaybe retractFunctionRule newAxioms
                 newSimplifications = mapMaybe retractSimplificationRule newAxioms
+                newExistentialSimplifications = mapMaybe retractExistentialSimplificationRule newAxioms
                 newCeils = mapMaybe retractCeilRule newAxioms
             let rewriteIndex =
                     if null defAttributes.indexCells
@@ -363,6 +367,11 @@ addModule
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newFunctionEquations currentFctEqs
                 simplifications =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newSimplifications currentSimpls
+                existentialSimplifications =
+                    addToTheoryWith
+                        (Idx.termTopIndex . (.lhs))
+                        newExistentialSimplifications
+                        currentExistentialSimplifications
                 ceils =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newCeils currentCeils
                 sorts =
@@ -374,6 +383,7 @@ addModule
                     , rewriteTheory
                     , functionEquations
                     , simplifications
+                    , existentialSimplifications
                     , ceils
                     }
       where
@@ -534,6 +544,8 @@ data AxiomResult
       FunctionAxiom (RewriteRule "Function")
     | -- | Simplification
       SimplificationAxiom (RewriteRule "Simplification")
+    | -- | Existential simplification
+      ExistentialSimplificationAxiom (RewriteRule "ExistentialSimplification")
     | -- | Ceil rule
       CeilAxiom (RewriteRule "Ceil")
 
@@ -553,6 +565,11 @@ retractFunctionRule _ = Nothing
 retractSimplificationRule :: AxiomResult -> Maybe (RewriteRule "Simplification")
 retractSimplificationRule (SimplificationAxiom r) = Just r
 retractSimplificationRule _ = Nothing
+
+retractExistentialSimplificationRule ::
+    AxiomResult -> Maybe (RewriteRule "ExistentialSimplification")
+retractExistentialSimplificationRule (ExistentialSimplificationAxiom r) = Just r
+retractExistentialSimplificationRule _ = Nothing
 
 retractCeilRule :: AxiomResult -> Maybe (RewriteRule "Ceil")
 retractCeilRule (CeilAxiom r) = Just r

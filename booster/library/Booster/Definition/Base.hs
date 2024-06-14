@@ -47,6 +47,7 @@ data KoreDefinition = KoreDefinition
     , rewriteTheory :: Theory (RewriteRule "Rewrite")
     , functionEquations :: Theory (RewriteRule "Function")
     , simplifications :: Theory (RewriteRule "Simplification")
+    , existentialSimplifications :: Theory (RewriteRule "ExistentialSimplification")
     , ceils :: Theory (RewriteRule "Ceil")
     }
     deriving stock (Eq, Show, GHC.Generic)
@@ -67,6 +68,7 @@ emptyKoreDefinition attributes =
         , rewriteTheory = Map.empty
         , functionEquations = Map.empty
         , simplifications = Map.empty
+        , existentialSimplifications = Map.empty
         , ceils = Map.empty
         }
 
