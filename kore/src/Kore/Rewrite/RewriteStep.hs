@@ -43,6 +43,7 @@ import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
 import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
+import Kore.Log.DebugRewriteRulesRemainder (debugRewriteRulesRemainder)
 import Kore.Log.DebugRewriteTrace (
     debugRewriteTrace,
  )
@@ -305,6 +306,7 @@ finalizeRulesParallel
                     & fmap fold
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
                 remainderPredicate = Remainder.remainder' unifications
+            debugRewriteRulesRemainder initial (length unifiedRules) remainderPredicate
             -- evaluate the remainder predicate to make sure it is actually satisfiable
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
