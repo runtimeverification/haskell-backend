@@ -304,12 +304,14 @@ finalizeRulesParallel
                     unifiedRules
                     & fmap fold
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
+                -- TODO here we lose the connection between the rules and the remainders.
+                -- Perhaps it would make sense to log the remainder of every rule.
                 remainderPredicate = Remainder.remainder' unifications
             -- evaluate the remainder predicate to make sure it is actually satisfiable
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
                 remainderPredicate
-                Nothing
+                (Just (SideCondition.addAssumption (predicate initial) sideCondition))
                 >>= \case
                     -- remainder condition is UNSAT: we prune the remainder branch early to avoid
                     -- jumping into the pit of function evaluation in the configuration under the
