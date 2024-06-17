@@ -83,6 +83,7 @@ import Kore.Simplify.Simplify (
     Simplifier,
     simplifyCondition,
  )
+import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Logic (
     LogicT,
@@ -307,10 +308,21 @@ finalizeRulesParallel
                 -- TODO here we lose the connection between the rules and the remainders.
                 -- Perhaps it would make sense to log the remainder of every rule.
                 remainderPredicate = Remainder.remainder' unifications
+
+            simplifiedRemainderConditional <-
+                Logic.observeAllT $
+                    Simplifier.simplifyCondition
+                        ( sideCondition
+                            & SideCondition.addConditionWithReplacements
+                                (Pattern.withoutTerm initial)
+                        )
+                        (Condition.fromPredicate remainderPredicate)
+            let simplifiedRemainderPredicate = Remainder.remainder' $ MultiOr.make simplifiedRemainderConditional
+
             -- evaluate the remainder predicate to make sure it is actually satisfiable
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
-                remainderPredicate
+                simplifiedRemainderPredicate
                 (Just (SideCondition.addAssumption (predicate initial) sideCondition))
                 >>= \case
                     -- remainder condition is UNSAT: we prune the remainder branch early to avoid
