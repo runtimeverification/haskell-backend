@@ -172,7 +172,7 @@ jobs:
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
 
       - name: Run booster integration tests
-        if: ${{ (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
+        if: ${{ (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/booster-integration-tests.sh"
 
