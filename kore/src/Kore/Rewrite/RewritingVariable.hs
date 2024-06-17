@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
 module Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
+    RewritingVariableName (..),
     RewritingVariable,
     isEquationVariable,
     isConfigVariable,
