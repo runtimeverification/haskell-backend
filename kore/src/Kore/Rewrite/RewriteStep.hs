@@ -312,10 +312,7 @@ finalizeRulesParallel
             simplifiedRemainderConditional <-
                 Logic.observeAllT $
                     Simplifier.simplifyCondition
-                        ( sideCondition
-                            & SideCondition.addConditionWithReplacements
-                                (Pattern.withoutTerm initial)
-                        )
+                        SideCondition.top
                         (Condition.fromPredicate remainderPredicate)
             let simplifiedRemainderPredicate = Remainder.remainder' $ MultiOr.make simplifiedRemainderConditional
 
@@ -323,7 +320,7 @@ finalizeRulesParallel
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
                 simplifiedRemainderPredicate
-                (Just sideCondition)
+                Nothing
                 >>= \case
                     -- remainder condition is UNSAT: we prune the remainder branch early to avoid
                     -- jumping into the pit of function evaluation in the configuration under the
