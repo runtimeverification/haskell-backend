@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
@@ -23,13 +24,17 @@ import Data.Data (Proxy (..))
 import Data.Hashable qualified
 import Data.List (foldl', intercalate, intersperse)
 import Data.List.Extra (splitOn, takeEnd)
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text, pack)
+import Data.Text.Encoding (decodeUtf8)
 import Data.Text.Lazy qualified as LazyText
 import GHC.Exts (IsString (..))
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Prettyprinter (Pretty, pretty)
+import System.Log.FastLogger (FormattedTime)
+import UnliftIO (MonadUnliftIO)
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base (RewriteRule (..), SourceRef (..), sourceRef)
@@ -44,11 +49,10 @@ import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..))
-import Data.Text.Encoding (decodeUtf8)
 import Kore.JsonRpc.Types (rpcJsonConfig)
+import Kore.JsonRpc.Types.ContextLog as CL
 import Kore.Util (showHashHex)
-import System.Log.FastLogger (FormattedTime)
-import UnliftIO (MonadUnliftIO)
+
 
 newtype Logger a = Logger (a -> IO ())
 
@@ -56,13 +60,8 @@ class ToLogFormat a where
     toTextualLog :: a -> Text
     toJSONLog :: a -> Value
 
-data LogContext = forall a. ToLogFormat a => LogContext a
-
-instance IsString LogContext where
-    fromString = LogContext . pack
-
 data LogMessage where
-    LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [LogContext] -> a -> LogMessage
+    LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [CLContext] -> a -> LogMessage
 
 class MonadIO m => LoggerMIO m where
     getLogger :: m (Logger LogMessage)
@@ -100,17 +99,11 @@ logMessage' a =
 logPretty :: (LoggerMIO m, Pretty a) => a -> m ()
 logPretty = logMessage . renderOneLineText . pretty
 
-withContext :: LoggerMIO m => LogContext -> m a -> m a
+withContext :: LoggerMIO m => CLContext -> m a -> m a
 withContext c =
     withLogger
         ( \(Logger l) -> Logger $ l . (\(LogMessage alwaysShown ctxt m) -> LogMessage alwaysShown (c : ctxt) m)
         )
-
-newtype TermCtxt = TermCtxt Int
-
-instance ToLogFormat TermCtxt where
-    toTextualLog (TermCtxt hsh) = "term " <> (showHashHex hsh)
-    toJSONLog (TermCtxt hsh) = object ["term" .= showHashHex hsh]
 
 newtype HookCtxt = HookCtxt Text
 
@@ -127,7 +120,7 @@ instance ToLogFormat Text where
     toJSONLog t = String t
 
 withTermContext :: LoggerMIO m => Term -> m a -> m a
-withTermContext t@(Term attrs _) m = withContext (LogContext $ TermCtxt attrs.hash) $ do
+withTermContext t@(Term attrs _) m = withContext (CLWithId $ CtxTerm $ Hex7 attrs.hash) $ do
     withContext "kore-term" $ logMessage t
     m
 
@@ -140,37 +133,38 @@ instance ToLogFormat KorePattern where
     toTextualLog = prettyPattern
     toJSONLog p = toJSON p
 
-newtype KorePatternCtxt = KorePatternCtxt KorePattern
-
-instance ToLogFormat KorePatternCtxt where
-    toTextualLog (KorePatternCtxt t) = "term " <> (showHashHex $ Data.Hashable.hash $ prettyPattern t)
-    toJSONLog (KorePatternCtxt t) = object ["term" .= (showHashHex $ Data.Hashable.hash $ prettyPattern t)]
-
-instance KnownSymbol k => ToLogFormat (RewriteRule k) where
-    toTextualLog RewriteRule{attributes} =
-        LazyText.toStrict $
-            (LazyText.toLower $ LazyText.pack $ symbolVal (Proxy :: Proxy k))
-                <> " "
-                <> (LazyText.take 7 . LazyText.fromStrict . coerce $ attributes.uniqueId)
-    toJSONLog RewriteRule{attributes} =
-        object
-            [ (Key.fromText $ LazyText.toStrict $ LazyText.toLower $ LazyText.pack $ symbolVal (Proxy :: Proxy k))
-                .= (coerce attributes.uniqueId :: Text)
-            ]
-
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a
-withKorePatternContext t m = withContext (LogContext $ KorePatternCtxt t) $ do
-    withContext "kore-term" $ logMessage t
+withKorePatternContext p m = withContext (CLWithId $ CtxTerm (Hex7 h)) $ do
+    withContext "kore-term" $ logMessage p
     m
+  where
+    h = Data.Hashable.hash (p.term, p.constraints, p.ceilConditions)
 
-withRuleContext :: KnownSymbol tag => LoggerMIO m => RewriteRule tag -> m a -> m a
-withRuleContext rule m = withContext (LogContext rule) $ do
+withRuleContext ::
+    (KnownSymbol tag, ContextFor (RewriteRule tag)) =>
+    LoggerMIO m => RewriteRule tag -> m a -> m a
+withRuleContext rule m = withContext (contextFor rule) $ do
     withContext "detail" $ logPretty $ case sourceRef rule of
         Located Location{file = FileSource f, position} ->
             Located
                 Location{file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f), position}
         loc -> loc
     m
+
+class ContextFor a where
+    contextFor :: a -> CLContext
+
+instance ContextFor (RewriteRule "rewrite") where
+    contextFor = CLWithId . CtxRewrite . parseRuleId
+
+instance ContextFor (RewriteRule "function") where
+    contextFor = CLWithId . CtxFunction . parseRuleId
+
+instance ContextFor (RewriteRule "simplification") where
+    contextFor = CLWithId . CtxSimplification . parseRuleId
+
+parseRuleId :: RewriteRule tag -> CL.UniqueId
+parseRuleId = fromMaybe CL.UNKNOWN . CL.parseUId . coerce . (.attributes.uniqueId)
 
 data WithJsonMessage where
     WithJsonMessage :: ToLogFormat a => Value -> a -> WithJsonMessage
@@ -196,7 +190,7 @@ instance MonadIO m => LoggerMIO (LoggerT m) where
 
 textLogger :: ((Maybe FormattedTime -> Control.Monad.Logger.LogStr) -> IO ()) -> Logger LogMessage
 textLogger l = Logger $ \(LogMessage _ ctxts msg) ->
-    let logLevel = mconcat $ intersperse "][" $ map (\(LogContext lc) -> toTextualLog lc) ctxts
+    let logLevel = mconcat $ intersperse "][" $ map toTextualLog ctxts
      in l $ \mTime ->
             ( case mTime of
                 Nothing -> mempty
@@ -210,7 +204,7 @@ textLogger l = Logger $ \(LogMessage _ ctxts msg) ->
 
 jsonLogger :: ((Maybe FormattedTime -> Control.Monad.Logger.LogStr) -> IO ()) -> Logger LogMessage
 jsonLogger l = Logger $ \(LogMessage _ ctxts msg) ->
-    let ctxt = toJSON $ map (\(LogContext lc) -> toJSONLog lc) ctxts
+    let ctxt = toJSON $ map toJSONLog ctxts
      in liftIO $
             l $ \mTime ->
                 ( Control.Monad.Logger.toLogStr $

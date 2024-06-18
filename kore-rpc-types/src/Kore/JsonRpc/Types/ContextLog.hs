@@ -118,27 +118,31 @@ instance Show IdContext where
 
 ----------------------------------------
 data UniqueId
-    = Hex7 Integer -- short hashes (7 char)
+    = Hex7 Int -- short hashes (7 char)
     | Hex64 Integer -- long hashes (64 char)
     | UNKNOWN
     deriving stock (Generic, Eq, Ord)
 
 instance Show UniqueId where
     show (Hex7 i) = showHex i ""
-    show (Hex64 i) = showHex i "" -- or show shortened version?
+    show (Hex64 i) = showHex i ""
     show UNKNOWN = "UNKNOWN"
+
+parseUId :: Text -> Maybe UniqueId
+parseUId "UNKNOWN" = pure UNKNOWN
+parseUId hex =
+    case readHex $ unpack hex of
+        [(h, "")]
+            | Text.length hex < 8 -> Just $ Hex7 (fromIntegral h)
+            | Text.length hex <= 64 -> Just $ Hex64 h
+        _otherwise -> Nothing
 
 instance FromJSON UniqueId where
     parseJSON = JSON.withText "Hexadecimal Hash" parseHex
       where
         parseHex :: Text -> JSON.Parser UniqueId
-        parseHex "UNKNOWN" = pure UNKNOWN
         parseHex hex =
-            case readHex $ unpack hex of
-                [(h, "")]
-                    | Text.length hex < 8 -> pure $ Hex7 h
-                    | Text.length hex <= 64 -> pure $ Hex64 h
-                _otherwise -> JSON.parseFail $ "Bad hash value: " <> show hex
+            maybe (JSON.parseFail $ "Bad hash value: " <> show hex) pure $ parseUId hex
 
 instance ToJSON UniqueId where
     toJSON = \case
