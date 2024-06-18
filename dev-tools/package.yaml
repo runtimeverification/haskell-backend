@@ -102,6 +102,22 @@ executables:
       - text
     ghc-options:
       - -rtsopts
+  timing:
+    source-dirs: timing
+    main: Main.hs
+    dependencies:
+      - aeson
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - profiteur
+      - text
+      - unordered-containers
+      - vector
+    ghc-options:
+      - -rtsopts
   parsetest-binary:
     source-dirs: parsetest-binary
     main: ParsetestBinary.hs

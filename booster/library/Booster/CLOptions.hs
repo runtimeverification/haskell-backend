@@ -236,6 +236,7 @@ allowedLogLevels =
         ( "EquationWarnings"
         , "Log warnings indicating soft-violations of conditions, i.e. exceeding the equation recursion/iteration limit "
         )
+    , ("Timing", "Logs for timing analysis")
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -287,6 +288,15 @@ levelToContext =
             ( "EquationWarnings"
             ,
                 [ [ctxt| booster>(simplification *|function *)>warning |]
+                ]
+            )
+        ,
+            ( "Timing"
+            ,
+                [ [ctxt| booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| booster|kore>rewrite*,match|definedness|condition,failure|abort |]
+                , [ctxt| booster|kore>function*|simplification*,success|failure|abort|detail |]
+                , [ctxt| booster|kore>function*|simplification*,match,failure|abort |]
                 ]
             )
         ]
