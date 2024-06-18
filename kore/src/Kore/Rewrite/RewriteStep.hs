@@ -108,7 +108,12 @@ finalizeAppliedRule ::
     RulePattern RewritingVariableName ->
     -- | Conditions of applied rule
     Condition RewritingVariableName ->
-    LogicT Simplifier (Pattern RewritingVariableName)
+    LogicT
+        Simplifier
+        ( Substitution.Substitution
+            RewritingVariableName
+        , Pattern RewritingVariableName
+        )
 finalizeAppliedRule
     sideCondition
     renamedRule
@@ -133,7 +138,7 @@ finalizeAppliedRule
         ruleRHS = Rule.rhs renamedRule
 
         catchSimplifiesToBottom srt = \case
-            [] -> return $ pure $ mkBottom srt
+            [] -> return (mempty, pure $ mkBottom srt)
             xs -> Logic.scatter xs
 
 {- | Combine all the conditions to apply rule and construct the result.
@@ -153,7 +158,12 @@ constructConfiguration ::
     Condition RewritingVariableName ->
     -- | Final configuration
     Pattern RewritingVariableName ->
-    LogicT Simplifier (Pattern RewritingVariableName)
+    LogicT
+        Simplifier
+        ( Substitution.Substitution
+            RewritingVariableName
+        , Pattern RewritingVariableName
+        )
 constructConfiguration
     sideCondition
     appliedCondition
@@ -181,7 +191,7 @@ constructConfiguration
         -- TODO (thomas.tuegel): Should the final term be simplified after
         -- substitution?
         debugCreatedSubstitution substitution (termLikeSort finalTerm)
-        return (finalTerm' `Pattern.withCondition` finalCondition)
+        return (substitution, finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
     -- | SideCondition containing metadata
@@ -190,7 +200,7 @@ finalizeAppliedClaim ::
     ClaimPattern ->
     -- | Conditions of applied rule
     Condition RewritingVariableName ->
-    LogicT Simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Substitution.Substitution RewritingVariableName, Pattern RewritingVariableName)
 finalizeAppliedClaim sideCondition renamedRule appliedCondition =
     -- `constructConfiguration` may simplify the configuration to bottom
     -- we want to "catch" this and return a #bottom Pattern
@@ -210,7 +220,7 @@ finalizeAppliedClaim sideCondition renamedRule appliedCondition =
     ClaimPattern{right} = renamedRule
 
     catchSimplifiesToBottom srt = \case
-        [] -> return $ pure $ mkBottom srt
+        [] -> return (mempty, pure $ mkBottom srt)
         xs -> Logic.scatter xs
 
 type UnifyingRuleWithRepresentation representation rule =
@@ -226,7 +236,7 @@ type UnifyingRuleWithRepresentation representation rule =
 type FinalizeApplied rule =
     rule ->
     Condition RewritingVariableName ->
-    LogicT Simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Substitution.Substitution RewritingVariableName, Pattern RewritingVariableName)
 
 finalizeRule ::
     UnifyingRuleWithRepresentation representation rule =>
@@ -256,9 +266,9 @@ finalizeRule
                     unificationCondition
             checkSubstitutionCoverage initial (toRule <$> unifiedRule)
             let renamedRule = Conditional.term unifiedRule
-            final <- finalizeApplied renamedRule applied
+            (subst, final) <- finalizeApplied renamedRule applied
             let result = resetResultPattern initialVariables final
-            return Step.Result{appliedRule = unifiedRule, result}
+            return Step.Result{appliedRule = unifiedRule{substitution = subst}, result}
 
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer rule =

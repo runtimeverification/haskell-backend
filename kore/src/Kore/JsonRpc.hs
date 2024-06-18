@@ -81,11 +81,12 @@ import Kore.Rewrite (
 import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewriteStep (EnableAssumeInitialDefined (..))
 import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
+    RewritingVariableName (..),
     getRewritingPattern,
     getRewritingVariable,
     isSomeConfigVariable,
     isSomeEquationVariable,
+    isSomeRuleVariable,
     mkRewritingPattern,
     mkRewritingTerm,
  )
@@ -386,7 +387,14 @@ respond serverState moduleName runSMT =
                                         else Just $ Kore.Syntax.Json.fromTermLike $ foldl TermLike.mkAnd pr' $ map toEquals predsFromSub
                              in ( getRewritingPattern p'
                                 , finalPr
-                                , PatternJson.fromSubstitution sort $ Substitution.mapVariables getRewritingVariable sub
+                                , PatternJson.fromSubstitution sort
+                                    $ Substitution.mapVariables
+                                        ( pure $ \case
+                                            ConfigVariableName v -> v
+                                            RuleVariableName v@SomeVariable.VariableName{base = TermLike.Id{getId = nm, idLocation = loc}} -> v{SomeVariable.base = TermLike.Id{getId = "Rule" <> nm, idLocation = loc}}
+                                            EquationVariableName v@SomeVariable.VariableName{base = TermLike.Id{getId = nm, idLocation = loc}} -> v{SomeVariable.base = TermLike.Id{getId = "Eq" <> nm, idLocation = loc}}
+                                        )
+                                    $ Substitution.filter isSomeRuleVariable sub
                                 , rid
                                 )
 
