@@ -36,7 +36,7 @@ import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
-import Data.Foldable (toList, traverse_)
+import Data.Foldable (foldl', toList, traverse_)
 import Data.List (intersperse, partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -60,6 +60,7 @@ import Booster.LLVM qualified as LLVM
 import Booster.Log
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
+import Booster.Pattern.Existential (instantiateExistentials)
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
 import Booster.Pattern.Util
@@ -707,6 +708,7 @@ applyEquation ::
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
 applyEquation term rule = runExceptT $ do
     -- ensured by internalisation: no existentials in equations
+    -- TODO: allow existentials in the requires clause
     unless (null rule.existentials) $ do
         withContext "abort" $
             logMessage ("Equation with existentials" :: Text)
@@ -773,10 +775,45 @@ applyEquation term rule = runExceptT $ do
                     concatMap
                         (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
                         rule.requires
+
+            knownPredicates <- (.predicates) <$> lift getState
+
+            let partitionExistentialRequires :: [Predicate] -> ([Predicate], [Predicate])
+                partitionExistentialRequires = foldl' decide ([], [])
+                  where
+                    decide (hasEx, noHasEx) p
+                        | hasExistentials p = (p : hasEx, noHasEx)
+                        | otherwise = (hasEx, p : noHasEx)
+
+                hasExistentials :: Predicate -> Bool
+                hasExistentials (Predicate t) = any (isExVar . (.variableName)) (freeVariables t)
+
+                listExistentials :: Predicate -> Set VarName
+                listExistentials (Predicate t) = Set.filter isExVar . Set.map (.variableName) . freeVariables $ t
+
+            -- If we get an equation with existentials in the requires clause, we must have them all instantiated
+            let (predicateWithEx, predicatesWithNoEx) = partitionExistentialRequires required
+                instantiatedExistentialPredicates = map (instantiateExistentials knownPredicates) predicateWithEx
+
+            -- detect if any existentials still remain
+            when (any hasExistentials instantiatedExistentialPredicates) $ do
+                -- what to do here? Abort equation or simply throw away the clauses with existentials?
+                -- Let's abort for now.
+
+                let remainingExistentials =
+                        Set.toList . Set.map Text.decodeLatin1 . Set.unions . map listExistentials $
+                            instantiatedExistentialPredicates
+
+                withContext "abort" $
+                    logMessage $
+                        "Could not instantiate existentials: " <> (Text.intercalate "," remainingExistentials)
+
+            -- all existentials are instantiated: assemble the requires clause again
+            let requiredWithInstantiatedExistentials = predicatesWithNoEx <> instantiatedExistentialPredicates
+
             -- If the required condition is _syntactically_ present in
             -- the prior (known constraints), we don't check it.
-            knownPredicates <- (.predicates) <$> lift getState
-            toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+            toCheck <- lift $ filterOutKnownConstraints knownPredicates requiredWithInstantiatedExistentials
 
             -- check the filtered requires clause conditions
             unclearConditions <-

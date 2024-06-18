@@ -13,6 +13,7 @@ module Booster.Pattern.Util (
     modifyVarName,
     modifyVarNameConcreteness,
     freeVariables,
+    retractVariable,
     isConstructorSymbol,
     isFunctionSymbol,
     isDefinedSymbol,
@@ -199,6 +200,11 @@ modifyVarNameConcreteness f = \case
 
 freeVariables :: Term -> Set Variable
 freeVariables (Term attributes _) = attributes.variables
+
+retractVariable :: Term -> Maybe Variable
+retractVariable = \case
+    (Var v) -> Just v
+    _ -> Nothing
 
 isConcrete :: Term -> Bool
 isConcrete = Set.null . freeVariables
