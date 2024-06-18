@@ -17,21 +17,15 @@ import Control.Monad.Trans.State (StateT (..))
 import Control.Monad.Trans.State.Strict qualified as Strict
 import Data.Aeson (ToJSON (..), Value (..), (.=))
 import Data.Aeson.Encode.Pretty (Config (confIndent), Indent (Spaces), encodePretty')
-import Data.Aeson.Key qualified as Key
 import Data.Aeson.Types (object)
 import Data.Coerce (coerce)
-import Data.Data (Proxy (..))
 import Data.Hashable qualified
 import Data.List (foldl', intercalate, intersperse)
 import Data.List.Extra (splitOn, takeEnd)
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
-import Data.String (IsString)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
-import Data.Text.Lazy qualified as LazyText
-import GHC.Exts (IsString (..))
-import GHC.TypeLits (KnownSymbol, symbolVal)
 import Prettyprinter (Pretty, pretty)
 import System.Log.FastLogger (FormattedTime)
 import UnliftIO (MonadUnliftIO)
@@ -41,6 +35,7 @@ import Booster.Definition.Base (RewriteRule (..), SourceRef (..), sourceRef)
 import Booster.Pattern.Base (
     Pattern (..),
     Predicate (..),
+    Symbol (..),
     Term (..),
     TermAttributes (hash),
     pattern AndTerm,
@@ -51,14 +46,16 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..))
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.JsonRpc.Types.ContextLog as CL
-import Kore.Util (showHashHex)
-
 
 newtype Logger a = Logger (a -> IO ())
 
 class ToLogFormat a where
     toTextualLog :: a -> Text
     toJSONLog :: a -> Value
+
+instance ToLogFormat CLContext where
+    toTextualLog = pack . show
+    toJSONLog = toJSON
 
 data LogMessage where
     LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [CLContext] -> a -> LogMessage
@@ -120,13 +117,13 @@ instance ToLogFormat Text where
     toJSONLog t = String t
 
 withTermContext :: LoggerMIO m => Term -> m a -> m a
-withTermContext t@(Term attrs _) m = withContext (CLWithId $ CtxTerm $ Hex7 attrs.hash) $ do
-    withContext "kore-term" $ logMessage t
+withTermContext t@(Term attrs _) m = withContext (CTerm $ Hex7 attrs.hash) $ do
+    withContext CKoreTerm $ logMessage t
     m
 
 withPatternContext :: LoggerMIO m => Pattern -> m a -> m a
 withPatternContext Pattern{term, constraints} m =
-    let t' = foldl' AndTerm term $ Set.toList $ Set.map coerce constraints
+    let t' = foldl' AndTerm term $ Set.toList $ Set.map coerce constraints -- FIXME
      in withTermContext t' m
 
 instance ToLogFormat KorePattern where
@@ -134,17 +131,18 @@ instance ToLogFormat KorePattern where
     toJSONLog p = toJSON p
 
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a
-withKorePatternContext p m = withContext (CLWithId $ CtxTerm (Hex7 h)) $ do
-    withContext "kore-term" $ logMessage p
-    m
+withKorePatternContext p m =
+    withContext (CTerm (Hex7 h)) $ do
+        withContext CKoreTerm $ logMessage p
+        m
   where
-    h = Data.Hashable.hash (p.term, p.constraints, p.ceilConditions)
+    h = Data.Hashable.hash $ show p -- FIXME
 
 withRuleContext ::
-    (KnownSymbol tag, ContextFor (RewriteRule tag)) =>
+    ContextFor (RewriteRule tag) =>
     LoggerMIO m => RewriteRule tag -> m a -> m a
 withRuleContext rule m = withContext (contextFor rule) $ do
-    withContext "detail" $ logPretty $ case sourceRef rule of
+    withContext CDetail $ logPretty $ case sourceRef rule of
         Located Location{file = FileSource f, position} ->
             Located
                 Location{file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f), position}
@@ -155,13 +153,16 @@ class ContextFor a where
     contextFor :: a -> CLContext
 
 instance ContextFor (RewriteRule "rewrite") where
-    contextFor = CLWithId . CtxRewrite . parseRuleId
+    contextFor = CRewrite . parseRuleId
 
 instance ContextFor (RewriteRule "function") where
-    contextFor = CLWithId . CtxFunction . parseRuleId
+    contextFor = CFunction . parseRuleId
 
 instance ContextFor (RewriteRule "simplification") where
-    contextFor = CLWithId . CtxSimplification . parseRuleId
+    contextFor = CSimplification . parseRuleId
+
+instance ContextFor Symbol where
+    contextFor = CHook . (maybe "not-hooked" decodeUtf8) . (.attributes.hook)
 
 parseRuleId :: RewriteRule tag -> CL.UniqueId
 parseRuleId = fromMaybe CL.UNKNOWN . CL.parseUId . coerce . (.attributes.uniqueId)

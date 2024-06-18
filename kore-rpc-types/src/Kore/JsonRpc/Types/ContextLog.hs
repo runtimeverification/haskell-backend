@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -83,6 +84,49 @@ data SimpleContext
     | CtxInfo
     deriving stock (Generic, Data, Enum, Show, Eq, Ord)
 
+
+pattern CBooster :: CLContext
+pattern CBooster = CLNullary CtxBooster
+pattern CKore :: CLContext
+pattern CKore = CLNullary CtxKore
+pattern CProxy :: CLContext
+pattern CProxy = CLNullary CtxProxy
+    -- method
+pattern CExecute :: CLContext
+pattern CExecute = CLNullary CtxExecute
+pattern CSimplify :: CLContext
+pattern CSimplify = CLNullary CtxSimplify
+pattern CImplies :: CLContext
+pattern CImplies = CLNullary CtxImplies
+pattern CGetModel :: CLContext
+pattern CGetModel = CLNullary CtxGetModel
+    -- mode/phase
+pattern CMatch :: CLContext
+pattern CMatch = CLNullary CtxMatch
+pattern CDefinedness :: CLContext
+pattern CDefinedness = CLNullary CtxDefinedness
+pattern CConstraint :: CLContext
+pattern CConstraint = CLNullary CtxConstraint
+    -- results
+pattern CFailure :: CLContext
+pattern CFailure = CLNullary CtxFailure
+pattern CAbort :: CLContext
+pattern CAbort = CLNullary CtxAbort
+pattern CSuccess :: CLContext
+pattern CSuccess = CLNullary CtxSuccess
+    -- information
+pattern CKoreTerm :: CLContext
+pattern CKoreTerm = CLNullary CtxKoreTerm
+pattern CDetail :: CLContext
+pattern CDetail = CLNullary CtxDetail
+    -- standard log levels
+pattern CError :: CLContext
+pattern CError = CLNullary CtxError
+pattern CWarn :: CLContext
+pattern CWarn = CLNullary CtxWarn
+pattern CInfo :: CLContext
+pattern CInfo = CLNullary CtxInfo
+
 -- translation table for nullary constructors
 translateSimple :: [(SimpleContext, String)]
 translateSimple =
@@ -115,6 +159,21 @@ instance Show IdContext where
     show (CtxFunction uid) = "function " <> show uid
     show (CtxTerm uid) = "term " <> show uid
     show (CtxHook name) = "simplification " <> unpack name
+
+pattern CRewrite :: UniqueId -> CLContext
+pattern CRewrite u = CLWithId (CtxRewrite u)
+
+pattern CSimplification :: UniqueId -> CLContext
+pattern CSimplification u = CLWithId (CtxSimplification u)
+
+pattern CFunction :: UniqueId -> CLContext
+pattern CFunction u = CLWithId (CtxFunction u)
+
+pattern CTerm :: UniqueId -> CLContext
+pattern CTerm u = CLWithId (CtxTerm u)
+
+pattern CHook :: Text -> CLContext
+pattern CHook t = CLWithId (CtxHook t)
 
 ----------------------------------------
 data UniqueId
