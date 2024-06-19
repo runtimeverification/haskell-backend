@@ -67,10 +67,10 @@ instance Entry DebugRewriteRulesRemainder where
     helpDoc _ = "log rewrite rules remainder"
 
     oneLineContextJson
-        entry@DebugRewriteRulesRemainder{configuration, rulesCount} =
+        DebugRewriteRulesRemainder{configuration, rulesCount} =
             Array $
                 fromList
-                    [ object ["entry" .= entryTypeText (toEntry entry)]
+                    [ toJSON remainderContextName
                     , object
                         [ "term" .= showHashHex (hash configuration)
                         ]
@@ -79,8 +79,8 @@ instance Entry DebugRewriteRulesRemainder where
                         ]
                     ]
 
-    oneLineDoc entry@(DebugRewriteRulesRemainder{rulesCount, remainder}) =
-        let context = map Pretty.brackets (pretty <$> oneLineContextDoc entry <> ["detail"])
+    oneLineDoc (DebugRewriteRulesRemainder{rulesCount, remainder}) =
+        let context = map Pretty.brackets (pretty <$> [remainderContextName, "detail"])
             logMsg =
                 ( Pretty.hsep
                     [ "After applying "
@@ -97,6 +97,9 @@ instance Entry DebugRewriteRulesRemainder where
             . PatternJson.fromPredicate sortBool
             . Predicate.mapVariables (pure toVariableName)
             $ remainder
+
+remainderContextName :: Text.Text
+remainderContextName = "remainder"
 
 sortBool :: TermLike.Sort
 sortBool =
