@@ -83,7 +83,6 @@ import Kore.Simplify.Simplify (
     Simplifier,
     simplifyCondition,
  )
-import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Logic (
     LogicT,
@@ -305,22 +304,12 @@ finalizeRulesParallel
                     unifiedRules
                     & fmap fold
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-                -- TODO here we lose the connection between the rules and the remainders.
-                -- Perhaps it would make sense to log the remainder of every rule.
                 remainderPredicate = Remainder.remainder' unifications
-
-            simplifiedRemainderConditional <-
-                Logic.observeAllT $
-                    Simplifier.simplifyCondition
-                        SideCondition.top
-                        (Condition.fromPredicate remainderPredicate)
-            let simplifiedRemainderPredicate = Remainder.remainder' $ MultiOr.make simplifiedRemainderConditional
-
             -- evaluate the remainder predicate to make sure it is actually satisfiable
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
-                simplifiedRemainderPredicate
-                Nothing
+                remainderPredicate
+                (Just sideCondition)
                 >>= \case
                     -- remainder condition is UNSAT: we prune the remainder branch early to avoid
                     -- jumping into the pit of function evaluation in the configuration under the
