@@ -306,7 +306,6 @@ finalizeRulesParallel
                     & fmap fold
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
                 remainderPredicate = Remainder.remainder' unifications
-            debugRewriteRulesRemainder initial (length unifiedRules) remainderPredicate
             -- evaluate the remainder predicate to make sure it is actually satisfiable
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
@@ -325,6 +324,7 @@ finalizeRulesParallel
                     -- NB: the UNKNOWN case will trigger an exception in SMT.evalPredicate, which will
                     --     be caught by the top-level code in the RPC server and reported to the client
                     _ -> do
+                        debugRewriteRulesRemainder initial (length unifiedRules) remainderPredicate
                         -- remainder condition is SAT: we are safe to explore
                         -- the remainder branch, i.e. to evaluate the functions in the configuration
                         -- with the remainder in the path condition and rewrite further

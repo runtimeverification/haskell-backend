@@ -38,10 +38,15 @@ import Pretty (
  )
 import Pretty qualified
 
+{- This log entry will be emitted if, after unifying with rewrite rules,
+   there is a satisfiable remainder condition  -}
 data DebugRewriteRulesRemainder = DebugRewriteRulesRemainder
     { configuration :: !(Pattern VariableName)
+    -- ^ the state the rules unified with
     , rulesCount :: !Int
+    -- ^ how many rules were unified
     , remainder :: !(Predicate RewritingVariableName)
+    -- ^ the condition not covered by the rules
     }
     deriving stock (Show)
 
@@ -81,7 +86,7 @@ instance Entry DebugRewriteRulesRemainder where
                     [ "After applying "
                     , pretty rulesCount
                     , " rewrite rules"
-                    , "there is a remainder condition: "
+                    , "there is a satisfiable remainder condition: "
                     , Pretty.group . pretty $ remainder
                     ]
                 )
