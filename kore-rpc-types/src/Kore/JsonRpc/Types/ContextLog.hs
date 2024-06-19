@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -48,10 +48,10 @@ instance FromJSON CLContext where
 options :: JSON.Options
 options =
     JSON.defaultOptions
-    { JSON.sumEncoding = JSON.ObjectWithSingleField
-    , JSON.constructorTagModifier = toJsonName
-    , JSON.allNullaryToStringTag = True
-    }
+        { JSON.sumEncoding = JSON.ObjectWithSingleField
+        , JSON.constructorTagModifier = toJsonName
+        , JSON.allNullaryToStringTag = True
+        }
 
 toJsonName :: String -> String
 toJsonName name = JSON.camelTo2 '-' $ fromMaybe name $ stripPrefix "Ctx" name
@@ -62,51 +62,52 @@ data SimpleContext
       CtxBooster
     | CtxKore
     | CtxProxy
-    -- method
-    | CtxExecute
+    | -- method
+      CtxExecute
     | CtxSimplify
     | CtxImplies
     | CtxGetModel
     | CtxAddModule
-    -- mode/phase
-    | CtxInternalise
+    | -- mode/phase
+      CtxInternalise
     | CtxMatch
     | CtxDefinedness
     | CtxConstraint
     | CtxSMT
     | CtxLlvm
     | CtxCached
-    -- results
-    | CtxFailure
+    | -- results
+      CtxFailure
     | CtxIndeterminate
     | CtxAbort
     | CtxSuccess
     | CtxBreak
     | CtxContinue
-    -- information
-    | CtxKoreTerm
+    | -- information
+      CtxKoreTerm
     | CtxDetail
     | CtxSubstitution
     | CtxDepth
-    -- standard log levels
-    | CtxError
+    | -- standard log levels
+      CtxError
     | CtxWarn
     | CtxInfo
     deriving stock (Generic, Data, Enum, Show, Eq, Ord)
-
 
 pattern CBooster, CKore, CProxy :: CLContext
 pattern CBooster = CLNullary CtxBooster
 pattern CKore = CLNullary CtxKore
 pattern CProxy = CLNullary CtxProxy
-    -- method
+
+-- method
 pattern CExecute, CSimplify, CImplies, CGetModel, CAddModule :: CLContext
 pattern CExecute = CLNullary CtxExecute
 pattern CSimplify = CLNullary CtxSimplify
 pattern CImplies = CLNullary CtxImplies
 pattern CGetModel = CLNullary CtxGetModel
 pattern CAddModule = CLNullary CtxAddModule
-    -- mode/phase
+
+-- mode/phase
 pattern CInternalise, CMatch, CDefinedness, CConstraint, CSMT, CLlvm, CCached :: CLContext
 pattern CInternalise = CLNullary CtxInternalise
 pattern CMatch = CLNullary CtxMatch
@@ -115,7 +116,8 @@ pattern CConstraint = CLNullary CtxConstraint
 pattern CSMT = CLNullary CtxSMT
 pattern CLlvm = CLNullary CtxLlvm
 pattern CCached = CLNullary CtxCached
-    -- results
+
+-- results
 pattern CFailure, CIndeterminate, CAbort, CSuccess, CBreak, CContinue :: CLContext
 pattern CFailure = CLNullary CtxFailure
 pattern CIndeterminate = CLNullary CtxIndeterminate
@@ -123,13 +125,15 @@ pattern CAbort = CLNullary CtxAbort
 pattern CSuccess = CLNullary CtxSuccess
 pattern CBreak = CLNullary CtxBreak
 pattern CContinue = CLNullary CtxContinue
-    -- information
+
+-- information
 pattern CKoreTerm, CDetail, CSubstitution, CDepth :: CLContext
 pattern CKoreTerm = CLNullary CtxKoreTerm
 pattern CDetail = CLNullary CtxDetail
 pattern CSubstitution = CLNullary CtxSubstitution
 pattern CDepth = CLNullary CtxDepth
-   -- standard log levels
+
+-- standard log levels
 pattern CError, CWarn, CInfo :: CLContext
 pattern CError = CLNullary CtxError
 pattern CWarn = CLNullary CtxWarn
@@ -156,8 +160,8 @@ data IdContext
     | CtxFunction UniqueId
     | CtxCeil UniqueId
     | CtxTerm UniqueId
-    -- entities with name
-    | CtxHook Text
+    | -- entities with name
+      CtxHook Text
     deriving stock (Generic, Eq)
 
 -- To/FromJSON by way of Generic
@@ -217,22 +221,20 @@ instance ToJSON UniqueId where
         UNKNOWN ->
             JSON.String "UNKNOWN"
       where
-          pad0 l = Text.takeEnd l . (Text.replicate l "0" <>)
-
+        pad0 l = Text.takeEnd l . (Text.replicate l "0" <>)
 
 ----------------------------------------
-data LogLine
-    = LogLine
-      { context :: [CLContext]
-      , message :: CLMessage
-      }
+data LogLine = LogLine
+    { context :: [CLContext]
+    , message :: CLMessage
+    }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[] LogLine
 
 data CLMessage
-    = CLText Text  -- generic log message
+    = CLText Text -- generic log message
     | CLValue JSON.Value -- other stuff
     deriving stock (Generic, Eq)
 

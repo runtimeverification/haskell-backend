@@ -107,11 +107,12 @@ instance ToLogFormat (RewriteRule tag) where
     toJSONLog = String . shortRuleLocation
 
 shortRuleLocation :: RewriteRule tag -> Text
-shortRuleLocation rule = renderOneLineText $ pretty $
-    case sourceRef rule of
-        Located l@Location{file = FileSource f} ->
-                Located l{ file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f)}
-        loc -> loc
+shortRuleLocation rule = renderOneLineText $
+    pretty $
+        case sourceRef rule of
+            Located l@Location{file = FileSource f} ->
+                Located l{file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f)}
+            loc -> loc
 
 data LogMessage where
     LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [CLContext] -> a -> LogMessage
@@ -182,7 +183,10 @@ withKorePatternContext p m =
 
 withRuleContext ::
     ContextFor (RewriteRule tag) =>
-    LoggerMIO m => RewriteRule tag -> m a -> m a
+    LoggerMIO m =>
+    RewriteRule tag ->
+    m a ->
+    m a
 withRuleContext rule m = withContext (contextFor rule) $ do
     withContext CDetail $ logPretty $ case sourceRef rule of
         Located Location{file = FileSource f, position} ->
