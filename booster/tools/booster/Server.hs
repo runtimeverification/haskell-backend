@@ -389,12 +389,12 @@ logLevelToKoreLogEntryMap =
                 [ "DebugAttemptedRewriteRules"
                 , "DebugAppliedLabeledRewriteRule"
                 , "DebugAppliedRewriteRules"
+                , "DebugRewriteRulesRemainder"
                 , "DebugTerm"
                 ]
             )
         , (LevelOther "SimplifySuccess", ["DebugTerm"])
         , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules", "DebugTerm"])
-        , (LevelOther "Unconditional", ["DebugRewriteRulesRemainder", "DebugEvaluateCondition"])
         ]
 
 data CLProxyOptions = CLProxyOptions
