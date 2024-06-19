@@ -83,6 +83,7 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..))
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.JsonRpc.Types.ContextLog as CL
+import Kore.Util
 
 newtype Logger a = Logger (a -> IO ())
 
@@ -160,7 +161,7 @@ withContext c =
         )
 
 withTermContext :: LoggerMIO m => Term -> m a -> m a
-withTermContext t@(Term attrs _) m = withContext (CTerm $ Hex7 attrs.hash) $ do
+withTermContext t@(Term attrs _) m = withContext (CTerm $ ShortId $ showHashHex attrs.hash) $ do
     withContext CKoreTerm $ logMessage t
     m
 
@@ -175,11 +176,9 @@ instance ToLogFormat KorePattern where
 
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a
 withKorePatternContext p m =
-    withContext (CTerm (Hex7 h)) $ do
+    withContext (contextFor p) $ do
         withContext CKoreTerm $ logMessage p
         m
-  where
-    h = Data.Hashable.hash $ show p -- FIXME
 
 withRuleContext ::
     ContextFor (RewriteRule tag) =>
@@ -197,6 +196,12 @@ withRuleContext rule m = withContext (contextFor rule) $ do
 
 class ContextFor a where
     contextFor :: a -> CLContext
+
+instance ContextFor Term where
+    contextFor (Term attrs _) = CTerm . ShortId $ showHashHex attrs.hash
+
+instance ContextFor KorePattern where
+    contextFor = CTerm . ShortId . showHashHex . Data.Hashable.hash . show -- FIXME
 
 instance ContextFor (RewriteRule "Rewrite") where
     contextFor = CRewrite . parseRuleId

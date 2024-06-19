@@ -20,7 +20,6 @@ import Data.Text (Text, pack, unpack)
 import Data.Text qualified as Text
 import Data.Tuple (swap)
 import Deriving.Aeson
-import Numeric
 
 data CLContext
     = CLNullary SimpleContext
@@ -186,42 +185,35 @@ pattern CHook t = CLWithId (CtxHook t)
 
 ----------------------------------------
 data UniqueId
-    = Hex7 Int -- short hashes (7 char)
-    | Hex64 Integer -- long hashes (64 char)
+    = ShortId Text -- short hashes (7 char)
+    | LongId Text -- long hashes (64 char)
     | UNKNOWN
     deriving stock (Generic, Eq, Ord)
 
 instance Show UniqueId where
-    show (Hex7 i) = showHex i ""
-    show (Hex64 i) = showHex i ""
+    show (ShortId x) = unpack x
+    show (LongId x) = unpack $ Text.take 7 x -- for parity with legacy log
     show UNKNOWN = "UNKNOWN"
 
 parseUId :: Text -> Maybe UniqueId
 parseUId "UNKNOWN" = pure UNKNOWN
-parseUId hex =
-    case readHex $ unpack hex of
-        [(h, "")]
-            | Text.length hex < 8 -> Just $ Hex7 (fromIntegral h)
-            | Text.length hex <= 64 -> Just $ Hex64 h
-        _otherwise -> Nothing
+parseUId hex
+    | Text.length hex == 7 = Just $ ShortId hex
+    | Text.length hex == 64 = Just $ LongId hex
+    | otherwise = Nothing
 
 instance FromJSON UniqueId where
-    parseJSON = JSON.withText "Hexadecimal Hash" parseHex
+    parseJSON = JSON.withText "Hash ID" parseHex
       where
         parseHex :: Text -> JSON.Parser UniqueId
         parseHex hex =
-            maybe (JSON.parseFail $ "Bad hash value: " <> show hex) pure $ parseUId hex
+            maybe (JSON.parseFail $ "Bad hash ID: " <> show hex) pure $ parseUId hex
 
 instance ToJSON UniqueId where
     toJSON = \case
-        Hex7 x ->
-            JSON.String . pad0 7 . pack $ showHex x ""
-        Hex64 x ->
-            JSON.String . pad0 64 . pack $ showHex x ""
-        UNKNOWN ->
-            JSON.String "UNKNOWN"
-      where
-        pad0 l = Text.takeEnd l . (Text.replicate l "0" <>)
+        ShortId x -> JSON.String x
+        LongId x -> JSON.String x
+        UNKNOWN -> JSON.String "UNKNOWN"
 
 ----------------------------------------
 data LogLine = LogLine
