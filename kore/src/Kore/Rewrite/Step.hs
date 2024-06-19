@@ -324,20 +324,8 @@ applyRemainder ::
     Condition RewritingVariableName ->
     LogicT Simplifier (Pattern RewritingVariableName)
 applyRemainder sideCondition initial remainder = inContext "apply-remainder" $ do
-    -- Simplify the remainder predicate under the initial conditions. We must
-    -- ensure that functions in the remainder are evaluated using the top-level
-    -- side conditions because we will not re-evaluate them after they are added
-    -- to the top level.
-    partial <-
-        Simplifier.simplifyCondition
-            ( sideCondition
-                & SideCondition.addConditionWithReplacements
-                    (Pattern.withoutTerm initial)
-            )
-            remainder
-    -- Add the simplified remainder to the initial conditions. We must preserve
-    -- the initial conditions here!
+    -- Add the remainder to the initial conditions.
     Simplifier.simplifyCondition
         sideCondition
-        (Pattern.andCondition initial partial)
+        (Pattern.andCondition initial remainder)
         <&> Pattern.mapVariables resetConfigVariable
