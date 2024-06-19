@@ -75,6 +75,7 @@ import Kore.Rewrite.Step (
     applyInitialConditions,
     applyRemainder,
     assertFunctionLikeResults,
+    simplifyRemainder,
     unifyRules,
  )
 import Kore.Simplify.Ceil (
@@ -84,7 +85,6 @@ import Kore.Simplify.Simplify (
     Simplifier,
     simplifyCondition,
  )
-import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Logic (
     LogicT,
@@ -308,36 +308,20 @@ finalizeRulesParallel
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
                 remainderPredicate = Remainder.remainder' unifications
 
-            let sideConditionWithInitialCondition =
-                    sideCondition
-                        & SideCondition.addConditionWithReplacements
-                            (Pattern.withoutTerm initial)
-
             -- Simplify the remainder predicate under the side condition and the initial conditions.
-            -- We must ensure that functions in the remainder are evaluated using the top-level
-            -- side conditions because we will not re-evaluate them after they are added
-            -- to the top level.
-            simplifiedRemainderRaw <-
-                Simplifier.simplifyCondition
-                    sideConditionWithInitialCondition
-                    (Condition.fromPredicate remainderPredicate)
-                    & Logic.observeAllT
+            simplifiedRemainderCondition <-
+                simplifyRemainder
+                    sideCondition
+                    (Conditional.withoutTerm initial)
+                    (Conditional.fromPredicate remainderPredicate)
 
-            -- convert to predicate from the list of conditionals produce by the simplifier
-            -- TODO must gracefully handle the ?impossible? case of more then one simplifier branch
-            let simplifiedRemainderPredicate =
-                    map
-                        (from @(Condition RewritingVariableName) @(Predicate RewritingVariableName))
-                        simplifiedRemainderRaw
-                        & \case
-                            [singleResult] -> singleResult
-                            _ -> error "more then one result after simplifying the remainder condition"
-
-            -- check simplified remainder predicate to make sure it is actually satisfiable.
+            -- check simplified remainder to make sure it is actually satisfiable.
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
-                simplifiedRemainderPredicate
-                (Just sideConditionWithInitialCondition)
+                ( from @(Conditional RewritingVariableName ()) @(Predicate RewritingVariableName)
+                    simplifiedRemainderCondition
+                )
+                (Just sideCondition)
                 >>= \case
                     -- remainder condition is UNSAT: we prune the remainder branch early to avoid
                     -- jumping into the pit of function evaluation in the configuration under the
@@ -355,7 +339,7 @@ finalizeRulesParallel
                         -- the remainder branch, i.e. to evaluate the functions in the configuration
                         -- with the remainder in the path condition and rewrite further
                         remainders <-
-                            applyRemainder sideCondition initial (Condition.fromPredicate simplifiedRemainderPredicate)
+                            applyRemainder sideCondition initial simplifiedRemainderCondition
                                 & Logic.observeAllT
                                 & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
                         return

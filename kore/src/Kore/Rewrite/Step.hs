@@ -16,6 +16,7 @@ module Kore.Rewrite.Step (
     unifyRules,
     unifyRule,
     applyInitialConditions,
+    simplifyRemainder,
     applyRemainder,
     assertFunctionLikeResults,
     checkFunctionLike,
@@ -313,6 +314,42 @@ applyInitialConditions sideCondition initial unification = inContext "apply-init
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
     Logic.scatter evaluated
+
+{- | Simplify the remainder condition in the context of the side condition and the initial condition
+
+This function assumes that the remainder is a pure boolean predicate, i.e. no configuration pieces/ceils etc. are involved. The simplifier should not branch on such pure predicates. This function will call @error@ if the simplifier returns more then one result.
+-}
+simplifyRemainder ::
+    -- | SideCondition containing metadata
+    SideCondition RewritingVariableName ->
+    -- | Initial conditions
+    Condition RewritingVariableName ->
+    -- | Remainder condition
+    Condition RewritingVariableName ->
+    Simplifier (Condition RewritingVariableName)
+simplifyRemainder sideCondition initialCondition remainderCondition = inContext "simplify-remainder" $ do
+    let sideConditionWithInitialCondition =
+            sideCondition
+                & SideCondition.addConditionWithReplacements
+                    initialCondition
+
+    -- Simplify the remainder predicate under the side condition and the initial conditions.
+    -- We must ensure that functions in the remainder are evaluated using the top-level
+    -- side conditions because we will not re-evaluate them after they are added
+    -- to the top level.
+    simplifiedRemainderRaw <-
+        Simplifier.simplifyCondition
+            sideConditionWithInitialCondition
+            remainderCondition
+            & Logic.observeAllT
+
+    -- convert to predicate from the list of conditionals produce by the simplifier
+    -- TODO must gracefully handle the ?impossible? case of more then one simplifier branch
+    let simplifiedRemainder = case simplifiedRemainderRaw of
+            [singleResult] -> singleResult
+            _ -> error "more then one result after simplifying the remainder condition"
+
+    pure simplifiedRemainder
 
 -- | Apply the remainder predicate to the given initial configuration.
 applyRemainder ::
