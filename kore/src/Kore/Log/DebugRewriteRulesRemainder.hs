@@ -77,9 +77,12 @@ instance Entry DebugRewriteRulesRemainder where
     oneLineDoc entry@(DebugRewriteRulesRemainder{rulesCount, remainder}) =
         let context = map Pretty.brackets (pretty <$> oneLineContextDoc entry <> ["detail"])
             logMsg =
-                ( Pretty.hsep . concat $
-                    [ ["After applying ", pretty rulesCount, " rewrite rules"]
-                    , ["there is a remainder condition: ", Pretty.group . pretty $ remainder]
+                ( Pretty.hsep
+                    [ "After applying "
+                    , pretty rulesCount
+                    , " rewrite rules"
+                    , "there is a remainder condition: "
+                    , Pretty.group . pretty $ remainder
                     ]
                 )
          in mconcat context <> logMsg
