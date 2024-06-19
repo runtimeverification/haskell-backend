@@ -13,6 +13,7 @@ import Data.List (stripPrefix)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Sequence (Seq)
 import Data.Text (Text, pack, unpack)
 import Data.Text qualified as Text
 import Data.Tuple (swap)
@@ -159,7 +160,7 @@ instance ToJSON UniqueId where
 
 ----------------------------------------
 data LogLine = LogLine
-    { context :: [CLContext]
+    { context :: Seq CLContext
     , message :: CLMessage
     }
     deriving stock (Generic, Show, Eq)
