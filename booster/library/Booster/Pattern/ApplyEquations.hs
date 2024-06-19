@@ -218,7 +218,7 @@ popRecursion = do
     s <- getState
     if null s.recursionStack
         then do
-            withContext CAbort $
+            withContext CtxAbort $
                 logMessage ("Trying to pop an empty recursion stack" :: Text)
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
@@ -239,16 +239,16 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
-    withContext CWarn $
+    withContext CtxWarn $
         logMessage msg
 
 checkForLoop :: LoggerMIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
-        withContext CAbort $ do
+        withContext CtxAbort $ do
             logWarn "Equation loop detected."
-            withContext CDetail $
+            withContext CtxDetail $
                 logMessage $
                     renderOneLineText $
                         hsep
@@ -304,7 +304,7 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            withContext CAbort $ do
+            withContext CtxAbort $ do
                 logWarn
                     "Recursion limit exceeded. The limit can be increased by \
                     \ restarting the server with '--equation-max-recursion N'."
@@ -317,11 +317,11 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                withContext CAbort $ do
+                withContext CtxAbort $ do
                     logWarn $
                         renderOneLineText $
                             "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                    withContext CDetail . logMessage . renderOneLineText $
+                    withContext CtxDetail . logMessage . renderOneLineText $
                         "Final term:" <+> pretty currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
@@ -351,18 +351,18 @@ llvmSimplify term = do
   where
     evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
-        | isConcrete t && attributes.canBeEvaluated = withContext CLlvm $ do
+        | isConcrete t && attributes.canBeEvaluated = withContext CtxLlvm $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
-                        withContext CAbort $
+                        withContext CtxAbort $
                             logWarn $
                                 "LLVM backend error detected: " <> Text.decodeUtf8 e
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> do
                         when (result /= t) $ do
                             setChanged
-                            withContext CSuccess $
+                            withContext CtxSuccess $
                                 withTermContext result $
                                     pure ()
                         pure result
@@ -531,8 +531,8 @@ cached cacheTag cb t@(Term attributes _)
             Just cachedTerm -> do
                 when (t /= cachedTerm) $ do
                     setChanged
-                    withContext CSuccess $
-                        withContext CCached $
+                    withContext CtxSuccess $
+                        withContext CtxCached $
                             withTermContext cachedTerm $
                                 pure ()
                 pure cachedTerm
@@ -564,10 +564,10 @@ applyHooksAndEquations pref term = do
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
                     let onError e = do
-                            withContext CAbort $
+                            withContext CtxAbort $
                                 logWarn e
                             throw (InternalError e)
-                    withContext (contextFor sym) $
+                    withContextFor sym $
                         either onError checkChanged $
                             runExcept (hook args)
             _other -> pure Nothing
@@ -576,9 +576,9 @@ applyHooksAndEquations pref term = do
     -- cannot blindly set the changed flag when we have applied a hook
     checkChanged :: Maybe Term -> EquationT io (Maybe Term)
     checkChanged Nothing =
-        withContext CFailure (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
+        withContext CtxFailure (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
     checkChanged (Just t) =
-        withContext CSuccess $ withTermContext t $ do
+        withContext CtxSuccess $ withTermContext t $ do
             unless (t == term) setChanged
             pure (Just t)
 
@@ -620,7 +620,7 @@ handleFunctionEquation continue abort = \case
     IndeterminateCondition{} -> abort
     ConditionFalse _ -> continue
     EnsuresFalse p -> do
-        withContext CAbort $
+        withContext CtxAbort $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> abort
@@ -633,7 +633,7 @@ handleSimplificationEquation continue _abort = \case
     IndeterminateCondition{} -> continue
     ConditionFalse _ -> continue
     EnsuresFalse p -> do
-        withContext CAbort $
+        withContext CtxAbort $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> continue
@@ -650,7 +650,7 @@ applyEquations ::
 applyEquations theory handler term = do
     let index = Idx.termTopIndex term
     when (Idx.hasNone index) $ do
-        withContext CAbort $ logMessage ("Index 'None'" :: Text)
+        withContext CtxAbort $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
     let
         indexes = Set.toList $ Idx.coveringIndexes index
@@ -678,18 +678,18 @@ applyEquations theory handler term = do
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
         withRuleContext eq (applyEquation term eq) >>= \case
-            Right t -> setChanged >> (withContext (contextFor eq) $ withContext CSuccess $ withTermContext t $ pure t)
+            Right t -> setChanged >> (withContextFor eq $ withContext CtxSuccess $ withTermContext t $ pure t)
             Left (m, err) ->
                 handler
-                    ( ( withContext (contextFor eq) $
+                    ( ( withContextFor eq $
                             m $
-                                withContext CFailure . withContext CContinue
+                                withContext CtxFailure . withContext CtxContinue
                       )
                         >> processEquations rest
                     )
-                    ( ( withContext (contextFor eq) $
+                    ( ( withContextFor eq $
                             m $
-                                withContext CFailure . withContext CBreak
+                                withContext CtxFailure . withContext CtxBreak
                       )
                         >> pure term
                     )
@@ -706,7 +706,7 @@ applyEquation ::
 applyEquation term rule = runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $ do
-        withContext CAbort $
+        withContext CtxAbort $
             logMessage ("Equation with existentials" :: Text)
         lift . throw . InternalError $
             "Equation with existentials: " <> Text.pack (show rule)
@@ -733,7 +733,7 @@ applyEquation term rule = runExceptT $ do
         MatchFailed failReason ->
             throwE
                 ( \ctxt ->
-                    withContext CMatch $
+                    withContext CtxMatch $
                         ctxt $
                             logPretty failReason
                 , FailedMatch failReason
@@ -741,7 +741,7 @@ applyEquation term rule = runExceptT $ do
         MatchIndeterminate remainder ->
             throwE
                 ( \ctxt ->
-                    withContext CMatch $
+                    withContext CtxMatch $
                         ctxt $
                             logMessage $
                                 WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
@@ -754,11 +754,11 @@ applyEquation term rule = runExceptT $ do
             -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
             --                        symbolic(v) -> not $ t isConstructorLike(t)
             -- is violated
-            withContext CMatch $ checkConcreteness rule.attributes.concreteness subst
+            withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
 
-            withContext CMatch $ withContext CSuccess $ do
+            withContext CtxMatch $ withContext CtxSuccess $ do
                 logMessage rule
-                withContext CSubstitution
+                withContext CtxSubstitution
                     $ logMessage
                     $ WithJsonMessage
                         (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
@@ -827,7 +827,7 @@ applyEquation term rule = runExceptT $ do
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
-    checkConstraint whenBottom (Predicate p) = withContext CConstraint $ do
+    checkConstraint whenBottom (Predicate p) = withContext CtxConstraint $ do
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
             fallBackToUnsimplifiedOrBottom = \case
                 UndefinedTerm{} -> pure FalseBool
@@ -945,10 +945,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    withContext CLlvm $
+                    withContext CtxLlvm $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
-                                withContext CAbort $
+                                withContext CtxAbort $
                                     logWarn $
                                         "LLVM backend error detected: " <> Text.decodeUtf8 e
                                 throw $ UndefinedTerm t $ LlvmError e
@@ -957,7 +957,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
                                         if res
                                             then TrueBool
                                             else FalseBool
-                                withContext CSuccess $
+                                withContext CtxSuccess $
                                     withTermContext result $
                                         pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t

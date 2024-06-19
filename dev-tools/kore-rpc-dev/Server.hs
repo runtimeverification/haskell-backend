@@ -97,7 +97,7 @@ respond kore req = case req of
     Execute _ ->
         loggedKore ExecuteM req >>= \case
             Right (Execute koreResult) -> do
-                withContext CKore $
+                withContext CtxKore $
                     logMessage $
                         Text.pack $
                             "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
@@ -126,7 +126,7 @@ respond kore req = case req of
                 pure koreError
 
     loggedKore method r = do
-        withContext CKore $
+        withContext CtxKore $
             logMessage' $
                 Text.pack $
                     show method <> " (using kore)"
@@ -230,7 +230,7 @@ main = do
                 kore@KoreServer{runSMT} <-
                     mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
                 runBoosterLogger $
-                    Booster.Log.withContext CKore $
+                    Booster.Log.withContext CtxKore $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
 
                 let koreRespond :: Respond (API 'Req) (LoggerT IO) (API 'Res)

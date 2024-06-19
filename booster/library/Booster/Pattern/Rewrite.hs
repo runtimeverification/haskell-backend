@@ -272,27 +272,27 @@ applyRule ::
 applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
-    subst <- withContext CMatch $ case matchTerms Rewrite def rule.lhs pat.term of
+    subst <- withContext CtxMatch $ case matchTerms Rewrite def rule.lhs pat.term of
         MatchFailed (SubsortingError sortError) -> do
-            withContext CError $ logPretty sortError
+            withContext CtxError $ logPretty sortError
             failRewrite $ RewriteSortError rule pat.term sortError
         MatchFailed err@ArgLengthsDiffer{} -> do
-            withContext CError $ logPretty err
+            withContext CtxError $ logPretty err
             failRewrite $ InternalMatchError $ renderText $ pretty err
         MatchFailed reason -> do
-            withContext CFailure $ logPretty reason
+            withContext CtxFailure $ logPretty reason
             fail "Rule matching failed"
         MatchIndeterminate remainder -> do
-            withContext CIndeterminate $
+            withContext CtxIndeterminate $
                 logMessage $
                     WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
                         renderOneLineText $
                             "Uncertain about match with rule. Remainder:" <+> pretty remainder
             failRewrite $ RuleApplicationUnclear rule pat.term remainder
         MatchSuccess substitution -> do
-            withContext CSuccess $ do
+            withContext CtxSuccess $ do
                 logMessage rule
-                withContext CSubstitution
+                withContext CtxSubstitution
                     $ logMessage
                     $ WithJsonMessage
                         ( object
@@ -306,7 +306,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext CDefinedness . withContext CAbort $
+        withContext CtxDefinedness . withContext CtxAbort $
             logMessage $
                 renderOneLineText $
                     "Uncertain about definedness of rule due to:"
@@ -337,7 +337,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
     let smtUnclear = do
-            withContext CConstraint . withContext CAbort . logMessage . renderOneLineText $
+            withContext CtxConstraint . withContext CtxAbort . logMessage . renderOneLineText $
                 "Uncertain about condition(s) in a rule:" <+> pretty unclearRequires
             failRewrite $
                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
@@ -354,7 +354,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                     liftIO $ Exception.throw other -- fail hard on other SMT errors
                 Right (Just False) -> do
                     -- requires is actually false given the prior
-                    withContext CFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                     RewriteRuleAppT $ pure NotApplied
                 Right (Just True) ->
                     pure () -- can proceed
@@ -362,7 +362,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                     smtUnclear -- no implication could be determined
         Nothing ->
             unless (null unclearRequires) $ do
-                withContext CConstraint . withContext CAbort $
+                withContext CtxConstraint . withContext CtxAbort $
                     logMessage $
                         renderOneLineText $
                             "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
@@ -382,7 +382,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     whenJust mbSolver $ \solver ->
         (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
             Right (Just False) -> do
-                withContext CSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
             Right _other ->
                 pure ()
@@ -413,7 +413,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                     <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
                 )
                 ceilConditions
-    withContext CSuccess $
+    withContext CtxSuccess $
         withPatternContext rewritten $
             return (rule, rewritten)
   where
@@ -428,7 +428,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
         RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get
         (simplified, cache) <-
-            withContext CConstraint $
+            withContext CtxConstraint $
                 simplifyConstraint definition llvmApi smtSolver oldCache p
         -- update cache
         lift . RewriteT . lift . modify $ const cache
@@ -684,7 +684,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
-    logDepth = withContext CDepth . logMessage
+    logDepth = withContext CtxDepth . logMessage
 
     depthReached n = maybe False (n >=) mbMaxDepth
 
@@ -701,7 +701,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     updateCache simplifierCache = modify $ \rss -> rss{simplifierCache}
 
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
-    simplifyP p = withContext CSimplify $ do
+    simplifyP p = withContext CtxSimplify $ do
         st <- get
         let cache = st.simplifierCache
             smt = st.smtSolver
@@ -843,7 +843,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                             | otherwise -> do
                                 -- was already simplified, emit an abort log entry
-                                withRuleContext rule . withContext CMatch . withContext CAbort . logMessage $
+                                withRuleContext rule . withContext CtxMatch . withContext CtxAbort . logMessage $
                                     WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
                                         renderOneLineText $
                                             "Uncertain about match with rule. Remainder:" <+> pretty remainder

@@ -1,6 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# OPTIONS_GHC -Wno-partial-fields #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -93,51 +90,6 @@ data SimpleContext
     | CtxInfo
     deriving stock (Generic, Data, Enum, Show, Eq, Ord)
 
-pattern CBooster, CKore, CProxy :: CLContext
-pattern CBooster = CLNullary CtxBooster
-pattern CKore = CLNullary CtxKore
-pattern CProxy = CLNullary CtxProxy
-
--- method
-pattern CExecute, CSimplify, CImplies, CGetModel, CAddModule :: CLContext
-pattern CExecute = CLNullary CtxExecute
-pattern CSimplify = CLNullary CtxSimplify
-pattern CImplies = CLNullary CtxImplies
-pattern CGetModel = CLNullary CtxGetModel
-pattern CAddModule = CLNullary CtxAddModule
-
--- mode/phase
-pattern CInternalise, CMatch, CDefinedness, CConstraint, CSMT, CLlvm, CCached :: CLContext
-pattern CInternalise = CLNullary CtxInternalise
-pattern CMatch = CLNullary CtxMatch
-pattern CDefinedness = CLNullary CtxDefinedness
-pattern CConstraint = CLNullary CtxConstraint
-pattern CSMT = CLNullary CtxSMT
-pattern CLlvm = CLNullary CtxLlvm
-pattern CCached = CLNullary CtxCached
-
--- results
-pattern CFailure, CIndeterminate, CAbort, CSuccess, CBreak, CContinue :: CLContext
-pattern CFailure = CLNullary CtxFailure
-pattern CIndeterminate = CLNullary CtxIndeterminate
-pattern CAbort = CLNullary CtxAbort
-pattern CSuccess = CLNullary CtxSuccess
-pattern CBreak = CLNullary CtxBreak
-pattern CContinue = CLNullary CtxContinue
-
--- information
-pattern CKoreTerm, CDetail, CSubstitution, CDepth :: CLContext
-pattern CKoreTerm = CLNullary CtxKoreTerm
-pattern CDetail = CLNullary CtxDetail
-pattern CSubstitution = CLNullary CtxSubstitution
-pattern CDepth = CLNullary CtxDepth
-
--- standard log levels
-pattern CError, CWarn, CInfo :: CLContext
-pattern CError = CLNullary CtxError
-pattern CWarn = CLNullary CtxWarn
-pattern CInfo = CLNullary CtxInfo
-
 -- translation table for nullary constructors
 translateSimple :: [(SimpleContext, String)]
 translateSimple =
@@ -171,17 +123,7 @@ instance Show IdContext where
     show (CtxFunction uid) = "function " <> show uid
     show (CtxCeil uid) = "ceil " <> show uid
     show (CtxTerm uid) = "term " <> show uid
-    show (CtxHook name) = "simplification " <> unpack name
-
-pattern CRewrite, CSimplification, CFunction, CCeil, CTerm :: UniqueId -> CLContext
-pattern CRewrite u = CLWithId (CtxRewrite u)
-pattern CSimplification u = CLWithId (CtxSimplification u)
-pattern CFunction u = CLWithId (CtxFunction u)
-pattern CCeil u = CLWithId (CtxCeil u)
-pattern CTerm u = CLWithId (CtxTerm u)
-
-pattern CHook :: Text -> CLContext
-pattern CHook t = CLWithId (CtxHook t)
+    show (CtxHook name) = "hook " <> unpack name
 
 ----------------------------------------
 data UniqueId

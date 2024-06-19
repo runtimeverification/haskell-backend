@@ -161,7 +161,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLev
                 ( const $
                     flip runReaderT filteredBoosterContextLogger
                         . Booster.Log.unLoggerT
-                        . Booster.Log.withContext Booster.Log.CBooster
+                        . Booster.Log.withContext Booster.Log.CtxBooster
                         . respond stateVar
                 )
                 [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]

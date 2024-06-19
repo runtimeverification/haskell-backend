@@ -5,42 +5,26 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Booster.Log (
-    module Booster.Log,
-    -- re-export all log context patterns for convenience
-    pattern CBooster,
-    pattern CKore,
-    pattern CProxy,
-    pattern CExecute,
-    pattern CSimplify,
-    pattern CImplies,
-    pattern CGetModel,
-    pattern CAddModule,
-    pattern CInternalise,
-    pattern CMatch,
-    pattern CDefinedness,
-    pattern CConstraint,
-    pattern CSMT,
-    pattern CLlvm,
-    pattern CCached,
-    pattern CFailure,
-    pattern CIndeterminate,
-    pattern CAbort,
-    pattern CSuccess,
-    pattern CBreak,
-    pattern CContinue,
-    pattern CKoreTerm,
-    pattern CDetail,
-    pattern CSubstitution,
-    pattern CDepth,
-    pattern CError,
-    pattern CWarn,
-    pattern CInfo,
-    pattern CRewrite,
-    pattern CSimplification,
-    pattern CFunction,
-    pattern CCeil,
-    pattern CTerm,
-    pattern CHook,
+    ContextFor (..),
+    LogMessage (..),
+    Logger (..),
+    LoggerT (..),
+    LoggerMIO (..),
+    ToLogFormat (..),
+    WithJsonMessage (..),
+    logMessage,
+    logMessage',
+    logPretty,
+    filterLogger,
+    jsonLogger,
+    textLogger,
+    withContext,
+    withKorePatternContext,
+    withPatternContext,
+    withRuleContext,
+    withTermContext,
+    -- re-export SimpleContext for withContext
+    SimpleContext (..),
 ) where
 
 import Control.Monad (when)
@@ -154,16 +138,20 @@ logMessage' a =
 logPretty :: (LoggerMIO m, Pretty a) => a -> m ()
 logPretty = logMessage . renderOneLineText . pretty
 
-withContext :: LoggerMIO m => CLContext -> m a -> m a
-withContext c =
+withContext :: LoggerMIO m => SimpleContext -> m a -> m a
+withContext c = withContext_ (CLNullary c)
+
+withContext_ :: LoggerMIO m => CLContext -> m a -> m a
+withContext_ c =
     withLogger
         ( \(Logger l) -> Logger $ l . (\(LogMessage alwaysShown ctxt m) -> LogMessage alwaysShown (c : ctxt) m)
         )
 
 withTermContext :: LoggerMIO m => Term -> m a -> m a
-withTermContext t@(Term attrs _) m = withContext (CTerm $ ShortId $ showHashHex attrs.hash) $ do
-    withContext CKoreTerm $ logMessage t
-    m
+withTermContext t@(Term attrs _) m =
+    withContext_ (CLWithId . CtxTerm . ShortId $ showHashHex attrs.hash) $ do
+        withContext CtxKoreTerm $ logMessage t
+        m
 
 withPatternContext :: LoggerMIO m => Pattern -> m a -> m a
 withPatternContext Pattern{term, constraints} m =
@@ -176,8 +164,8 @@ instance ToLogFormat KorePattern where
 
 withKorePatternContext :: LoggerMIO m => KorePattern -> m a -> m a
 withKorePatternContext p m =
-    withContext (contextFor p) $ do
-        withContext CKoreTerm $ logMessage p
+    withContextFor p $ do
+        withContext CtxKoreTerm $ logMessage p
         m
 
 withRuleContext ::
@@ -186,8 +174,8 @@ withRuleContext ::
     RewriteRule tag ->
     m a ->
     m a
-withRuleContext rule m = withContext (contextFor rule) $ do
-    withContext CDetail $ logPretty $ case sourceRef rule of
+withRuleContext rule m = withContextFor rule $ do
+    withContext CtxDetail $ logPretty $ case sourceRef rule of
         Located Location{file = FileSource f, position} ->
             Located
                 Location{file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f), position}
@@ -195,28 +183,35 @@ withRuleContext rule m = withContext (contextFor rule) $ do
     m
 
 class ContextFor a where
-    contextFor :: a -> CLContext
+    withContextFor :: LoggerMIO m => a -> m b -> m b
 
 instance ContextFor Term where
-    contextFor (Term attrs _) = CTerm . ShortId $ showHashHex attrs.hash
+    withContextFor (Term attrs _) =
+        withContext_ (CLWithId . CtxTerm . ShortId $ showHashHex attrs.hash)
 
 instance ContextFor KorePattern where
-    contextFor = CTerm . ShortId . showHashHex . Data.Hashable.hash . show -- FIXME
+    withContextFor p =
+        withContext_ (CLWithId . CtxTerm . ShortId . showHashHex . Data.Hashable.hash $ show p) -- FIXME
 
 instance ContextFor (RewriteRule "Rewrite") where
-    contextFor = CRewrite . parseRuleId
+    withContextFor r =
+        withContext_ (CLWithId . CtxRewrite $ parseRuleId r)
 
 instance ContextFor (RewriteRule "Function") where
-    contextFor = CFunction . parseRuleId
+    withContextFor r =
+        withContext_ (CLWithId . CtxFunction $ parseRuleId r)
 
 instance ContextFor (RewriteRule "Simplification") where
-    contextFor = CSimplification . parseRuleId
+    withContextFor r =
+        withContext_ (CLWithId . CtxSimplification $ parseRuleId r)
 
 instance ContextFor (RewriteRule "Ceil") where
-    contextFor = CCeil . parseRuleId
+    withContextFor r =
+        withContext_ (CLWithId . CtxCeil $ parseRuleId r)
 
 instance ContextFor Symbol where
-    contextFor = CHook . (maybe "not-hooked" decodeUtf8) . (.attributes.hook)
+    withContextFor s =
+        withContext_ (CLWithId . CtxHook $ maybe "not-hooked" decodeUtf8 s.attributes.hook)
 
 parseRuleId :: RewriteRule tag -> CL.UniqueId
 parseRuleId = fromMaybe CL.UNKNOWN . CL.parseUId . coerce . (.attributes.uniqueId)

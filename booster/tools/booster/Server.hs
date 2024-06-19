@@ -209,7 +209,7 @@ main = do
                         (fromMaybe stderrLogger mFileLogger)
 
         runBoosterLogger $
-            Booster.Log.withContext CProxy $
+            Booster.Log.withContext CtxProxy $
                 Booster.Log.logMessage' $
                     Text.pack $
                         "Loading definition from "
@@ -239,18 +239,18 @@ main = do
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
                     runBoosterLogger $
-                        Booster.Log.withContext CProxy $
+                        Booster.Log.withContext CtxProxy $
                             Booster.Log.logMessage' $
                                 "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                     liftIO exitFailure
 
                 liftIO $
                     runBoosterLogger $
-                        Booster.Log.withContext CInfo $ -- FIXME "ceil" $
+                        Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $
                             forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
                                 forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
                                     Booster.Log.withRuleContext rule $ do
-                                        Booster.Log.withContext CInfo -- FIXME "partial-symbols"
+                                        Booster.Log.withContext CtxInfo -- FIXME "partial-symbols"
                                             $ Booster.Log.logMessage
                                             $ Booster.Log.WithJsonMessage
                                                 (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
@@ -261,7 +261,7 @@ main = do
                                                 (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
                                                 rule.computedAttributes.notPreservesDefinednessReasons
                                         unless (null ceils)
-                                            $ Booster.Log.withContext CInfo -- FIXME"computed-ceils"
+                                            $ Booster.Log.withContext CtxInfo -- FIXME"computed-ceils"
                                             $ Booster.Log.logMessage
                                             $ Booster.Log.WithJsonMessage
                                                 ( JSON.object
@@ -277,7 +277,7 @@ main = do
                                 forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
                                     unless (null s.computedAttributes.notPreservesDefinednessReasons)
                                         $ Booster.Log.withRuleContext s
-                                        $ Booster.Log.withContext CInfo -- FIXME"partial-symbols"
+                                        $ Booster.Log.withContext CtxInfo -- FIXME"partial-symbols"
                                         $ Booster.Log.logMessage
                                         $ Booster.Log.WithJsonMessage
                                             (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
@@ -308,13 +308,13 @@ main = do
                 writeGlobalEquationOptions equationOptions
 
                 runBoosterLogger $
-                    Booster.Log.withContext CProxy $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text)
 
                 let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
                     koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
                     boosterRespond =
-                        Booster.Log.withContext CBooster
+                        Booster.Log.withContext CtxBooster
                             . Booster.respond boosterState
 
                     proxyConfig =
@@ -341,7 +341,7 @@ main = do
                             , handleSomeException
                             ]
                     interruptHandler _ =
-                        runBoosterLogger . Booster.Log.withContext CProxy $ do
+                        runBoosterLogger . Booster.Log.withContext CtxProxy $ do
                             Booster.Log.logMessage' @_ @Text "Server shutting down"
                             whenJust statsVar $ \var ->
                                 liftIO (Stats.finaliseStats var) >>= Booster.Log.logMessage'
@@ -357,7 +357,7 @@ main = do
     withMDLib (Just fp) f = withDLib fp $ \dl -> f (Just dl)
 
     logRequestId rid =
-        Booster.Log.withContext CProxy $
+        Booster.Log.withContext CtxProxy $
             Booster.Log.logMessage' $
                 Text.pack $
                     "Processing request " <> rid
