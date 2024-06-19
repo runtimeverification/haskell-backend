@@ -4,7 +4,44 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Booster.Log (module Booster.Log) where
+module Booster.Log (
+    module Booster.Log,
+    -- re-export all log context patterns for convenience
+    pattern CBooster,
+    pattern CKore,
+    pattern CProxy,
+    pattern CExecute,
+    pattern CSimplify,
+    pattern CImplies,
+    pattern CGetModel,
+    pattern CAddModule,
+    pattern CInternalise,
+    pattern CMatch,
+    pattern CDefinedness,
+    pattern CConstraint,
+    pattern CSMT,
+    pattern CLlvm,
+    pattern CCached,
+    pattern CFailure,
+    pattern CIndeterminate,
+    pattern CAbort,
+    pattern CSuccess,
+    pattern CBreak,
+    pattern CContinue,
+    pattern CKoreTerm,
+    pattern CDetail,
+    pattern CSubstitution,
+    pattern CDepth,
+    pattern CError,
+    pattern CWarn,
+    pattern CInfo,
+    pattern CRewrite,
+    pattern CSimplification,
+    pattern CFunction,
+    pattern CCeil,
+    pattern CTerm,
+    pattern CHook,
+) where
 
 import Control.Monad (when)
 import Control.Monad.IO.Class
@@ -57,6 +94,25 @@ instance ToLogFormat CLContext where
     toTextualLog = pack . show
     toJSONLog = toJSON
 
+instance ToLogFormat Text where
+    toTextualLog t = t
+    toJSONLog t = String t
+
+instance ToLogFormat Term where
+    toTextualLog t = renderOneLineText $ pretty t
+    toJSONLog t = toJSON $ addHeader $ externaliseTerm t
+
+instance ToLogFormat (RewriteRule tag) where
+    toTextualLog = shortRuleLocation
+    toJSONLog = String . shortRuleLocation
+
+shortRuleLocation :: RewriteRule tag -> Text
+shortRuleLocation rule = renderOneLineText $ pretty $
+    case sourceRef rule of
+        Located l@Location{file = FileSource f} ->
+                Located l{ file = FileSource $ "..." <> (intercalate "/" $ takeEnd 3 $ splitOn "/" f)}
+        loc -> loc
+
 data LogMessage where
     LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [CLContext] -> a -> LogMessage
 
@@ -102,20 +158,6 @@ withContext c =
         ( \(Logger l) -> Logger $ l . (\(LogMessage alwaysShown ctxt m) -> LogMessage alwaysShown (c : ctxt) m)
         )
 
-newtype HookCtxt = HookCtxt Text
-
-instance ToLogFormat HookCtxt where
-    toTextualLog (HookCtxt h) = "hook " <> h
-    toJSONLog (HookCtxt h) = object ["hook" .= h]
-
-instance ToLogFormat Term where
-    toTextualLog t = renderOneLineText $ pretty t
-    toJSONLog t = toJSON $ addHeader $ externaliseTerm t
-
-instance ToLogFormat Text where
-    toTextualLog t = t
-    toJSONLog t = String t
-
 withTermContext :: LoggerMIO m => Term -> m a -> m a
 withTermContext t@(Term attrs _) m = withContext (CTerm $ Hex7 attrs.hash) $ do
     withContext CKoreTerm $ logMessage t
@@ -152,14 +194,17 @@ withRuleContext rule m = withContext (contextFor rule) $ do
 class ContextFor a where
     contextFor :: a -> CLContext
 
-instance ContextFor (RewriteRule "rewrite") where
+instance ContextFor (RewriteRule "Rewrite") where
     contextFor = CRewrite . parseRuleId
 
-instance ContextFor (RewriteRule "function") where
+instance ContextFor (RewriteRule "Function") where
     contextFor = CFunction . parseRuleId
 
-instance ContextFor (RewriteRule "simplification") where
+instance ContextFor (RewriteRule "Simplification") where
     contextFor = CSimplification . parseRuleId
+
+instance ContextFor (RewriteRule "Ceil") where
+    contextFor = CCeil . parseRuleId
 
 instance ContextFor Symbol where
     contextFor = CHook . (maybe "not-hooked" decodeUtf8) . (.attributes.hook)

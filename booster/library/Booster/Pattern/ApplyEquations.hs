@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 
 {- |
@@ -48,7 +49,6 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
-import GHC.TypeLits (KnownSymbol)
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -218,7 +218,7 @@ popRecursion = do
     s <- getState
     if null s.recursionStack
         then do
-            withContext "abort" $
+            withContext CAbort $
                 logMessage ("Trying to pop an empty recursion stack" :: Text)
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
@@ -239,16 +239,16 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
-    withContext "warning" $
+    withContext CWarn $
         logMessage msg
 
 checkForLoop :: LoggerMIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
-        withContext "abort" $ do
+        withContext CAbort $ do
             logWarn "Equation loop detected."
-            withContext "detail" $
+            withContext CDetail $
                 logMessage $
                     renderOneLineText $
                         hsep
@@ -304,7 +304,7 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            withContext "abort" $ do
+            withContext CAbort $ do
                 logWarn
                     "Recursion limit exceeded. The limit can be increased by \
                     \ restarting the server with '--equation-max-recursion N'."
@@ -317,11 +317,11 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                withContext "abort" $ do
+                withContext CAbort $ do
                     logWarn $
                         renderOneLineText $
                             "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                    withContext "detail" . logMessage . renderOneLineText $
+                    withContext CDetail . logMessage . renderOneLineText $
                         "Final term:" <+> pretty currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
@@ -351,18 +351,18 @@ llvmSimplify term = do
   where
     evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
-        | isConcrete t && attributes.canBeEvaluated = withContext "llvm" $ do
+        | isConcrete t && attributes.canBeEvaluated = withContext CLlvm $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
-                        withContext "abort" $
+                        withContext CAbort $
                             logWarn $
                                 "LLVM backend error detected: " <> Text.decodeUtf8 e
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> do
                         when (result /= t) $ do
                             setChanged
-                            withContext "success" $
+                            withContext CSuccess $
                                 withTermContext result $
                                     pure ()
                         pure result
@@ -531,8 +531,8 @@ cached cacheTag cb t@(Term attributes _)
             Just cachedTerm -> do
                 when (t /= cachedTerm) $ do
                     setChanged
-                    withContext "success" $
-                        withContext "cached" $
+                    withContext CSuccess $
+                        withContext CCached $
                             withTermContext cachedTerm $
                                 pure ()
                 pure cachedTerm
@@ -563,12 +563,11 @@ applyHooksAndEquations pref term = do
         case term of
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
-                    let hookName = maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook
-                        onError e = do
-                            withContext "abort" $
+                    let onError e = do
+                            withContext CAbort $
                                 logWarn e
                             throw (InternalError e)
-                    withContext (LogContext $ HookCtxt hookName) $
+                    withContext (contextFor sym) $
                         either onError checkChanged $
                             runExcept (hook args)
             _other -> pure Nothing
@@ -577,9 +576,9 @@ applyHooksAndEquations pref term = do
     -- cannot blindly set the changed flag when we have applied a hook
     checkChanged :: Maybe Term -> EquationT io (Maybe Term)
     checkChanged Nothing =
-        withContext "failure" (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
+        withContext CFailure (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
     checkChanged (Just t) =
-        withContext "success" $ withTermContext t $ do
+        withContext CSuccess $ withTermContext t $ do
             unless (t == term) setChanged
             pure (Just t)
 
@@ -621,7 +620,7 @@ handleFunctionEquation continue abort = \case
     IndeterminateCondition{} -> abort
     ConditionFalse _ -> continue
     EnsuresFalse p -> do
-        withContext "abort" $
+        withContext CAbort $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> abort
@@ -634,7 +633,7 @@ handleSimplificationEquation continue _abort = \case
     IndeterminateCondition{} -> continue
     ConditionFalse _ -> continue
     EnsuresFalse p -> do
-        withContext "abort" $
+        withContext CAbort $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> continue
@@ -642,7 +641,7 @@ handleSimplificationEquation continue _abort = \case
 
 applyEquations ::
     forall io tag.
-    KnownSymbol tag =>
+    ContextFor (RewriteRule tag) =>
     LoggerMIO io =>
     Theory (RewriteRule tag) ->
     ResultHandler io ->
@@ -651,7 +650,7 @@ applyEquations ::
 applyEquations theory handler term = do
     let index = Idx.termTopIndex term
     when (Idx.hasNone index) $ do
-        withContext "abort" $ logMessage ("Index 'None'" :: Text)
+        withContext CAbort $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
     let
         indexes = Set.toList $ Idx.coveringIndexes index
@@ -679,18 +678,18 @@ applyEquations theory handler term = do
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
         withRuleContext eq (applyEquation term eq) >>= \case
-            Right t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
+            Right t -> setChanged >> (withContext (contextFor eq) $ withContext CSuccess $ withTermContext t $ pure t)
             Left (m, err) ->
                 handler
-                    ( ( withContext (LogContext eq) $
+                    ( ( withContext (contextFor eq) $
                             m $
-                                withContext "failure" . withContext "continue"
+                                withContext CFailure . withContext CContinue
                       )
                         >> processEquations rest
                     )
-                    ( ( withContext (LogContext eq) $
+                    ( ( withContext (contextFor eq) $
                             m $
-                                withContext "failure" . withContext "break"
+                                withContext CFailure . withContext CBreak
                       )
                         >> pure term
                     )
@@ -698,7 +697,6 @@ applyEquations theory handler term = do
 
 applyEquation ::
     forall io tag.
-    KnownSymbol tag =>
     LoggerMIO io =>
     Term ->
     RewriteRule tag ->
@@ -708,7 +706,7 @@ applyEquation ::
 applyEquation term rule = runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $ do
-        withContext "abort" $
+        withContext CAbort $
             logMessage ("Equation with existentials" :: Text)
         lift . throw . InternalError $
             "Equation with existentials: " <> Text.pack (show rule)
@@ -735,7 +733,7 @@ applyEquation term rule = runExceptT $ do
         MatchFailed failReason ->
             throwE
                 ( \ctxt ->
-                    withContext "match" $
+                    withContext CMatch $
                         ctxt $
                             logPretty failReason
                 , FailedMatch failReason
@@ -743,7 +741,7 @@ applyEquation term rule = runExceptT $ do
         MatchIndeterminate remainder ->
             throwE
                 ( \ctxt ->
-                    withContext "match" $
+                    withContext CMatch $
                         ctxt $
                             logMessage $
                                 WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
@@ -756,11 +754,11 @@ applyEquation term rule = runExceptT $ do
             -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
             --                        symbolic(v) -> not $ t isConstructorLike(t)
             -- is violated
-            withContext "match" $ checkConcreteness rule.attributes.concreteness subst
+            withContext CMatch $ checkConcreteness rule.attributes.concreteness subst
 
-            withContext "match" $ withContext "success" $ do
+            withContext CMatch $ withContext CSuccess $ do
                 logMessage rule
-                withContext "substitution"
+                withContext CSubstitution
                     $ logMessage
                     $ WithJsonMessage
                         (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
@@ -829,7 +827,7 @@ applyEquation term rule = runExceptT $ do
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
-    checkConstraint whenBottom (Predicate p) = withContext "constraint" $ do
+    checkConstraint whenBottom (Predicate p) = withContext CConstraint $ do
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
             fallBackToUnsimplifiedOrBottom = \case
                 UndefinedTerm{} -> pure FalseBool
@@ -947,10 +945,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    withContext "llvm" $
+                    withContext CLlvm $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
-                                withContext "abort" $
+                                withContext CAbort $
                                     logWarn $
                                         "LLVM backend error detected: " <> Text.decodeUtf8 e
                                 throw $ UndefinedTerm t $ LlvmError e
@@ -959,7 +957,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
                                         if res
                                             then TrueBool
                                             else FalseBool
-                                withContext "success" $
+                                withContext CSuccess $
                                     withTermContext result $
                                         pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t

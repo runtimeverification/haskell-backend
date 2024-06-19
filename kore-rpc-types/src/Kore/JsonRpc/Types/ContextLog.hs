@@ -67,17 +67,27 @@ data SimpleContext
     | CtxSimplify
     | CtxImplies
     | CtxGetModel
+    | CtxAddModule
     -- mode/phase
+    | CtxInternalise
     | CtxMatch
     | CtxDefinedness
     | CtxConstraint
+    | CtxSMT
+    | CtxLlvm
+    | CtxCached
     -- results
     | CtxFailure
+    | CtxIndeterminate
     | CtxAbort
     | CtxSuccess
+    | CtxBreak
+    | CtxContinue
     -- information
     | CtxKoreTerm
     | CtxDetail
+    | CtxSubstitution
+    | CtxDepth
     -- standard log levels
     | CtxError
     | CtxWarn
@@ -85,46 +95,44 @@ data SimpleContext
     deriving stock (Generic, Data, Enum, Show, Eq, Ord)
 
 
-pattern CBooster :: CLContext
+pattern CBooster, CKore, CProxy :: CLContext
 pattern CBooster = CLNullary CtxBooster
-pattern CKore :: CLContext
 pattern CKore = CLNullary CtxKore
-pattern CProxy :: CLContext
 pattern CProxy = CLNullary CtxProxy
     -- method
-pattern CExecute :: CLContext
+pattern CExecute, CSimplify, CImplies, CGetModel, CAddModule :: CLContext
 pattern CExecute = CLNullary CtxExecute
-pattern CSimplify :: CLContext
 pattern CSimplify = CLNullary CtxSimplify
-pattern CImplies :: CLContext
 pattern CImplies = CLNullary CtxImplies
-pattern CGetModel :: CLContext
 pattern CGetModel = CLNullary CtxGetModel
+pattern CAddModule = CLNullary CtxAddModule
     -- mode/phase
-pattern CMatch :: CLContext
+pattern CInternalise, CMatch, CDefinedness, CConstraint, CSMT, CLlvm, CCached :: CLContext
+pattern CInternalise = CLNullary CtxInternalise
 pattern CMatch = CLNullary CtxMatch
-pattern CDefinedness :: CLContext
 pattern CDefinedness = CLNullary CtxDefinedness
-pattern CConstraint :: CLContext
 pattern CConstraint = CLNullary CtxConstraint
+pattern CSMT = CLNullary CtxSMT
+pattern CLlvm = CLNullary CtxLlvm
+pattern CCached = CLNullary CtxCached
     -- results
-pattern CFailure :: CLContext
+pattern CFailure, CIndeterminate, CAbort, CSuccess, CBreak, CContinue :: CLContext
 pattern CFailure = CLNullary CtxFailure
-pattern CAbort :: CLContext
+pattern CIndeterminate = CLNullary CtxIndeterminate
 pattern CAbort = CLNullary CtxAbort
-pattern CSuccess :: CLContext
 pattern CSuccess = CLNullary CtxSuccess
+pattern CBreak = CLNullary CtxBreak
+pattern CContinue = CLNullary CtxContinue
     -- information
-pattern CKoreTerm :: CLContext
+pattern CKoreTerm, CDetail, CSubstitution, CDepth :: CLContext
 pattern CKoreTerm = CLNullary CtxKoreTerm
-pattern CDetail :: CLContext
 pattern CDetail = CLNullary CtxDetail
-    -- standard log levels
-pattern CError :: CLContext
+pattern CSubstitution = CLNullary CtxSubstitution
+pattern CDepth = CLNullary CtxDepth
+   -- standard log levels
+pattern CError, CWarn, CInfo :: CLContext
 pattern CError = CLNullary CtxError
-pattern CWarn :: CLContext
 pattern CWarn = CLNullary CtxWarn
-pattern CInfo :: CLContext
 pattern CInfo = CLNullary CtxInfo
 
 -- translation table for nullary constructors
@@ -146,6 +154,7 @@ data IdContext
       CtxRewrite UniqueId
     | CtxSimplification UniqueId
     | CtxFunction UniqueId
+    | CtxCeil UniqueId
     | CtxTerm UniqueId
     -- entities with name
     | CtxHook Text
@@ -157,19 +166,15 @@ instance Show IdContext where
     show (CtxRewrite uid) = "rewrite " <> show uid
     show (CtxSimplification uid) = "simplification " <> show uid
     show (CtxFunction uid) = "function " <> show uid
+    show (CtxCeil uid) = "ceil " <> show uid
     show (CtxTerm uid) = "term " <> show uid
     show (CtxHook name) = "simplification " <> unpack name
 
-pattern CRewrite :: UniqueId -> CLContext
+pattern CRewrite, CSimplification, CFunction, CCeil, CTerm :: UniqueId -> CLContext
 pattern CRewrite u = CLWithId (CtxRewrite u)
-
-pattern CSimplification :: UniqueId -> CLContext
 pattern CSimplification u = CLWithId (CtxSimplification u)
-
-pattern CFunction :: UniqueId -> CLContext
 pattern CFunction u = CLWithId (CtxFunction u)
-
-pattern CTerm :: UniqueId -> CLContext
+pattern CCeil u = CLWithId (CtxCeil u)
 pattern CTerm u = CLWithId (CtxTerm u)
 
 pattern CHook :: Text -> CLContext

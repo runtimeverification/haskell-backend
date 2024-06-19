@@ -82,7 +82,7 @@ declareVariables transState = do
      - set user-specified timeout for queries
 -}
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
-initSolver def smtOptions = Log.withContext "smt" $ do
+initSolver def smtOptions = Log.withContext Log.CSMT $ do
     prelude <- translatePrelude def
 
     Log.logMessage ("Starting new SMT solver" :: Text)
@@ -168,13 +168,13 @@ getModelFor ::
     Map Variable Term -> -- supplied substitution
     io (Either SMTError (Either SMT.Response (Map Variable Term)))
 getModelFor ctxt ps subst
-    | null ps && Map.null subst = Log.withContext "smt" $ do
-        Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
+    | null ps && Map.null subst = Log.withContext Log.CSMT $ do
+        Log.logMessage ("No Constraints Or Substitutions To Check, Returning Sat" :: Text)
         pure . Right . Right $ Map.empty
-    | Left errMsg <- translated = Log.withContext "smt" $ do
+    | Left errMsg <- translated = Log.withContext Log.CSMT $ do
         Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
-    | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
+    | Right (smtAsserts, transState) <- translated = Log.withContext Log.CSMT $ do
         evalSMT ctxt . runExceptT $ do
             lift $ hardResetSolver ctxt.options
             solve smtAsserts transState
@@ -330,10 +330,10 @@ checkPredicates ::
     io (Either SMTError (Maybe Bool))
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure . Right $ Just True
-    | Left errMsg <- translated = Log.withContext "smt" $ do
-        Log.withContext "abort" $ Log.logMessage $ "SMT translation error: " <> errMsg
+    | Left errMsg <- translated = Log.withContext Log.CSMT $ do
+        Log.withContext Log.CAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
         pure . Left . SMTTranslationError $ errMsg
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext Log.CSMT $ do
         evalSMT ctxt . runExceptT $ do
             lift $ hardResetSolver ctxt.options
             solve smtGiven sexprsToCheck transState
@@ -400,13 +400,13 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     failBecauseUnknown =
         smtRun GetReasonUnknown >>= \case
             ReasonUnknown reason -> do
-                Log.withContext "abort" $
+                Log.withContext Log.CAbort $
                     Log.logMessage $
                         "Returned Unknown. Reason: " <> reason
                 throwE $ SMTSolverUnknown reason givenPs psToCheck
             other -> do
                 let msg = "Unexpected result while calling ':reason-unknown': " <> show other
-                Log.withContext "abort" $ Log.logMessage $ Text.pack msg
+                Log.withContext Log.CAbort $ Log.logMessage $ Text.pack msg
                 throwSMT' msg
 
     -- Given the known truth and the expressions to check,
