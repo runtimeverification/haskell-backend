@@ -66,6 +66,9 @@ instance Entry DebugRewriteRulesRemainder where
     entrySeverity _ = Debug
     helpDoc _ = "log rewrite rules remainder"
 
+    oneLineContextDoc
+        DebugRewriteRulesRemainder{} = [remainderContextName]
+
     oneLineContextJson
         DebugRewriteRulesRemainder{configuration, rulesCount} =
             Array $
@@ -80,7 +83,7 @@ instance Entry DebugRewriteRulesRemainder where
                     ]
 
     oneLineDoc (DebugRewriteRulesRemainder{rulesCount, remainder}) =
-        let context = map Pretty.brackets (pretty <$> [remainderContextName, "detail"])
+        let context = [Pretty.brackets "detail"]
             logMsg =
                 ( Pretty.hsep
                     [ "After applying "
