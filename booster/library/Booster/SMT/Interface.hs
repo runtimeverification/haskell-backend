@@ -169,7 +169,7 @@ getModelFor ::
     io (Either SMTError (Either SMT.Response (Map Variable Term)))
 getModelFor ctxt ps subst
     | null ps && Map.null subst = Log.withContext Log.CtxSMT $ do
-        Log.logMessage ("No Constraints Or Substitutions To Check, Returning Sat" :: Text)
+        Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure . Right . Right $ Map.empty
     | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
         Log.logMessage $ "SMT translation error: " <> errMsg
