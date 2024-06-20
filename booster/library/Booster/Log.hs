@@ -218,7 +218,6 @@ instance ContextFor (JSONRPC.Id) where
     withContextFor r =
         withContext_ (CLWithId . CtxRequest $ pack $ JSONRPC.fromId r)
 
-
 parseRuleId :: RewriteRule tag -> CL.UniqueId
 parseRuleId = fromMaybe CL.UNKNOWN . CL.parseUId . coerce . (.attributes.uniqueId)
 

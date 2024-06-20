@@ -69,8 +69,7 @@ insertTime (c :<| cs) t t' (TimeMap m) =
                 )
                 m
 
-
-{- This function walks the parsed logs, collecting the timestamps and prodcing a timing map, 
+{- This function walks the parsed logs, collecting the timestamps and prodcing a timing map,
    which is a tree of contexts where each node holds the timing data for the subtree.AliasName
    this function generates the initial tree where each node holds the start and finis time of
    each log withing the context subtree.
@@ -81,7 +80,7 @@ insertTime (c :<| cs) t t' (TimeMap m) =
    *  This function produces a list of `TimeMap`s. THis is because we can have logs where certain contexts are repeated.
       This happens when we fall back from booster to kore for simplification and then re-attempt execution. This can result in the exact same context
       appearing twice during a single request. As a result, we check the current context and start a fresh timing map each time we encounter a proxy
-      context, as we know this message signals a fallback. 
+      context, as we know this message signals a fallback.
       Note that this may still not be enitrely correct as there could be a context withing kore/booster that repeats within a request.
 -}
 collectTiming ::
@@ -110,7 +109,6 @@ collectTiming ((timeMap' : ts'), ruleMap) LogMessage{context, message, timestamp
                 [] -> ((newTimeMap : ts), newRuleMap)
                 (l : ls) -> collectTiming ((newTimeMap : ts), newRuleMap) l ls
 
-
 newtype ElapsedNanoseconds = ElapsedNanoseconds Int deriving newtype (Num, Show)
 
 instance Semigroup ElapsedNanoseconds where
@@ -129,7 +127,6 @@ instance Monoid Count where
 
 computeTimes :: TimeMap (Int, Int) -> TimeMap ElapsedNanoseconds
 computeTimes = fmap $ \(minT, maxT) -> ElapsedNanoseconds $ maxT - minT
-
 
 aggregateRewriteRulesPerRequest ::
     Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
