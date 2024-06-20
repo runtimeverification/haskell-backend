@@ -429,14 +429,6 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
     Syntax.KJBottom{} -> notSupported
     Syntax.KJNot{arg} -> do
         recursion arg >>= \case
-            [BoolPred (Internal.Predicate (Internal.EqualsInt a b))] ->
-                pure [BoolPred $ Internal.Predicate $ Internal.NEqualsInt a b]
-            [BoolPred (Internal.Predicate (Internal.NEqualsInt a b))] ->
-                pure [BoolPred $ Internal.Predicate $ Internal.EqualsInt a b]
-            [BoolPred (Internal.Predicate (Internal.EqualsK a b))] ->
-                pure [BoolPred $ Internal.Predicate $ Internal.NEqualsK a b]
-            [BoolPred (Internal.Predicate (Internal.NEqualsK a b))] ->
-                pure [BoolPred $ Internal.Predicate $ Internal.EqualsK a b]
             [BoolPred (Internal.Predicate p')] ->
                 pure [BoolPred $ Internal.Predicate $ Internal.NotBool p']
             [SubstitutionPred k v] ->
@@ -444,12 +436,13 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                     then notSupported -- @ variables are set variables, the negation of which we do not support internalising
                     else case sortOfTerm v of
                         Internal.SortInt ->
-                            pure [BoolPred $ Internal.Predicate $ Internal.NEqualsInt (Internal.Var k) v]
+                            pure [BoolPred $ Internal.Predicate $ Internal.NotBool $ Internal.EqualsInt (Internal.Var k) v]
                         otherSort ->
                             pure
                                 [ BoolPred $
                                     Internal.Predicate $
-                                        Internal.NEqualsK (Internal.KSeq otherSort $ Internal.Var k) (Internal.KSeq otherSort v)
+                                        Internal.NotBool $
+                                            Internal.EqualsK (Internal.KSeq otherSort $ Internal.Var k) (Internal.KSeq otherSort v)
                                 ]
             _ -> notSupported
     Syntax.KJAnd{patterns = []} -> notSupported
