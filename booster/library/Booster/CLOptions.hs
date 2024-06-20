@@ -293,10 +293,10 @@ levelToContext =
         ,
             ( "Timing"
             ,
-                [ [ctxt| booster|kore>rewrite*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>rewrite*,match|definedness|condition,failure|abort |]
-                , [ctxt| booster|kore>function*|simplification*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>function*|simplification*,match,failure|abort |]
+                [ [ctxt| request*,booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>rewrite*,match|definedness|condition,failure|abort |]
+                , [ctxt| request*,booster|kore>function*|simplification*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>function*|simplification*,match,failure|abort |]
                 ]
             )
         ]

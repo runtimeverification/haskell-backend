@@ -7,19 +7,13 @@ module Main (
     main,
 ) where
 
-import Control.Monad (foldM, forM_)
 import Data.Aeson (decode)
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.List (foldl', sortOn)
-import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
-import Data.Ord (Down (..))
-import Data.Text qualified as T
-import Data.Text.IO qualified as T
-import System.Environment (getArgs)
-import Types
-import qualified System.IO as IO
+import Data.Maybe (mapMaybe)
 import Profiteur.Main (writeReport)
+import System.Environment (getArgs)
+import System.IO qualified as IO
+import Types
 
 {- | Utility for parsing and extracting information from context logs,
    produced by running the booster binary with `--log-format json --log-file <path>`.
@@ -36,9 +30,24 @@ main =
                 putStrLn "Call via `count-aborts <path_1> ... <path_n>`"
                 putStrLn
                     "To produce the correct context logs, run kore-rpc-booster with `-l Aborts --log-format json --log-file <file>`"
-        [profFile] ->
-            let htmlFile = profFile ++ ".html"
-            in IO.withBinaryFile htmlFile IO.WriteMode $ \h -> do
-                (timing, ruleMap) <- foldl' (foldl' collectTiming) mempty . map decode . BS.lines <$> BS.readFile profFile
-                -- print timing
+        [profFile] -> do
+            logs <- mapMaybe decode . BS.lines <$> BS.readFile profFile
+
+            let (timings, ruleMap) = case logs of
+                    m : ms -> collectTiming mempty m ms
+                    [] -> mempty
+                timing = foldr (((<>)) . fmap (,Count 1) . computeTimes) (TimeMap mempty) timings
+                htmlFile = profFile ++ ".html"
+            IO.withBinaryFile htmlFile IO.WriteMode $ \h -> do
                 writeReport h profFile $ toNodeMap timing ruleMap
+
+            let htmlAggregateFile = profFile ++ ".aggregate.html"
+            IO.withBinaryFile htmlAggregateFile IO.WriteMode $ \h -> do
+                writeReport h profFile $
+                    toNodeMap (aggregateRewriteRules aggregateRewriteRulesPerRequest timing) ruleMap
+
+            let htmlAggregateFile2 = profFile ++ ".aggregate2.html"
+            IO.withBinaryFile htmlAggregateFile2 IO.WriteMode $ \h -> do
+                writeReport h profFile $
+                    toNodeMap (aggregateRewriteRules aggregateRewriteRulesPerRequest2 timing) ruleMap
+        _ -> error "invalid arguments"
