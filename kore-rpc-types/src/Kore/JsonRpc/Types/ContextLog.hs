@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -6,54 +8,14 @@ module Kore.JsonRpc.Types.ContextLog (
     module Kore.JsonRpc.Types.ContextLog,
 ) where
 
-import Data.Aeson.Types (FromJSON (..), ToJSON (..))
+import Data.Aeson.TH (deriveJSON)
+import Data.Aeson.Types (FromJSON (..), Options (..), ToJSON (..), defaultOptions)
 import Data.Aeson.Types qualified as JSON
-import Data.Data
-import Data.List (stripPrefix)
-import Data.Map (Map)
-import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Char (toLower)
 import Data.Sequence (Seq)
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, unpack)
 import Data.Text qualified as Text
-import Data.Tuple (swap)
-import Deriving.Aeson
 
-data CLContext
-    = CLNullary SimpleContext
-    | CLWithId IdContext
-    deriving stock (Generic, Eq)
-
-instance Show CLContext where
-    show (CLNullary c) = fromMaybe (error $ show c) $ Map.lookup c simpleShow
-    show (CLWithId withId) = show withId
-
-instance ToJSON CLContext where
-    toJSON (CLNullary c) = JSON.String $ maybe (error $ show c) pack $ Map.lookup c simpleShow
-    toJSON (CLWithId withId) = JSON.genericToJSON options withId
-
-instance FromJSON CLContext where
-    parseJSON = \case
-        JSON.String simple
-            | Just c <- Map.lookup (unpack simple) simpleRead ->
-                pure $ CLNullary c
-        obj@JSON.Object{} ->
-            CLWithId <$> JSON.genericParseJSON options obj
-        other ->
-            JSON.typeMismatch "Object or string" other
-
-options :: JSON.Options
-options =
-    JSON.defaultOptions
-        { JSON.sumEncoding = JSON.ObjectWithSingleField
-        , JSON.constructorTagModifier = toJsonName
-        , JSON.allNullaryToStringTag = True
-        }
-
-toJsonName :: String -> String
-toJsonName name = JSON.camelTo2 '-' $ fromMaybe name $ stripPrefix "Ctx" name
-
-----------------------------------------
 data SimpleContext
     = -- component
       CtxBooster
@@ -89,20 +51,10 @@ data SimpleContext
       CtxError
     | CtxWarn
     | CtxInfo
-    deriving stock (Generic, Data, Enum, Show, Eq, Ord)
+    deriving stock (Show, Eq, Ord, Enum)
 
--- translation table for nullary constructors
-translateSimple :: [(SimpleContext, String)]
-translateSimple =
-    [ (con, toJsonName $ show con)
-    | con <- [CtxBooster .. CtxInfo]
-    ]
-
-simpleShow :: Map SimpleContext String
-simpleShow = Map.fromList translateSimple
-
-simpleRead :: Map String SimpleContext
-simpleRead = Map.fromList $ map swap translateSimple
+-- JSON encoding: strings dropping the 3-letter prefix and lower-case-ing
+$(deriveJSON defaultOptions{constructorTagModifier = map toLower . drop 3} ''SimpleContext)
 
 ----------------------------------------
 data IdContext
@@ -114,9 +66,7 @@ data IdContext
     | CtxTerm UniqueId
     | -- entities with name
       CtxHook Text
-    deriving stock (Generic, Eq)
-
--- To/FromJSON by way of Generic
+    deriving stock (Eq)
 
 instance Show IdContext where
     show (CtxRewrite uid) = "rewrite " <> show uid
@@ -131,7 +81,7 @@ data UniqueId
     = ShortId Text -- short hashes (7 char)
     | LongId Text -- long hashes (64 char)
     | UNKNOWN
-    deriving stock (Generic, Eq, Ord)
+    deriving stock (Eq, Ord)
 
 instance Show UniqueId where
     show (ShortId x) = unpack x
@@ -158,20 +108,42 @@ instance ToJSON UniqueId where
         LongId x -> JSON.String x
         UNKNOWN -> JSON.String "UNKNOWN"
 
-----------------------------------------
-data LogLine = LogLine
-    { context :: Seq CLContext
-    , message :: CLMessage
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (FromJSON, ToJSON)
-        via CustomJSON '[] LogLine
+$( deriveJSON
+    defaultOptions
+        { JSON.constructorTagModifier = JSON.camelTo2 '-' . drop 3
+        , JSON.sumEncoding = JSON.ObjectWithSingleField
+        }
+    ''IdContext
+ )
 
+----------------------------------------
+data CLContext
+    = CLNullary SimpleContext
+    | CLWithId IdContext
+    deriving stock (Eq)
+
+instance Show CLContext where
+    show (CLNullary c) = map toLower . drop 3 $ show c
+    show (CLWithId withId) = show withId
+
+instance ToJSON CLContext where
+    toJSON (CLNullary c) = toJSON c
+    toJSON (CLWithId withId) = toJSON withId
+
+instance FromJSON CLContext where
+    parseJSON = \case
+        simple@JSON.String{} ->
+            CLNullary <$> parseJSON simple
+        obj@JSON.Object{} ->
+            CLWithId <$> parseJSON obj
+        other ->
+            JSON.typeMismatch "Object or string" other
+
+----------------------------------------
 data CLMessage
     = CLText Text -- generic log message
     | CLValue JSON.Value -- other stuff
-    deriving stock (Generic, Eq)
+    deriving stock (Eq)
 
 instance Show CLMessage where
     show (CLText t) = unpack t
@@ -188,3 +160,11 @@ instance FromJSON CLMessage where
 instance ToJSON CLMessage where
     toJSON (CLText text) = toJSON text
     toJSON (CLValue value) = value
+
+data LogLine = LogLine
+    { context :: Seq CLContext
+    , message :: CLMessage
+    }
+    deriving stock (Show, Eq)
+
+$(deriveJSON defaultOptions ''LogLine)
