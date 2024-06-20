@@ -11,7 +11,6 @@ module Kore.JsonRpc.Types.ContextLog (
 import Data.Aeson.TH (deriveJSON)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), defaultOptions)
 import Data.Aeson.Types qualified as JSON
-import Data.Char (toLower)
 import Data.Data (Data, toConstr)
 import Data.Sequence (Seq)
 import Data.Text (Text, unpack)
