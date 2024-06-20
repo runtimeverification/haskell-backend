@@ -35,6 +35,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Network.JSONRPC qualified as JSONRPC
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -57,7 +58,7 @@ import Booster.Definition.Ceil (ComputeCeilSummary (..), computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
-import Booster.Log qualified
+import Booster.Log hiding (withLogger)
 import Booster.Log.Context qualified
 import Booster.Pattern.Base (Predicate (..))
 import Booster.Prettyprinter (renderOneLineText)
@@ -193,7 +194,7 @@ main = do
             filteredBoosterContextLogger =
                 flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                     alwaysDisplay
-                        || let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
+                        || let ctxt = map (Text.encodeUtf8 . Booster.Log.toTextualLog) ctxts
                             in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
@@ -209,7 +210,7 @@ main = do
                         (fromMaybe stderrLogger mFileLogger)
 
         runBoosterLogger $
-            Booster.Log.withContext "proxy" $
+            Booster.Log.withContext CtxProxy $
                 Booster.Log.logMessage' $
                     Text.pack $
                         "Loading definition from "
@@ -239,18 +240,18 @@ main = do
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
                     runBoosterLogger $
-                        Booster.Log.withContext "proxy" $
+                        Booster.Log.withContext CtxProxy $
                             Booster.Log.logMessage' $
                                 "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                     liftIO exitFailure
 
                 liftIO $
                     runBoosterLogger $
-                        Booster.Log.withContext "ceil" $
+                        Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $
                             forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
                                 forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
                                     Booster.Log.withRuleContext rule $ do
-                                        Booster.Log.withContext "partial-symbols"
+                                        Booster.Log.withContext CtxInfo -- FIXME "partial-symbols"
                                             $ Booster.Log.logMessage
                                             $ Booster.Log.WithJsonMessage
                                                 (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
@@ -261,7 +262,7 @@ main = do
                                                 (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
                                                 rule.computedAttributes.notPreservesDefinednessReasons
                                         unless (null ceils)
-                                            $ Booster.Log.withContext "computed-ceils"
+                                            $ Booster.Log.withContext CtxInfo -- FIXME"computed-ceils"
                                             $ Booster.Log.logMessage
                                             $ Booster.Log.WithJsonMessage
                                                 ( JSON.object
@@ -277,7 +278,7 @@ main = do
                                 forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
                                     unless (null s.computedAttributes.notPreservesDefinednessReasons)
                                         $ Booster.Log.withRuleContext s
-                                        $ Booster.Log.withContext "partial-symbols"
+                                        $ Booster.Log.withContext CtxInfo -- FIXME"partial-symbols"
                                         $ Booster.Log.logMessage
                                         $ Booster.Log.WithJsonMessage
                                             (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
@@ -308,14 +309,14 @@ main = do
                 writeGlobalEquationOptions equationOptions
 
                 runBoosterLogger $
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text)
 
-                let koreRespond, boosterRespond :: String -> Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
-                    koreRespond reqId = Kore.respond reqId kore.serverState (ModuleName kore.mainModule) runSMT
+                let koreRespond, boosterRespond :: JSONRPC.Id -> Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
+                    koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
                     boosterRespond reqId =
-                        Booster.Log.withContext (Booster.Log.LogContext $ "request " <> Text.pack reqId)
-                            . Booster.Log.withContext "booster"
+                        Booster.Log.withContextFor reqId
+                            . Booster.Log.withContext CtxBooster
                             . Booster.respond boosterState
 
                     proxyConfig =
@@ -332,7 +333,7 @@ main = do
                         jsonRpcServer
                             srvSettings
                             ( \rawReq req ->
-                                let reqId = fromId $ getReqId rawReq
+                                let reqId = getReqId rawReq
                                  in runBoosterLogger $
                                         logRequestId reqId
                                             >> Proxy.respondEither proxyConfig (boosterRespond reqId) (koreRespond reqId) req
@@ -343,7 +344,7 @@ main = do
                             , handleSomeException
                             ]
                     interruptHandler _ =
-                        runBoosterLogger . Booster.Log.withContext "proxy" $ do
+                        runBoosterLogger . Booster.Log.withContext CtxProxy $ do
                             Booster.Log.logMessage' @_ @Text "Server shutting down"
                             whenJust statsVar $ \var ->
                                 liftIO (Stats.finaliseStats var) >>= Booster.Log.logMessage'
@@ -359,10 +360,10 @@ main = do
     withMDLib (Just fp) f = withDLib fp $ \dl -> f (Just dl)
 
     logRequestId rid =
-        Booster.Log.withContext "proxy" $
+        Booster.Log.withContext CtxProxy $
             Booster.Log.logMessage' $
                 Text.pack $
-                    "Processing request " <> rid
+                    "Processing request " <> fromId rid
 
     isInterrupt :: AsyncException -> Maybe ()
     isInterrupt UserInterrupt = Just ()
@@ -391,6 +392,7 @@ logLevelToKoreLogEntryMap =
                 [ "DebugAttemptedRewriteRules"
                 , "DebugAppliedLabeledRewriteRule"
                 , "DebugAppliedRewriteRules"
+                , "DebugRewriteRulesRemainder"
                 , "DebugTerm"
                 ]
             )

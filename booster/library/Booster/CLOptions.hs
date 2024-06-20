@@ -259,7 +259,7 @@ levelToContext =
             ( "Rewrite"
             ,
                 [ [ctxt| booster|kore>rewrite*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>rewrite*,match|definedness|condition,failure|abort |]
+                , [ctxt| booster|kore>rewrite*,match|definedness|constraint,failure|abort |]
                 ]
             )
         ,
@@ -278,7 +278,7 @@ levelToContext =
             ( "Aborts"
             ,
                 [ [ctxt| booster>rewrite*,detail. |]
-                , [ctxt| booster>rewrite*,match|definedness|condition,abort. |]
+                , [ctxt| booster>rewrite*,match|definedness|constraint,abort. |]
                 , [ctxt| proxy. |]
                 , [ctxt| proxy,abort. |]
                 , [ctxt| booster>failure,abort |]
