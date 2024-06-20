@@ -9,9 +9,10 @@ module Kore.JsonRpc.Types.ContextLog (
 ) where
 
 import Data.Aeson.TH (deriveJSON)
-import Data.Aeson.Types (FromJSON (..), Options (..), ToJSON (..), defaultOptions)
+import Data.Aeson.Types (FromJSON (..), ToJSON (..), defaultOptions)
 import Data.Aeson.Types qualified as JSON
 import Data.Char (toLower)
+import Data.Data (Data, toConstr)
 import Data.Sequence (Seq)
 import Data.Text (Text, unpack)
 import Data.Text qualified as Text
@@ -51,7 +52,10 @@ data SimpleContext
       CtxError
     | CtxWarn
     | CtxInfo
-    deriving stock (Show, Eq, Ord, Enum)
+    deriving stock (Eq, Ord, Enum, Data)
+
+instance Show SimpleContext where
+    show = JSON.camelTo2 '-' . drop 3 . show . toConstr
 
 $( deriveJSON
     defaultOptions
@@ -127,7 +131,7 @@ data CLContext
     deriving stock (Eq)
 
 instance Show CLContext where
-    show (CLNullary c) = map toLower . drop 3 $ show c
+    show (CLNullary c) = show c
     show (CLWithId withId) = show withId
 
 instance ToJSON CLContext where
