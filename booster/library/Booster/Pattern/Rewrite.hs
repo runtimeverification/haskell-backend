@@ -331,7 +331,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                 "Known true side conditions (won't check):" <+> pretty knownTrue
 
     unclearRequires <-
-        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom) toCheck
+        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom (Set.fromList knownTrue)) toCheck
 
     -- check unclear requires-clauses in the context of known constraints (prior)
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
@@ -376,7 +376,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                 Set.toList rule.ensures
         trivialIfBottom = RewriteRuleAppT $ pure Trivial
     newConstraints <-
-        catMaybes <$> mapM (checkConstraint id trivialIfBottom) ruleEnsures
+        catMaybes <$> mapM (checkConstraint id trivialIfBottom (Set.fromList knownTrue)) ruleEnsures
 
     -- check all new constraints together with the known side constraints
     whenJust mbSolver $ \solver ->
@@ -422,17 +422,17 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
     checkConstraint ::
         (Predicate -> a) ->
         RewriteRuleAppT (RewriteT io) (Maybe a) ->
+        Set.Set Predicate ->
         Predicate ->
         RewriteRuleAppT (RewriteT io) (Maybe a)
-    checkConstraint onUnclear onBottom p = do
+    checkConstraint onUnclear onBottom knownPredicates p = do
         RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get
         (simplified, cache) <-
             withContext CtxConstraint $
-                simplifyConstraint definition llvmApi smtSolver oldCache p
+                simplifyConstraint definition llvmApi smtSolver oldCache knownPredicates p
         -- update cache
         lift . RewriteT . lift . modify $ const cache
-        -- TODO should we keep the traces? Or only on success?
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing

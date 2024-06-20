@@ -172,13 +172,13 @@ data EquationMetadata = EquationMetadata
     }
     deriving stock (Eq, Show)
 
-startState :: SimplifierCache -> EquationState
-startState cache =
+startState :: SimplifierCache -> Set Predicate -> EquationState
+startState cache known =
     EquationState
         { termStack = mempty
         , recursionStack = []
         , changed = False
-        , predicates = mempty
+        , predicates = known
         , cache
         }
 
@@ -272,13 +272,14 @@ runEquationT ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
+    Set Predicate ->
     EquationT io a ->
     io (Either EquationFailure a, SimplifierCache)
-runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
+runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
     (res, endState) <-
-        flip runStateT (startState sCache) $
+        flip runStateT (startState sCache known) $
             runExceptT $
                 runReaderT
                     m
@@ -379,10 +380,11 @@ evaluateTerm ::
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
+    Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm direction def llvmApi smtSolver =
-    runEquationT def llvmApi smtSolver mempty
+evaluateTerm direction def llvmApi smtSolver knownPredicates =
+    runEquationT def llvmApi smtSolver mempty knownPredicates
         . evaluateTerm' direction
 
 -- version for internal nested evaluation
@@ -404,16 +406,15 @@ evaluatePattern ::
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
-evaluatePattern def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache . evaluatePattern'
+evaluatePattern def mLlvmLibrary smtSolver cache pat =
+    runEquationT def mLlvmLibrary smtSolver cache pat.constraints . evaluatePattern' $ pat
 
 -- version for internal nested evaluation
 evaluatePattern' ::
     LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
-    pushConstraints constraints
+evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     newTerm <- withTermContext term $ evaluateTerm' BottomUp term
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
@@ -440,7 +441,7 @@ evaluateConstraints ::
     Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
 evaluateConstraints def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache . evaluateConstraints'
+    runEquationT def mLlvmLibrary smtSolver cache mempty . evaluateConstraints'
 
 evaluateConstraints' ::
     LoggerMIO io =>
@@ -916,10 +917,11 @@ simplifyConstraint ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
+    Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi mbSMT cache (Predicate p) = do
-    runEquationT def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi mbSMT cache knownPredicates (Predicate p) = do
+    runEquationT def mbApi mbSMT cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     LoggerMIO io =>
@@ -930,7 +932,7 @@ simplifyConstraints ::
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)
 simplifyConstraints def mbApi mbSMT cache ps =
-    runEquationT def mbApi mbSMT cache $
+    runEquationT def mbApi mbSMT cache mempty $
         concatMap splitAndBools
             <$> mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
