@@ -389,6 +389,7 @@ logLevelToKoreLogEntryMap =
                 [ "DebugAttemptedRewriteRules"
                 , "DebugAppliedLabeledRewriteRule"
                 , "DebugAppliedRewriteRules"
+                , "DebugRewriteRulesRemainder"
                 , "DebugTerm"
                 ]
             )
