@@ -62,7 +62,8 @@ $( deriveJSON
         { JSON.constructorTagModifier = JSON.camelTo2 '-' . drop 3
         , JSON.sumEncoding = JSON.ObjectWithSingleField
         }
- ''SimpleContext)
+    ''SimpleContext
+ )
 
 ----------------------------------------
 data IdContext
