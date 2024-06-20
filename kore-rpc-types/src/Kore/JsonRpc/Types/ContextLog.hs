@@ -53,8 +53,12 @@ data SimpleContext
     | CtxInfo
     deriving stock (Show, Eq, Ord, Enum)
 
--- JSON encoding: strings dropping the 3-letter prefix and lower-case-ing
-$(deriveJSON defaultOptions{constructorTagModifier = map toLower . drop 3} ''SimpleContext)
+$( deriveJSON
+    defaultOptions
+        { JSON.constructorTagModifier = JSON.camelTo2 '-' . drop 3
+        , JSON.sumEncoding = JSON.ObjectWithSingleField
+        }
+ ''SimpleContext)
 
 ----------------------------------------
 data IdContext
