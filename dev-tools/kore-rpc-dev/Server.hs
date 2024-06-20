@@ -97,7 +97,7 @@ respond kore req = case req of
     Execute _ ->
         loggedKore ExecuteM req >>= \case
             Right (Execute koreResult) -> do
-                withContext "proxy" $
+                withContext CtxKore $
                     logMessage $
                         Text.pack $
                             "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
@@ -126,7 +126,7 @@ respond kore req = case req of
                 pure koreError
 
     loggedKore method r = do
-        withContext "proxy" $
+        withContext CtxKore $
             logMessage' $
                 Text.pack $
                     show method <> " (using kore)"
@@ -217,7 +217,7 @@ main = do
             filteredBoosterContextLogger =
                 flip filterLogger boosterContextLogger $ \(LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                     alwaysDisplay
-                        || let ctxt = map (\(LogContext lc) -> Text.encodeUtf8 $ toTextualLog lc) ctxts
+                        || let ctxt = map (Text.encodeUtf8 . toTextualLog) ctxts
                             in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
@@ -230,7 +230,7 @@ main = do
                 kore@KoreServer{runSMT} <-
                     mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
                 runBoosterLogger $
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxKore $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
 
                 let koreRespond :: Respond (API 'Req) (LoggerT IO) (API 'Res)

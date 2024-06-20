@@ -143,7 +143,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLev
                 filteredBoosterContextLogger =
                     flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                         alwaysDisplay
-                            || let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
+                            || let ctxt = map (Text.encodeUtf8 . Booster.Log.toTextualLog) ctxts
                                 in any (flip Booster.Log.mustMatch ctxt) $
                                     logContexts
                                         <> concatMap (\case Log.LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
@@ -161,7 +161,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLev
                 ( const $
                     flip runReaderT filteredBoosterContextLogger
                         . Booster.Log.unLoggerT
-                        . Booster.Log.withContext "booster"
+                        . Booster.Log.withContext Booster.Log.CtxBooster
                         . respond stateVar
                 )
                 [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
