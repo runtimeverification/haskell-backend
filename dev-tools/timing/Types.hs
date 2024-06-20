@@ -24,6 +24,11 @@ instance FromJSON Context where
     parseJSON (Object o) | [(k, String v)] <- toList o = pure $ Ref (pack $ toString k) v
     parseJSON _ = fail "Invalid context"
 
+toId :: Context -> Text
+toId = \case
+    Plain t -> t
+    Ref k v -> k <> "-" <> v
+
 data LogMessage = LogMessage
     { context :: Seq Context
     , message :: Value
@@ -64,6 +69,21 @@ insertTime (c :<| cs) t t' (TimeMap m) =
                 )
                 m
 
+
+{- This function walks the parsed logs, collecting the timestamps and prodcing a timing map, 
+   which is a tree of contexts where each node holds the timing data for the subtree.AliasName
+   this function generates the initial tree where each node holds the start and finis time of
+   each log withing the context subtree.
+
+   There are several subtle things to note here:
+   *  We travese the logs with a lookahead, to figure out the interval between when the current and next message was emitted
+      We store this interval in the tree and after traversal, compute the timing by calling `computeTimes`.
+   *  This function produces a list of `TimeMap`s. THis is because we can have logs where certain contexts are repeated.
+      This happens when we fall back from booster to kore for simplification and then re-attempt execution. This can result in the exact same context
+      appearing twice during a single request. As a result, we check the current context and start a fresh timing map each time we encounter a proxy
+      context, as we know this message signals a fallback. 
+      Note that this may still not be enitrely correct as there could be a context withing kore/booster that repeats within a request.
+-}
 collectTiming ::
     ([TimeMap (Int, Int)], Map Text Text) ->
     LogMessage ->
@@ -90,10 +110,6 @@ collectTiming ((timeMap' : ts'), ruleMap) LogMessage{context, message, timestamp
                 [] -> ((newTimeMap : ts), newRuleMap)
                 (l : ls) -> collectTiming ((newTimeMap : ts), newRuleMap) l ls
 
-toId :: Context -> Text
-toId = \case
-    Plain t -> t
-    Ref k v -> k <> "-" <> v
 
 newtype ElapsedNanoseconds = ElapsedNanoseconds Int deriving newtype (Num, Show)
 
@@ -114,28 +130,6 @@ instance Monoid Count where
 computeTimes :: TimeMap (Int, Int) -> TimeMap ElapsedNanoseconds
 computeTimes = fmap $ \(minT, maxT) -> ElapsedNanoseconds $ maxT - minT
 
-toNode :: Map Text Text -> [Context] -> Context -> ElapsedNanoseconds -> Count -> [Context] -> Node
-toNode ruleMap ctxt currentCtxt (ElapsedNanoseconds t) (Count count) children =
-    Node
-        { nId = Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt]
-        , nName = toId currentCtxt
-        , nModule = ""
-        , nSrc = case currentCtxt of
-            Plain{} -> ""
-            Ref _ v -> fromMaybe "" (Map.lookup v ruleMap)
-        , nEntries = count
-        , nTime = (fromIntegral t) / 1000000000
-        , nAlloc = 0
-        , nChildren =
-            Vector.fromList
-                [Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt, c] | c <- children, filterNode c]
-        }
-
-filterNode :: Context -> Bool
-filterNode = \case
-    Plain "detail" -> False
-    Plain "proxy" -> False
-    _ -> True
 
 aggregateRewriteRulesPerRequest ::
     Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
@@ -243,11 +237,36 @@ aggregateRewriteRules f m =
                     requests
      in TimeMap $ Map.fromList [(Plain "main", (aggregate requests', requests'))]
 
+-- functions to convert a `TimeMap` into profiteur's `NodeMap`
+
+toNode :: Map Text Text -> [Context] -> Context -> ElapsedNanoseconds -> Count -> [Context] -> Node
+toNode ruleMap ctxt currentCtxt (ElapsedNanoseconds t) (Count count) children =
+    Node
+        { nId = Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt]
+        , nName = toId currentCtxt
+        , nModule = ""
+        , nSrc = case currentCtxt of
+            Plain{} -> ""
+            Ref _ v -> fromMaybe "" (Map.lookup v ruleMap)
+        , nEntries = count
+        , nTime = (fromIntegral t) / 1000000000
+        , nAlloc = 0
+        , nChildren =
+            Vector.fromList
+                [Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt, c] | c <- children, filterNode c]
+        }
+
+filterNode :: Context -> Bool
+filterNode = \case
+    Plain "detail" -> False
+    Plain "proxy" -> False
+    _ -> True
+
 toNodes :: Int -> Map Text Text -> [Context] -> TimeMap (ElapsedNanoseconds, Count) -> [Node]
-toNodes levels ruleMap ctxt (TimeMap m) =
+toNodes cutoff ruleMap ctxt (TimeMap m) =
     concat
         [ (toNode ruleMap ctxt k t c (Map.keys cs))
-            : if levels > 0 then toNodes (levels - 1) ruleMap (ctxt <> [k]) (TimeMap cs) else []
+            : if cutoff > 0 then toNodes (cutoff - 1) ruleMap (ctxt <> [k]) (TimeMap cs) else []
         | (k, ((t, c), TimeMap cs)) <- Map.toList m
         , filterNode k
         ]
