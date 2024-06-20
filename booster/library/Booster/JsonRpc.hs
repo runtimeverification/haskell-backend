@@ -103,14 +103,14 @@ respond stateVar =
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-        RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "execute" $ do
+        RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxExecute $ do
             start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do
-                    void $ Booster.Log.withContext "internalise" $ logPatternError patternError
+                    void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -152,7 +152,7 @@ respond stateVar =
                                         fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
                                 else Nothing
                     pure $ execResponse duration req result substitution unsupported
-        RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext "add-module" $ runExceptT $ do
+        RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
             -- block other request executions while modifying the server state
             state <- liftIO $ takeMVar stateVar
             let nameAsId = fromMaybe False nameAsId'
@@ -213,7 +213,7 @@ respond stateVar =
                 Booster.Log.logMessage $
                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                 pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
-        RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "simplify" $ do
+        RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxSimplify $ do
             start <- liftIO $ getTime Monotonic
             let internalised =
                     runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -228,7 +228,7 @@ respond stateVar =
             result <- case internalised of
                 Left patternErrors -> do
                     forM_ patternErrors $ \patternError ->
-                        void $ Booster.Log.withContext "internalise" $ logPatternError patternError
+                        void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -273,7 +273,7 @@ respond stateVar =
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
                         -- apply the given substitution before doing anything else
                         let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
-                        withContext "constraint" $
+                        withContext CtxConstraint $
                             ApplyEquations.simplifyConstraints
                                 def
                                 mLlvmLibrary
@@ -305,7 +305,7 @@ respond stateVar =
             pure $ second mkSimplifyResponse result
         RpcTypes.GetModel req -> withModule req._module $ \case
             (_, _, Nothing) -> do
-                withContext "get-model" $
+                withContext CtxGetModel $
                     logMessage' ("get-model request, not supported without SMT solver" :: Text)
                 pure $ Left RpcError.notImplemented
             (def, _, Just smtOptions) -> do
@@ -315,7 +315,7 @@ respond stateVar =
                 case internalised of
                     Left patternErrors -> do
                         forM_ patternErrors $ \patternError ->
-                            void $ Booster.Log.withContext "internalise" $ logPatternError patternError
+                            void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
                         pure $
                             Left $
                                 RpcError.backendError $
@@ -327,20 +327,20 @@ respond stateVar =
                         (boolPs, suppliedSubst) <-
                             case things of
                                 TermAndPredicates pat substitution unsupported -> do
-                                    withContext "get-model" $
+                                    withContext CtxGetModel $
                                         logMessage' ("ignoring supplied terms and only checking predicates" :: Text)
 
                                     unless (null unsupported) $ do
-                                        withContext "get-model" $ do
+                                        withContext CtxGetModel $ do
                                             logMessage' ("ignoring unsupported predicates" :: Text)
-                                            withContext "detail" $
+                                            withContext CtxDetail $
                                                 logMessage (Text.unwords $ map prettyPattern unsupported)
                                     pure (Set.toList pat.constraints, substitution)
                                 Predicates ps -> do
                                     unless (null ps.ceilPredicates && null ps.unsupported) $ do
-                                        withContext "get-model" $ do
+                                        withContext CtxGetModel $ do
                                             logMessage' ("ignoring supplied ceils and unsupported predicates" :: Text)
-                                            withContext "detail" $
+                                            withContext CtxDetail $
                                                 logMessage
                                                     ( Text.unlines $
                                                         map
@@ -354,8 +354,8 @@ respond stateVar =
                             if null boolPs && Map.null suppliedSubst
                                 then do
                                     -- as per spec, no predicate, no answer
-                                    withContext "get-model" $
-                                        withContext "smt" $
+                                    withContext CtxGetModel $
+                                        withContext CtxSMT $
                                             logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
                                     pure $ Left SMT.Unknown
                                 else do
@@ -365,8 +365,8 @@ respond stateVar =
                                     case result of
                                         Left err -> liftIO $ Exception.throw err -- fail hard on SMT errors
                                         Right response -> pure response
-                        withContext "get-model" $
-                            withContext "smt" $
+                        withContext CtxGetModel $
+                            withContext CtxSMT $
                                 logMessage $
                                     "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
                         pure . Right . RpcTypes.GetModel $ case smtResult of
@@ -413,14 +413,14 @@ respond stateVar =
                                         { satisfiable = RpcTypes.Sat
                                         , substitution
                                         }
-        RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext "implies" $ do
+        RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxImplies $ do
             -- internalise given constrained term
             let internalised =
                     runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
 
             case (internalised req.antecedent.term, internalised req.consequent.term) of
                 (Left patternError, _) -> do
-                    void $ Booster.Log.withContext "internalise" $ logPatternError patternError
+                    void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -428,7 +428,7 @@ respond stateVar =
                                     [ patternErrorToRpcError patternError
                                     ]
                 (_, Left patternError) -> do
-                    void $ Booster.Log.withContext "internalise" $ logPatternError patternError
+                    void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -440,11 +440,11 @@ respond stateVar =
                         logMessage'
                             ("aborting due to unsupported predicate parts" :: Text)
                         unless (null unsupportedL) $
-                            withContext "detail" $
+                            withContext CtxDetail $
                                 logMessage
                                     (Text.unwords $ map prettyPattern unsupportedL)
                         unless (null unsupportedR) $
-                            withContext "detail" $
+                            withContext CtxDetail $
                                 logMessage
                                     (Text.unwords $ map prettyPattern unsupportedR)
                     let

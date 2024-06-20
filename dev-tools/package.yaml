@@ -99,6 +99,7 @@ executables:
       - containers
       - directory
       - filepath
+      - kore-rpc-types
       - text
     ghc-options:
       - -rtsopts
