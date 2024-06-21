@@ -13,3 +13,5 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	stack install --local-bin-path $(DESTDIR)$(PREFIX)
+
+override_dh_auto_test:
