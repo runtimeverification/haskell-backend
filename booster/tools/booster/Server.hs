@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -246,7 +245,8 @@ main = do
 
                 liftIO $
                     runBoosterLogger $
-                        Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $
+                        Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $ -- FIXME "ceil" $ -- FIXME "ceil" $ -- FIXME "ceil" $ -- FIXME "ceil" $ -- FIXME "ceil" $
+                             -- FIXME "ceil" $
                             forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
                                 forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
                                     Booster.Log.withRuleContext rule $ do
