@@ -191,7 +191,7 @@ jobs:
     steps:
       - name: Install prerequisites
         run: |
-          sudo apt install --yes z3 libsecp256k1-dev
+          sudo apt install --yes debhelper z3 libsecp256k1-dev
 
       - uses: actions/checkout@v4
         with:
