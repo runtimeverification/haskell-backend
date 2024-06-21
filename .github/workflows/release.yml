@@ -55,11 +55,65 @@ jobs:
       - name: Build
         run: nix build .#kore-exec .#kore-rpc-booster
 
+  ubuntu-package:
+    name: 'Build Ubuntu package'
+    needs: draft-release
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Stack root
+        uses: actions/cache@v4
+        with:
+          path: ~/.stack
+          key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
+
+      - uses: haskell-actions/setup@v2.7
+        id: setup-haskell-stack
+        with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
+          enable-stack: true
+          stack-setup-ghc: true
+
+      - name: Build Ubuntu package
+        run: ./package/debian/build-package jammy k-haskell-backend.deb
+
+      - name: 'Upload to release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          VERSION=v$(cat package/version)
+          cp k-haskell-backend.deb k-haskell-backend_${VERSION}_amd64_ubuntu_jammy.deb
+          gh release upload ${VERSION}                  \
+            --repo runtimeverification/haskell-backend  \
+            --clobber                                   \
+            k-haskell-backend_${VERSION}_amd64_ubuntu_jammy.deb
+
+      - name: 'On failure, delete drafted release'
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          VERSION=v$(cat package/version)
+          gh release delete ${VERSION}                  \
+            --repo runtimeverification/haskell-backend  \
+            --yes                                       \
+            --cleanup-tag
+
   update-dependents:
     name: 'Publish Release'
     runs-on: ubuntu-latest
     environment: production
-    needs: [draft-release, release]
+    needs: [draft-release, ubuntu-package, release]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ needs.draft-release.outputs.version }}
