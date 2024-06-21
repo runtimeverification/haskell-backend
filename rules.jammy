@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+DESTDIR=$(shell pwd)/debian/k-haskell-backend
+PREFIX=/usr
+export DESTDIR
+export PREFIX
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	stack build
+
+override_dh_auto_install:
+	stack install --local-bin-path $(DESTDIR)$(PREFIX)

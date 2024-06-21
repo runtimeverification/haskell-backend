@@ -1,0 +1,16 @@
+Source: k-haskell-backend
+Section: devel
+Priority: optional
+Maintainer: Bruce Collie <bruce.collie@runtimeverification.com>
+Build-Depends: libsecp256k1-dev
+Standards-Version: 3.9.6
+Homepage: https://github.com/runtimeverification/haskell-backend
+
+Package: k-haskell-backend
+Architecture: any
+Section: devel
+Priority: optional
+Depends: z3
+Description: K Framework Haskell Backend
+ The symbolic execution engine powering the K Framework
+Homepage: https://github.com/runtimeverification/haskell-backend
