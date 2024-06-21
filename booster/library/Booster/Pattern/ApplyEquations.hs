@@ -532,6 +532,7 @@ cached cacheTag cb t@(Term attributes _)
                 when (t /= cachedTerm) $ do
                     setChanged
                     withContext CtxSuccess $
+                        -- FIXME CtxCached needs to be parametrised by CacheTag so that we can distinguish the LLVM cache form the normal cache
                         withContext CtxCached $
                             withTermContext cachedTerm $
                                 pure ()
