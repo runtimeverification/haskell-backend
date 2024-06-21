@@ -47,6 +47,7 @@ data SimpleContext
     | CtxDetail
     | CtxSubstitution
     | CtxDepth
+    | CtxTiming
     | -- standard log levels
       CtxError
     | CtxWarn
