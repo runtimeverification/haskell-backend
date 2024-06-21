@@ -230,6 +230,9 @@ jobs:
       - name: Run unit tests
         run: stack test kore:kore-test hs-backend-booster:unit-tests
 
+      - name: Build Ubuntu package
+        run: ./package/debian/build-package jammy haskell-backend.deb
+
   hlint:
     name: 'HLint'
     needs: formatting
