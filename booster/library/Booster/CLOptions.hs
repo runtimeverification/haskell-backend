@@ -244,14 +244,14 @@ levelToContext =
         [
             ( "Simplify"
             ,
-                [ [ctxt| booster|kore>function*|simplification*,success|failure|abort|detail |]
+                [ [ctxt| booster|kore>function*|simplification*|hook*,success|failure|abort|detail |]
                 , [ctxt| booster|kore>function*|simplification*,match,failure|abort |]
                 ]
             )
         ,
             ( "SimplifySuccess"
             ,
-                [ [ctxt| booster|kore>function*|simplification*,success|detail |]
+                [ [ctxt| booster|kore>function*|simplification*|hook*,success|detail |]
                 ]
             )
         ,

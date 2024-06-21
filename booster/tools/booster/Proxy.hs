@@ -49,7 +49,7 @@ import Kore.Log qualified
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 import SMT qualified
-import Stats (StatsVar, addStats, microsWithUnit, timed)
+import Stats (MethodTiming (..), StatsVar, addStats, microsWithUnit, timed)
 
 data KoreServer = KoreServer
     { serverState :: MVar.MVar Kore.ServerState
@@ -64,7 +64,7 @@ data KoreServer = KoreServer
     }
 
 data ProxyConfig = ProxyConfig
-    { statsVar :: Maybe StatsVar
+    { statsVar :: StatsVar
     , forceFallback :: Maybe Depth
     , boosterState :: MVar.MVar Booster.ServerState
     , fallbackReasons :: [HaltReason]
@@ -83,7 +83,7 @@ respondEither ::
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case req of
+respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
@@ -252,21 +252,10 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         logStats method (time, time)
         pure result
 
-    logStats method (time, koreTime)
-        | Just v <- statsVar = do
-            addStats v method time koreTime
-            Booster.Log.withContext CtxProxy $
-                Booster.Log.logMessage' $
-                    Text.pack $
-                        unwords
-                            [ "Performed"
-                            , show method
-                            , "in"
-                            , microsWithUnit time
-                            , "(" <> microsWithUnit koreTime <> " kore time)"
-                            ]
-        | otherwise =
-            pure ()
+    logStats method (time, koreTime) = do
+        let timing = MethodTiming{method, time, koreTime}
+        addStats cfg.statsVar timing
+        Booster.Log.withContexts [CtxProxy, CtxTiming] $ Booster.Log.logMessage timing
 
     handleExecute ::
         LogSettings ->
@@ -397,11 +386,17 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                                 , assumeStateDefined = Just True
                                                 }
                                         )
-                            when (isJust statsVar) $ do
-                                Booster.Log.withContext CtxProxy $
-                                    Booster.Log.logMessage $
-                                        Text.pack $
-                                            "Kore fall-back in " <> microsWithUnit kTime
+                            Booster.Log.withContexts [CtxProxy, CtxTiming, CtxKore] $
+                                Booster.Log.logMessage $
+                                    WithJsonMessage
+                                        ( toJSON
+                                            MethodTiming
+                                                { method = ExecuteM
+                                                , time = kTime
+                                                , koreTime = kTime
+                                                }
+                                        )
+                                        ("Kore fall-back in " <> microsWithUnit kTime)
                             case kResult of
                                 Right (Execute koreResult) -> do
                                     let
