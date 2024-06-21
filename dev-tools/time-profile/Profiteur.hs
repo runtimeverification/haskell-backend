@@ -1,10 +1,8 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-module Types (module Types) where
+module Profiteur (module Profiteur) where
 
 import Data.Aeson (FromJSON (..), Value (..))
-import Data.Aeson.Key (toString)
-import Data.Aeson.KeyMap (toList)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -17,20 +15,13 @@ import Data.Vector qualified as Vector
 import GHC.Generics (Generic)
 import Profiteur.Core
 
-data Context = Plain Text | Ref Text Text deriving (Eq, Ord, Show)
+import Kore.JsonRpc.Types.ContextLog
 
-instance FromJSON Context where
-    parseJSON (String t) = pure $ Plain t
-    parseJSON (Object o) | [(k, String v)] <- toList o = pure $ Ref (pack $ toString k) v
-    parseJSON _ = fail "Invalid context"
-
-toId :: Context -> Text
-toId = \case
-    Plain t -> t
-    Ref k v -> k <> "-" <> v
+toId :: CLContext -> Text
+toId = Text.replace " " "-" . pack . show
 
 data LogMessage = LogMessage
-    { context :: Seq Context
+    { context :: Seq CLContext
     , message :: Value
     , timestamp :: String
     }
@@ -38,20 +29,20 @@ data LogMessage = LogMessage
 
 type AbortKey = (Text, Text)
 
-newtype TimeMap timing = TimeMap (Map Context (timing, TimeMap timing))
+newtype TimeMap timing = TimeMap (Map CLContext (timing, TimeMap timing))
     deriving newtype (Show, Monoid)
     deriving (Functor)
 
 instance Monoid timing => Semigroup (TimeMap timing) where
     (TimeMap m1) <> (TimeMap m2) = TimeMap $ Map.unionWith (<>) m1 m2
 
-(!) :: Monoid timing => TimeMap timing -> Context -> (timing, TimeMap timing)
+(!) :: Monoid timing => TimeMap timing -> CLContext -> (timing, TimeMap timing)
 (TimeMap m) ! c = fromMaybe mempty $ Map.lookup c m
 
 aggregate :: Monoid a => TimeMap a -> a
 aggregate (TimeMap m) = foldr (\(t, _) t' -> t <> t') mempty m
 
-insertTime :: Seq Context -> Int -> Int -> TimeMap (Int, Int) -> TimeMap (Int, Int)
+insertTime :: Seq CLContext -> Int -> Int -> TimeMap (Int, Int) -> TimeMap (Int, Int)
 insertTime Empty _ _ m = m
 insertTime (c :<| cs) t t' (TimeMap m) =
     TimeMap $
@@ -84,27 +75,27 @@ insertTime (c :<| cs) t t' (TimeMap m) =
       Note that this may still not be enitrely correct as there could be a context withing kore/booster that repeats within a request.
 -}
 collectTiming ::
-    ([TimeMap (Int, Int)], Map Text Text) ->
+    ([TimeMap (Int, Int)], Map UniqueId Text) ->
     LogMessage ->
     [LogMessage] ->
-    ([TimeMap (Int, Int)], Map Text Text)
+    ([TimeMap (Int, Int)], Map UniqueId Text)
 collectTiming ([], ruleMap) l ls = collectTiming ([TimeMap mempty], ruleMap) l ls
 collectTiming ((timeMap' : ts'), ruleMap) LogMessage{context, message, timestamp} nextLogs
     | t <- read timestamp =
         let newRuleMap =
                 case context of
-                    (_ :|> Ref "rewrite" ruleId :|> Plain "detail") | String ruleLoc <- message -> Map.insert ruleId ruleLoc ruleMap
-                    (_ :|> Ref "function" ruleId :|> Plain "detail") | String ruleLoc <- message -> Map.insert ruleId ruleLoc ruleMap
-                    (_ :|> Ref "simplification" ruleId :|> Plain "detail") | String ruleLoc <- message -> Map.insert ruleId ruleLoc ruleMap
+                    (_ :|> CLWithId (CtxRewrite ruleId) :|> CLNullary CtxDetail) | String ruleLoc <- message -> Map.insert ruleId ruleLoc ruleMap
+                    (_ :|> CLWithId (CtxFunction ruleId) :|> CLNullary CtxDetail) | String ruleLoc <- message -> Map.insert ruleId ruleLoc ruleMap
+                    (_ :|> CLWithId (CtxSimplification ruleId) :|> CLNullary CtxDetail) | String ruleLoc <- message -> Map.insert ruleId ruleLoc ruleMap
                     _ -> ruleMap
             (timeMap, ts) = case context of
-                (Plain "proxy" :<| _) -> (TimeMap mempty, (timeMap' : ts'))
+                (CLNullary CtxProxy :<| _) -> (TimeMap mempty, (timeMap' : ts'))
                 _ -> (timeMap', ts')
             newTimeMap = case nextLogs of
-                [] -> insertTime (Plain "main" :<| context) t t timeMap
+                [] -> insertTime context t t timeMap
                 LogMessage{timestamp = nextTimestamp} : _
                     | t' <- read nextTimestamp ->
-                        insertTime (Plain "main" :<| context) t t' timeMap
+                        insertTime context t t' timeMap
          in case nextLogs of
                 [] -> ((newTimeMap : ts), newRuleMap)
                 (l : ls) -> collectTiming ((newTimeMap : ts), newRuleMap) l ls
@@ -129,21 +120,21 @@ computeTimes :: TimeMap (Int, Int) -> TimeMap ElapsedNanoseconds
 computeTimes = fmap $ \(minT, maxT) -> ElapsedNanoseconds $ maxT - minT
 
 aggregateRewriteRulesPerRequest ::
-    Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
-    Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+    Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+    Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
     TimeMap (ElapsedNanoseconds, Count)
 aggregateRewriteRulesPerRequest kore booster = TimeMap combinedMap
   where
     rewriteMap ::
-        Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
-        Map Text (ElapsedNanoseconds, Count)
+        Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+        Map UniqueId (ElapsedNanoseconds, Count)
     rewriteMap =
         Map.foldrWithKey
             ( \k (_, TimeMap m') acc -> case k of
-                Ref "term" _tId ->
+                CLWithId CtxTerm{} ->
                     Map.foldrWithKey
                         ( \k' ((t, c), _) acc' -> case k' of
-                            Ref "rewrite" rId -> case Map.lookup rId acc' of
+                            CLWithId (CtxRewrite rId) -> case Map.lookup rId acc' of
                                 Nothing -> Map.insert rId (t, 1) acc'
                                 Just (totalT, count) -> Map.insert rId (totalT <> t, count + c) acc'
                             _ -> acc'
@@ -159,16 +150,16 @@ aggregateRewriteRulesPerRequest kore booster = TimeMap combinedMap
 
     mkTimeMap c k m = case Map.lookup k m of
         Nothing -> Nothing
-        Just tc -> Just (Plain c, (tc, mempty))
+        Just tc -> Just (CLNullary c, (tc, mempty))
 
     combinedMapKeys = Set.toList $ Set.fromList $ Map.keys rewriteMapKore' <> Map.keys rewriteMapBooster'
     combinedMap =
         Map.fromList
-            [ ( Ref "rewrite" k
+            [ ( CLWithId $ CtxRewrite k
               , ( let combinedM =
                         TimeMap $
                             Map.fromList $
-                                catMaybes [mkTimeMap "kore" k rewriteMapKore', mkTimeMap "booster" k rewriteMapBooster']
+                                catMaybes [mkTimeMap CtxKore k rewriteMapKore', mkTimeMap CtxBooster k rewriteMapBooster']
                    in (aggregate combinedM, combinedM)
                 )
               )
@@ -176,21 +167,21 @@ aggregateRewriteRulesPerRequest kore booster = TimeMap combinedMap
             ]
 
 aggregateRewriteRulesPerRequest2 ::
-    Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
-    Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+    Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+    Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
     TimeMap (ElapsedNanoseconds, Count)
 aggregateRewriteRulesPerRequest2 kore booster = TimeMap combinedMap2
   where
     rewriteMap ::
-        Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
-        Map Text (ElapsedNanoseconds, Count)
+        Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+        Map UniqueId (ElapsedNanoseconds, Count)
     rewriteMap =
         Map.foldrWithKey
             ( \k (_, TimeMap m') acc -> case k of
-                Ref "term" _tId ->
+                CLWithId CtxTerm{} ->
                     Map.foldrWithKey
                         ( \k' ((t, c), _) acc' -> case k' of
-                            Ref "rewrite" rId -> case Map.lookup rId acc' of
+                            CLWithId (CtxRewrite rId) -> case Map.lookup rId acc' of
                                 Nothing -> Map.insert rId (t, 1) acc'
                                 Just (totalT, count) -> Map.insert rId (totalT <> t, count + c) acc'
                             _ -> acc'
@@ -204,47 +195,44 @@ aggregateRewriteRulesPerRequest2 kore booster = TimeMap combinedMap2
     rewriteMapKore' = rewriteMap kore
     rewriteMapBooster' = rewriteMap booster
 
-    rewriteMapKore = TimeMap $ Map.mapKeys (Ref "rewrite") $ fmap (,mempty) rewriteMapKore'
-    rewriteMapBooster = TimeMap $ Map.mapKeys (Ref "rewrite") $ fmap (,mempty) rewriteMapBooster'
+    rewriteMapKore = TimeMap $ Map.mapKeys (CLWithId . CtxRewrite) $ fmap (,mempty) rewriteMapKore'
+    rewriteMapBooster = TimeMap $ Map.mapKeys (CLWithId . CtxRewrite) $ fmap (,mempty) rewriteMapBooster'
 
     combinedMap2 =
         Map.fromList
-            [ (Plain "kore", (aggregate rewriteMapKore, rewriteMapKore))
-            , (Plain "booster", (aggregate rewriteMapBooster, rewriteMapBooster))
+            [ (CLNullary CtxKore, (aggregate rewriteMapKore, rewriteMapKore))
+            , (CLNullary CtxBooster, (aggregate rewriteMapBooster, rewriteMapBooster))
             ]
 
 aggregateRewriteRules ::
-    ( Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
-      Map Context ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+    ( Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
+      Map CLContext ((ElapsedNanoseconds, Count), TimeMap (ElapsedNanoseconds, Count)) ->
       TimeMap (ElapsedNanoseconds, Count)
     ) ->
     TimeMap (ElapsedNanoseconds, Count) ->
     TimeMap (ElapsedNanoseconds, Count)
-aggregateRewriteRules f m =
-    let TimeMap requests = snd (m ! Plain "main")
-        requests' =
-            TimeMap $
-                Map.map
-                    ( \(_t, reqTimeMap) ->
-                        let TimeMap kore = snd $ (snd (reqTimeMap ! Plain "kore")) ! Plain "execute"
-                            TimeMap booster = snd $ (snd (reqTimeMap ! Plain "booster")) ! Plain "execute"
-                            res = f kore booster
-                         in (aggregate res, res)
-                    )
-                    requests
-     in TimeMap $ Map.fromList [(Plain "main", (aggregate requests', requests'))]
+aggregateRewriteRules f (TimeMap requests) =
+    TimeMap $
+        Map.map
+            ( \(_t, reqTimeMap) ->
+                let TimeMap kore = snd $ (snd (reqTimeMap ! CLNullary CtxKore)) ! CLNullary CtxExecute
+                    TimeMap booster = snd $ (snd (reqTimeMap ! CLNullary CtxBooster)) ! CLNullary CtxExecute
+                    res = f kore booster
+                    in (aggregate res, res)
+            )
+            requests
 
 -- functions to convert a `TimeMap` into profiteur's `NodeMap`
 
-toNode :: Map Text Text -> [Context] -> Context -> ElapsedNanoseconds -> Count -> [Context] -> Node
+toNode :: Map UniqueId Text -> [CLContext] -> CLContext -> ElapsedNanoseconds -> Count -> [CLContext] -> Node
 toNode ruleMap ctxt currentCtxt (ElapsedNanoseconds t) (Count count) children =
     Node
         { nId = Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt]
         , nName = toId currentCtxt
         , nModule = ""
         , nSrc = case currentCtxt of
-            Plain{} -> ""
-            Ref _ v -> fromMaybe "" (Map.lookup v ruleMap)
+            CLNullary{} -> ""
+            CLWithId c -> fromMaybe "" $ getUniqueId c >>= flip Map.lookup ruleMap
         , nEntries = count
         , nTime = (fromIntegral t) / 1000000000
         , nAlloc = 0
@@ -253,13 +241,13 @@ toNode ruleMap ctxt currentCtxt (ElapsedNanoseconds t) (Count count) children =
                 [Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt, c] | c <- children, filterNode c]
         }
 
-filterNode :: Context -> Bool
+filterNode :: CLContext -> Bool
 filterNode = \case
-    Plain "detail" -> False
-    Plain "proxy" -> False
+    CLNullary CtxDetail -> False
+    CLNullary CtxProxy -> False
     _ -> True
 
-toNodes :: Int -> Map Text Text -> [Context] -> TimeMap (ElapsedNanoseconds, Count) -> [Node]
+toNodes :: Int -> Map UniqueId Text -> [CLContext] -> TimeMap (ElapsedNanoseconds, Count) -> [Node]
 toNodes cutoff ruleMap ctxt (TimeMap m) =
     concat
         [ (toNode ruleMap ctxt k t c (Map.keys cs))
@@ -268,5 +256,19 @@ toNodes cutoff ruleMap ctxt (TimeMap m) =
         , filterNode k
         ]
 
-toNodeMap :: TimeMap (ElapsedNanoseconds, Count) -> Map Text Text -> NodeMap
-toNodeMap tm ruleMap = NodeMap (HashMap.fromList [(nId, n) | n@Node{nId} <- toNodes 10 ruleMap [] tm]) "main"
+toNodeMap :: TimeMap (ElapsedNanoseconds, Count) -> Map UniqueId Text -> NodeMap
+toNodeMap tm@(TimeMap m) ruleMap = NodeMap (HashMap.fromList $ ("rpc-server", mainNode) :[(nId, n) | n@Node{nId} <- toNodes 10 ruleMap [] tm]) "rpc-server"
+    where
+        (ElapsedNanoseconds time, Count count) = aggregate tm
+        mainNode = 
+             Node
+                { nId = "rpc-server"
+                , nName = "rpc-server"
+                , nModule = ""
+                , nSrc = ""
+                , nEntries = count
+                , nTime = (fromIntegral time) / 1000000000
+                , nAlloc = 0
+                , nChildren =
+                    Vector.fromList [toId c | c <- Map.keys m, filterNode c]
+                }

@@ -103,8 +103,8 @@ executables:
       - text
     ghc-options:
       - -rtsopts
-  timing:
-    source-dirs: timing
+  time-profile:
+    source-dirs: time-profile
     main: Main.hs
     dependencies:
       - aeson
@@ -113,6 +113,7 @@ executables:
       - containers
       - directory
       - filepath
+      - kore-rpc-types
       - profiteur
       - text
       - unordered-containers

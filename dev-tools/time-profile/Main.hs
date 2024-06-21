@@ -13,7 +13,7 @@ import Data.Maybe (mapMaybe)
 import Profiteur.Main (writeReport)
 import System.Environment (getArgs)
 import System.IO qualified as IO
-import Types
+import Profiteur
 
 {- | Utility for parsing and extracting timing information from context logs,
    produced by running the booster binary with `-l Timing --log-format json --log-timestamps --timestamp-format nanosecond`.
@@ -26,10 +26,10 @@ main =
         files
             | "-h" `elem` files || "--help" `elem` files -> do
                 putStrLn
-                    "This tool parses the JSON contextual logs, collects the number of aborts for each rewrite rule and displays the informantion in a table."
-                putStrLn "Call via `count-aborts <path_1> ... <path_n>`"
+                    "This tool parses the JSON contextual logs with timestamps and generates a time profile."
+                putStrLn "Call via `time-profile <path>.log`"
                 putStrLn
-                    "To produce the correct context logs, run kore-rpc-booster with `-l Aborts --log-format json --log-file <file>`"
+                    "To produce the correct context logs, run kore-rpc-booster with `-l Timing --log-format json --log-timestamps --timestamp-format nanosecond`"
         [profFile] -> do
             logs <- mapMaybe decode . BS.lines <$> BS.readFile profFile
 
