@@ -331,7 +331,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                 "Known true side conditions (won't check):" <+> pretty knownTrue
 
     unclearRequires <-
-        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom (Set.fromList knownTrue)) toCheck
+        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom prior) toCheck
 
     -- check unclear requires-clauses in the context of known constraints (prior)
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
@@ -376,7 +376,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                 Set.toList rule.ensures
         trivialIfBottom = RewriteRuleAppT $ pure Trivial
     newConstraints <-
-        catMaybes <$> mapM (checkConstraint id trivialIfBottom (Set.fromList knownTrue)) ruleEnsures
+        catMaybes <$> mapM (checkConstraint id trivialIfBottom prior) ruleEnsures
 
     -- check all new constraints together with the known side constraints
     whenJust mbSolver $ \solver ->
