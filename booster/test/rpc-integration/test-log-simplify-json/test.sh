@@ -8,7 +8,7 @@ echo "client=$client"
 echo "dir=$dir"
 echo "arguments=$*"
 
-diff="git diff --no-index"
+diff="git --no-pager diff --no-index"
 # remove "--regenerate" and tweak $diff if it is present
 
 regenerate () {

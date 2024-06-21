@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -13,7 +14,6 @@ import Control.DeepSeq (force)
 import Control.Exception (AsyncException (UserInterrupt), evaluate, handleJust)
 import Control.Monad (forM_, unless, void)
 import Control.Monad.Catch (bracket)
-import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
     LogLevel (..),
@@ -59,7 +59,7 @@ import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Log hiding (withLogger)
-import Booster.Log.Context qualified
+import Booster.Log.Context qualified as Ctxt
 import Booster.Pattern.Base (Predicate (..))
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
@@ -150,6 +150,7 @@ main = do
         logContextsWithcustomLevelContexts =
             logContexts
                 <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
+                <> [[Ctxt.ctxt| *>timing |] | printStats]
         contextLoggingEnabled = not (null logContextsWithcustomLevelContexts)
         koreSolverOptions = translateSMTOpts smtOptions
         timestampFlag = case timeStampsFormat of
@@ -178,7 +179,7 @@ main = do
                                     ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
                                     )
                                     ctxt
-                          in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
+                          in any (flip Ctxt.mustMatch contextStrs) logContextsWithcustomLevelContexts
                        )
 
             koreLogEntries =
@@ -195,7 +196,7 @@ main = do
                 flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                     alwaysDisplay
                         || let ctxt = map (Text.encodeUtf8 . Booster.Log.toTextualLog) ctxts
-                            in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
+                            in any (flip Ctxt.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
             runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
@@ -304,7 +305,7 @@ main = do
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
                                 , addedModules = mempty
                                 }
-                statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
+                statsVar <- Stats.newStats
 
                 writeGlobalEquationOptions equationOptions
 
@@ -346,8 +347,9 @@ main = do
                     interruptHandler _ =
                         runBoosterLogger . Booster.Log.withContext CtxProxy $ do
                             Booster.Log.logMessage' @_ @Text "Server shutting down"
-                            whenJust statsVar $ \var ->
-                                liftIO (Stats.finaliseStats var) >>= Booster.Log.logMessage'
+                            ( liftIO (Stats.finaliseStats statsVar)
+                                    >>= Booster.Log.withContext CtxTiming . Booster.Log.logMessage
+                                )
                             liftIO exitSuccess
                 handleJust isInterrupt interruptHandler $ runBoosterLogger server
   where

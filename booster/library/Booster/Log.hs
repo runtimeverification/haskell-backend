@@ -19,6 +19,7 @@ module Booster.Log (
     jsonLogger,
     textLogger,
     withContext,
+    withContexts,
     withKorePatternContext,
     withPatternContext,
     withRuleContext,
@@ -84,6 +85,10 @@ instance ToLogFormat Text where
     toTextualLog t = t
     toJSONLog t = String t
 
+instance ToLogFormat String where
+    toTextualLog = pack
+    toJSONLog = String . pack
+
 instance ToLogFormat Term where
     toTextualLog t = renderOneLineText $ pretty t
     toJSONLog t = toJSON $ addHeader $ externaliseTerm t
@@ -141,6 +146,10 @@ logPretty = logMessage . renderOneLineText . pretty
 
 withContext :: LoggerMIO m => SimpleContext -> m a -> m a
 withContext c = withContext_ (CLNullary c)
+
+withContexts :: LoggerMIO m => [SimpleContext] -> m a -> m a
+withContexts [] m = m
+withContexts cs m = foldr withContext m cs
 
 withContext_ :: LoggerMIO m => CLContext -> m a -> m a
 withContext_ c =
