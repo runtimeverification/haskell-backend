@@ -76,7 +76,7 @@ data IdContext
     | -- entities with name
       CtxHook Text
     | CtxRequest Text
-    deriving stock (Eq)
+    deriving stock (Eq, Ord)
 
 instance Show IdContext where
     show (CtxRewrite uid) = "rewrite " <> show uid
@@ -86,6 +86,15 @@ instance Show IdContext where
     show (CtxTerm uid) = "term " <> show uid
     show (CtxHook name) = "hook " <> unpack name
     show (CtxRequest name) = "request " <> unpack name
+
+getUniqueId :: IdContext -> Maybe UniqueId
+getUniqueId = \case
+    CtxRewrite uid -> Just uid
+    CtxSimplification uid -> Just uid
+    CtxFunction uid -> Just uid
+    CtxCeil uid -> Just uid
+    CtxTerm uid -> Just uid
+    _ -> Nothing
 
 ----------------------------------------
 data UniqueId
@@ -131,7 +140,7 @@ $( deriveJSON
 data CLContext
     = CLNullary SimpleContext
     | CLWithId IdContext
-    deriving stock (Eq)
+    deriving stock (Eq, Ord)
 
 instance Show CLContext where
     show (CLNullary c) = show c

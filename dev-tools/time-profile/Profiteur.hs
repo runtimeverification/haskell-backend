@@ -218,13 +218,14 @@ aggregateRewriteRules f (TimeMap requests) =
                 let TimeMap kore = snd $ (snd (reqTimeMap ! CLNullary CtxKore)) ! CLNullary CtxExecute
                     TimeMap booster = snd $ (snd (reqTimeMap ! CLNullary CtxBooster)) ! CLNullary CtxExecute
                     res = f kore booster
-                    in (aggregate res, res)
+                 in (aggregate res, res)
             )
             requests
 
 -- functions to convert a `TimeMap` into profiteur's `NodeMap`
 
-toNode :: Map UniqueId Text -> [CLContext] -> CLContext -> ElapsedNanoseconds -> Count -> [CLContext] -> Node
+toNode ::
+    Map UniqueId Text -> [CLContext] -> CLContext -> ElapsedNanoseconds -> Count -> [CLContext] -> Node
 toNode ruleMap ctxt currentCtxt (ElapsedNanoseconds t) (Count count) children =
     Node
         { nId = Text.intercalate "-" $ map toId $ ctxt <> [currentCtxt]
@@ -257,18 +258,21 @@ toNodes cutoff ruleMap ctxt (TimeMap m) =
         ]
 
 toNodeMap :: TimeMap (ElapsedNanoseconds, Count) -> Map UniqueId Text -> NodeMap
-toNodeMap tm@(TimeMap m) ruleMap = NodeMap (HashMap.fromList $ ("rpc-server", mainNode) :[(nId, n) | n@Node{nId} <- toNodes 10 ruleMap [] tm]) "rpc-server"
-    where
-        (ElapsedNanoseconds time, Count count) = aggregate tm
-        mainNode = 
-             Node
-                { nId = "rpc-server"
-                , nName = "rpc-server"
-                , nModule = ""
-                , nSrc = ""
-                , nEntries = count
-                , nTime = (fromIntegral time) / 1000000000
-                , nAlloc = 0
-                , nChildren =
-                    Vector.fromList [toId c | c <- Map.keys m, filterNode c]
-                }
+toNodeMap tm@(TimeMap m) ruleMap =
+    NodeMap
+        (HashMap.fromList $ ("rpc-server", mainNode) : [(nId, n) | n@Node{nId} <- toNodes 10 ruleMap [] tm])
+        "rpc-server"
+  where
+    (ElapsedNanoseconds time, Count count) = aggregate tm
+    mainNode =
+        Node
+            { nId = "rpc-server"
+            , nName = "rpc-server"
+            , nModule = ""
+            , nSrc = ""
+            , nEntries = count
+            , nTime = (fromIntegral time) / 1000000000
+            , nAlloc = 0
+            , nChildren =
+                Vector.fromList [toId c | c <- Map.keys m, filterNode c]
+            }

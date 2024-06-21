@@ -233,12 +233,12 @@ main = do
                     Booster.Log.withContext CtxKore $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
 
-                let koreRespond :: Respond (API 'Req) (LoggerT IO) (API 'Res)
-                    koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
+                let koreRespond :: Id -> Respond (API 'Req) (LoggerT IO) (API 'Res)
+                    koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
                     server =
                         jsonRpcServer
                             srvSettings
-                            (const $ runBoosterLogger . respond koreRespond)
+                            (\rawReq -> runBoosterLogger . respond (koreRespond $ getReqId rawReq))
                             [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
                     interruptHandler _ = do
                         when (logLevel >= LevelInfo) $

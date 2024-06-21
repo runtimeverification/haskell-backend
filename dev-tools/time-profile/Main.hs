@@ -10,10 +10,10 @@ module Main (
 import Data.Aeson (decode)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe (mapMaybe)
+import Profiteur
 import Profiteur.Main (writeReport)
 import System.Environment (getArgs)
 import System.IO qualified as IO
-import Profiteur
 
 {- | Utility for parsing and extracting timing information from context logs,
    produced by running the booster binary with `-l Timing --log-format json --log-timestamps --timestamp-format nanosecond`.
