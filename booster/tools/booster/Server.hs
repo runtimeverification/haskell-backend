@@ -138,8 +138,7 @@ main = do
                     }
             , proxyOptions =
                 ProxyOptions
-                    { printStats
-                    , forceFallback
+                    { forceFallback
                     , boosterSMT
                     , fallbackReasons
                     , simplifyAtEnd
@@ -150,7 +149,6 @@ main = do
         logContextsWithcustomLevelContexts =
             logContexts
                 <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
-                <> [[Ctxt.ctxt| *>timing |] | printStats]
         contextLoggingEnabled = not (null logContextsWithcustomLevelContexts)
         koreSolverOptions = translateSMTOpts smtOptions
         timestampFlag = case timeStampsFormat of
@@ -408,9 +406,7 @@ data CLProxyOptions = CLProxyOptions
     }
 
 data ProxyOptions = ProxyOptions
-    { printStats :: Bool
-    -- ^ print timing statistics per request and on shutdown
-    , forceFallback :: Maybe Depth
+    { forceFallback :: Maybe Depth
     -- ^ force fallback every n-steps
     , boosterSMT :: Bool
     -- ^ whether to use an SMT solver in booster code (but keeping kore-rpc's SMT solver)
@@ -435,11 +431,7 @@ clProxyOptionsParser =
   where
     parseProxyOptions =
         ProxyOptions
-            <$> switch
-                ( long "print-stats"
-                    <> help "(development) Print timing information per request and on shutdown"
-                )
-            <*> optional
+            <$> optional
                 ( option
                     (Depth <$> auto)
                     ( metavar "INTERIM_SIMPLIFICATION"

@@ -237,6 +237,7 @@ allowedLogLevels =
         , "Log warnings indicating soft-violations of conditions, i.e. exceeding the equation recursion/iteration limit "
         )
     , ("Timing", "Logs for timing analysis")
+    , ("TimingStats", "Formerly --print-stats")
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -297,6 +298,12 @@ levelToContext =
                 , [ctxt| request*,booster|kore>rewrite*,match|definedness|condition,failure|abort |]
                 , [ctxt| request*,booster|kore>function*|simplification*,success|failure|abort|detail |]
                 , [ctxt| request*,booster|kore>function*|simplification*,match,failure|abort |]
+                ]
+            )
+        ,
+            ( "TimingStats"
+            ,
+                [ [ctxt| *>timing |]
                 ]
             )
         ]
