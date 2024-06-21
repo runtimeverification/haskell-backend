@@ -149,7 +149,7 @@ main = do
         logContextsWithcustomLevelContexts =
             logContexts
                 <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
-                <> [[Ctxt.ctxt| *>timing |] | printStats ]
+                <> [[Ctxt.ctxt| *>timing |] | printStats]
         contextLoggingEnabled = not (null logContextsWithcustomLevelContexts)
         koreSolverOptions = translateSMTOpts smtOptions
         timestampFlag = case timeStampsFormat of
