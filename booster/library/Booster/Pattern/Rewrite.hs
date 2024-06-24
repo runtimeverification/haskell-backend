@@ -355,7 +355,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
             failRewrite $
                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
                     map coerce unclearRequires
-    case mbSolver of
+    assumedUnclearConditions <- case mbSolver of
         Just solver -> do
             checkAllRequires <-
                 SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
@@ -370,17 +370,21 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                     withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                     RewriteRuleAppT $ pure NotApplied
                 Right (Just True) ->
-                    pure () -- can proceed
-                Right Nothing ->
-                    smtUnclear -- no implication could be determined
-        Nothing ->
-            unless (null unclearRequires) $ do
-                withContext CtxConstraint . withContext CtxAbort $
-                    logMessage $
-                        renderOneLineText $
-                            "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
-                failRewrite $
-                    RuleConditionUnclear rule (head unclearRequires)
+                    pure [] -- can proceed
+                Right Nothing -> do
+                    withContext CtxConstraint . withContext CtxAbort . logMessage . renderOneLineText $
+                        "Uncertain about condition(s) in a rule:" <+> pretty unclearRequires
+                    pure unclearRequires
+        Nothing -> do
+            if (not . null $ unclearRequires)
+                then do
+                    withContext CtxConstraint . withContext CtxAbort $
+                        logMessage $
+                            renderOneLineText $
+                                "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
+                    failRewrite $
+                        RuleConditionUnclear rule (head unclearRequires)
+                else pure []
 
     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
     -- any are false, remove all that are trivially true, return the rest
@@ -396,6 +400,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
         (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
             Right (Just False) -> do
                 withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                -- it's probably still fine to return trivial here even if we assumed unclear required conditions
                 RewriteRuleAppT $ pure Trivial
             Right _other ->
                 pure ()
@@ -428,7 +433,9 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                 ceilConditions
     withContext CtxSuccess $
         withPatternContext rewritten $
-            return (rule, rewritten)
+            RewriteRuleAppT $
+                pure $
+                    Applied (collapseAndBools assumedUnclearConditions) (rule, rewritten)
   where
     failRewrite = lift . throw
 
