@@ -25,6 +25,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.String (fromString)
 import Data.Text (Text, pack)
+import Data.Text qualified as Text
 import Data.Text.Encoding (encodeUtf8)
 import GlobalMain (
     LoadedDefinition (..),
@@ -113,6 +114,7 @@ import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
+import Network.JSONRPC (fromId)
 import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
@@ -120,6 +122,7 @@ import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 respond ::
     forall m.
     MonadIO m =>
+    String ->
     MVar.MVar ServerState ->
     ModuleName ->
     ( forall a.
@@ -129,7 +132,7 @@ respond ::
       IO a
     ) ->
     Respond (API 'Req) m (API 'Res)
-respond serverState moduleName runSMT =
+respond reqId serverState moduleName runSMT =
     \case
         Execute
             ExecuteRequest
@@ -159,23 +162,24 @@ respond serverState moduleName runSMT =
                         traversalResult <-
                             liftIO
                                 ( runSMT (Exec.metadataTools serializedModule) lemmas $
-                                    Log.logWhile (Log.DebugContext "kore") $
-                                        Log.logWhile (Log.DebugContext "execute") $
-                                            Exec.rpcExec
-                                                (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
-                                                (coerce stepTimeout)
-                                                ( if fromMaybe False movingAverageStepTimeout
-                                                    then EnableMovingAverage
-                                                    else DisableMovingAverage
-                                                )
-                                                ( if fromMaybe False assumeStateDefined
-                                                    then EnableAssumeInitialDefined
-                                                    else DisableAssumeInitialDefined
-                                                )
-                                                tracingEnabled
-                                                serializedModule
-                                                (toStopLabels cutPointRules terminalRules)
-                                                verifiedPattern
+                                    Log.logWhile (Log.DebugContext $ Text.pack $ "request " <> reqId) $
+                                        Log.logWhile (Log.DebugContext "kore") $
+                                            Log.logWhile (Log.DebugContext "execute") $
+                                                Exec.rpcExec
+                                                    (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
+                                                    (coerce stepTimeout)
+                                                    ( if fromMaybe False movingAverageStepTimeout
+                                                        then EnableMovingAverage
+                                                        else DisableMovingAverage
+                                                    )
+                                                    ( if fromMaybe False assumeStateDefined
+                                                        then EnableAssumeInitialDefined
+                                                        else DisableAssumeInitialDefined
+                                                    )
+                                                    tracingEnabled
+                                                    serializedModule
+                                                    (toStopLabels cutPointRules terminalRules)
+                                                    verifiedPattern
                                 )
 
                         stop <- liftIO $ getTime Monotonic
@@ -429,6 +433,7 @@ respond serverState moduleName runSMT =
                     result <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
+                            . Log.logWhile (Log.DebugContext $ Text.pack $ "request " <> reqId)
                             . Log.logWhile (Log.DebugContext "kore")
                             . Log.logWhile (Log.DebugContext "implies")
                             . evalInSimplifierContext serializedModule
@@ -513,6 +518,7 @@ respond serverState moduleName runSMT =
                     result <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
+                            . Log.logWhile (Log.DebugContext $ Text.pack $ "request " <> reqId)
                             . Log.logWhile (Log.DebugContext "kore")
                             . Log.logWhile (Log.DebugContext "simplify")
                             . evalInSimplifierContext serializedModule
@@ -610,6 +616,7 @@ respond serverState moduleName runSMT =
                         serializedModule <-
                             liftIO
                                 . runSMT metadataTools lemmas
+                                . Log.logWhile (Log.DebugContext $ Text.pack $ "request " <> reqId)
                                 . Log.logWhile (Log.DebugContext "kore")
                                 . Log.logWhile (Log.DebugContext "add-module")
                                 $ Exec.makeSerializedModule newModule
@@ -670,6 +677,7 @@ respond serverState moduleName runSMT =
                                 else
                                     liftIO
                                         . runSMT tools lemmas
+                                        . Log.logWhile (Log.DebugContext $ Text.pack $ "request " <> reqId)
                                         . Log.logWhile (Log.DebugContext "kore")
                                         . Log.logWhile (Log.DebugContext "get-model")
                                         . SMT.Evaluator.getModelFor tools
@@ -760,7 +768,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
             srvSettings
             ( \req parsed ->
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
-                    >> respond serverState mainModule runSMT parsed
+                    >> respond (fromId $ getReqId req) serverState mainModule runSMT parsed
             )
             [ handleDecidePredicateUnknown
             , handleErrorCall
