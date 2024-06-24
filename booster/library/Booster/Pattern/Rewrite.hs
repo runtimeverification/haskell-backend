@@ -171,10 +171,21 @@ rewriteStep cutLabels terminalLabels pat = do
             ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
             uniqueId = (.uniqueId) . (.attributes)
 
+        -- compute remainder condition here. If Bottom, the following code returns the result
+        -- if it is not Bottom. Let's say we have computed P : Predicate which is the remainder predicate.
+        -- To construct the "remainder pattern", we add the remainder condition to the predicates of the @pattr@
+
+        -- let remainder :: Predicate = undefined
+        --     newPattr = pattr{constraints = pattr.constraints <> Set.singleton remainder}
+
+        -- case (remainder, results) of
+        --     (PredicateTrue, []) -> processGroups pattr rest -- do not need the Top remainder
+        --     (PredicateFalse, _) ->
+
         case results of
             -- no rules in this group were applicable
             [] -> processGroups pattr rest
-            _ -> case concatMap (\case Applied x -> [x]; _ -> []) results of
+            _ -> case concatMap (\case Applied _condition x -> [x]; _ -> []) results of
                 [] ->
                     -- all remaining branches are trivial, i.e. rules which did apply had an ensures condition which evaluated to false
                     -- if, all the other groups only generate a not applicable or trivial rewrites,
@@ -199,7 +210,7 @@ rewriteStep cutLabels terminalLabels pat = do
                                 map (\(r, p) -> (ruleLabelOrLocT r, uniqueId r, p)) rxs
 
 data RewriteRuleAppResult a
-    = Applied a
+    = Applied Predicate a
     | NotApplied
     | Trivial
     deriving (Show, Eq, Functor)
@@ -208,19 +219,20 @@ newtype RewriteRuleAppT m a = RewriteRuleAppT {runRewriteRuleAppT :: m (RewriteR
     deriving (Functor)
 
 instance Monad m => Applicative (RewriteRuleAppT m) where
-    pure = RewriteRuleAppT . return . Applied
+    pure = RewriteRuleAppT . return . Applied (Predicate TrueBool)
     {-# INLINE pure #-}
     mf <*> mx = RewriteRuleAppT $ do
         mb_f <- runRewriteRuleAppT mf
         case mb_f of
             NotApplied -> return NotApplied
             Trivial -> return Trivial
-            Applied f -> do
+            Applied _condition f -> do
                 mb_x <- runRewriteRuleAppT mx
                 case mb_x of
                     NotApplied -> return NotApplied
                     Trivial -> return Trivial
-                    Applied x -> return (Applied (f x))
+                    -- FIXME what to do with the top-level condition??? Conjoin?
+                    Applied secondCondition x -> return (Applied secondCondition (f x))
     {-# INLINE (<*>) #-}
     m *> k = m >> k
     {-# INLINE (*>) #-}
@@ -231,14 +243,15 @@ instance Monad m => Monad (RewriteRuleAppT m) where
     x >>= f = RewriteRuleAppT $ do
         v <- runRewriteRuleAppT x
         case v of
-            Applied y -> runRewriteRuleAppT (f y)
+            -- FIXME what to do with the condition???
+            Applied _condition y -> runRewriteRuleAppT (f y)
             NotApplied -> return NotApplied
             Trivial -> return Trivial
     {-# INLINE (>>=) #-}
 
 instance MonadTrans RewriteRuleAppT where
     lift :: Monad m => m a -> RewriteRuleAppT m a
-    lift = RewriteRuleAppT . fmap Applied
+    lift = RewriteRuleAppT . fmap (Applied (Predicate TrueBool))
     {-# INLINE lift #-}
 
 instance Monad m => MonadFail (RewriteRuleAppT m) where
