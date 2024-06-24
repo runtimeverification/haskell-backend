@@ -65,6 +65,10 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes debhelper z3 libsecp256k1-dev
+
       - name: Cache Stack root
         uses: actions/cache@v4
         with:

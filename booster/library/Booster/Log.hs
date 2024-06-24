@@ -48,6 +48,7 @@ import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
+import Network.JSONRPC qualified as JSONRPC
 import Prettyprinter (Pretty, pretty)
 import System.Log.FastLogger (FormattedTime)
 import UnliftIO (MonadUnliftIO)
@@ -221,6 +222,10 @@ instance ContextFor (RewriteRule "Ceil") where
 instance ContextFor Symbol where
     withContextFor s =
         withContext_ (CLWithId . CtxHook $ maybe "not-hooked" decodeUtf8 s.attributes.hook)
+
+instance ContextFor (JSONRPC.Id) where
+    withContextFor r =
+        withContext_ (CLWithId . CtxRequest $ pack $ JSONRPC.fromId r)
 
 parseRuleId :: RewriteRule tag -> CL.UniqueId
 parseRuleId = fromMaybe CL.UNKNOWN . CL.parseUId . coerce . (.attributes.uniqueId)
