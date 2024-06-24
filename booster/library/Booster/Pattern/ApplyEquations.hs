@@ -67,6 +67,7 @@ import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..))
+import Kore.JsonRpc.Types.ContextLog (CLContext (CLWithId), IdContext (CtxCached))
 import Kore.Util (showHashHex)
 
 newtype EquationT io a
@@ -164,6 +165,10 @@ instance Monoid SimplifierCache where
 
 data CacheTag = LLVM | Equations
     deriving stock (Show)
+
+instance ContextFor CacheTag where
+    withContextFor t =
+        withContext_ (CLWithId . CtxCached $ Text.toLower $ Text.pack $ show t)
 
 data EquationMetadata = EquationMetadata
     { location :: Maybe Location
@@ -531,11 +536,11 @@ cached cacheTag cb t@(Term attributes _)
             Just cachedTerm -> do
                 when (t /= cachedTerm) $ do
                     setChanged
-                    withContext CtxSuccess $
-                        -- FIXME CtxCached needs to be parametrised by CacheTag so that we can distinguish the LLVM cache form the normal cache
-                        withContext CtxCached $
-                            withTermContext cachedTerm $
-                                pure ()
+                    withTermContext t $
+                        withContext CtxSuccess $
+                            withContextFor cacheTag $
+                                withTermContext cachedTerm $
+                                    pure ()
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
