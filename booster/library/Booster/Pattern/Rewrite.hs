@@ -152,7 +152,7 @@ rewriteStep cutLabels terminalLabels pat = do
         RewriteT io (RewriteResult Pattern)
     processGroups pattr [] =
         pure $ RewriteStuck pattr
-    processGroups pattr (rules : rest) = do
+    processGroups pattr (rules : lowerPriorityRules) = do
         -- try all rules of the priority group. This will immediately
         -- fail the rewrite if anything is uncertain (unification,
         -- definedness, rule conditions)
@@ -167,50 +167,80 @@ rewriteStep cutLabels terminalLabels pat = do
         -- so unless the original pattern contained bottom, we won't gain anything from
         -- calling the simplifier on the original conditions which came with the term.
 
-        let labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
-            ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
-            uniqueId = (.uniqueId) . (.attributes)
-
-        -- compute remainder condition here. If Bottom, the following code returns the result
-        -- if it is not Bottom. Let's say we have computed P : Predicate which is the remainder predicate.
-        -- To construct the "remainder pattern", we add the remainder condition to the predicates of the @pattr@
-
-        -- let remainder :: Predicate = undefined
-        --     newPattr = pattr{constraints = pattr.constraints <> Set.singleton remainder}
-
-        -- case (remainder, results) of
-        --     (PredicateTrue, []) -> processGroups pattr rest -- do not need the Top remainder
-        --     (PredicateFalse, _) ->
-
         case results of
             -- no rules in this group were applicable
-            [] -> processGroups pattr rest
-            _ -> case concatMap (\case Applied _condition x -> [x]; _ -> []) results of
-                [] ->
-                    -- all remaining branches are trivial, i.e. rules which did apply had an ensures condition which evaluated to false
-                    -- if, all the other groups only generate a not applicable or trivial rewrites,
-                    -- then we return a `RewriteTrivial`.
-                    processGroups pattr rest >>= \case
-                        RewriteStuck{} -> pure $ RewriteTrivial pat
-                        other -> pure other
-                -- all branches but one were either not applied or trivial
-                [(r, x)]
-                    | labelOf r `elem` cutLabels ->
-                        pure $ RewriteCutPoint (labelOf r) (uniqueId r) pat x
-                    | labelOf r `elem` terminalLabels ->
-                        pure $ RewriteTerminal (labelOf r) (uniqueId r) x
-                    | otherwise ->
-                        pure $ RewriteFinished (Just $ ruleLabelOrLocT r) (Just $ uniqueId r) x
-                -- at this point, there were some Applied rules and potentially some Trivial ones.
-                -- here, we just return all the applied rules in a `RewriteBranch`
-                rxs ->
-                    pure $
-                        RewriteBranch pat $
-                            NE.fromList $
-                                map (\(r, p) -> (ruleLabelOrLocT r, uniqueId r, p)) rxs
+            [] -> processGroups pattr lowerPriorityRules
+            _ -> do
+                let nonTrivialResults = concatMap (\case Applied conditions x -> [(conditions, x)]; _ -> []) results
+
+                -- compute remainder condition here from @nonTrivialResults@ here.
+                -- If the remainder is bottom, then the rest
+                let remainder@(Predicate remainderTerm) :: Predicate = Predicate FalseBool
+                -- newPattr = pattr{constraints = pattr.constraints <> Set.singleton remainder}
+                -- check unclear requires-clauses in the context of known constraints (prior)
+                let mbSolver = undefined
+
+                case mbSolver of
+                    Just solver -> do
+                        checkAllRequires <-
+                            SMT.checkPredicates solver mempty mempty (Set.singleton remainder)
+
+                        case checkAllRequires of
+                            Left SMT.SMTSolverUnknown{} ->
+                                -- solver cannot solve the remainder. Descend into the remainder branch anyway?
+                                undefined
+                            Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
+                            Right (Just False) ->
+                                -- the remainder condition is unsatisfiable: no need to consider the remainder branch
+                                continueNoRemainder pattr lowerPriorityRules nonTrivialResults
+                            Right (Just True) ->
+                                -- the remainder condition is satisfiable.
+                                --  Have to construct the remainder branch and consider it
+                                -- To construct the "remainder pattern",
+                                -- we add the remainder condition to the predicates of the @pattr@
+                                undefined
+                            Right Nothing ->
+                                -- solver cannot solve the remainder. Descend into the remainder branch anyway?
+                                -- how is this different from the @Left SMT.SMTSolverUnknown@ case?
+                                undefined
+                    Nothing -> undefined
+      where
+        continueNoRemainder ::
+            LoggerMIO io =>
+            Pattern ->
+            [[RewriteRule "Rewrite"]] ->
+            [([Predicate], (RewriteRule "Rewrite", Pattern))] ->
+            RewriteT io (RewriteResult Pattern)
+        continueNoRemainder pattr rest = \case
+            [] ->
+                -- all remaining branches are trivial, i.e. rules which did apply had an ensures condition which evaluated to false
+                -- if, all the other groups only generate a not applicable or trivial rewrites,
+                -- then we return a `RewriteTrivial`.
+                processGroups pattr rest >>= \case
+                    RewriteStuck{} -> pure $ RewriteTrivial pat
+                    other -> pure other
+            -- all branches but one were either not applied or trivial
+            [(_assumedConditons, (r, x))]
+                | labelOf r `elem` cutLabels ->
+                    pure $ RewriteCutPoint (labelOf r) (uniqueId r) pat x
+                | labelOf r `elem` terminalLabels ->
+                    pure $ RewriteTerminal (labelOf r) (uniqueId r) x
+                | otherwise ->
+                    pure $ RewriteFinished (Just $ ruleLabelOrLocT r) (Just $ uniqueId r) x
+            -- at this point, there were some Applied rules and potentially some Trivial ones.
+            -- here, we just return all the applied rules in a `RewriteBranch`
+            rxs ->
+                pure $
+                    RewriteBranch pat $
+                        NE.fromList $
+                            map (\(_assumedConditons, (r, p)) -> (ruleLabelOrLocT r, uniqueId r, p)) rxs
+
+        labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
+        ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
+        uniqueId = (.uniqueId) . (.attributes)
 
 data RewriteRuleAppResult a
-    = Applied Predicate a
+    = Applied ![Predicate] a
     | NotApplied
     | Trivial
     deriving (Show, Eq, Functor)
@@ -219,7 +249,7 @@ newtype RewriteRuleAppT m a = RewriteRuleAppT {runRewriteRuleAppT :: m (RewriteR
     deriving (Functor)
 
 instance Monad m => Applicative (RewriteRuleAppT m) where
-    pure = RewriteRuleAppT . return . Applied (Predicate TrueBool)
+    pure = RewriteRuleAppT . return . Applied []
     {-# INLINE pure #-}
     mf <*> mx = RewriteRuleAppT $ do
         mb_f <- runRewriteRuleAppT mf
@@ -251,7 +281,7 @@ instance Monad m => Monad (RewriteRuleAppT m) where
 
 instance MonadTrans RewriteRuleAppT where
     lift :: Monad m => m a -> RewriteRuleAppT m a
-    lift = RewriteRuleAppT . fmap (Applied (Predicate TrueBool))
+    lift = RewriteRuleAppT . fmap (Applied [])
     {-# INLINE lift #-}
 
 instance Monad m => MonadFail (RewriteRuleAppT m) where
@@ -435,7 +465,7 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
         withPatternContext rewritten $
             RewriteRuleAppT $
                 pure $
-                    Applied (collapseAndBools assumedUnclearConditions) (rule, rewritten)
+                    Applied assumedUnclearConditions (rule, rewritten)
   where
     failRewrite = lift . throw
 
