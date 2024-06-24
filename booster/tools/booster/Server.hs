@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -35,6 +34,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Network.JSONRPC qualified as JSONRPC
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -137,8 +137,7 @@ main = do
                     }
             , proxyOptions =
                 ProxyOptions
-                    { printStats
-                    , forceFallback
+                    { forceFallback
                     , boosterSMT
                     , fallbackReasons
                     , simplifyAtEnd
@@ -149,7 +148,6 @@ main = do
         logContextsWithcustomLevelContexts =
             logContexts
                 <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
-                <> [[Ctxt.ctxt| *>timing |] | printStats]
         contextLoggingEnabled = not (null logContextsWithcustomLevelContexts)
         koreSolverOptions = translateSMTOpts smtOptions
         timestampFlag = case timeStampsFormat of
@@ -312,10 +310,11 @@ main = do
                     Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text)
 
-                let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
-                    koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                    boosterRespond =
-                        Booster.Log.withContext CtxBooster
+                let koreRespond, boosterRespond :: JSONRPC.Id -> Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
+                    koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
+                    boosterRespond reqId =
+                        Booster.Log.withContextFor reqId
+                            . Booster.Log.withContext CtxBooster
                             . Booster.respond boosterState
 
                     proxyConfig =
@@ -332,9 +331,10 @@ main = do
                         jsonRpcServer
                             srvSettings
                             ( \rawReq req ->
-                                runBoosterLogger $
-                                    logRequestId (fromId $ getReqId rawReq)
-                                        >> Proxy.respondEither proxyConfig boosterRespond koreRespond req
+                                let reqId = getReqId rawReq
+                                 in runBoosterLogger $
+                                        logRequestId reqId
+                                            >> Proxy.respondEither proxyConfig (boosterRespond reqId) (koreRespond reqId) req
                             )
                             [ Kore.handleDecidePredicateUnknown
                             , Booster.handleSmtError
@@ -362,7 +362,7 @@ main = do
         Booster.Log.withContext CtxProxy $
             Booster.Log.logMessage' $
                 Text.pack $
-                    "Processing request " <> rid
+                    "Processing request " <> fromId rid
 
     isInterrupt :: AsyncException -> Maybe ()
     isInterrupt UserInterrupt = Just ()
@@ -405,9 +405,7 @@ data CLProxyOptions = CLProxyOptions
     }
 
 data ProxyOptions = ProxyOptions
-    { printStats :: Bool
-    -- ^ print timing statistics per request and on shutdown
-    , forceFallback :: Maybe Depth
+    { forceFallback :: Maybe Depth
     -- ^ force fallback every n-steps
     , boosterSMT :: Bool
     -- ^ whether to use an SMT solver in booster code (but keeping kore-rpc's SMT solver)
@@ -432,11 +430,7 @@ clProxyOptionsParser =
   where
     parseProxyOptions =
         ProxyOptions
-            <$> switch
-                ( long "print-stats"
-                    <> help "(development) Print timing information per request and on shutdown"
-                )
-            <*> optional
+            <$> optional
                 ( option
                     (Depth <$> auto)
                     ( metavar "INTERIM_SIMPLIFICATION"

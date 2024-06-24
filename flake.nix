@@ -60,6 +60,7 @@
               tar = dontCheck hprev.tar;
               text-short = doJailbreak hprev.text-short;
               these = doJailbreak hprev.these;
+              ghc-prof = doJailbreak hprev.ghc-prof;
               hs-backend-booster = overrideCabal hprev.hs-backend-booster
                 (drv: {
                   doCheck = false;

@@ -236,6 +236,8 @@ allowedLogLevels =
         ( "EquationWarnings"
         , "Log warnings indicating soft-violations of conditions, i.e. exceeding the equation recursion/iteration limit "
         )
+    , ("TimeProfile", "Logs for timing analysis")
+    , ("Timing", "Formerly --print-stats")
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -244,49 +246,64 @@ levelToContext =
         [
             ( "Simplify"
             ,
-                [ [ctxt| booster|kore>function*|simplification*|hook*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>function*|simplification*,match,failure|abort |]
+                [ [ctxt| request*,booster|kore>function*|simplification*|hook*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>function*|simplification*,match,failure|abort |]
                 ]
             )
         ,
             ( "SimplifySuccess"
             ,
-                [ [ctxt| booster|kore>function*|simplification*|hook*,success|detail |]
+                [ [ctxt| request*,booster|kore>function*|simplification*|hook*,success|detail |]
                 ]
             )
         ,
             ( "Rewrite"
             ,
-                [ [ctxt| booster|kore>rewrite*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>rewrite*,match|definedness|constraint,failure|abort |]
+                [ [ctxt| request*,booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>rewrite*,match|definedness|constraint,failure|abort |]
                 ]
             )
         ,
             ( "RewriteSuccess"
             ,
-                [ [ctxt| booster|kore>rewrite*,success|detail |]
+                [ [ctxt| request*,booster|kore>rewrite*,success|detail |]
                 ]
             )
         ,
             ( "SMT"
             ,
-                [ [ctxt| booster|kore>smt |]
+                [ [ctxt| request*,booster|kore>smt |]
                 ]
             )
         ,
             ( "Aborts"
             ,
-                [ [ctxt| booster>rewrite*,detail. |]
-                , [ctxt| booster>rewrite*,match|definedness|constraint,abort. |]
+                [ [ctxt| request*,booster>rewrite*,detail. |]
+                , [ctxt| request*,booster>rewrite*,match|definedness|constraint,abort. |]
                 , [ctxt| proxy. |]
                 , [ctxt| proxy,abort. |]
-                , [ctxt| booster>failure,abort |]
+                , [ctxt| request*,booster>failure,abort |]
                 ]
             )
         ,
             ( "EquationWarnings"
             ,
-                [ [ctxt| booster>(simplification *|function *)>warning |]
+                [ [ctxt| request*,booster>(simplification *|function *)>warning |]
+                ]
+            )
+        ,
+            ( "TimeProfile"
+            ,
+                [ [ctxt| request*,booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>rewrite*,match|definedness|condition,failure|abort |]
+                , [ctxt| request*,booster|kore>function*|simplification*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>function*|simplification*,match,failure|abort |]
+                ]
+            )
+        ,
+            ( "Timing"
+            ,
+                [ [ctxt| *>timing |]
                 ]
             )
         ]
