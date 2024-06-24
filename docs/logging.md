@@ -44,8 +44,6 @@ Context showing the ceil/definedness analysis of rules at load-time. See below f
 [ceil][simplification 5c9073a][partial-symbols] Lbl_modInt_
 ```
 
-
-
 ### `[execute]`/`[add-module]`/`[get-model]`
 top-level (right below `[booster]`/`[kore]`) contexts corresponding to rpc calls
 
@@ -90,7 +88,7 @@ The reason to abort is usually indicated by a `STAGE` context before `abort`, wh
 ### `[failure][continue]`/`[failure][break]` (for equations)
 Things get more complicated in equation application, where some failures are recoverable from depending on the type of equation being applied. We indicate these with a nested `[failure][continue]` context, indicating that the backend will proceed applying further rules in the same priority group. If a failure to apply an equation leads to simplification aborting entirely, we use the `[failure][break]` context to show the reason.
 
-### `[success]`
+### `[success]` / `[success][cached]`
 context used for printing successful match or rewrite. will usually have the following shapes:
 
 rewritten one term into another: 
@@ -98,6 +96,12 @@ rewritten one term into another:
 ```
 ...[term 6b25517][success][term c75f0d1][kore-term] ...
 ...[term 585d8c3][llvm][success][term 98b0892][kore-term] "true"
+```
+
+rewritten one term into another using a cached result: 
+
+```
+...[term 6b25517][success][cached][term c75f0d1][kore-term] ...
 ```
 
 rewritten a subterm inside a term:
@@ -164,3 +168,22 @@ Here are some common patterns we may want to use:
 ## Timestamps
 
 The booster now supports timestamps via `--log-timestamps` where the timestamp format can be specified as `--timestamp-format nanosecond` or `--timestamp-format pretty`
+
+
+## Common log context sets
+
+To make it easier for users to get started with log contexts and/or to collect a specific subset of context logs required for certain utilities, such as the `time-profile` or `count-aborts` tool, we support the following "log levels", which can be set via the `-l <Level>` flag when starting an rpc server:
+
+| Log level        | Description                                                                                                  |
+|------------------|--------------------------------------------------------------------------------------------------------------|
+| Aborts           | Log information related to aborting execution                                                                |
+| Rewrite          | Log all rewriting in booster                                                                                 |
+| RewriteSuccess   | Log successful rewrites (booster and kore-rpc)                                                               |
+| Simplify         | Log all simplification/evaluation in booster                                                                 |
+| SimplifySuccess  | Log successful simplifications (booster and kore-rpc)                                                        |
+| SMT              | Log the SMT-solver interactions                                                                              |
+| EquationWarnings | Log warnings indicating soft-violations of conditions, i.e. exceeding the equation recursion/iteration limit |
+| TimeProfile      | Logs for timing analysis (to be used by the `time-profile` tool)                                             |
+| Timing           | Printis beasic timing stats per request; formerly the `--print-stats` flag in booster server                 |
+
+_Note: To see what context filters these levels correspond too, see the `Booster.CLOptions` module, specifically the `levelToContext` map._

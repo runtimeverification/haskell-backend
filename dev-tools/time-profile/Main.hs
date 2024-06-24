@@ -16,7 +16,7 @@ import System.Environment (getArgs)
 import System.IO qualified as IO
 
 {- | Utility for parsing and extracting timing information from context logs,
-   produced by running the booster binary with `-l Timing --log-format json --log-timestamps --timestamp-format nanosecond`.
+   produced by running the booster binary with `-l TimeProfile --log-format json --log-timestamps --timestamp-format nanosecond`.
    This tool collects the timing per each context level and uses the profiteur library to generate an HTML report of the timing information
    Call via `timing <path>.log`
 -}
@@ -29,7 +29,7 @@ main =
                     "This tool parses the JSON contextual logs with timestamps and generates a time profile."
                 putStrLn "Call via `time-profile <path>.log`"
                 putStrLn
-                    "To produce the correct context logs, run kore-rpc-booster with `-l Timing --log-format json --log-timestamps --timestamp-format nanosecond`"
+                    "To produce the correct context logs, run kore-rpc-booster with `-l TimeProfile --log-format json --log-timestamps --timestamp-format nanosecond`"
         [profFile] -> do
             logs <- mapMaybe decode . BS.lines <$> BS.readFile profFile
 
