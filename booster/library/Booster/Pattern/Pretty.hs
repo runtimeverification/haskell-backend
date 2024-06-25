@@ -19,7 +19,7 @@ import Booster.Pattern.Base
 import Booster.Prettyprinter qualified as KPretty
 import Booster.Util (decodeLabel')
 import Data.ByteString.Char8 qualified as BS
-import Data.Data (Proxy (..), repConstr)
+import Data.Data (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 

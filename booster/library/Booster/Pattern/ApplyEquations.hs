@@ -713,51 +713,49 @@ applyEquation ::
     EquationT
         io
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
-applyEquation term rule = runExceptT $ do
-    -- ensured by internalisation: no existentials in equations
-    unless (null rule.existentials) $ do
-        withContext CtxAbort $
-            logMessage ("Equation with existentials" :: Text)
-        lift . throw . InternalError $
-            "Equation with existentials: " <> Text.pack (show rule)
-    -- immediately cancel if not preserving definedness
-    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        throwE
-            ( \ctxt ->
-                ctxt $
-                    logMessage $
-                        renderOneLineText $
-                            "Uncertain about definedness of rule due to:"
-                                <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-            , RuleNotPreservingDefinedness
-            )
-    -- immediately cancel if rule has concrete() flag and term has variables
-    when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
-        throwE
-            ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
-            , MatchConstraintViolated Concrete "* (term has variables)"
-            )
-    -- match lhs
-    koreDef <- (.definition) <$> lift getConfig
-    case matchTerms Eval koreDef rule.lhs term of
-        MatchFailed failReason ->
-            throwE
-                ( \ctxt ->
-                    withContext CtxMatch $
-                        getPrettyModifiers >>= \case
-                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                                ctxt $
-                                    logPretty' @mods failReason
-                , FailedMatch failReason
-                )
-        MatchIndeterminate remainder ->
-            throwE
-                ( \ctxt ->
-                    withContext CtxMatch $
-                        ctxt $
-                            withContext CtxMatch $
-                                getPrettyModifiers >>= \case
-                                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+applyEquation term rule =
+    runExceptT $
+        getPrettyModifiers >>= \case
+            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
+                -- ensured by internalisation: no existentials in equations
+                unless (null rule.existentials) $ do
+                    withContext CtxAbort $
+                        logMessage ("Equation with existentials" :: Text)
+                    lift . throw . InternalError $
+                        "Equation with existentials: " <> Text.pack (show rule)
+                -- immediately cancel if not preserving definedness
+                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+                    throwE
+                        ( \ctxt ->
+                            ctxt $
+                                logMessage $
+                                    renderOneLineText $
+                                        "Uncertain about definedness of rule due to:"
+                                            <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+                        , RuleNotPreservingDefinedness
+                        )
+                -- immediately cancel if rule has concrete() flag and term has variables
+                when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
+                    throwE
+                        ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
+                        , MatchConstraintViolated Concrete "* (term has variables)"
+                        )
+                -- match lhs
+                koreDef <- (.definition) <$> lift getConfig
+                case matchTerms Eval koreDef rule.lhs term of
+                    MatchFailed failReason ->
+                        throwE
+                            ( \ctxt ->
+                                withContext CtxMatch $
+                                    ctxt $
+                                        logPretty' @mods failReason
+                            , FailedMatch failReason
+                            )
+                    MatchIndeterminate remainder ->
+                        throwE
+                            ( \ctxt ->
+                                withContext CtxMatch $
+                                    ctxt $
                                         logMessage $
                                             WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
                                                 renderOneLineText $
@@ -767,21 +765,19 @@ applyEquation term rule = runExceptT $ do
                                                                     map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
                                                                         NonEmpty.toList remainder
                                                             )
-                , IndeterminateMatch
-                )
-        MatchSuccess subst -> do
-            -- cancel if condition
-            -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
-            --                        symbolic(v) -> not $ t isConstructorLike(t)
-            -- is violated
-            withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
+                            , IndeterminateMatch
+                            )
+                    MatchSuccess subst -> do
+                        -- cancel if condition
+                        -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
+                        --                        symbolic(v) -> not $ t isConstructorLike(t)
+                        -- is violated
+                        withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
 
-            withContext CtxMatch $ withContext CtxSuccess $ do
-                logMessage rule
-                withContext CtxSubstitution $
-                    getPrettyModifiers >>= \case
-                        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                            logMessage
+                        withContext CtxMatch $ withContext CtxSuccess $ do
+                            logMessage rule
+                            withContext CtxSubstitution
+                                $ logMessage
                                 $ WithJsonMessage
                                     (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
                                 $ renderOneLineText
@@ -792,57 +788,55 @@ applyEquation term rule = runExceptT $ do
                                                     Map.toList subst
                                         )
 
-            -- instantiate the requires clause with the obtained substitution
-            let required =
-                    concatMap
-                        (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
-                        rule.requires
-            -- If the required condition is _syntactically_ present in
-            -- the prior (known constraints), we don't check it.
-            knownPredicates <- (.predicates) <$> lift getState
-            toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+                        -- instantiate the requires clause with the obtained substitution
+                        let required =
+                                concatMap
+                                    (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
+                                    rule.requires
+                        -- If the required condition is _syntactically_ present in
+                        -- the prior (known constraints), we don't check it.
+                        knownPredicates <- (.predicates) <$> lift getState
+                        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
 
-            -- check the filtered requires clause conditions
-            unclearConditions <-
-                catMaybes
-                    <$> mapM
-                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
-                        )
-                        toCheck
+                        -- check the filtered requires clause conditions
+                        unclearConditions <-
+                            catMaybes
+                                <$> mapM
+                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                                    )
+                                    toCheck
 
-            -- unclear conditions may have been simplified and
-            -- could now be syntactically present in the path constraints, filter again
-            stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
+                        -- unclear conditions may have been simplified and
+                        -- could now be syntactically present in the path constraints, filter again
+                        stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
 
-            -- abort if any of the conditions is still unclear at that point
-            unless (null stillUnclear) $
-                throwE
-                    ( \ctxt ->
-                        ctxt $
-                            getPrettyModifiers >>= \case
-                                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                                    logMessage $
-                                        renderOneLineText $
-                                            "Uncertain about a condition(s) in rule:"
-                                                <+> hsep (intersperse "," $ map (pretty' @mods) unclearConditions)
-                    , IndeterminateCondition unclearConditions
-                    )
+                        -- abort if any of the conditions is still unclear at that point
+                        unless (null stillUnclear) $
+                            throwE
+                                ( \ctxt ->
+                                    ctxt $
+                                        logMessage $
+                                            renderOneLineText $
+                                                "Uncertain about a condition(s) in rule:"
+                                                    <+> hsep (intersperse "," $ map (pretty' @mods) unclearConditions)
+                                , IndeterminateCondition unclearConditions
+                                )
 
-            -- check ensured conditions, filter any
-            -- true ones, prune if any is false
-            let ensured =
-                    concatMap
-                        (splitBoolPredicates . substituteInPredicate subst)
-                        (Set.toList rule.ensures)
-            ensuredConditions <-
-                -- throws if an ensured condition found to be false
-                catMaybes
-                    <$> mapM
-                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
-                        )
-                        ensured
-            lift $ pushConstraints $ Set.fromList ensuredConditions
-            pure $ substituteInTerm subst rule.rhs
+                        -- check ensured conditions, filter any
+                        -- true ones, prune if any is false
+                        let ensured =
+                                concatMap
+                                    (splitBoolPredicates . substituteInPredicate subst)
+                                    (Set.toList rule.ensures)
+                        ensuredConditions <-
+                            -- throws if an ensured condition found to be false
+                            catMaybes
+                                <$> mapM
+                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                                    )
+                                    ensured
+                        lift $ pushConstraints $ Set.fromList ensuredConditions
+                        pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
