@@ -522,6 +522,7 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
             -- we should not rely on the requests being returned in a sorted order and
             -- should therefore sort them explicitly
             let requests = sort $ mapMaybe (stripSuffix "_request.json") jsonFiles
+                successMsg = if compareDetails then "matches expected" else "has expected type"
             results <-
                 forM requests $ \r -> do
                     mbError <- runRequest skt tmp jsonFiles r
@@ -532,7 +533,7 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
                                 liftIO $
                                     shutdown skt ShutdownReceive >> exitWith (ExitFailure 2)
                         Nothing ->
-                            logInfo_ $ "Response to " <> r <> " matched with expected"
+                            logInfo_ $ unwords ["Response to", r, successMsg]
                     pure mbError
             liftIO $ shutdown skt ShutdownReceive
             liftIO $ exitWith (if all isNothing results then ExitSuccess else ExitFailure 2)
