@@ -19,6 +19,7 @@ module Booster.Log (
     jsonLogger,
     textLogger,
     withContext,
+    withContext_,
     withContexts,
     withKorePatternContext,
     withPatternContext,
