@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -47,7 +48,6 @@ import System.IO (hPutStrLn, stderr)
 import Booster.CLOptions
 import Booster.Definition.Attributes.Base (
     ComputedAxiomAttributes (notPreservesDefinednessReasons),
-    NotPreservesDefinednessReason (UndefinedSymbol),
  )
 import Booster.Definition.Base (
     KoreDefinition (..),
@@ -60,6 +60,7 @@ import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Log hiding (withLogger)
 import Booster.Log.Context qualified as Ctxt
 import Booster.Pattern.Base (Predicate (..))
+import Booster.Pattern.Pretty
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
@@ -67,6 +68,7 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
 import Booster.Util qualified as Booster
+import Data.Data (Proxy)
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
@@ -133,6 +135,7 @@ main = do
                     , smtOptions
                     , equationOptions
                     , indexCells
+                    , prettyPrintOptions
                     , eventlogEnabledUserEvents
                     }
             , proxyOptions =
@@ -196,7 +199,9 @@ main = do
                             in any (flip Ctxt.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
-            runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
+            runBoosterLogger =
+                flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
+                    . Booster.Log.unLoggerT
 
             koreLogActions :: forall m. MonadIO m => [Log.LogAction m Log.SomeEntry]
             koreLogActions = [koreLogAction]
@@ -245,47 +250,48 @@ main = do
 
                 liftIO $
                     runBoosterLogger $
-                        Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $
-                            forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
-                                forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
-                                    Booster.Log.withRuleContext rule $ do
-                                        Booster.Log.withContext CtxInfo -- FIXME "partial-symbols"
-                                            $ Booster.Log.logMessage
-                                            $ Booster.Log.WithJsonMessage
-                                                (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
-                                            $ renderOneLineText
-                                            $ Pretty.hsep
-                                            $ Pretty.punctuate Pretty.comma
-                                            $ map
-                                                (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
-                                                rule.computedAttributes.notPreservesDefinednessReasons
-                                        unless (null ceils)
-                                            $ Booster.Log.withContext CtxInfo -- FIXME"computed-ceils"
-                                            $ Booster.Log.logMessage
-                                            $ Booster.Log.WithJsonMessage
-                                                ( JSON.object
-                                                    ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
-                                                )
-                                            $ renderOneLineText
-                                            $ Pretty.hsep
-                                            $ Pretty.punctuate Pretty.comma
-                                            $ map
-                                                (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
-                                                (Set.toList ceils)
+                        getPrettyModifiers >>= \case
+                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $
+                                forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
+                                    forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
+                                        Booster.Log.withRuleContext rule $ do
+                                            Booster.Log.withContext CtxInfo -- FIXME "partial-symbols"
+                                                $ Booster.Log.logMessage
+                                                $ Booster.Log.WithJsonMessage
+                                                    (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
+                                                $ renderOneLineText
+                                                $ Pretty.hsep
+                                                $ Pretty.punctuate Pretty.comma
+                                                $ map
+                                                    (pretty' @mods)
+                                                    rule.computedAttributes.notPreservesDefinednessReasons
+                                            unless (null ceils)
+                                                $ Booster.Log.withContext CtxInfo -- FIXME"computed-ceils"
+                                                $ Booster.Log.logMessage
+                                                $ Booster.Log.WithJsonMessage
+                                                    ( JSON.object
+                                                        ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
+                                                    )
+                                                $ renderOneLineText
+                                                $ Pretty.hsep
+                                                $ Pretty.punctuate Pretty.comma
+                                                $ map
+                                                    (either (pretty' @mods) (\t -> "#Ceil(" Pretty.<+> pretty' @mods t Pretty.<+> ")"))
+                                                    (Set.toList ceils)
 
-                                forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
-                                    unless (null s.computedAttributes.notPreservesDefinednessReasons)
-                                        $ Booster.Log.withRuleContext s
-                                        $ Booster.Log.withContext CtxInfo -- FIXME"partial-symbols"
-                                        $ Booster.Log.logMessage
-                                        $ Booster.Log.WithJsonMessage
-                                            (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
-                                        $ renderOneLineText
-                                        $ Pretty.hsep
-                                        $ Pretty.punctuate Pretty.comma
-                                        $ map
-                                            (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
-                                            s.computedAttributes.notPreservesDefinednessReasons
+                                    forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
+                                        unless (null s.computedAttributes.notPreservesDefinednessReasons)
+                                            $ Booster.Log.withRuleContext s
+                                            $ Booster.Log.withContext CtxInfo -- FIXME"partial-symbols"
+                                            $ Booster.Log.logMessage
+                                            $ Booster.Log.WithJsonMessage
+                                                (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
+                                            $ renderOneLineText
+                                            $ Pretty.hsep
+                                            $ Pretty.punctuate Pretty.comma
+                                            $ map
+                                                (pretty' @mods)
+                                                s.computedAttributes.notPreservesDefinednessReasons
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
 

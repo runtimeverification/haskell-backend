@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RankNTypes #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -36,9 +37,10 @@ import Data.Aeson (object, (.=))
 import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
-import Data.Data (Data)
+import Data.Data (Data, Proxy)
 import Data.Foldable (toList, traverse_)
 import Data.List (intersperse, partition)
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
@@ -62,6 +64,7 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
+import Booster.Pattern.Pretty
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
@@ -76,6 +79,7 @@ newtype EquationT io a
 
 instance MonadIO io => LoggerMIO (EquationT io) where
     getLogger = EquationT $ asks logger
+    getPrettyModifiers = EquationT $ asks prettyModifiers
     withLogger modL (EquationT m) = EquationT $ withReaderT (\cfg@EquationConfig{logger} -> cfg{logger = modL logger}) m
 
 throw :: Monad io => EquationFailure -> EquationT io a
@@ -104,31 +108,31 @@ data EquationFailure
     | UndefinedTerm Term LLVM.LlvmError
     deriving stock (Eq, Show, Data)
 
-instance Pretty EquationFailure where
-    pretty = \case
+instance Pretty (PrettyWithModifiers mods EquationFailure) where
+    pretty (PrettyWithModifiers f) = case f of
         IndexIsNone t ->
-            "Index 'None' for term " <> pretty t
+            "Index 'None' for term " <> pretty' @mods t
         TooManyIterations count start end ->
             vsep
                 [ "Unable to finish evaluation in " <> pretty count <> " iterations"
-                , "Started with: " <> pretty start
-                , "Stopped at: " <> pretty end
+                , "Started with: " <> pretty' @mods start
+                , "Stopped at: " <> pretty' @mods end
                 ]
         EquationLoop ts ->
-            vsep $ "Evaluation produced a loop:" : map pretty ts
+            vsep $ "Evaluation produced a loop:" : map (pretty' @mods) ts
         TooManyRecursions ts ->
             vsep $
                 "Recursion limit exceeded. The following terms were evaluated:"
-                    : map pretty ts
+                    : map (pretty' @mods) ts
         SideConditionFalse p ->
             vsep
                 [ "A side condition was found to be false during evaluation (pruning)"
-                , pretty p
+                , pretty' @mods p
                 ]
         UndefinedTerm t (LLVM.LlvmError err) ->
             vsep
                 [ "Term"
-                , pretty t
+                , pretty' @mods t
                 , "is undefined: "
                 , pretty (BS.unpack err)
                 ]
@@ -142,6 +146,7 @@ data EquationConfig = EquationConfig
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
+    , prettyModifiers :: ModifiersRep
     }
 
 data EquationState = EquationState
@@ -277,6 +282,7 @@ runEquationT ::
 runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
+    prettyModifiers <- getPrettyModifiers
     (res, endState) <-
         flip runStateT (startState sCache) $
             runExceptT $
@@ -289,6 +295,7 @@ runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
                         , logger
+                        , prettyModifiers
                         }
     pure (res, endState.cache)
 
@@ -321,8 +328,11 @@ iterateEquations direction preference startTerm = do
                     logWarn $
                         renderOneLineText $
                             "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                    withContext CtxDetail . logMessage . renderOneLineText $
-                        "Final term:" <+> pretty currentTerm
+                    withContext CtxDetail $
+                        getPrettyModifiers >>= \case
+                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                logMessage . renderOneLineText $
+                                    "Final term:" <+> pretty' @mods currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -734,8 +744,10 @@ applyEquation term rule = runExceptT $ do
             throwE
                 ( \ctxt ->
                     withContext CtxMatch $
-                        ctxt $
-                            logPretty failReason
+                        getPrettyModifiers >>= \case
+                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                ctxt $
+                                    logPretty' @mods failReason
                 , FailedMatch failReason
                 )
         MatchIndeterminate remainder ->
@@ -743,10 +755,18 @@ applyEquation term rule = runExceptT $ do
                 ( \ctxt ->
                     withContext CtxMatch $
                         ctxt $
-                            logMessage $
-                                WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                                    renderOneLineText $
-                                        "Uncertain about match with rule. Remainder:" <+> pretty remainder
+                            withContext CtxMatch $
+                                getPrettyModifiers >>= \case
+                                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                        logMessage $
+                                            WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                                renderOneLineText $
+                                                    "Uncertain about match with rule. Remainder:"
+                                                        <+> ( hsep $
+                                                                punctuate comma $
+                                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                        NonEmpty.toList remainder
+                                                            )
                 , IndeterminateMatch
                 )
         MatchSuccess subst -> do
@@ -758,13 +778,19 @@ applyEquation term rule = runExceptT $ do
 
             withContext CtxMatch $ withContext CtxSuccess $ do
                 logMessage rule
-                withContext CtxSubstitution
-                    $ logMessage
-                    $ WithJsonMessage
-                        (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
-                    $ renderOneLineText
-                    $ "Substitution:"
-                        <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
+                withContext CtxSubstitution $
+                    getPrettyModifiers >>= \case
+                        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                            logMessage
+                                $ WithJsonMessage
+                                    (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
+                                $ renderOneLineText
+                                $ "Substitution:"
+                                    <+> ( hsep $
+                                            intersperse "," $
+                                                map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
+                                                    Map.toList subst
+                                        )
 
             -- instantiate the requires clause with the obtained substitution
             let required =
@@ -793,9 +819,12 @@ applyEquation term rule = runExceptT $ do
                 throwE
                     ( \ctxt ->
                         ctxt $
-                            logMessage $
-                                renderOneLineText $
-                                    "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
+                            getPrettyModifiers >>= \case
+                                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                    logMessage $
+                                        renderOneLineText $
+                                            "Uncertain about a condition(s) in rule:"
+                                                <+> hsep (intersperse "," $ map (pretty' @mods) unclearConditions)
                     , IndeterminateCondition unclearConditions
                     )
 
@@ -819,9 +848,12 @@ applyEquation term rule = runExceptT $ do
     filterOutKnownConstraints priorKnowledge constraitns = do
         let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
         unless (null knownTrue) $
-            logMessage $
-                renderOneLineText $
-                    "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
+            getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    logMessage $
+                        renderOneLineText $
+                            "Known true side conditions (won't check):"
+                                <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
         pure toCheck
 
     -- Simplify given predicate in a nested EquationT execution.
