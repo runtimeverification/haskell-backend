@@ -99,7 +99,25 @@ executables:
       - containers
       - directory
       - filepath
+      - kore-rpc-types
       - text
+    ghc-options:
+      - -rtsopts
+  time-profile:
+    source-dirs: time-profile
+    main: Main.hs
+    dependencies:
+      - aeson
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - kore-rpc-types
+      - profiteur
+      - text
+      - unordered-containers
+      - vector
     ghc-options:
       - -rtsopts
   parsetest-binary:

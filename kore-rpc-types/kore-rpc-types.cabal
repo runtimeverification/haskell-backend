@@ -67,6 +67,7 @@ common library
   build-depends: casing >= 0.1.4
   build-depends: conduit >= 1.3
   build-depends: conduit-extra >=1.3
+  build-depends: containers >= 0.6
   build-depends: deepseq >=1.4
   build-depends: extra >=1.7
   build-depends: deriving-aeson >=0.2
@@ -77,6 +78,7 @@ common library
   build-depends: stm >=2.5
   build-depends: stm-conduit >= 4.0
   build-depends: text >=1.2
+  build-depends: time
   build-depends: unliftio >= 0.2
   build-depends: vector >= 0.12.3.1
 
@@ -88,6 +90,7 @@ library
     Kore.JsonRpc.Error
     Kore.JsonRpc.Types
     Kore.JsonRpc.Types.Log
+    Kore.JsonRpc.Types.ContextLog
     Kore.JsonRpc.Types.Depth
     Kore.JsonRpc.Server
     Kore.Syntax.Json.Types
