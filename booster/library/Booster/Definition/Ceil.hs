@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant <$>" #-}
 
 module Booster.Definition.Ceil (
     module Booster.Definition.Ceil,
