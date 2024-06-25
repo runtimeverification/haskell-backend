@@ -34,7 +34,6 @@ data SimpleContext
     | CtxConstraint
     | CtxSMT
     | CtxLlvm
-    | CtxCached
     | -- results
       CtxFailure
     | CtxIndeterminate
@@ -76,6 +75,7 @@ data IdContext
     | -- entities with name
       CtxHook Text
     | CtxRequest Text
+    | CtxCached Text
     deriving stock (Eq, Ord)
 
 instance Show IdContext where
@@ -86,6 +86,7 @@ instance Show IdContext where
     show (CtxTerm uid) = "term " <> show uid
     show (CtxHook name) = "hook " <> unpack name
     show (CtxRequest name) = "request " <> unpack name
+    show (CtxCached name) = "cached " <> unpack name
 
 getUniqueId :: IdContext -> Maybe UniqueId
 getUniqueId = \case
