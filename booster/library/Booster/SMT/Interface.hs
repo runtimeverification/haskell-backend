@@ -11,6 +11,7 @@ module Booster.SMT.Interface (
     finaliseSolver,
     getModelFor,
     checkPredicates,
+    checkSat,
     hardResetSolver,
 ) where
 
@@ -448,3 +449,47 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 <> pack (show (positive, negative))
 
         pure (positive, negative)
+
+
+checkSat ::
+    forall io.
+    Log.LoggerMIO io =>
+    SMT.SMTContext ->
+    Set Predicate ->
+    io (Either SMTError Bool)
+checkSat = undefined
+
+    -- interactWithSolver ::
+    --     [DeclareCommand] -> [SExpr] -> ExceptT SMTError (SMT io) (Response, Response)
+    -- interactWithSolver smtGiven sexprsToCheck = do
+    --     smtRun_ Push
+
+    --     -- assert ground truth
+    --     mapM_ smtRun smtGiven
+
+    --     consistent <- smtRun CheckSat
+    --     unless (consistent == Sat) $ do
+    --         let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
+    --         Log.logMessage errMsg
+    --     let ifConsistent check = if (consistent == Sat) then check else pure Unsat
+
+    --     -- save ground truth for 2nd check
+    --     smtRun_ Push
+
+    --     -- run check for K ∧ P and then for K ∧ !P
+    --     let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
+
+    --     positive <- ifConsistent $ do
+    --         smtRun_ $ Assert "P" allToCheck
+    --         smtRun CheckSat
+    --     smtRun_ Pop
+    --     negative <- ifConsistent $ do
+    --         smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
+    --         smtRun CheckSat
+    --     smtRun_ Pop
+
+    --     Log.logMessage $
+    --         "Check of Given ∧ P and Given ∧ !P produced "
+    --             <> pack (show (positive, negative))
+
+    --     pure (positive, negative)
