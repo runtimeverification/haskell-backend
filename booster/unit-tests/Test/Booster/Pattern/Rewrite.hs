@@ -201,9 +201,7 @@ errorCases =
 rewriteSuccess =
     testCase "con1 app rewrites to f1 app" $
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-            `rewritesTo` ( "con1-f1"
-                         , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-                         )
+            `rewritesTo` [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
 unifyNotMatch =
     testCase "Stuck case when subject has variables" $
         getsStuck
@@ -231,36 +229,32 @@ rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
             `branchesTo` [
-                             ( "con1-f2"
-                             , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
-                             )
+                             [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
                          ,
-                             ( "con1-f1'"
-                             , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
-                             )
+                             [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
                          ]
 
-runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteResult Pattern)
-runWith t =
+runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteStepResult [Pattern])
+runWith t = 
     second fst $
         unsafePerformIO
             ( runNoLoggingT $
-                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty (rewriteStep [] [] $ Pattern_ t)
+                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty mempty (fmap (fmap snd) <$> (rewriteStep $ Pattern_ t))
             )
 
-rewritesTo :: Term -> (Text, Term) -> IO ()
-t1 `rewritesTo` (lbl, t2) =
-    runWith t1 @?= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
+rewritesTo :: Term -> Term -> IO ()
+t1 `rewritesTo` t2 =
+    runWith t1 @?= Right (AppliedRules [Pattern_ t2])
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    runWith t1 @?= Right (RewriteStuck $ Pattern_ t1)
+    runWith t1 @?= Right (AppliedRules [])
 
-branchesTo :: Term -> [(Text, Term)] -> IO ()
+branchesTo :: Term -> [Term] -> IO ()
 t `branchesTo` ts =
     runWith t
         @?= Right
-            (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t')) ts)
+            (AppliedRules $ map Pattern_ ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
