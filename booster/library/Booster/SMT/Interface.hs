@@ -90,9 +90,9 @@ initSolver def smtOptions = Log.withContext Log.CtxSMT $ do
     ctxt <- mkContext smtOptions prelude
 
     evalSMT ctxt $ do
-        checkPrelude
         -- set timeout value for the general queries
         runCmd_ $ SetTimeout smtOptions.timeout
+        checkPrelude
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
