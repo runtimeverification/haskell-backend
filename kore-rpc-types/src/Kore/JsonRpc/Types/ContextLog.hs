@@ -15,6 +15,7 @@ import Data.Data (Data, toConstr)
 import Data.Sequence (Seq)
 import Data.Text (Text, unpack)
 import Data.Text qualified as Text
+import Data.Time.Clock.System (SystemTime (..))
 
 data SimpleContext
     = -- component
@@ -185,9 +186,10 @@ instance ToJSON CLMessage where
     toJSON (CLValue value) = value
 
 data LogLine = LogLine
-    { context :: Seq CLContext
+    { timestamp :: Maybe SystemTime
+    , context :: Seq CLContext
     , message :: CLMessage
     }
     deriving stock (Show, Eq)
 
-$(deriveJSON defaultOptions ''LogLine)
+$(deriveJSON defaultOptions{JSON.omitNothingFields = True} ''LogLine)
