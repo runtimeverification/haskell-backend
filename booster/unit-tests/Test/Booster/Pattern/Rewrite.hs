@@ -228,18 +228,23 @@ rewriteStuck =
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
-            `branchesTo` [
-                             [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
-                         ,
-                             [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
+            `branchesTo` [ [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
+                         , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
                          ]
 
 runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteStepResult [Pattern])
-runWith t = 
+runWith t =
     second fst $
         unsafePerformIO
             ( runNoLoggingT $
-                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty mempty (fmap (fmap snd) <$> (rewriteStep $ Pattern_ t))
+                runRewriteT
+                    NoCollectRewriteTraces
+                    def
+                    Nothing
+                    Nothing
+                    mempty
+                    mempty
+                    (fmap (fmap snd) <$> (rewriteStep $ Pattern_ t))
             )
 
 rewritesTo :: Term -> Term -> IO ()

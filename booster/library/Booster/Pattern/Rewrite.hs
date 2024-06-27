@@ -12,7 +12,7 @@ module Booster.Pattern.Rewrite (
     performRewrite,
     rewriteStep,
     RewriteFailed (..),
-    RewriteStepResult(..),
+    RewriteStepResult (..),
     RewriteResult (..),
     RewriteTrace (..),
     pattern CollectRewriteTraces,
@@ -133,7 +133,6 @@ getRemainder = RewriteT $ snd <$> lift get
 
 setRemainder :: Monad m => Set.Set Predicate -> RewriteT m ()
 setRemainder r = RewriteT $ lift $ modify $ \(cache, _) -> (cache, r)
-
 
 data RewriteStepResult a = OnlyTrivial | AppliedRules a deriving (Eq, Show, Functor)
 
@@ -400,10 +399,12 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
                 )
                 ceilConditions
     withContext CtxSuccess $ do
-            case unclearRequiresAfterSmt of
-                    [] -> withPatternContext rewritten $ pure (rewritten, Nothing)
-                    _ -> let rewritten' = rewritten{constraints = rewritten.constraints <> Set.fromList unclearRequiresAfterSmt} in
-                        withPatternContext rewritten' $ pure (rewritten', Just $ Predicate $ NotBool $ coerce $ collapseAndBools unclearRequiresAfterSmt)
+        case unclearRequiresAfterSmt of
+            [] -> withPatternContext rewritten $ pure (rewritten, Nothing)
+            _ ->
+                let rewritten' = rewritten{constraints = rewritten.constraints <> Set.fromList unclearRequiresAfterSmt}
+                 in withPatternContext rewritten' $
+                        pure (rewritten', Just $ Predicate $ NotBool $ coerce $ collapseAndBools unclearRequiresAfterSmt)
   where
     failRewrite = lift . throw
 
