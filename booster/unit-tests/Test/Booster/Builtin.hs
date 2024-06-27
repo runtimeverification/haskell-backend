@@ -548,9 +548,9 @@ testMapInKeysHook =
             result2 <- runInKeys [key, mapWith assocs (Just restVar)]
             Just (Builtin.boolTerm True) === result2
         , testCase "returns true when key syntactically present" $ do
-            result <- runInKeys [ [trm| g{}() |], Fixture.functionKMapWithOneItem]
+            result <- runInKeys [[trm| g{}() |], Fixture.functionKMapWithOneItem]
             Just (Builtin.boolTerm True) @=? result
-            result2 <- runInKeys [ [trm| g{}() |], Fixture.functionKMapWithOneItemAndRest]
+            result2 <- runInKeys [[trm| g{}() |], Fixture.functionKMapWithOneItemAndRest]
             Just (Builtin.boolTerm True) @=? result2
         , testCase "no result if unevaluated map keys present" $ do
             result <- runInKeys [notAKey, Fixture.functionKMapWithOneItem]
@@ -559,7 +559,7 @@ testMapInKeysHook =
             Nothing @=? result2
         , testProperty "no result for an unevaluated key not present" . property $ do
             assocs <- forAll $ genAssocs (Range.linear 0 42)
-            result <- runInKeys [ [trm| g{}() |] , mapWith assocs Nothing]
+            result <- runInKeys [[trm| g{}() |], mapWith assocs Nothing]
             Nothing === result
         ]
   where
