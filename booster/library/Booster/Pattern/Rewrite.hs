@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Redundant <$>" #-}
 
 {- |
@@ -71,7 +72,10 @@ import Booster.Util (Flag (..))
 
 newtype RewriteT io a = RewriteT
     { unRewriteT ::
-        ReaderT RewriteConfig (StateT (SimplifierCache, Set.Set Predicate) (ExceptT (RewriteFailed "Rewrite") io)) a
+        ReaderT
+            RewriteConfig
+            (StateT (SimplifierCache, Set.Set Predicate) (ExceptT (RewriteFailed "Rewrite") io))
+            a
     }
     deriving newtype (Functor, Applicative, Monad, MonadIO)
 
@@ -114,7 +118,6 @@ runRewriteT doTracing definition llvmApi smtSolver cache remainders m = do
 throw :: LoggerMIO io => RewriteFailed "Rewrite" -> RewriteT io a
 throw = RewriteT . lift . lift . throwE
 
-
 getConfig :: Monad m => RewriteT m RewriteConfig
 getConfig = RewriteT ask
 
@@ -129,7 +132,6 @@ getRemainder = RewriteT $ snd <$> lift get
 
 setRemainder :: Monad m => Set.Set Predicate -> RewriteT m ()
 setRemainder r = RewriteT $ lift $ modify $ \(cache, _) -> (cache, r)
-
 
 {- | Performs a rewrite step (using suitable rewrite rules from the
    definition).
@@ -171,15 +173,20 @@ rewriteStep pat = do
         -- fail the rewrite if anything is uncertain (unification,
         -- definedness, rule conditions)
         currentRemainder <- getRemainder
-        results <- catMaybes <$> mapM (\r -> (fmap (r,)) <$> applyRule pattr{constraints = pattr.constraints <> currentRemainder} r) rules
+        results <-
+            catMaybes
+                <$> mapM
+                    (\r -> (fmap (r,)) <$> applyRule pattr{constraints = pattr.constraints <> currentRemainder} r)
+                    rules
 
-
-        let nonTrivialResultsWithPartialRemainders = 
-                foldr 
-                    (\(rule, mRes) accRes -> case mRes of
+        let nonTrivialResultsWithPartialRemainders =
+                foldr
+                    ( \(rule, mRes) accRes -> case mRes of
                         Nothing -> accRes
-                        Just res -> (rule,res): accRes)
-                    mempty results
+                        Just res -> (rule, res) : accRes
+                    )
+                    mempty
+                    results
             -- compute remainder condition here from @nonTrivialResults@ and the remainder up to now.
             -- If the new remainder is bottom, then no lower priority rules apply
             newRemainder = currentRemainder <> Set.fromList (mapMaybe (snd . snd) nonTrivialResultsWithPartialRemainders)
@@ -189,26 +196,26 @@ rewriteStep pat = do
 
         if Set.null newRemainder
             then pure resultsWithoutRemainders
-            else getSolver >>= \case
-                Just solver -> SMT.checkSat solver (pattr.constraints <> newRemainder) >>= \case
-                    Right False -> do
-                        -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
-                        -- we need to make sure we set the remainder to empty before returning
-                        setRemainder mempty
-                        pure resultsWithoutRemainders
-                    Right True -> do
-                        -- the remainder condition is satisfiable.
-                        --  Have to construct the remainder branch and consider it
-                        -- To construct the "remainder pattern",
-                        -- we add the remainder condition to the predicates of the @pattr@
-                        (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
-                    Left SMT.SMTSolverUnknown{} ->
-                        -- solver cannot solve the remainder. Descend into the remainder branch anyway?
-                        (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
-                    Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
-
-
-                Nothing -> (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
+            else
+                getSolver >>= \case
+                    Just solver ->
+                        SMT.checkSat solver (pattr.constraints <> newRemainder) >>= \case
+                            Right False -> do
+                                -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
+                                -- we need to make sure we set the remainder to empty before returning
+                                setRemainder mempty
+                                pure resultsWithoutRemainders
+                            Right True -> do
+                                -- the remainder condition is satisfiable.
+                                --  Have to construct the remainder branch and consider it
+                                -- To construct the "remainder pattern",
+                                -- we add the remainder condition to the predicates of the @pattr@
+                                (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
+                            Left SMT.SMTSolverUnknown{} ->
+                                -- solver cannot solve the remainder. Descend into the remainder branch anyway?
+                                (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
+                            Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
+                    Nothing -> (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
 
 type RewriteRuleAppT m a = ExceptT (Maybe ()) m a
 
@@ -310,7 +317,8 @@ applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRu
             case checkAllRequires of
                 Left SMT.SMTSolverUnknown{} -> do
                     withContext CtxConstraint . logMessage . renderOneLineText $
-                        "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:" <+> pretty unclearRequires
+                        "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
+                            <+> pretty unclearRequires
                     pure unclearRequires
                 Left other ->
                     liftIO $ Exception.throw other -- fail hard on other SMT errors
@@ -567,7 +575,6 @@ data MaybeSimplified (isSimplified :: Bool) a where
     Unsimplified :: a -> MaybeSimplified 'False a
     Bottom :: a -> MaybeSimplified 'True a
 
-
 instance Functor (MaybeSimplified 'True) where
     fmap f = \case
         Simplified a -> Simplified $ f a
@@ -582,8 +589,8 @@ unMaybeSimplified = \case
 catSimplified :: [MaybeSimplified 'True a] -> [a]
 catSimplified = \case
     [] -> []
-    Bottom{}:xs -> catSimplified xs
-    (Simplified x):xs -> x : catSimplified xs
+    Bottom{} : xs -> catSimplified xs
+    (Simplified x) : xs -> x : catSimplified xs
 
 {- | Interface for RPC execute: Rewrite given term as long as there is
    exactly one result in each step.
@@ -691,7 +698,8 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
 
     updateCache simplifierCache = modify $ \rss -> rss{simplifierCache}
 
-    simplify :: MaybeSimplified flag Pattern -> StateT RewriteStepsState io (MaybeSimplified 'True Pattern)
+    simplify ::
+        MaybeSimplified flag Pattern -> StateT RewriteStepsState io (MaybeSimplified 'True Pattern)
     simplify = \case
         Simplified p -> pure $ Simplified p
         Bottom p -> pure $ Bottom p
@@ -715,19 +723,19 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                         emitRewriteTrace $ RewriteSimplified (Just other)
                         pure $ Simplified p
 
-
     labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
     ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
     uniqueId = (.uniqueId) . (.attributes)
 
-    -- return `Nothing` if all elements of a list are `(r, Nothing)`. If the list is empty or contains at least one `(r, Just p)`, 
+    -- return `Nothing` if all elements of a list are `(r, Nothing)`. If the list is empty or contains at least one `(r, Just p)`,
     -- return a `Just` list of `(r, p)` pairs.
-    collapseIfOnlyTrivial :: [(RewriteRule "Rewrite", Maybe Pattern)] -> Maybe [(RewriteRule "Rewrite", Pattern)]
+    collapseIfOnlyTrivial ::
+        [(RewriteRule "Rewrite", Maybe Pattern)] -> Maybe [(RewriteRule "Rewrite", Pattern)]
     collapseIfOnlyTrivial = \case
         [] -> Just []
         [(_, Nothing)] -> Nothing
-        (_, Nothing):xs -> collapseIfOnlyTrivial xs
-        (rule, Just pat):xs -> ((rule,pat):) <$> collapseIfOnlyTrivial xs
+        (_, Nothing) : xs -> collapseIfOnlyTrivial xs
+        (rule, Just pat) : xs -> ((rule, pat) :) <$> collapseIfOnlyTrivial xs
 
     doSteps ::
         MaybeSimplified flag Pattern -> StateT RewriteStepsState io (RewriteResult Pattern)
@@ -753,85 +761,95 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                         Left failure@RuleApplicationUnclear{} ->
                             case pat of
                                 Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
-                                _ -> simplify pat >>= \case
-                                    -- FIXME: I think this should be trivial, surely?
-                                    Bottom pat' -> logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
-                                    pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
+                                _ ->
+                                    simplify pat >>= \case
+                                        -- FIXME: I think this should be trivial, surely?
+                                        Bottom pat' -> logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
+                                        pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
                         Left failure -> do
                             emitRewriteTrace $ RewriteStepFailed failure
                             case pat of
                                 Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
-                                _ -> simplify pat >>= \case
-                                    -- FIXME: I think this should be trivial, surely?
-                                    Bottom pat' -> logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
-                                    Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
-                        Right (appliedRules, (cache, _remainder)) -> updateCache cache >> incrementCounter >> case collapseIfOnlyTrivial appliedRules of
-                            Nothing -> do
-                                -- all rule applications were trivial
-                                -- by definition that means we couldn't have had any remainders, so we can just return trivial
-                                logMessage $ "Simplified to bottom after " <> showCounter counter
-                                pure $ RewriteTrivial unWrappedPat
-                            Just [] -> do
-                                -- No trivial results, and no other applied rules.
-                                -- We return stuck if the term had already been simplified in a previous step
-                                -- If not, we attempt to 
-                                logMessage $ "Stopped after " <> showCounter counter
-                                emitRewriteTrace $ RewriteStepFailed $ NoApplicableRules unWrappedPat
-                                case pat of
-                                    Simplified pat' -> pure $ RewriteStuck pat'
-                                    _ -> simplify pat >>= \case
-                                        Bottom pat' ->
-                                            -- FIXME: I think this should be trivial, surely?
-                                            logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
-                                        pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
-                            Just [(rule, nextPat)]
-                                | labelOf rule `elem` cutLabels -> do
+                                _ ->
                                     simplify pat >>= \case
-                                        Bottom pat' -> do
-                                            logMessage $ "Previous state found to be bottom after " <> showCounter counter
-                                            pure $ RewriteTrivial pat'
-                                        Simplified pat' -> simplify (Unsimplified nextPat) >>= \case
+                                        -- FIXME: I think this should be trivial, surely?
+                                        Bottom pat' -> logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
+                                        Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
+                        Right (appliedRules, (cache, _remainder)) ->
+                            updateCache cache >> incrementCounter >> case collapseIfOnlyTrivial appliedRules of
+                                Nothing -> do
+                                    -- all rule applications were trivial
+                                    -- by definition that means we couldn't have had any remainders, so we can just return trivial
+                                    logMessage $ "Simplified to bottom after " <> showCounter counter
+                                    pure $ RewriteTrivial unWrappedPat
+                                Just [] -> do
+                                    -- No trivial results, and no other applied rules.
+                                    -- We return stuck if the term had already been simplified in a previous step
+                                    -- If not, we attempt to
+                                    logMessage $ "Stopped after " <> showCounter counter
+                                    emitRewriteTrace $ RewriteStepFailed $ NoApplicableRules unWrappedPat
+                                    case pat of
+                                        Simplified pat' -> pure $ RewriteStuck pat'
+                                        _ ->
+                                            simplify pat >>= \case
+                                                Bottom pat' ->
+                                                    -- FIXME: I think this should be trivial, surely?
+                                                    logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
+                                                pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
+                                Just [(rule, nextPat)]
+                                    | labelOf rule `elem` cutLabels -> do
+                                        simplify pat >>= \case
+                                            Bottom pat' -> do
+                                                logMessage $ "Previous state found to be bottom after " <> showCounter counter
+                                                pure $ RewriteTrivial pat'
+                                            Simplified pat' ->
+                                                simplify (Unsimplified nextPat) >>= \case
+                                                    Bottom nextPat' -> do
+                                                        logMessage $ "Simplified to bottom after " <> showCounter counter
+                                                        pure $ RewriteTrivial nextPat'
+                                                    Simplified nextPat' -> do
+                                                        logMessage $ "Cut point " <> (labelOf rule) <> " after " <> showCounter counter
+                                                        pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat' nextPat'
+                                    | labelOf rule `elem` terminalLabels -> do
+                                        emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) unWrappedPat nextPat
+                                        simplify (Unsimplified nextPat) >>= \case
                                             Bottom nextPat' -> do
                                                 logMessage $ "Simplified to bottom after " <> showCounter counter
                                                 pure $ RewriteTrivial nextPat'
                                             Simplified nextPat' -> do
-                                                logMessage $ "Cut point " <> (labelOf rule) <> " after " <> showCounter counter
-                                                pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat' nextPat'
-                                | labelOf rule `elem` terminalLabels -> do
-                                    emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) unWrappedPat nextPat
-                                    simplify (Unsimplified nextPat) >>= \case
-                                        Bottom nextPat' -> do
-                                            logMessage $ "Simplified to bottom after " <> showCounter counter
-                                            pure $ RewriteTrivial nextPat'
-                                        Simplified nextPat' -> do
-                                            logMessage $ "Terminal " <> (labelOf rule) <> " after " <> showCounter counter
-                                            pure $ RewriteTerminal (labelOf rule) (uniqueId rule) nextPat'
-                                | otherwise -> do
-                                    emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) unWrappedPat nextPat
-                                    doSteps (Unsimplified nextPat)
-                            Just nextPats -> do
-                                logMessage $ "Stopped due to branching after " <> showCounter counter
-                                simplify pat >>= \case
-                                    Bottom pat' -> do
-                                        logMessage $ "Previous state found to be bottom after " <> showCounter counter
-                                        pure $ RewriteTrivial pat'
-                                    Simplified pat' ->
-                                        (catSimplified <$> mapM (\(r, nextPat) -> fmap (r,) <$> simplify (Unsimplified nextPat)) nextPats) >>= \case
-                                            [] -> withPatternContext pat' $ do
-                                                logMessage ("Rewrite stuck after pruning branches" :: Text)
-                                                -- FIXME: why is this stuck? Surely we go from some pats to an empty list only if all branches were pruned to bottom
-                                                -- in which case we should say that the rewrite is trivial? ... but perhaps this branch should not occur at all?
-                                                -- i.e. pat would have been bottom already??
-                                                pure $ RewriteStuck pat'
-                                            [(rule, nextPat')] -> withPatternContext pat' $ do
-                                                logMessage ("All but one branch pruned, continuing" :: Text)
-                                                emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) pat' nextPat'
-                                                doSteps (Simplified nextPat')
-                                            nextPats' -> do
-                                                emitRewriteTrace $ RewriteBranchingStep pat' $ NE.fromList $
-                                                    map (\(rule, _) -> (ruleLabelOrLocT rule, uniqueId rule)) nextPats'
-                                                pure $ RewriteBranch pat' $ NE.fromList $
-                                                    map (\(r, n) -> (ruleLabelOrLocT r, uniqueId r, n)) nextPats'
+                                                logMessage $ "Terminal " <> (labelOf rule) <> " after " <> showCounter counter
+                                                pure $ RewriteTerminal (labelOf rule) (uniqueId rule) nextPat'
+                                    | otherwise -> do
+                                        emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) unWrappedPat nextPat
+                                        doSteps (Unsimplified nextPat)
+                                Just nextPats -> do
+                                    logMessage $ "Stopped due to branching after " <> showCounter counter
+                                    simplify pat >>= \case
+                                        Bottom pat' -> do
+                                            logMessage $ "Previous state found to be bottom after " <> showCounter counter
+                                            pure $ RewriteTrivial pat'
+                                        Simplified pat' ->
+                                            (catSimplified <$> mapM (\(r, nextPat) -> fmap (r,) <$> simplify (Unsimplified nextPat)) nextPats) >>= \case
+                                                [] -> withPatternContext pat' $ do
+                                                    logMessage ("Rewrite stuck after pruning branches" :: Text)
+                                                    -- FIXME: why is this stuck? Surely we go from some pats to an empty list only if all branches were pruned to bottom
+                                                    -- in which case we should say that the rewrite is trivial? ... but perhaps this branch should not occur at all?
+                                                    -- i.e. pat would have been bottom already??
+                                                    pure $ RewriteStuck pat'
+                                                [(rule, nextPat')] -> withPatternContext pat' $ do
+                                                    logMessage ("All but one branch pruned, continuing" :: Text)
+                                                    emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) pat' nextPat'
+                                                    doSteps (Simplified nextPat')
+                                                nextPats' -> do
+                                                    emitRewriteTrace $
+                                                        RewriteBranchingStep pat' $
+                                                            NE.fromList $
+                                                                map (\(rule, _) -> (ruleLabelOrLocT rule, uniqueId rule)) nextPats'
+                                                    pure $
+                                                        RewriteBranch pat' $
+                                                            NE.fromList $
+                                                                map (\(r, n) -> (ruleLabelOrLocT r, uniqueId r, n)) nextPats'
+
 data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace ()))
