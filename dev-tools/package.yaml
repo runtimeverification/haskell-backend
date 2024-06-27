@@ -103,6 +103,22 @@ executables:
       - text
     ghc-options:
       - -rtsopts
+  process-logs:
+    source-dirs: process-logs
+    main: Main.hs
+    dependencies:
+      - aeson
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - hs-backend-booster
+      - kore-rpc-types
+      - optparse-applicative
+      - text
+    ghc-options:
+      - -rtsopts
   time-profile:
     source-dirs: time-profile
     main: Main.hs
