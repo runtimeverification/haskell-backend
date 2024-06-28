@@ -8,6 +8,8 @@ module Kore.JsonRpc.Types.ContextLog (
     module Kore.JsonRpc.Types.ContextLog,
 ) where
 
+import Control.Applicative ((<|>))
+import Data.Aeson ((.:), (.:?), (.=))
 import Data.Aeson.TH (deriveJSON)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), defaultOptions)
 import Data.Aeson.Types qualified as JSON
@@ -15,7 +17,9 @@ import Data.Data (Data, toConstr)
 import Data.Sequence (Seq)
 import Data.Text (Text, unpack)
 import Data.Text qualified as Text
-import Data.Time.Clock.System (SystemTime (..))
+import Data.Time.Clock.System (SystemTime (..), systemToUTCTime, utcToSystemTime)
+import Data.Time.Format (defaultTimeLocale, formatTime, parseTimeM)
+import Text.Read (readMaybe)
 
 data SimpleContext
     = -- component
@@ -192,4 +196,44 @@ data LogLine = LogLine
     }
     deriving stock (Show, Eq)
 
-$(deriveJSON defaultOptions{JSON.omitNothingFields = True} ''LogLine)
+instance FromJSON LogLine where
+    parseJSON = JSON.withObject "LogLine" $ \l ->
+        LogLine
+            <$> (l .:? "timestamp" >>= parseTimestamp)
+            <*> l .: "context"
+            <*> l .: "message"
+
+parseTimestamp :: Maybe JSON.Value -> JSON.Parser (Maybe SystemTime)
+parseTimestamp Nothing = pure Nothing
+parseTimestamp (Just x) =
+    JSON.withScientific "numeric timestamp" (pure . Just . fromNumeric) x
+        <|> JSON.withText "human-readable timestamp" fromString x
+        <|> JSON.withText "nanosecond timestamp" fromNanos x
+  where
+    -- fromNumeric :: Scientific -> SystemTime
+    fromNumeric n =
+        let seconds = truncate n
+            nanos = truncate $ 1e9 * (n - fromIntegral seconds) -- no leap seconds
+         in MkSystemTime seconds nanos
+    fromString s = do
+        utc <- parseTimeM False defaultTimeLocale timestampFormat (Text.unpack s)
+        pure . Just $ utcToSystemTime utc
+    fromNanos s =
+        case readMaybe (Text.unpack s) of
+            Nothing -> fail $ "bad number " <> show s
+            Just (n :: Integer) -> pure . Just $ fromNumeric (fromIntegral n :: Double)
+
+instance ToJSON LogLine where
+    toJSON LogLine{timestamp, context, message} =
+        JSON.object $
+            maybe
+                []
+                (\t -> ["timestamp" .= formatted t])
+                timestamp
+                <> ["context" .= context, "message" .= message]
+      where
+        formatted = formatTime defaultTimeLocale timestampFormat . systemToUTCTime
+
+-- same format as the one used in Booster.Util
+timestampFormat :: String
+timestampFormat = "%Y-%m-%dT%H:%M:%S%6Q"
