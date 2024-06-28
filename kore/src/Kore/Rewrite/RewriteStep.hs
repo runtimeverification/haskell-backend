@@ -35,6 +35,7 @@ import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (SideCondition)
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
@@ -75,6 +76,7 @@ import Kore.Rewrite.Step (
     applyInitialConditions,
     applyRemainder,
     assertFunctionLikeResults,
+    simplifyRemainder,
     unifyRules,
  )
 import Kore.Simplify.Ceil (
@@ -306,11 +308,21 @@ finalizeRulesParallel
                     & fmap fold
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
                 remainderPredicate = Remainder.remainder' unifications
-            -- evaluate the remainder predicate to make sure it is actually satisfiable
+
+            -- Simplify the remainder predicate under the side condition and the initial conditions.
+            simplifiedRemainderCondition <-
+                simplifyRemainder
+                    sideCondition
+                    (Conditional.withoutTerm initial)
+                    (Conditional.fromPredicate remainderPredicate)
+
+            -- check simplified remainder to make sure it is actually satisfiable.
             SMT.evalPredicate
                 (ErrorDecidePredicateUnknown $srcLoc Nothing)
-                remainderPredicate
-                Nothing
+                ( from @(Conditional RewritingVariableName ()) @(Predicate RewritingVariableName)
+                    simplifiedRemainderCondition
+                )
+                (Just sideCondition)
                 >>= \case
                     -- remainder condition is UNSAT: we prune the remainder branch early to avoid
                     -- jumping into the pit of function evaluation in the configuration under the
@@ -329,7 +341,7 @@ finalizeRulesParallel
                         -- the remainder branch, i.e. to evaluate the functions in the configuration
                         -- with the remainder in the path condition and rewrite further
                         remainders <-
-                            applyRemainder sideCondition initial (Condition.fromPredicate remainderPredicate)
+                            applyRemainder sideCondition initial simplifiedRemainderCondition
                                 & Logic.observeAllT
                                 & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
                         return
