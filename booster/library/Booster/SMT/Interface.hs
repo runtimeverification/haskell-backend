@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -23,6 +26,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
+import Data.Data (Proxy)
 import Data.Either (isLeft)
 import Data.Either.Extra (fromLeft', fromRight')
 import Data.Map (Map)
@@ -30,12 +34,13 @@ import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
-import Prettyprinter (Pretty, hsep, pretty)
+import Prettyprinter (Pretty, hsep)
 import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
 import Booster.Log qualified as Log
 import Booster.Pattern.Base
+import Booster.Pattern.Pretty
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
@@ -267,8 +272,10 @@ getModelFor ctxt ps subst
                     (const . ((`Set.member` sortsToTranslate) . (.variableSort)))
                     freeVarsMap
         unless (Map.null untranslatableVars) $
-            let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
-             in Log.logMessage ("Untranslatable variables in model: " <> vars)
+            Log.getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    let vars = Pretty.renderText . hsep . map (pretty' @mods) $ Map.keys untranslatableVars
+                     in Log.logMessage ("Untranslatable variables in model: " <> vars)
 
         response <-
             if Map.null freeVarsMap
@@ -294,8 +301,8 @@ getModelFor ctxt ps subst
             other ->
                 throwSMT' $ "Unexpected SMT response to GetValue: " <> show other
 
-mkComment :: Pretty a => a -> BS.ByteString
-mkComment = BS.pack . Pretty.renderDefault . pretty
+mkComment :: Pretty (PrettyWithModifiers '[Decoded] a) => a -> BS.ByteString
+mkComment = BS.pack . Pretty.renderDefault . pretty' @'[Decoded]
 
 {- | Check a predicates, given a set of predicates as known truth.
 
@@ -355,8 +362,10 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 , "assertions and a substitution of size"
                 , pack (show $ Map.size givenSubst)
                 ]
-        Log.logMessage . Pretty.renderOneLineText $
-            hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
+        Log.getPrettyModifiers >>= \case
+            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                Log.logMessage . Pretty.renderOneLineText $
+                    hsep ("Predicates to check:" : map (pretty' @mods) (Set.toList psToCheck))
         result <- interactWithSolver smtGiven sexprsToCheck
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "

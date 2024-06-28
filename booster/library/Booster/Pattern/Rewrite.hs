@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Redundant <$>" #-}
@@ -32,6 +33,7 @@ import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Aeson (object, (.=))
 import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
+import Data.Data (Proxy)
 import Data.Hashable qualified as Hashable
 import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
@@ -65,6 +67,7 @@ import Booster.Pattern.Match (
     SortError,
     matchTerms,
  )
+import Booster.Pattern.Pretty
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
@@ -86,10 +89,13 @@ data RewriteConfig = RewriteConfig
     , smtSolver :: Maybe SMT.SMTContext
     , doTracing :: Flag "CollectRewriteTraces"
     , logger :: Logger LogMessage
+    , prettyModifiers :: ModifiersRep
     }
 
 instance MonadIO io => LoggerMIO (RewriteT io) where
     getLogger = RewriteT $ asks logger
+    getPrettyModifiers = RewriteT $ asks prettyModifiers
+
     withLogger modL (RewriteT m) = RewriteT $ withReaderT (\cfg@RewriteConfig{logger} -> cfg{logger = modL logger}) m
 
 pattern CollectRewriteTraces :: Flag "CollectRewriteTraces"
@@ -110,9 +116,10 @@ runRewriteT ::
     io (Either (RewriteFailed "Rewrite") (a, (SimplifierCache, Set.Set Predicate)))
 runRewriteT doTracing definition llvmApi smtSolver cache remainders m = do
     logger <- getLogger
+    prettyModifiers <- getPrettyModifiers
     runExceptT
         . flip runStateT (cache, remainders)
-        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing, logger}
+        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing, logger, prettyModifiers}
         . unRewriteT
         $ m
 
@@ -254,159 +261,177 @@ applyRule ::
     Pattern ->
     RewriteRule "Rewrite" ->
     RewriteT io (Maybe (Maybe (Pattern, Maybe Predicate)))
-applyRule pat@Pattern{ceilConditions} rule = withRuleContext rule $ runRewriteRuleAppT $ do
-    def <- lift getDefinition
-    -- unify terms
-    subst <- withContext CtxMatch $ case matchTerms Rewrite def rule.lhs pat.term of
-        MatchFailed (SubsortingError sortError) -> do
-            withContext CtxError $ logPretty sortError
-            failRewrite $ RewriteSortError rule pat.term sortError
-        MatchFailed err@ArgLengthsDiffer{} -> do
-            withContext CtxError $ logPretty err
-            failRewrite $ InternalMatchError $ renderText $ pretty err
-        MatchFailed reason -> do
-            withContext CtxFailure $ logPretty reason
-            returnNotApplied
-        MatchIndeterminate remainder -> do
-            withContext CtxIndeterminate $
-                logMessage $
-                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                        renderOneLineText $
-                            "Uncertain about match with rule. Remainder:" <+> pretty remainder
-            failRewrite $ RuleApplicationUnclear rule pat.term remainder
-        MatchSuccess substitution -> do
-            withContext CtxSuccess $ do
-                logMessage rule
-                withContext CtxSubstitution
-                    $ logMessage
-                    $ WithJsonMessage
-                        ( object
-                            ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList substitution)]
-                        )
-                    $ renderOneLineText
-                    $ "Substitution:"
-                        <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList substitution)
-            pure substitution
+applyRule pat@Pattern{ceilConditions} rule =
+    withRuleContext rule $
+        runRewriteRuleAppT $
+            getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
+                    def <- lift getDefinition
+                    -- unify terms
+                    subst <- withContext CtxMatch $ case matchTerms Rewrite def rule.lhs pat.term of
+                        MatchFailed (SubsortingError sortError) -> do
+                            withContext CtxError $ logPretty' @mods sortError
+                            failRewrite $ RewriteSortError rule pat.term sortError
+                        MatchFailed err@ArgLengthsDiffer{} -> do
+                            withContext CtxError $ logPretty' @mods err
+                            failRewrite $ InternalMatchError $ renderText $ pretty' @mods err
+                        MatchFailed reason -> do
+                            withContext CtxFailure $ logPretty' @mods reason
+                            returnNotApplied
+                        MatchIndeterminate remainder -> do
+                            withContext CtxIndeterminate $
+                                logMessage $
+                                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                        renderOneLineText $
+                                            "Uncertain about match with rule. Remainder:"
+                                                <+> ( hsep $
+                                                        punctuate comma $
+                                                            map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                NE.toList remainder
+                                                    )
+                            failRewrite $ RuleApplicationUnclear rule pat.term remainder
+                        MatchSuccess substitution -> do
+                            withContext CtxSuccess $ do
+                                logMessage rule
+                                withContext CtxSubstitution
+                                    $ logMessage
+                                    $ WithJsonMessage
+                                        ( object
+                                            ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList substitution)]
+                                        )
+                                    $ renderOneLineText
+                                    $ "Substitution:"
+                                        <+> ( hsep $
+                                                intersperse "," $
+                                                    map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
+                                                        Map.toList substitution
+                                            )
+                            pure substitution
 
-    -- Also fail the whole rewrite if a rule applies but may introduce
-    -- an undefined term.
-    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        withContext CtxDefinedness . withContext CtxAbort $
-            logMessage $
-                renderOneLineText $
-                    "Uncertain about definedness of rule due to:"
-                        <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-        failRewrite $
-            DefinednessUnclear
-                rule
-                pat
-                rule.computedAttributes.notPreservesDefinednessReasons
+                    -- Also fail the whole rewrite if a rule applies but may introduce
+                    -- an undefined term.
+                    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+                        withContext CtxDefinedness . withContext CtxAbort $
+                            logMessage $
+                                renderOneLineText $
+                                    "Uncertain about definedness of rule due to:"
+                                        <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+                        failRewrite $
+                            DefinednessUnclear
+                                rule
+                                pat
+                                rule.computedAttributes.notPreservesDefinednessReasons
 
-    -- apply substitution to rule requires constraints and simplify (one by one
-    -- in isolation). Stop if false, abort rewrite if indeterminate.
-    let ruleRequires =
-            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
-    -- filter out any predicates known to be _syntactically_ present in the known prior
-    let prior = pat.constraints
-        (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
-    unless (null knownTrue) $
-        logMessage $
-            renderOneLineText $
-                "Known true side conditions (won't check):" <+> pretty knownTrue
-
-    unclearRequires <-
-        catMaybes <$> mapM (checkConstraint returnNotApplied) toCheck
-
-    -- check unclear requires-clauses in the context of known constraints (prior)
-    mbSolver <- lift getSolver
-
-    unclearRequiresAfterSmt <- case mbSolver of
-        Just solver -> do
-            checkAllRequires <-
-                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
-
-            case checkAllRequires of
-                Left SMT.SMTSolverUnknown{} -> do
-                    withContext CtxConstraint . logMessage . renderOneLineText $
-                        "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
-                            <+> pretty unclearRequires
-                    pure unclearRequires
-                Left other ->
-                    liftIO $ Exception.throw other -- fail hard on other SMT errors
-                Right (Just False) -> do
-                    -- requires is actually false given the prior
-                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
-                    returnNotApplied
-                Right (Just True) ->
-                    pure [] -- can proceed
-                Right Nothing -> do
-                    withContext CtxConstraint . logMessage . renderOneLineText $
-                        "Uncertain about condition(s) in a rule, adding as remainder:" <+> pretty unclearRequires
-                    pure unclearRequires
-        Nothing -> do
-            if (not . null $ unclearRequires)
-                then do
-                    withContext CtxConstraint . withContext CtxAbort $
+                    -- apply substitution to rule requires constraints and simplify (one by one
+                    -- in isolation). Stop if false, abort rewrite if indeterminate.
+                    let ruleRequires =
+                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
+                    -- filter out any predicates known to be _syntactically_ present in the known prior
+                    let prior = pat.constraints
+                        (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
+                    unless (null knownTrue) $
                         logMessage $
                             renderOneLineText $
-                                "Uncertain about a condition(s) in rule, no SMT solver:" <+> pretty unclearRequires
-                    failRewrite $
-                        RuleConditionUnclear rule (head unclearRequires)
-                else pure []
+                                "Known true side conditions (won't check):"
+                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ knownTrue)
 
-    -- check ensures constraints (new) from rhs: stop and return `Trivial` if
-    -- any are false, remove all that are trivially true, return the rest
-    let ruleEnsures =
-            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
-                Set.toList rule.ensures
-    newConstraints <-
-        catMaybes <$> mapM (checkConstraint returnTrivial) ruleEnsures
+                    unclearRequires <-
+                        catMaybes <$> mapM (checkConstraint returnNotApplied) toCheck
 
-    -- check all new constraints together with the known side constraints
-    whenJust mbSolver $ \solver ->
-        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-            Right (Just False) -> do
-                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                -- it's probably still fine to return trivial here even if we assumed unclear required conditions
-                returnTrivial
-            Right _other ->
-                pure ()
-            Left SMT.SMTSolverUnknown{} ->
-                pure ()
-            Left other ->
-                liftIO $ Exception.throw other
+                    -- check unclear requires-clauses in the context of known constraints (prior)
+                    mbSolver <- lift getSolver
 
-    -- existential variables may be present in rule.rhs and rule.ensures,
-    -- need to strip prefixes and freshen their names with respect to variables already
-    -- present in the input pattern and in the unification substitution
-    let varsFromInput = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
-        varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
-        forbiddenVars = varsFromInput <> varsFromSubst
-        existentialSubst =
-            Map.fromSet
-                (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
-                rule.existentials
+                    unclearRequiresAfterSmt <- case mbSolver of
+                        Just solver -> do
+                            checkAllRequires <-
+                                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
 
-    -- modify the substitution to include the existentials
-    let substWithExistentials = subst `Map.union` existentialSubst
+                            case checkAllRequires of
+                                Left SMT.SMTSolverUnknown{} -> do
+                                    withContext CtxConstraint . logMessage . renderOneLineText $
+                                        "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
+                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                                    pure unclearRequires
+                                Left other ->
+                                    liftIO $ Exception.throw other -- fail hard on other SMT errors
+                                Right (Just False) -> do
+                                    -- requires is actually false given the prior
+                                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                                    returnNotApplied
+                                Right (Just True) ->
+                                    pure [] -- can proceed
+                                Right Nothing -> do
+                                    withContext CtxConstraint . logMessage . renderOneLineText $
+                                        "Uncertain about condition(s) in a rule, adding as remainder:"
+                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                                    pure unclearRequires
+                        Nothing -> do
+                            if (not . null $ unclearRequires)
+                                then do
+                                    withContext CtxConstraint . withContext CtxAbort $
+                                        logMessage $
+                                            WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> unclearRequires)]) $
+                                                renderOneLineText $
+                                                    "Uncertain about a condition(s) in rule, no SMT solver:"
+                                                        <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                                    failRewrite $
+                                        RuleConditionUnclear rule (head unclearRequires)
+                                else pure []
 
-    let rewritten =
-            Pattern
-                (substituteInTerm substWithExistentials rule.rhs)
-                -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
-                ( pat.constraints
-                    <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
-                )
-                ceilConditions
-    withContext CtxSuccess $ do
-        case unclearRequiresAfterSmt of
-            [] -> withPatternContext rewritten $ pure (rewritten, Nothing)
-            _ ->
-                let rewritten' = rewritten{constraints = rewritten.constraints <> Set.fromList unclearRequiresAfterSmt}
-                 in withPatternContext rewritten' $
-                        pure (rewritten', Just $ Predicate $ NotBool $ coerce $ collapseAndBools unclearRequiresAfterSmt)
+                    -- check ensures constraints (new) from rhs: stop and return `Trivial` if
+                    -- any are false, remove all that are trivially true, return the rest
+                    let ruleEnsures =
+                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
+                                Set.toList rule.ensures
+                    newConstraints <-
+                        catMaybes <$> mapM (checkConstraint returnTrivial) ruleEnsures
+
+                    -- check all new constraints together with the known side constraints
+                    whenJust mbSolver $ \solver ->
+                        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
+                            Right (Just False) -> do
+                                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                                -- it's probably still fine to return trivial here even if we assumed unclear required conditions
+                                returnTrivial
+                            Right _other ->
+                                pure ()
+                            Left SMT.SMTSolverUnknown{} ->
+                                pure ()
+                            Left other ->
+                                liftIO $ Exception.throw other
+
+                    -- existential variables may be present in rule.rhs and rule.ensures,
+                    -- need to strip prefixes and freshen their names with respect to variables already
+                    -- present in the input pattern and in the unification substitution
+                    let varsFromInput = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
+                        varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
+                        forbiddenVars = varsFromInput <> varsFromSubst
+                        existentialSubst =
+                            Map.fromSet
+                                (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
+                                rule.existentials
+
+                        -- modify the substitution to include the existentials
+                        substWithExistentials = subst `Map.union` existentialSubst
+
+                        rewritten =
+                            Pattern
+                                (substituteInTerm substWithExistentials rule.rhs)
+                                -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
+                                ( pat.constraints
+                                    <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
+                                )
+                                ceilConditions
+                    withContext CtxSuccess $ do
+                        case unclearRequiresAfterSmt of
+                            [] -> withPatternContext rewritten $ pure (rewritten, Nothing)
+                            _ ->
+                                let rewritten' = rewritten{constraints = rewritten.constraints <> Set.fromList unclearRequiresAfterSmt}
+                                 in withPatternContext rewritten' $
+                                        pure (rewritten', Just $ Predicate $ NotBool $ coerce $ collapseAndBools unclearRequiresAfterSmt)
   where
-    failRewrite = lift . throw
+    failRewrite :: RewriteFailed "Rewrite" -> RewriteRuleAppT (RewriteT io) a
+    failRewrite = lift . (throw)
 
     checkConstraint ::
         RewriteRuleAppT (RewriteT io) (Maybe Predicate) ->
@@ -448,44 +473,49 @@ data RewriteFailed k
       TermIndexIsNone Term
     deriving stock (Eq, Show)
 
-instance Pretty (RewriteFailed k) where
-    pretty (NoApplicableRules pat) =
-        "No rules applicable for the pattern " <> pretty pat
-    pretty (RuleApplicationUnclear rule term remainder) =
-        hsep
-            [ "Uncertain about unification of rule"
-            , ruleLabelOrLoc rule
-            , " with term "
-            , pretty term
-            , "Remainder:"
-            , pretty remainder
-            ]
-    pretty (RuleConditionUnclear rule predicate) =
-        hsep
-            [ "Uncertain about a condition in rule"
-            , ruleLabelOrLoc rule
-            , ": "
-            , pretty predicate
-            ]
-    pretty (DefinednessUnclear rule _pat reasons) =
-        hsep $
-            [ "Uncertain about definedness of rule "
-            , ruleLabelOrLoc rule
-            , "because of:"
-            ]
-                ++ map pretty reasons
-    pretty (RewriteSortError rule term sortError) =
-        hsep
-            [ "Sort error while unifying"
-            , pretty term
-            , "with rule"
-            , ruleLabelOrLoc rule
-            , ":"
-            , pretty $ show sortError
-            ]
-    pretty (TermIndexIsNone term) =
-        "Term index is None for term " <> pretty term
-    pretty (InternalMatchError err) = "An internal error occured" <> pretty err
+instance FromModifiersT mods => Pretty (PrettyWithModifiers mods (RewriteFailed k)) where
+    pretty (PrettyWithModifiers f) = case f of
+        NoApplicableRules pat ->
+            "No rules applicable for the pattern " <> pretty' @mods pat
+        RuleApplicationUnclear rule term remainder ->
+            hsep
+                [ "Uncertain about unification of rule"
+                , ruleLabelOrLoc rule
+                , " with term "
+                , pretty' @mods term
+                , "Remainder:"
+                , ( hsep $
+                        punctuate comma $
+                            map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                NE.toList remainder
+                  )
+                ]
+        RuleConditionUnclear rule predicate ->
+            hsep
+                [ "Uncertain about a condition in rule"
+                , ruleLabelOrLoc rule
+                , ": "
+                , pretty' @mods predicate
+                ]
+        DefinednessUnclear rule _pat reasons ->
+            hsep $
+                [ "Uncertain about definedness of rule "
+                , ruleLabelOrLoc rule
+                , "because of:"
+                ]
+                    ++ map pretty reasons
+        RewriteSortError rule term sortError ->
+            hsep
+                [ "Sort error while unifying"
+                , pretty' @mods term
+                , "with rule"
+                , ruleLabelOrLoc rule
+                , ":"
+                , pretty $ show sortError
+                ]
+        TermIndexIsNone term ->
+            "Term index is None for term " <> pretty' @mods term
+        InternalMatchError err -> "An internal error occured" <> pretty err
 
 ruleLabelOrLoc :: RewriteRule k -> Doc a
 ruleLabelOrLoc rule =
@@ -534,29 +564,29 @@ eraseStates = \case
     RewriteStepFailed failureInfo -> RewriteStepFailed failureInfo
     RewriteSimplified mbEquationFailure -> RewriteSimplified mbEquationFailure
 
-instance Pretty (RewriteTrace Pattern) where
-    pretty = \case
+instance FromModifiersT mods => Pretty (PrettyWithModifiers mods (RewriteTrace Pattern)) where
+    pretty (PrettyWithModifiers t) = case t of
         RewriteSingleStep lbl _uniqueId pat rewritten ->
             let
                 (l, r) = diff pat rewritten
              in
                 hang 4 . vsep $
                     [ "Rewriting configuration"
-                    , pretty l.term
+                    , pretty' @mods l.term
                     , "to"
-                    , pretty r.term
+                    , pretty' @mods r.term
                     , "Using rule:"
                     , pretty lbl
                     ]
         RewriteBranchingStep pat branches ->
             hang 4 . vsep $
                 [ "Configuration"
-                , pretty (term pat)
+                , pretty' @mods (term pat)
                 , "branches on rules:"
                 , hang 2 $ vsep [pretty lbl | (lbl, _) <- toList branches]
                 ]
         RewriteSimplified{} -> "Applied simplification"
-        RewriteStepFailed failure -> pretty failure
+        RewriteStepFailed failure -> pretty' @mods failure
 
 diff :: Pattern -> Pattern -> (Pattern, Pattern)
 diff p1 p2 =
