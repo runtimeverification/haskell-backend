@@ -483,8 +483,10 @@ isSat ctxt psToCheck
       where
         solve' = do
             lift $ hardResetSolver ctxt.options
-            Log.logMessage . Pretty.renderOneLineText $
-                hsep ("Predicates to check for SAT:" : map pretty (Set.toList psToCheck))
+            Log.getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    Log.logMessage . Pretty.renderOneLineText $
+                        hsep ("Predicates to check for SAT:" : map (pretty' @mods) (Set.toList psToCheck))
             lift $ declareVariables transState
             mapM_ smtRun smtToCheck
             smtRun CheckSat >>= \case
@@ -518,38 +520,3 @@ isSat ctxt psToCheck
                     let msg = "Unexpected result while calling ':reason-unknown': " <> show other
                     Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
                     throwSMT' msg
-
--- interactWithSolver ::
---     [DeclareCommand] -> [SExpr] -> ExceptT SMTError (SMT io) (Response, Response)
--- interactWithSolver smtGiven sexprsToCheck = do
---     smtRun_ Push
-
---     -- assert ground truth
---     mapM_ smtRun smtGiven
-
---     consistent <- smtRun CheckSat
---     unless (consistent == Sat) $ do
---         let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
---         Log.logMessage errMsg
---     let ifConsistent check = if (consistent == Sat) then check else pure Unsat
-
---     -- save ground truth for 2nd check
---     smtRun_ Push
-
---     -- run check for K ∧ P and then for K ∧ !P
---     let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
-
---     positive <- ifConsistent $ do
---         smtRun_ $ Assert "P" allToCheck
---         smtRun CheckSat
---     smtRun_ Pop
---     negative <- ifConsistent $ do
---         smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
---         smtRun CheckSat
---     smtRun_ Pop
-
---     Log.logMessage $
---         "Check of Given ∧ P and Given ∧ !P produced "
---             <> pack (show (positive, negative))
-
---     pure (positive, negative)

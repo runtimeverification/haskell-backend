@@ -170,7 +170,7 @@ rewriteStep pat = do
 
     -- process one priority group at a time (descending priority),
     -- until a result is obtained or the entire rewrite fails.
-    filterOutTrivial <$> processGroups pat rules
+    filterOutTrivial <$> processGroups rules
   where
     -- return `OnlyTrivial` if all elements of a list are `(r, Nothing)`. If the list is empty or contains at least one `(r, Just p)`,
     -- return an `AppliedRules` list of `(r, p)` pairs.
@@ -184,11 +184,10 @@ rewriteStep pat = do
 
     processGroups ::
         LoggerMIO io =>
-        Pattern ->
         [[RewriteRule "Rewrite"]] ->
         RewriteT io [(RewriteRule "Rewrite", Maybe Pattern)]
-    processGroups _pattr [] = pure mempty
-    processGroups pattr (rules : lowerPriorityRules) = do
+    processGroups [] = pure []
+    processGroups (rules : lowerPriorityRules) = do
         -- try all rules of the priority group. This will immediately
         -- fail the rewrite if anything is uncertain (unification,
         -- definedness, rule conditions)
@@ -196,7 +195,7 @@ rewriteStep pat = do
         results <-
             catMaybes
                 <$> mapM
-                    (\r -> (fmap (r,)) <$> applyRule pattr{constraints = pattr.constraints <> currentRemainder} r)
+                    (\r -> (fmap (r,)) <$> applyRule pat{constraints = pat.constraints <> currentRemainder} r)
                     rules
 
         let nonTrivialResultsWithPartialRemainders =
@@ -219,21 +218,22 @@ rewriteStep pat = do
             else
                 getSolver >>= \case
                     Just solver ->
-                        SMT.isSat solver (pattr.constraints <> newRemainder) >>= \case
+                        SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
                             Right False -> do
                                 -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
+                                setRemainder mempty
                                 pure resultsWithoutRemainders
                             Right True -> do
                                 -- the remainder condition is satisfiable.
                                 --  Have to construct the remainder branch and consider it
                                 -- To construct the "remainder pattern",
                                 -- we add the remainder condition to the predicates of the @pattr@
-                                (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
+                                (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
                             Left SMT.SMTSolverUnknown{} ->
                                 -- solver cannot solve the remainder. Descend into the remainder branch anyway
-                                (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
+                                (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
                             Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
-                    Nothing -> (resultsWithoutRemainders <>) <$> processGroups pattr lowerPriorityRules
+                    Nothing -> (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
 
 type RewriteRuleAppT m a = ExceptT (Maybe ()) m a
 
@@ -795,7 +795,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
                                 _ ->
                                     simplify pat >>= \case
-                                        -- FIXME: I think this should be trivial, surely?
+                                        -- We are stuck here not trivial because we didn't apply a single rule
                                         Bottom pat' -> logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
                                         pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
                         Left failure -> do
@@ -804,9 +804,11 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
                                 _ ->
                                     simplify pat >>= \case
-                                        -- FIXME: I think this should be trivial, surely?
+                                        -- We are stuck here not trivial because we didn't apply a single rule
                                         Bottom pat' -> logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
                                         Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
+                        -- We may want to return the remainder as a new field in the execute response, as the remainder
+                        -- may not be empty, which would indicate a "hole" in the semantics that the user should be aware of.
                         Right (appliedRules, (cache, _remainder)) ->
                             updateCache cache >> incrementCounter >> case appliedRules of
                                 OnlyTrivial -> do
@@ -824,7 +826,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                         _ ->
                                             simplify pat >>= \case
                                                 Bottom pat' ->
-                                                    -- FIXME: I think this should be trivial, surely?
+                                                    -- We are stuck here not trivial because we didn't apply a single rule
                                                     logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
                                                 pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
                                 AppliedRules [(rule, nextPat)]
