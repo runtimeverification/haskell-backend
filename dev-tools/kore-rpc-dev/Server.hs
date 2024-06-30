@@ -41,6 +41,7 @@ import System.Log.FastLogger (newTimeCache)
 import Booster.CLOptions
 import Booster.Log
 import Booster.Log.Context qualified
+import Booster.Pattern.Pretty
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
@@ -147,6 +148,7 @@ main = do
                     , eventlogEnabledUserEvents
                     , logFile
                     , logTimeStamps
+                    , prettyPrintOptions
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -221,7 +223,9 @@ main = do
                             in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
-            runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
+            runBoosterLogger =
+                flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
+                    . Booster.Log.unLoggerT
 
         liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
             Kore.Log.BoosterAdaptor.withLogger koreLogOptions $ \actualLogAction -> do
