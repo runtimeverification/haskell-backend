@@ -215,7 +215,14 @@ rewriteStep pat = do
         withContext CtxRemainder $ logPretty' @mods (collapseAndBools . Set.toList $ newRemainder)
 
         if Set.null newRemainder
-            then pure resultsWithoutRemainders
+            then case resultsWithoutRemainders of
+                [] ->
+                    -- proceed to lower priority rules if we have not applied any rules at this priority level
+                    processGroups lowerPriorityRules
+                xs ->
+                    -- if we applied at least one rule and the remainder was empty, return the results.
+                    -- TODO: I think we have to apply lower priority rules here still!
+                    pure xs
             else
                 getSolver >>= \case
                     Just solver ->
