@@ -210,8 +210,9 @@ rewriteStep pat = do
             -- If the new remainder is bottom, then no lower priority rules apply
             newRemainder = currentRemainder <> Set.fromList (mapMaybe (snd . snd) nonTrivialResultsWithPartialRemainders)
             resultsWithoutRemainders = map (fmap (fmap fst)) results
-
         setRemainder newRemainder
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        withContext CtxRemainder $ logPretty' @mods (collapseAndBools . Set.toList $ newRemainder)
 
         if Set.null newRemainder
             then pure resultsWithoutRemainders
@@ -222,14 +223,17 @@ rewriteStep pat = do
                             Right False -> do
                                 -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
                                 setRemainder mempty
+                                withContext CtxRemainder $ logMessage ("remainder is UNSAT" :: Text)
                                 pure resultsWithoutRemainders
                             Right True -> do
+                                withContext CtxRemainder $ logMessage ("remainder is SAT" :: Text)
                                 -- the remainder condition is satisfiable.
                                 --  Have to construct the remainder branch and consider it
                                 -- To construct the "remainder pattern",
                                 -- we add the remainder condition to the predicates of the @pattr@
                                 (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
-                            Left SMT.SMTSolverUnknown{} ->
+                            Left SMT.SMTSolverUnknown{} -> do
+                                withContext CtxRemainder $ logMessage ("remainder is UNKNWON" :: Text)
                                 -- solver cannot solve the remainder. Descend into the remainder branch anyway
                                 (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
                             Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors

@@ -45,6 +45,7 @@ data SimpleContext
       CtxKoreTerm
     | CtxDetail
     | CtxSubstitution
+    | CtxRemainder
     | CtxDepth
     | CtxTiming
     | -- standard log levels
