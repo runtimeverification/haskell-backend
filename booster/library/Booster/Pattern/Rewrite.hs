@@ -821,14 +821,14 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                         -- We may want to return the remainder as a new field in the execute response, as the remainder
                         -- may not be empty, which would indicate a "hole" in the semantics that the user should be aware of.
                         Right (appliedRules, (cache, _remainder)) ->
-                            updateCache cache >> incrementCounter >> case appliedRules of
+                            updateCache cache >> case appliedRules of
                                 OnlyTrivial -> do
                                     -- all rule applications were trivial
                                     -- by definition that means we couldn't have had any remainders, so we can just return trivial
                                     logMessage $ "Simplified to bottom after " <> showCounter counter
                                     pure $ RewriteTrivial unWrappedPat
                                 AppliedRules [] -> do
-                                    -- No rules applied.
+                                    -- no rules applied.
                                     -- We return stuck if the term had already been simplified in a previous step
                                     logMessage $ "Stopped after " <> showCounter counter
                                     emitRewriteTrace $ RewriteStepFailed $ NoApplicableRules unWrappedPat
@@ -840,7 +840,8 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                     -- We are stuck here not trivial because we didn't apply a single rule
                                                     logMessage ("Rewrite stuck after simplification." :: Text) >> pure (RewriteStuck pat')
                                                 pat'@Simplified{} -> logMessage ("Retrying with simplified pattern" :: Text) >> doSteps pat'
-                                AppliedRules [(rule, nextPat)]
+                                AppliedRules [(rule, nextPat)] -- applied single rule
+                                -- cut-point rule, stop
                                     | labelOf rule `elem` cutLabels -> do
                                         simplify pat >>= \case
                                             Bottom pat' -> do
@@ -855,6 +856,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                         logMessage $ "Cut point " <> (labelOf rule) <> " after " <> showCounter counter
                                                         pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat' nextPat'
                                     | labelOf rule `elem` terminalLabels -> do
+                                        -- terminal rule, stop
                                         emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) unWrappedPat nextPat
                                         simplify (Unsimplified nextPat) >>= \case
                                             Bottom nextPat' -> do
@@ -862,11 +864,15 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                 pure $ RewriteTrivial nextPat'
                                             Simplified nextPat' -> do
                                                 logMessage $ "Terminal " <> (labelOf rule) <> " after " <> showCounter counter
+                                                incrementCounter
                                                 pure $ RewriteTerminal (labelOf rule) (uniqueId rule) nextPat'
                                     | otherwise -> do
+                                        -- any other rule, go on
                                         emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) unWrappedPat nextPat
+                                        incrementCounter
                                         doSteps (Unsimplified nextPat)
                                 AppliedRules nextPats -> do
+                                    -- applied multiple rules
                                     logMessage $ "Stopped due to branching after " <> showCounter counter
                                     simplify pat >>= \case
                                         Bottom pat' -> do
@@ -880,6 +886,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                 [(rule, nextPat')] -> withPatternContext pat' $ do
                                                     logMessage ("All but one branch pruned, continuing" :: Text)
                                                     emitRewriteTrace $ RewriteSingleStep (labelOf rule) (uniqueId rule) pat' nextPat'
+                                                    incrementCounter
                                                     doSteps (Simplified nextPat')
                                                 nextPats' -> do
                                                     emitRewriteTrace $
