@@ -22,6 +22,7 @@ import Control.Monad.Logger (
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson qualified as JSON
 import Data.Bifunctor (bimap)
+import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
@@ -176,7 +177,7 @@ main = do
                 not contextLoggingEnabled
                     || ( let contextStrs =
                                 concatMap
-                                    ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
+                                    ( \(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c
                                     )
                                     ctxt
                           in any (flip Ctxt.mustMatch contextStrs) logContextsWithcustomLevelContexts
@@ -508,7 +509,7 @@ translateSMTOpts = \case
 mkKoreServer ::
     Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
 mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
-    flip Log.runLoggerT logAction $ Log.logWhile (Log.DebugContext "kore") $ do
+    flip Log.runLoggerT logAction $ Log.logWhile (Log.DebugContext $ Log.CLNullary CtxKore) $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
             GlobalMain.deserializeDefinition
                 koreSolverOptions
