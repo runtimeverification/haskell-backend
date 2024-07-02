@@ -42,7 +42,7 @@ import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
-import Data.Text as Text (Text, pack)
+import Data.Text as Text (Text, intercalate, pack)
 import Numeric.Natural
 import Prettyprinter
 import Unsafe.Coerce (unsafeCoerce)
@@ -820,7 +820,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                         Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
                         -- We may want to return the remainder as a new field in the execute response, as the remainder
                         -- may not be empty, which would indicate a "hole" in the semantics that the user should be aware of.
-                        Right (appliedRules, (cache, _remainder)) ->
+                        Right (appliedRules, (cache, remainderPredicates)) ->
                             updateCache cache >> case appliedRules of
                                 OnlyTrivial -> do
                                     -- all rule applications were trivial
@@ -893,6 +893,14 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                         RewriteBranchingStep pat' $
                                                             NE.fromList $
                                                                 map (\(rule, _) -> (ruleLabelOrLocT rule, uniqueId rule)) nextPats'
+                                                    unless (Set.null remainderPredicates) $ do
+                                                        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+                                                        withContext CtxRemainder . withContext CtxDetail $
+                                                            logMessage
+                                                                ( ("Uncovered remainder branch after rewriting with rules " :: Text)
+                                                                    <> ( Text.intercalate ", " $ map (\(r, _) -> getUniqueId $ uniqueId r) nextPats'
+                                                                       )
+                                                                )
                                                     pure $
                                                         RewriteBranch pat' $
                                                             NE.fromList $
