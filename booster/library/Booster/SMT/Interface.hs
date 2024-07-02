@@ -14,6 +14,7 @@ module Booster.SMT.Interface (
     finaliseSolver,
     getModelFor,
     checkPredicates,
+    isSat,
     hardResetSolver,
 ) where
 
@@ -457,3 +458,65 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 <> pack (show (positive, negative))
 
         pure (positive, negative)
+
+isSat ::
+    forall io.
+    Log.LoggerMIO io =>
+    SMT.SMTContext ->
+    Set Predicate ->
+    io (Either SMTError Bool)
+isSat ctxt psToCheck
+    | null psToCheck = pure . Right $ True
+    | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
+        Log.withContext Log.CtxAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
+        pure . Left . SMTTranslationError $ errMsg
+    | Right (smtToCheck, transState) <- translated = Log.withContext Log.CtxSMT $ do
+        evalSMT ctxt . runExceptT $ solve smtToCheck transState
+  where
+    translated :: Either Text ([DeclareCommand], TranslationState)
+    translated =
+        SMT.runTranslator $
+            mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) $
+                Set.toList psToCheck
+
+    solve smtToCheck transState = solve'
+      where
+        solve' = do
+            lift $ hardResetSolver ctxt.options
+            Log.getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    Log.logMessage . Pretty.renderOneLineText $
+                        hsep ("Predicates to check for SAT:" : map (pretty' @mods) (Set.toList psToCheck))
+            lift $ declareVariables transState
+            mapM_ smtRun smtToCheck
+            smtRun CheckSat >>= \case
+                Sat -> pure True
+                Unsat -> pure False
+                Unknown -> retry
+                other -> do
+                    let msg = "Unexpected result while calling 'check-sat': " <> show other
+                    Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
+                    throwSMT' msg
+
+        retry = do
+            opts <- lift . SMT $ gets (.options)
+            case opts.retryLimit of
+                Just x | x > 0 -> do
+                    let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
+                    lift $ hardResetSolver newOpts
+                    Log.logMessage ("Retrying with higher timeout" :: Text)
+                    solve'
+                _ -> failBecauseUnknown
+
+        failBecauseUnknown :: ExceptT SMTError (SMT io) Bool
+        failBecauseUnknown =
+            smtRun GetReasonUnknown >>= \case
+                ReasonUnknown reason -> do
+                    Log.withContext Log.CtxAbort $
+                        Log.logMessage $
+                            "Returned Unknown. Reason: " <> reason
+                    throwE $ SMTSolverUnknown reason mempty psToCheck
+                other -> do
+                    let msg = "Unexpected result while calling ':reason-unknown': " <> show other
+                    Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
+                    throwSMT' msg
