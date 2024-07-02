@@ -19,6 +19,7 @@ import Control.Monad.Logger (
  )
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson.Types (Value (..))
+import Data.ByteString.Char8 qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -187,7 +188,7 @@ main = do
                     null logContextsWithcustomLevelContexts
                         || ( let contextStrs =
                                     concatMap
-                                        ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
+                                        ( \(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c
                                         )
                                         ctxt
                               in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
