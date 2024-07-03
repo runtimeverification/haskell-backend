@@ -7,14 +7,19 @@ module Main (
     main,
 ) where
 
-import Control.Monad (when)
+import Control.Monad (unless)
 import Data.Aeson qualified as JSON
 import Data.ByteString.Char8 qualified as BSS
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Either (partitionEithers)
 import Data.Foldable (toList)
+import Data.List (foldl', maximumBy)
+import Data.Map qualified as Map
+import Data.Maybe (mapMaybe)
+import Data.Ord (comparing)
 import Options.Applicative
 import System.Exit
+import Text.Printf
 
 import Booster.Log.Context (ContextFilter, mustMatch, readContextFilter)
 import Kore.JsonRpc.Types.ContextLog
@@ -30,7 +35,7 @@ main = do
             . map JSON.eitherDecode
             . BS.lines
             <$> maybe BS.getContents BS.readFile input
-    when (not $ null errors) $ do
+    unless (null errors) $ do
         putStrLn "JSON parse errors in log file:"
         mapM_ putStrLn errors
         exitWith (ExitFailure 1)
@@ -47,6 +52,7 @@ data Options = Options
 data Command
     = -- | filter a log file, output to stdout. Same options as for the server
       Filter [ContextFilter]
+    | FindRecursions
     deriving (Show)
 
 {-
@@ -89,7 +95,7 @@ parse =
                     )
                 )
     commandParser =
-        subparser
+        subparser $
             ( command
                 "filter"
                 ( info
@@ -97,6 +103,13 @@ parse =
                     (progDesc "filter log file with given filter options")
                 )
             )
+                <> ( command
+                        "find-recursions"
+                        ( info
+                            (pure FindRecursions)
+                            (progDesc "find repeated contexts in log lines")
+                        )
+                   )
 
     parseContextFilter =
         option
@@ -110,10 +123,64 @@ parse =
 ------------------------------------------------------------
 
 process :: Command -> [LogLine] -> [BS.ByteString]
-process (Filter filters) = map JSON.encode . filter keepLine
+process (Filter filters) ls = map JSON.encode $ filterLines filters ls
+process FindRecursions ls = heading <> (map renderResult $ findRecursions ls)
+  where
+    heading =
+        [ "| Context                | Longest | Count | Prefix"
+        , "|----------------------- | ------- | ----- |-----------"
+        ]
+    renderResult (ctx, (pfx, len, cnt)) =
+        BS.pack $ printf "| %22s | %7d | %5d | %s" (show ctx) len cnt (showCtx pfx)
+
+    showCtx = concatMap (show . (: []))
+
+filterLines :: [ContextFilter] -> [LogLine] -> [LogLine]
+filterLines filters = filter keepLine
   where
     keepLine LogLine{context} =
-        let cs = map (BSS.pack . show . show) $ toList context
+        let cs = map (BSS.pack . show) $ toList context
          in matchesAFilter cs
     matchesAFilter :: [BSS.ByteString] -> Bool
-    matchesAFilter x = or $ map (flip mustMatch x) filters
+    matchesAFilter x = any (flip mustMatch x) filters
+
+lineRecursion :: LogLine -> Maybe (CLContext, ([CLContext], Int))
+lineRecursion LogLine{context}
+    | null repeatedContexts = Nothing
+    | otherwise = Just (maxRepeatC, (prefix, count + 1))
+  where
+    repeatedContexts = rr $ toList context
+    rr [] = []
+    rr (c : cs)
+        | CLWithId (c') <- c -- only contexts with ID (rules, equations, hooks)
+        , interesting c'
+        , repeats > 0 =
+            (c, repeats) : rr cs
+        | otherwise = rr cs
+      where
+        repeats = length $ filter (== c) cs
+        interesting CtxFunction{} = True
+        interesting CtxSimplification{} = True
+        interesting CtxRewrite{} = True
+        interesting _ = False
+
+    (maxRepeatC, count) = maximumBy (comparing snd) repeatedContexts
+
+    prefix = takeWhile (/= maxRepeatC) $ toList context
+
+findRecursions :: [LogLine] -> [(CLContext, ([CLContext], Int, Int))]
+findRecursions ls = Map.assocs resultMap
+  where
+    recursions =
+        [(ctx, (pfx, cnt, 1)) | (ctx, (pfx, cnt)) <- mapMaybe lineRecursion ls]
+    maxAndCount ::
+        ([CLContext], Int, Int) ->
+        ([CLContext], Int, Int) ->
+        ([CLContext], Int, Int)
+    maxAndCount (pfx1, len1, cnt1) (pfx2, len2, cnt2)
+        | len1 >= len2 =
+            (pfx1, len1, cnt1 + cnt2)
+        | otherwise =
+            (pfx2, len2, cnt1 + cnt2)
+    resultMap =
+        foldl' (\m (ctx, item) -> Map.insertWith maxAndCount ctx item m) mempty recursions
