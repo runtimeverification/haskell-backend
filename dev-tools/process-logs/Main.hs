@@ -17,6 +17,8 @@ import Data.List (foldl', maximumBy)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Ord (comparing)
+import Data.Sequence (Seq (..))
+import Data.Sequence qualified as Seq
 import Options.Applicative
 import System.Exit
 import Text.Printf
@@ -135,6 +137,7 @@ process FindRecursions ls = heading <> (map renderResult $ findRecursions ls)
 
     showCtx = concatMap (show . (: []))
 
+------------------------------------------------------------
 filterLines :: [ContextFilter] -> [LogLine] -> [LogLine]
 filterLines filters = filter keepLine
   where
@@ -144,21 +147,22 @@ filterLines filters = filter keepLine
     matchesAFilter :: [BSS.ByteString] -> Bool
     matchesAFilter x = any (flip mustMatch x) filters
 
+------------------------------------------------------------
 lineRecursion :: LogLine -> Maybe (CLContext, ([CLContext], Int))
 lineRecursion LogLine{context}
     | null repeatedContexts = Nothing
     | otherwise = Just (maxRepeatC, (prefix, count + 1))
   where
-    repeatedContexts = rr $ toList context
-    rr [] = []
-    rr (c : cs)
+    repeatedContexts = rr context
+    rr Seq.Empty = []
+    rr (c :<| cs)
         | CLWithId (c') <- c -- only contexts with ID (rules, equations, hooks)
         , interesting c'
         , repeats > 0 =
             (c, repeats) : rr cs
         | otherwise = rr cs
       where
-        repeats = length $ filter (== c) cs
+        repeats = length $ Seq.filter (== c) cs
         interesting CtxFunction{} = True
         interesting CtxSimplification{} = True
         interesting CtxRewrite{} = True
