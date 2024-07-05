@@ -234,6 +234,6 @@ instance ToJSON LogLine where
       where
         formatted = formatTime defaultTimeLocale timestampFormat . systemToUTCTime
 
--- same format as the one used in Booster.Util
+-- similar to the one used in Booster.Util, but not setting a length for the sub-second digits
 timestampFormat :: String
-timestampFormat = "%Y-%m-%dT%H:%M:%S%6Q"
+timestampFormat = "%Y-%m-%dT%H:%M:%S%Q"
