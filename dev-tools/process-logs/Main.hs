@@ -54,6 +54,7 @@ data Options = Options
 data Command
     = -- | filter a log file, output to stdout. Same options as for the server
       Filter [ContextFilter]
+      -- | find repeated rule/equation contexts in lines
     | FindRecursions
     deriving (Show)
 
@@ -101,24 +102,22 @@ parse =
             ( command
                 "filter"
                 ( info
-                    (Filter <$> many parseContextFilter)
-                    (progDesc "filter log file with given filter options")
+                    ((Filter <$> many parseContextFilter) <**> helper)
+                    (progDesc "filter log file with given contexts (space separated)")
                 )
             )
                 <> ( command
                         "find-recursions"
                         ( info
-                            (pure FindRecursions)
+                            (pure FindRecursions <**> helper)
                             (progDesc "find repeated contexts in log lines")
                         )
                    )
 
     parseContextFilter =
-        option
+        argument
             (eitherReader readContextFilter)
             ( metavar "CONTEXT"
-                <> long "log-context"
-                <> short 'c'
                 <> help "Log context"
             )
 
