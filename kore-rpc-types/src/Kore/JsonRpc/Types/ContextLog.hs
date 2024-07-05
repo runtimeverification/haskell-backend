@@ -182,6 +182,7 @@ instance FromJSON CLMessage where
     parseJSON (JSON.String msg) = pure $ CLText msg
     parseJSON obj@JSON.Object{} = pure $ CLValue obj
     parseJSON arr@JSON.Array{} = pure $ CLValue arr
+    parseJSON JSON.Null = pure $ CLValue JSON.Null
     parseJSON other =
         JSON.typeMismatch "Object, array, or string" other
 
