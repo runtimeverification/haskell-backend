@@ -56,14 +56,13 @@ data Command
       Filter [ContextFilter]
       -- | find repeated rule/equation contexts in lines
     | FindRecursions
+      -- | re-order lines based on their timestamps (if present). The
+      -- parameter is the window size in which lines can move.
+    | SortByTime Int
     deriving (Show)
 
 {-
 brainstorm only
-    | -- | sort lines by timestamp
-      SortByTime Int -- insertion window size
-    | -- | identify simplification and function rules that are recursively applied
-      FindRecursions -- specific targets
     | -- | select subtrees below specific rules by ID
       Select [UniqueId]
 
@@ -113,6 +112,22 @@ parse =
                             (progDesc "find repeated contexts in log lines")
                         )
                    )
+                <> ( command
+                        "sort-by-time"
+                        ( info
+                            ((SortByTime
+                              <$> option auto
+                                  ( long "window-size"
+                                    <> short 'w'
+                                    <> metavar "NAT"
+                                    <> value 100
+                                    <> help "size of sliding window to insert into"
+                                  )
+                             ) <**> helper
+                            )
+                            (progDesc "find repeated contexts in log lines")
+                        )
+                   )
 
     parseContextFilter =
         argument
@@ -124,8 +139,10 @@ parse =
 ------------------------------------------------------------
 
 process :: Command -> [LogLine] -> [BS.ByteString]
-process (Filter filters) ls = map JSON.encode $ filterLines filters ls
-process FindRecursions ls = heading <> (map renderResult $ findRecursions ls)
+process (Filter filters) =
+    map JSON.encode . filterLines filters
+process FindRecursions =
+    (heading <>) . map renderResult . findRecursions
   where
     heading =
         [ "| Context                | Longest | Count | Prefix"
@@ -135,6 +152,8 @@ process FindRecursions ls = heading <> (map renderResult $ findRecursions ls)
         BS.pack $ printf "| %22s | %7d | %5d | %s" (show ctx) len cnt (showCtx pfx)
 
     showCtx = concatMap (show . (: []))
+process (SortByTime windowSize) =
+    map JSON.encode . toList . sortByTime windowSize
 
 ------------------------------------------------------------
 filterLines :: [ContextFilter] -> [LogLine] -> [LogLine]
@@ -187,3 +206,34 @@ findRecursions ls = Map.assocs resultMap
             (pfx2, len2, cnt1 + cnt2)
     resultMap =
         foldl' (\m (ctx, item) -> Map.insertWith maxAndCount ctx item m) mempty recursions
+------------------------------------------------------------
+sortByTime :: Int -> [LogLine] -> Seq LogLine
+sortByTime winSize ls = uncurry (<>) $ foldl' go (Seq.Empty, initWindow) rest
+  where
+    initWindow = Seq.sortOn (.timestamp) $ Seq.fromList first
+    (first, rest) = splitAt winSize ls
+
+    go :: (Seq LogLine, Seq LogLine) -> LogLine -> (Seq LogLine, Seq LogLine)
+    -- invariants:
+    -- - window is sorted by timestamp (if present) and has size 'size'
+    -- - acc is sorted by timestamp (if present)
+    -- - all timestamps in acc are < all timestamps in window. This
+    --   may not be possible if the window size is too small.
+    go (acc, window) l
+        | _ :|> lastAcc <- acc
+        , Just True <- liftA2 (<) l.timestamp lastAcc.timestamp =
+            error $
+                "Window size "
+                    <> show winSize
+                    <> " too small for timestamp pair "
+                    <> show (lastAcc.timestamp, l.timestamp)
+        | otherwise =
+            case insertByTS l window of
+                (oldest :<| newWindow) -> (acc :|> oldest, newWindow)
+                Seq.Empty -> error "empty after insertion?"
+
+    insertByTS l@LogLine{timestamp} window
+        | Nothing <- timestamp = window :|> l
+        | Just t <- timestamp =
+              let (front, back) = Seq.breakl (maybe False (> t) . (.timestamp)) window
+               in front <> (l :<| back)
