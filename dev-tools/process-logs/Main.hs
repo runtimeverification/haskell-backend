@@ -9,6 +9,7 @@ module Main (
 
 import Control.Monad (unless)
 import Data.Aeson qualified as JSON
+import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.ByteString.Char8 qualified as BSS
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Either (partitionEithers)
@@ -25,6 +26,7 @@ import Text.Printf
 
 import Booster.Log.Context (ContextFilter, mustMatch, readContextFilter)
 import Kore.JsonRpc.Types.ContextLog
+import Kore.JsonRpc.Types (rpcJsonConfig)
 
 -- reads log file in json-format from stdin (or a single given file)
 -- applies the command
@@ -140,7 +142,7 @@ parse =
 
 process :: Command -> [LogLine] -> [BS.ByteString]
 process (Filter filters) =
-    map JSON.encode . filterLines filters
+    map encodeLogLine . filterLines filters
 process FindRecursions =
     (heading <>) . map renderResult . findRecursions
   where
@@ -153,7 +155,10 @@ process FindRecursions =
 
     showCtx = concatMap (show . (: []))
 process (SortByTime windowSize) =
-    map JSON.encode . toList . sortByTime windowSize
+    map encodeLogLine . toList . sortByTime windowSize
+
+encodeLogLine :: LogLine -> BS.ByteString
+encodeLogLine = JSON.encodePretty' rpcJsonConfig{JSON.confIndent = JSON.Spaces 0}
 
 ------------------------------------------------------------
 filterLines :: [ContextFilter] -> [LogLine] -> [LogLine]

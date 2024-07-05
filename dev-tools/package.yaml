@@ -108,6 +108,7 @@ executables:
     main: Main.hs
     dependencies:
       - aeson
+      - aeson-pretty
       - base
       - bytestring
       - containers
