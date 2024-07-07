@@ -606,9 +606,10 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     , logs
                     , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates =
+                        -- FIXME return _ruleSubst in the response, removing '#'s from the variable names to make pyk happy
                         Just
                             $ map
-                                ( \(_, muid, p', mrulePred, ruleSubst) -> toExecState p' originalSubstitution unsupported (Just muid) mrulePred (Just ruleSubst)
+                                ( \(_, muid, p', mrulePred, _ruleSubst) -> toExecState p' originalSubstitution unsupported (Just muid) mrulePred Nothing
                                 )
                             $ toList nexts
                     , rule = Nothing
