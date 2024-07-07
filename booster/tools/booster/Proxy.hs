@@ -500,11 +500,14 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     postExecResult <-
                         simplifyExecResult logSettings r._module def boosterResult
                     case postExecResult of
-                        Left (nextState, newLogs) ->
+                        Left (nextState, newLogs) -> do
+                            let prunedBoosterBranchStep
+                                    | boosterResult.reason == Branching = 1
+                                    | otherwise = 0
                             executionLoop
                                 logSettings
                                 def
-                                ( currentDepth + boosterResult.depth
+                                ( currentDepth + boosterResult.depth + prunedBoosterBranchStep
                                 , time + bTime
                                 , koreTime
                                 , postProcessLogs <$> combineLogs (rpcLogs : boosterResult.logs : newLogs)
