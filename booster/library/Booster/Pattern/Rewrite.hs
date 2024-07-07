@@ -909,6 +909,11 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                                         <> ( Text.intercalate ", " $ map (\(r, _, _subst) -> getUniqueId $ uniqueId r) nextPats'
                                                                            )
                                                                     )
+                                                        let mkRulePredicate :: RewriteRule "Rewrite" -> Substitution -> Predicate
+                                                            mkRulePredicate rule subst =
+                                                                collapseAndBools $
+                                                                    concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
+
                                                         pure $
                                                             RewriteBranch pat' $
                                                                 NE.fromList $
@@ -917,10 +922,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                                             ( ruleLabelOrLocT r
                                                                             , uniqueId r
                                                                             , n
-                                                                            , Just
-                                                                                ( collapseAndBools $
-                                                                                    concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) r.requires
-                                                                                )
+                                                                            , Just (mkRulePredicate r subst)
                                                                             , subst
                                                                             )
                                                                         )
