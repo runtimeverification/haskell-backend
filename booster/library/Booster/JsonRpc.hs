@@ -48,7 +48,7 @@ import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
+import Booster.Pattern.Base (Pattern (..), Predicate (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
@@ -604,10 +604,11 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.Branching
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
                     , nextStates =
                         Just $
-                            map (\(_, muid, p') -> toExecState p' originalSubstitution unsupported (Just muid)) $
+                            map
+                                (\(_, muid, p', mrulePred) -> toExecState p' originalSubstitution unsupported (Just muid) mrulePred) $
                                 toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -619,7 +620,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.Stuck
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -631,7 +632,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.Vacuous
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -643,8 +644,8 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
-                    , nextStates = Just [toExecState next originalSubstitution unsupported Nothing]
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
+                    , nextStates = Just [toExecState next originalSubstitution unsupported Nothing Nothing]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }
@@ -655,7 +656,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
@@ -667,7 +668,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.DepthBound
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -684,7 +685,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                                     (logSuccessfulRewrites, logFailedRewrites)
                                     (RewriteStepFailed failure)
                          in logs <|> abortRewriteLog
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -710,17 +711,23 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                 (Just t, xs) -> Just (t : xs)
 
 toExecState ::
-    Pattern -> Map Variable Term -> [Syntax.KorePattern] -> Maybe UniqueId -> RpcTypes.ExecuteState
-toExecState pat sub unsupported muid =
+    Pattern ->
+    Map Variable Term ->
+    [Syntax.KorePattern] ->
+    Maybe UniqueId ->
+    Maybe Predicate ->
+    RpcTypes.ExecuteState
+toExecState pat sub unsupported muid mrulePredicate =
     RpcTypes.ExecuteState
         { term = addHeader t
         , predicate = addHeader <$> addUnsupported p
         , substitution = addHeader <$> s
         , ruleSubstitution = Nothing
-        , rulePredicate = Nothing
+        , rulePredicate = addHeader <$> mrulePredExt
         , ruleId = getUniqueId <$> muid
         }
   where
+    mrulePredExt = externalisePredicate (externaliseSort Pattern.SortBool) <$> mrulePredicate
     (t, p, s) = externalisePattern pat sub
     termSort = externaliseSort $ sortOfPattern pat
     allUnsupported = Syntax.KJAnd termSort unsupported

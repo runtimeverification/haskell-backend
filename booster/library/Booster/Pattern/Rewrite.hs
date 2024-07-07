@@ -175,7 +175,8 @@ rewriteStep pat = do
     -- return `OnlyTrivial` if all elements of a list are `(r, Nothing)`. If the list is empty or contains at least one `(r, Just p)`,
     -- return an `AppliedRules` list of `(r, p)` pairs.
     filterOutTrivial ::
-        [(RewriteRule "Rewrite", Maybe Pattern)] -> RewriteStepResult [(RewriteRule "Rewrite", Pattern)]
+        [(RewriteRule "Rewrite", Maybe Pattern)] ->
+        RewriteStepResult [(RewriteRule "Rewrite", Pattern)]
     filterOutTrivial = \case
         [] -> AppliedRules []
         [(_, Nothing)] -> OnlyTrivial
@@ -536,7 +537,7 @@ ruleLabelOrLoc rule =
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult pat
     = -- | branch point
-      RewriteBranch pat (NonEmpty (Text, UniqueId, pat))
+      RewriteBranch pat (NonEmpty (Text, UniqueId, pat, Maybe Predicate))
     | -- | no rules could be applied, config is stuck
       RewriteStuck pat
     | -- | cut point rule, return current (lhs) and single next state
@@ -904,7 +905,9 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                     pure $
                                                         RewriteBranch pat' $
                                                             NE.fromList $
-                                                                map (\(r, n) -> (ruleLabelOrLocT r, uniqueId r, n)) nextPats'
+                                                                map
+                                                                    (\(r, n) -> (ruleLabelOrLocT r, uniqueId r, n, Just (collapseAndBools . Set.toList $ r.requires)))
+                                                                    nextPats'
 
 data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
