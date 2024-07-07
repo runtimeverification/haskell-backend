@@ -730,7 +730,7 @@ toExecState pat sub unsupported muid mrulePredicate mruleSubst =
         , ruleId = getUniqueId <$> muid
         }
   where
-    mrulePredExt = externalisePredicate predicateSort <$> mrulePredicate
+    mrulePredExt = externalisePredicate termSort <$> mrulePredicate
     mruleSubstExt =
         Syntax.KJAnd predicateSort
             . map (uncurry $ externaliseSubstitution predicateSort)
