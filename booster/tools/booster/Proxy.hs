@@ -567,7 +567,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                 -- this ensures the information from next states in a branch reponse doesn't get lost
                                 pure $
                                     Right
-                                        ( (Booster.toExecState p sub unsup Nothing Nothing)
+                                        ( (Booster.toExecState p sub unsup Nothing Nothing Nothing)
                                             { ruleId = s.ruleId
                                             , ruleSubstitution = s.ruleSubstitution
                                             , rulePredicate = s.rulePredicate

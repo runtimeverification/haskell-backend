@@ -541,7 +541,7 @@ ruleLabelOrLoc rule =
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult pat
     = -- | branch point
-      RewriteBranch pat (NonEmpty (Text, UniqueId, pat, Maybe Predicate))
+      RewriteBranch pat (NonEmpty (Text, UniqueId, pat, Maybe Predicate, Substitution))
     | -- | no rules could be applied, config is stuck
       RewriteStuck pat
     | -- | cut point rule, return current (lhs) and single next state
@@ -921,6 +921,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                                                 ( collapseAndBools $
                                                                                     concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) r.requires
                                                                                 )
+                                                                            , subst
                                                                             )
                                                                         )
                                                                         nextPats'
