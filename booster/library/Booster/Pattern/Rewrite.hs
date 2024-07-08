@@ -224,7 +224,6 @@ rewriteStep pat = do
                 -- proceed to lower priority rules if we have not applied any rules at this priority level
                 processGroups lowerPriorityRules
             _xs -> do
-                liftIO . putStrLn $ "YES RESULTS WITH REMAINDER"
                 getSolver >>= \case
                     Just solver ->
                         SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
