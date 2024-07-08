@@ -14,7 +14,7 @@ import Data.ByteString.Char8 qualified as BSS
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Either (partitionEithers)
 import Data.Foldable (toList)
-import Data.List (foldl', maximumBy)
+import Data.List (foldl', maximumBy, sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
@@ -61,21 +61,9 @@ data Command
       Filter [ContextFilter]
       -- | find repeated rule/equation contexts in lines
     | FindRecursions
+      -- | compute total times spent on applying certain rules/equations (top-level)
+    | TimesPerRule
     deriving (Show)
-
-{-
-brainstorm only
-    | -- | sort lines by timestamp
-      SortByTime Int -- insertion window size
-    | -- | identify simplification and function rules that are recursively applied
-      FindRecursions -- specific targets
-    | -- | select subtrees below specific rules by ID
-      Select [UniqueId]
-
-canStream :: Command -> Bool
-canStream Filter = True
-canStream _ = False
--}
 
 parse :: ParserInfo Options
 parse =
@@ -118,6 +106,13 @@ parse =
                             (progDesc "find repeated contexts in log lines")
                         )
                    )
+                <> ( command
+                        "times-per-rule"
+                        ( info
+                            (pure TimesPerRule <**> helper)
+                            (progDesc "compute total times spent per (top-level) rule/equation")
+                        )
+                   )
 
     parseContextFilter =
         argument
@@ -142,6 +137,26 @@ process FindRecursions =
         BS.pack $ printf "| %22s | %7d | %5d | %s" (show ctx) len cnt (showCtx pfx)
 
     showCtx = concatMap (show . (: []))
+process TimesPerRule =
+    (heading <>) . map renderResult . ruleStatistics
+  where
+    heading =
+        [ "| Rule/Equation          | Success           | Failure           | Abort"
+        , "|----------------------- | ----------------- | ----------------- | ----------------"
+        ]
+    renderResult :: (IdContext, RuleStats) -> BS.ByteString
+    renderResult (ctx, stats) =
+        BS.pack $
+            printf
+                "| %22s | %3.3fs (%4d) | %3.3fs (%4d) | %3.3fs (%4d)"
+                (show ctx)
+                stats.tSuccess
+                stats.nSuccess
+                stats.tFailure
+                stats.nFailure
+                stats.tAbort
+                stats.nAbort
+
 
 encodeLogLine :: LogLine -> BS.ByteString
 encodeLogLine = JSON.encodePretty' rpcJsonConfig{JSON.confIndent = JSON.Spaces 0}
@@ -203,13 +218,22 @@ findRecursions ls = Map.assocs resultMap
 ------------------------------------------------------------
 -- rule statistics
 
+ruleStatistics :: [LogLine] -> [(IdContext, RuleStats)]
+ruleStatistics =
+    sortBy (comparing $ allTimes . snd)
+        . Map.assocs
+        . ruleStats
+  where
+    allTimes :: RuleStats -> Double
+    allTimes stats = stats.tSuccess + stats.tFailure + stats.tAbort
+
 data RuleStats =
     RuleStats
         { -- counts of:
           nSuccess :: !Int -- successful application
         , nFailure :: !Int -- failure to apply
         , nAbort :: !Int -- failure, leading to abort
-        , -- total times for these categores
+        , -- total times for these categories
           tSuccess :: !Double
         , tFailure :: !Double
         , tAbort :: !Double
@@ -255,7 +279,8 @@ ruleStats = Map.fromListWith (<>) . collect
     fromCtxSpan :: Seq CLContext -> [LogLine] -> (RuleStats, [LogLine])
     fromCtxSpan prefix ls
         | null prefixLines =
-            error "Should have at least one line with the prefix" -- see above
+            (RuleStats 0 0 0 0 0 0, ls) -- HACK
+            -- error "Should have at least one line with the prefix" -- see above
         | otherwise =
             (mkOutcome (head prefixLines) (last prefixLines), rest)
       where
