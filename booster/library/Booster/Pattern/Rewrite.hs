@@ -190,6 +190,7 @@ rewriteStep pat = do
         RewriteT io [(RewriteRule "Rewrite", Maybe (Pattern, Substitution))]
     processGroups [] = pure []
     processGroups (rules : lowerPriorityRules) = do
+        withContext CtxDetail $ logMessage ("Trying rules at priority " <> show (ruleGroupPriority rules))
         -- try all rules of the priority group. This will immediately
         -- fail the rewrite if anything is uncertain (unification,
         -- definedness, rule conditions)
@@ -249,6 +250,11 @@ rewriteStep pat = do
                                 (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
                             Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
                     Nothing -> (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+
+ruleGroupPriority :: [RewriteRule a] -> Maybe Priority
+ruleGroupPriority = \case
+    [] -> Nothing
+    (rule : _) -> Just rule.attributes.priority
 
 type RewriteRuleAppT m a = ExceptT (Maybe ()) m a
 
