@@ -244,7 +244,7 @@ runWith t =
                     Nothing
                     mempty
                     mempty
-                    (fmap (fmap snd) <$> (rewriteStep $ Pattern_ t))
+                    (fmap (fmap (\(_, p, _) -> p)) <$> (rewriteStep $ Pattern_ t))
             )
 
 rewritesTo :: Term -> Term -> IO ()
@@ -280,8 +280,22 @@ aborts failure t = runRewrite t >>= (@?= (0, RewriteAborted failure t))
 newtype Steps = Steps Natural
 
 rewrites :: Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
-rewrites (Steps n) t t' f =
-    runRewrite t >>= (@?= (n, f t'))
+rewrites (Steps n) t t' f = do
+    let expected = (n, f t')
+    actual <- runRewrite t
+    second withoutRulePredAndSubst actual @?= expected
+
+mkRewriteBranch :: a -> NE.NonEmpty (Text, UniqueId, a) -> RewriteResult a
+mkRewriteBranch pre branches = RewriteBranch pre (fmap withEmptyPredandSubst branches)
+  where
+    withEmptyPredandSubst (l, uid, post) = (l, uid, post, Nothing, Map.empty)
+
+withoutRulePredAndSubst :: RewriteResult a -> RewriteResult a
+withoutRulePredAndSubst = \case
+    RewriteBranch pre branches -> RewriteBranch pre (fmap ignorePredandSubst branches)
+    other -> other
+  where
+    ignorePredandSubst (l, uid, post, _, _) = (l, uid, post, Nothing, Map.empty)
 
 canRewrite :: TestTree
 canRewrite =
@@ -313,7 +327,7 @@ canRewrite =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse")                        ) ), C:SortK{}) ) |]
-                (`RewriteBranch` NE.fromList [branch1, branch2])
+                (`mkRewriteBranch` NE.fromList [branch1, branch2])
         , testCase "Returns stuck when no rules could be applied" $ do
             rewrites
                 (Steps 0)
@@ -407,7 +421,7 @@ supportsDepthControl =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse")                        ) ), C:SortK{}) ) |]
-                (`RewriteBranch` NE.fromList [branch1, branch2])
+                (`mkRewriteBranch` NE.fromList [branch1, branch2])
         ]
   where
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
@@ -416,7 +430,7 @@ supportsDepthControl =
             runNoLoggingT $
                 performRewrite NoCollectRewriteTraces def Nothing Nothing (Just depth) [] [] $
                     Pattern_ t
-        (counter, fmap (.term) res) @?= (n, f t')
+        (counter, withoutRulePredAndSubst $ fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
 supportsCutPoints =
@@ -461,7 +475,7 @@ supportsCutPoints =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse")                        ) ), C:SortK{}) ) |]
-                (`RewriteBranch` NE.fromList [branch1, branch2])
+                (`mkRewriteBranch` NE.fromList [branch1, branch2])
         ]
   where
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
@@ -470,7 +484,7 @@ supportsCutPoints =
             runNoLoggingT $
                 performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [lbl] [] $
                     Pattern_ t
-        (counter, fmap (.term) res) @?= (n, f t')
+        (counter, withoutRulePredAndSubst $ fmap (.term) res) @?= (n, f t')
 
 supportsTerminalRules :: TestTree
 supportsTerminalRules =
