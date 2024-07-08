@@ -245,7 +245,8 @@ rewriteStep pat = do
                                 (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
                             Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
                     Nothing ->
-                        -- using poor-man's SMT solver, for unit-tests
+                        -- using poor-man's SMT solver, for unit-tests, as otherwise the branch due to False
+                        -- remainders produces by unconditional rules
                         if any isFalse (pat.constraints <> newRemainder)
                             then do
                                 setRemainder mempty
