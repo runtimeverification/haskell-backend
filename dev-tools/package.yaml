@@ -118,6 +118,7 @@ executables:
       - kore-rpc-types
       - optparse-applicative
       - text
+      - time
     ghc-options:
       - -rtsopts
   time-profile:

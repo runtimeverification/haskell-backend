@@ -15,11 +15,14 @@ import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Either (partitionEithers)
 import Data.Foldable (toList)
 import Data.List (foldl', maximumBy)
+import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Ord (comparing)
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
+import Data.Time.Clock
+import Data.Time.Clock.System (systemToUTCTime)
 import Options.Applicative
 import System.Exit
 import Text.Printf
@@ -163,20 +166,22 @@ lineRecursion LogLine{context}
     rr Seq.Empty = []
     rr (c :<| cs)
         | CLWithId (c') <- c -- only contexts with ID (rules, equations, hooks)
-        , interesting c'
+        , isRuleCtx c'
         , repeats > 0 =
             (c, repeats) : rr cs
         | otherwise = rr cs
       where
         repeats = length $ Seq.filter (== c) cs
-        interesting CtxFunction{} = True
-        interesting CtxSimplification{} = True
-        interesting CtxRewrite{} = True
-        interesting _ = False
 
     (maxRepeatC, count) = maximumBy (comparing snd) repeatedContexts
 
     prefix = takeWhile (/= maxRepeatC) $ toList context
+
+isRuleCtx :: IdContext -> Bool
+isRuleCtx CtxFunction{} = True
+isRuleCtx CtxSimplification{} = True
+isRuleCtx CtxRewrite{} = True
+isRuleCtx _ = False
 
 findRecursions :: [LogLine] -> [(CLContext, ([CLContext], Int, Int))]
 findRecursions ls = Map.assocs resultMap
@@ -194,3 +199,87 @@ findRecursions ls = Map.assocs resultMap
             (pfx2, len2, cnt1 + cnt2)
     resultMap =
         foldl' (\m (ctx, item) -> Map.insertWith maxAndCount ctx item m) mempty recursions
+
+------------------------------------------------------------
+-- rule statistics
+
+data RuleStats =
+    RuleStats
+        { -- counts of:
+          nSuccess :: !Int -- successful application
+        , nFailure :: !Int -- failure to apply
+        , nAbort :: !Int -- failure, leading to abort
+        , -- total times for these categores
+          tSuccess :: !Double
+        , tFailure :: !Double
+        , tAbort :: !Double
+        }
+    deriving stock (Eq, Ord, Show)
+
+instance Monoid RuleStats where
+    mempty = RuleStats 0 0 0 0 0 0
+
+instance Semigroup RuleStats where
+    rStats1 <> rStats2 =
+        RuleStats
+            { nSuccess = rStats1.nSuccess + rStats2.nSuccess
+            , nFailure = rStats1.nFailure + rStats2.nFailure
+            , nAbort = rStats1.nAbort + rStats2.nAbort
+            , tSuccess = rStats1.tSuccess + rStats2.tSuccess
+            , tFailure = rStats1.tFailure + rStats2.tFailure
+            , tAbort = rStats1.tAbort + rStats2.tAbort
+            }
+
+ruleStats :: [LogLine] -> Map IdContext RuleStats
+ruleStats = Map.fromListWith (<>) . collect
+  where
+    collect [] = []
+    collect (l@LogLine{context} : ls)
+        | Seq.null rulePart = -- no rule involved?
+            collect ls
+        | otherwise =
+            let (outcome, rest) = fromCtxSpan (prefix :|> ruleCtx) (l : ls)
+             in (ruleId, outcome) : collect rest
+      where
+        (prefix, rulePart) = Seq.breakl interesting context
+        (ruleCtx, ruleId) = case rulePart of
+            hd :<| _rest
+                | c@(CLWithId c') <- hd -> (c, c')
+                | CLNullary{}     <- hd -> error "no rule head found"
+            Seq.Empty -> error "no rule head found"
+
+    -- only contexts with ID (rules, equations, hooks)
+    interesting CLNullary{} = False
+    interesting (CLWithId c') = isRuleCtx c'
+
+    fromCtxSpan :: Seq CLContext -> [LogLine] -> (RuleStats, [LogLine])
+    fromCtxSpan prefix ls
+        | null prefixLines =
+            error "Should have at least one line with the prefix" -- see above
+        | otherwise =
+            (mkOutcome (head prefixLines) (last prefixLines), rest)
+      where
+        len = Seq.length prefix
+
+        hasPrefix :: LogLine -> Bool
+        hasPrefix = (== prefix) . Seq.take len . (.context)
+
+        (prefixLines, rest) = span (not . hasPrefix) ls
+
+        mkOutcome :: LogLine -> LogLine -> RuleStats
+        mkOutcome startLine endLine =
+            let time =
+                    maybe 1 realToFrac $
+                        (diffUTCTime
+                            <$> fmap systemToUTCTime endLine.timestamp
+                            <*> fmap systemToUTCTime startLine.timestamp
+                        )
+             in case endLine.context of
+                _ :|> CLNullary CtxSuccess ->
+                    RuleStats 1 0 0 time 0 0
+                _ :|> CLNullary CtxFailure ->
+                    RuleStats 0 1 0 0 time 0
+                _ :|> CLNullary CtxAbort ->
+                    RuleStats 0 0 1 0 0 time
+                other -> -- case not covered...
+                    error $ "Unexpected last context " <> show (Seq.drop len other)
