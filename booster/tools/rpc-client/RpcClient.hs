@@ -483,7 +483,7 @@ parseMode =
         maybeReader $ \s -> case split (== '=') s of [k, v] -> Just (k, v); _ -> Nothing
 
 ----------------------------------------
--- Running all requests contained in the `rpc_*` directory of a tarball
+-- Running all requests contained in the subdirectories of the tarball
 
 runTarball ::
     CommonOptions ->
@@ -548,15 +548,13 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
         case splitFileName (Tar.entryPath entry) of
             -- unpack all directories "rpc_<something>" containing "*.json" files
             (dir, "") -- directory
-                | Tar.Directory <- Tar.entryContent entry
-                , "rpc_" `isPrefixOf` dir -> do
+                | Tar.Directory <- Tar.entryContent entry -> do
                     createDirectoryIfMissing False dir -- create rpc dir so we can unpack files there
                     acc -- no additional file to return
                 | otherwise ->
                     acc -- skip other directories and top-level files
             (dir, file)
-                | "rpc_" `isPrefixOf` dir
-                , ".json" `isSuffixOf` file
+                | ".json" `isSuffixOf` file
                 , not ("." `isPrefixOf` file)
                 , Tar.NormalFile bs _size <- Tar.entryContent entry -> do
                     -- unpack json files into tmp directory
