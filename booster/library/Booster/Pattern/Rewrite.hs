@@ -445,7 +445,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 ceilConditions
                     withContext CtxSuccess $ do
                         case unclearRequiresAfterSmt of
-                            [] -> withPatternContext rewritten $ pure (rewritten, Nothing, subst)
+                            [] -> withPatternContext rewritten $ pure (rewritten, Just $ Predicate FalseBool, subst)
                             _ ->
                                 let rewritten' = rewritten{constraints = rewritten.constraints <> Set.fromList unclearRequiresAfterSmt}
                                  in withPatternContext rewritten' $
