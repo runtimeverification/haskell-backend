@@ -219,16 +219,12 @@ rewriteStep pat = do
         ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
         withContext CtxRemainder $ logPretty' @mods (collapseAndBools . Set.toList $ newRemainder)
 
-        if Set.null newRemainder
-            then case resultsWithoutRemainders of
-                [] ->
-                    -- proceed to lower priority rules if we have not applied any rules at this priority level
-                    processGroups lowerPriorityRules
-                xs ->
-                    -- if we applied at least one rule and the remainder was empty, return the results.
-                    -- TODO: I think we have to apply lower priority rules here still!
-                    pure xs
-            else
+        case resultsWithoutRemainders of
+            [] -> do
+                -- proceed to lower priority rules if we have not applied any rules at this priority level
+                processGroups lowerPriorityRules
+            _xs -> do
+                liftIO . putStrLn $ "YES RESULTS WITH REMAINDER"
                 getSolver >>= \case
                     Just solver ->
                         SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
@@ -249,7 +245,13 @@ rewriteStep pat = do
                                 -- solver cannot solve the remainder. Descend into the remainder branch anyway
                                 (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
                             Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
-                    Nothing -> (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                    Nothing ->
+                        -- using poor-man's SMT solver, for unit-tests
+                        if any isFalse (pat.constraints <> newRemainder)
+                            then do
+                                setRemainder mempty
+                                pure resultsWithoutRemainders
+                            else (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
 
 ruleGroupPriority :: [RewriteRule a] -> Maybe Priority
 ruleGroupPriority = \case
