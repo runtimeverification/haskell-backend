@@ -814,9 +814,25 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     mempty
                     (withPatternContext unWrappedPat $ rewriteStep unWrappedPat)
                     >>= \case
-                        Left failure@RuleApplicationUnclear{} ->
+                        Left failure@(RuleApplicationUnclear rule _ remainder) ->
                             case pat of
-                                Simplified pat' -> logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
+                                Simplified pat' -> do
+                                    -- was already simplified, emit an abort log entry
+                                    -- TODO factor-out common code with the non-abort message
+                                    --      search for "Uncertain about match with rule. Remainder:"
+                                    withRuleContext rule . withContext CtxMatch . withContext CtxAbort $
+                                        getPrettyModifiers >>= \case
+                                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                                logMessage $
+                                                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                                        renderOneLineText $
+                                                            "Uncertain about match with rule. Remainder:"
+                                                                <+> ( hsep $
+                                                                        punctuate comma $
+                                                                            map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                                NE.toList remainder
+                                                                    )
+                                    logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
                                 _ ->
                                     simplify pat >>= \case
                                         -- We are stuck here not trivial because we didn't apply a single rule
