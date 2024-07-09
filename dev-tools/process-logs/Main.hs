@@ -18,7 +18,7 @@ import Data.List (foldl', maximumBy, sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
-import Data.Ord (comparing, Down (..))
+import Data.Ord (Down (..), comparing)
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import Data.Time.Clock
@@ -28,8 +28,8 @@ import System.Exit
 import Text.Printf
 
 import Booster.Log.Context (ContextFilter, mustMatch, readContextFilter)
-import Kore.JsonRpc.Types.ContextLog
 import Kore.JsonRpc.Types (rpcJsonConfig)
+import Kore.JsonRpc.Types.ContextLog
 
 -- reads log file in json-format from stdin (or a single given file)
 -- applies the command
@@ -59,10 +59,10 @@ data Options = Options
 data Command
     = -- | filter a log file, output to stdout. Same options as for the server
       Filter [ContextFilter]
-      -- | find repeated rule/equation contexts in lines
-    | FindRecursions
-      -- | compute total times spent on applying certain rules/equations (top-level)
-    | TimesPerRule
+    | -- | find repeated rule/equation contexts in lines
+      FindRecursions
+    | -- | compute total times spent on applying certain rules/equations (top-level)
+      TimesPerRule
     deriving (Show)
 
 parse :: ParserInfo Options
@@ -148,7 +148,7 @@ process TimesPerRule =
     renderResult (ctx, stats) =
         BS.pack $
             printf
-            "| %22s | %10.6fs (%5d) | %10.6fs (%5d) | %10.6fs (%5d)"
+                "| %22s | %10.6fs (%5d) | %10.6fs (%5d) | %10.6fs (%5d)"
                 (show ctx)
                 stats.tSuccess
                 stats.nSuccess
@@ -156,7 +156,6 @@ process TimesPerRule =
                 stats.nFailure
                 stats.tAbort
                 stats.nAbort
-
 
 encodeLogLine :: LogLine -> BS.ByteString
 encodeLogLine = JSON.encodePretty' rpcJsonConfig{JSON.confIndent = JSON.Spaces 0}
@@ -227,17 +226,16 @@ ruleStatistics =
     allTimes :: RuleStats -> Double
     allTimes stats = stats.tSuccess + stats.tFailure + stats.tAbort
 
-data RuleStats =
-    RuleStats
-        { -- counts of:
-          nSuccess :: !Int -- successful application
-        , nFailure :: !Int -- failure to apply
-        , nAbort :: !Int -- failure, leading to abort
-        , -- total times for these categories
-          tSuccess :: !Double
-        , tFailure :: !Double
-        , tAbort :: !Double
-        }
+data RuleStats = RuleStats
+    { -- counts of:
+      nSuccess :: !Int -- successful application
+    , nFailure :: !Int -- failure to apply
+    , nAbort :: !Int -- failure, leading to abort
+    , -- total times for these categories
+      tSuccess :: !Double
+    , tFailure :: !Double
+    , tAbort :: !Double
+    }
     deriving stock (Eq, Ord, Show)
 
 instance Monoid RuleStats where
@@ -259,7 +257,8 @@ ruleStats = Map.fromListWith (<>) . collect
   where
     collect [] = []
     collect (l@LogLine{context} : ls)
-        | Seq.null rulePart = -- no rule involved?
+        | Seq.null rulePart -- no rule involved?
+            =
             collect ls
         | otherwise =
             let (outcome, rest) = fromCtxSpan (prefix :|> ruleCtx) (l : ls)
@@ -269,7 +268,7 @@ ruleStats = Map.fromListWith (<>) . collect
         (ruleCtx, ruleId) = case rulePart of
             hd :<| _rest
                 | c@(CLWithId c') <- hd -> (c, c')
-                | CLNullary{}     <- hd -> error "no rule head found"
+                | CLNullary{} <- hd -> error "no rule head found"
             Seq.Empty -> error "no rule head found"
 
     -- only contexts with ID (rules, equations, hooks)
@@ -296,22 +295,23 @@ ruleStats = Map.fromListWith (<>) . collect
                     maybe
                         1
                         realToFrac
-                        (diffUTCTime
+                        ( diffUTCTime
                             <$> fmap systemToUTCTime endLine.timestamp
                             <*> fmap systemToUTCTime startLine.timestamp
                         )
              in case Seq.drop len endLine.context of
-                CLNullary CtxSuccess :<| _ ->
-                    RuleStats 1 0 0 time 0 0
+                    CLNullary CtxSuccess :<| _ ->
+                        RuleStats 1 0 0 time 0 0
                     -- rewrite failures
-                _ :|> CLNullary CtxFailure ->
-                    RuleStats 0 1 0 0 time 0
-                _ :|> CLNullary CtxIndeterminate ->
-                    RuleStats 0 0 1 0 0 time
+                    _ :|> CLNullary CtxFailure ->
+                        RuleStats 0 1 0 0 time 0
+                    _ :|> CLNullary CtxIndeterminate ->
+                        RuleStats 0 0 1 0 0 time
                     -- equation failures
-                _ :|> CLNullary CtxContinue ->
-                    RuleStats 0 1 0 0 time 0
-                _ :|> CLNullary CtxBreak ->
-                    RuleStats 0 0 1 0 0 time
-                other -> -- case not covered...
-                    error $ "Unexpected last context " <> show other
+                    _ :|> CLNullary CtxContinue ->
+                        RuleStats 0 1 0 0 time 0
+                    _ :|> CLNullary CtxBreak ->
+                        RuleStats 0 0 1 0 0 time
+                    other ->
+                        -- case not covered...
+                        error $ "Unexpected last context " <> show other
