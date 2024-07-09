@@ -18,7 +18,7 @@ import Data.List (foldl', maximumBy, sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
-import Data.Ord (comparing)
+import Data.Ord (comparing, Down (..))
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import Data.Time.Clock
@@ -141,14 +141,14 @@ process TimesPerRule =
     (heading <>) . map renderResult . ruleStatistics
   where
     heading =
-        [ "| Rule/Equation          | Success           | Failure           | Abort"
-        , "|----------------------- | ----------------- | ----------------- | ----------------"
+        [ "| Rule/Equation          | Success             | Failure             | Abort"
+        , "|----------------------- | ------------------- | ------------------- | -------------------"
         ]
     renderResult :: (IdContext, RuleStats) -> BS.ByteString
     renderResult (ctx, stats) =
         BS.pack $
             printf
-                "| %22s | %3.3fs (%4d) | %3.3fs (%4d) | %3.3fs (%4d)"
+            "| %22s | %10.6fs (%5d) | %10.6fs (%5d) | %10.6fs (%5d)"
                 (show ctx)
                 stats.tSuccess
                 stats.nSuccess
@@ -220,7 +220,7 @@ findRecursions ls = Map.assocs resultMap
 
 ruleStatistics :: [LogLine] -> [(IdContext, RuleStats)]
 ruleStatistics =
-    sortBy (comparing $ allTimes . snd)
+    sortBy (comparing (Down . allTimes . snd))
         . Map.assocs
         . ruleStats
   where
@@ -279,8 +279,7 @@ ruleStats = Map.fromListWith (<>) . collect
     fromCtxSpan :: Seq CLContext -> [LogLine] -> (RuleStats, [LogLine])
     fromCtxSpan prefix ls
         | null prefixLines =
-            (RuleStats 0 0 0 0 0 0, ls) -- HACK
-            -- error "Should have at least one line with the prefix" -- see above
+            error "Should have at least one line with the prefix" -- see above
         | otherwise =
             (mkOutcome (head prefixLines) (last prefixLines), rest)
       where
@@ -289,22 +288,30 @@ ruleStats = Map.fromListWith (<>) . collect
         hasPrefix :: LogLine -> Bool
         hasPrefix = (== prefix) . Seq.take len . (.context)
 
-        (prefixLines, rest) = span (not . hasPrefix) ls
+        (prefixLines, rest) = span hasPrefix ls
 
         mkOutcome :: LogLine -> LogLine -> RuleStats
         mkOutcome startLine endLine =
             let time =
-                    maybe 1 realToFrac $
+                    maybe
+                        1
+                        realToFrac
                         (diffUTCTime
                             <$> fmap systemToUTCTime endLine.timestamp
                             <*> fmap systemToUTCTime startLine.timestamp
                         )
-             in case endLine.context of
-                _ :|> CLNullary CtxSuccess ->
+             in case Seq.drop len endLine.context of
+                CLNullary CtxSuccess :<| _ ->
                     RuleStats 1 0 0 time 0 0
+                    -- rewrite failures
                 _ :|> CLNullary CtxFailure ->
                     RuleStats 0 1 0 0 time 0
-                _ :|> CLNullary CtxAbort ->
+                _ :|> CLNullary CtxIndeterminate ->
+                    RuleStats 0 0 1 0 0 time
+                    -- equation failures
+                _ :|> CLNullary CtxContinue ->
+                    RuleStats 0 1 0 0 time 0
+                _ :|> CLNullary CtxBreak ->
                     RuleStats 0 0 1 0 0 time
                 other -> -- case not covered...
-                    error $ "Unexpected last context " <> show (Seq.drop len other)
+                    error $ "Unexpected last context " <> show other
