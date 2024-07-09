@@ -8,6 +8,8 @@ module Kore.JsonRpc.Types.ContextLog (
     module Kore.JsonRpc.Types.ContextLog,
 ) where
 
+import Control.Applicative ((<|>))
+import Data.Aeson ((.:), (.:?), (.=))
 import Data.Aeson.TH (deriveJSON)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), defaultOptions)
 import Data.Aeson.Types qualified as JSON
@@ -15,6 +17,9 @@ import Data.Data (Data, toConstr)
 import Data.Sequence (Seq)
 import Data.Text (Text, unpack)
 import Data.Text qualified as Text
+import Data.Time.Clock.System (SystemTime (..), systemToUTCTime, utcToSystemTime)
+import Data.Time.Format (defaultTimeLocale, formatTime, parseTimeM)
+import Text.Read (readMaybe)
 
 data SimpleContext
     = -- component
@@ -30,11 +35,11 @@ data SimpleContext
     | -- mode/phase
       CtxInternalise
     | CtxMatch
+    | CtxUnify
     | CtxDefinedness
     | CtxConstraint
     | CtxSMT
     | CtxLlvm
-    | CtxCached
     | -- results
       CtxFailure
     | CtxIndeterminate
@@ -46,7 +51,9 @@ data SimpleContext
       CtxKoreTerm
     | CtxDetail
     | CtxSubstitution
+    | CtxRemainder
     | CtxDepth
+    | CtxTiming
     | -- standard log levels
       CtxError
     | CtxWarn
@@ -74,7 +81,9 @@ data IdContext
     | CtxTerm UniqueId
     | -- entities with name
       CtxHook Text
-    deriving stock (Eq)
+    | CtxRequest Text
+    | CtxCached Text
+    deriving stock (Eq, Ord)
 
 instance Show IdContext where
     show (CtxRewrite uid) = "rewrite " <> show uid
@@ -83,6 +92,17 @@ instance Show IdContext where
     show (CtxCeil uid) = "ceil " <> show uid
     show (CtxTerm uid) = "term " <> show uid
     show (CtxHook name) = "hook " <> unpack name
+    show (CtxRequest name) = "request " <> unpack name
+    show (CtxCached name) = "cached " <> unpack name
+
+getUniqueId :: IdContext -> Maybe UniqueId
+getUniqueId = \case
+    CtxRewrite uid -> Just uid
+    CtxSimplification uid -> Just uid
+    CtxFunction uid -> Just uid
+    CtxCeil uid -> Just uid
+    CtxTerm uid -> Just uid
+    _ -> Nothing
 
 ----------------------------------------
 data UniqueId
@@ -128,7 +148,7 @@ $( deriveJSON
 data CLContext
     = CLNullary SimpleContext
     | CLWithId IdContext
-    deriving stock (Eq)
+    deriving stock (Eq, Ord)
 
 instance Show CLContext where
     show (CLNullary c) = show c
@@ -170,9 +190,50 @@ instance ToJSON CLMessage where
     toJSON (CLValue value) = value
 
 data LogLine = LogLine
-    { context :: Seq CLContext
+    { timestamp :: Maybe SystemTime
+    , context :: Seq CLContext
     , message :: CLMessage
     }
     deriving stock (Show, Eq)
 
-$(deriveJSON defaultOptions ''LogLine)
+instance FromJSON LogLine where
+    parseJSON = JSON.withObject "LogLine" $ \l ->
+        LogLine
+            <$> (l .:? "timestamp" >>= parseTimestamp)
+            <*> l .: "context"
+            <*> l .: "message"
+
+parseTimestamp :: Maybe JSON.Value -> JSON.Parser (Maybe SystemTime)
+parseTimestamp Nothing = pure Nothing
+parseTimestamp (Just x) =
+    JSON.withScientific "numeric timestamp" (pure . Just . fromNumeric) x
+        <|> JSON.withText "human-readable timestamp" fromString x
+        <|> JSON.withText "nanosecond timestamp" fromNanos x
+  where
+    -- fromNumeric :: Scientific -> SystemTime
+    fromNumeric n =
+        let seconds = truncate n
+            nanos = truncate $ 1e9 * (n - fromIntegral seconds) -- no leap seconds
+         in MkSystemTime seconds nanos
+    fromString s = do
+        utc <- parseTimeM False defaultTimeLocale timestampFormat (Text.unpack s)
+        pure . Just $ utcToSystemTime utc
+    fromNanos s =
+        case readMaybe (Text.unpack s) of
+            Nothing -> fail $ "bad number " <> show s
+            Just (n :: Integer) -> pure . Just $ fromNumeric (fromIntegral n :: Double)
+
+instance ToJSON LogLine where
+    toJSON LogLine{timestamp, context, message} =
+        JSON.object $
+            maybe
+                []
+                (\t -> ["timestamp" .= formatted t])
+                timestamp
+                <> ["context" .= context, "message" .= message]
+      where
+        formatted = formatTime defaultTimeLocale timestampFormat . systemToUTCTime
+
+-- same format as the one used in Booster.Util
+timestampFormat :: String
+timestampFormat = "%Y-%m-%dT%H:%M:%S%6Q"

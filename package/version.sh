@@ -32,6 +32,7 @@ version_sub() {
     sed -i "s/^version: '.*'$/version: '${version}'/" booster/package.yaml
     sed -i "s/^version:        .*$/version:        ${version}/" kore/kore.cabal
     sed -i "s/^version:        .*$/version:        ${version}/" ./kore-rpc-types/kore-rpc-types.cabal
+    sed -i 's/^k-haskell-backend (.*) unstable; urgency=medium$/k-haskell-backend ('"$version"') unstable; urgency=medium/' package/debian/changelog
 }
 
 version_command="$1" ; shift

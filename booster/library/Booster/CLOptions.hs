@@ -28,6 +28,7 @@ import Text.Read (readMaybe)
 
 import Booster.GlobalState (EquationOptions (..))
 import Booster.Log.Context (ContextFilter, ctxt, readContextFilter)
+import Booster.Pattern.Pretty
 import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
 import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
 import Booster.Trace (CustomUserEventType)
@@ -48,6 +49,7 @@ data CLOptions = CLOptions
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
     , indexCells :: [Text]
+    , prettyPrintOptions :: [ModifierT]
     , -- developer options below
       eventlogEnabledUserEvents :: [CustomUserEventType]
     }
@@ -162,6 +164,14 @@ clOptionsParser =
                 <> help "Names of configuration cells to index rewrite rules with (default: 'k')"
                 <> value []
             )
+        <*> option
+            (eitherReader $ mapM (readModifierT . trim) . splitOn ",")
+            ( metavar "PRETTY_PRINT"
+                <> value [Decoded, Truncated]
+                <> long "pretty-print"
+                <> help "Prety print options for kore terms: decode, infix, truncated"
+                <> showDefault
+            )
         -- developer options below
         <*> many
             ( option
@@ -201,6 +211,13 @@ clOptionsParser =
         "json" -> Right Json
         other -> Left $ other <> ": Unsupported log format"
 
+    readModifierT :: String -> Either String ModifierT
+    readModifierT = \case
+        "truncated" -> Right Truncated
+        "infix" -> Right Infix
+        "decoded" -> Right Decoded
+        other -> Left $ other <> ": Unsupported prettry printer option"
+
     readTimeStampFormat :: String -> Either String TimestampFormat
     readTimeStampFormat = \case
         "pretty" -> Right Pretty
@@ -236,6 +253,8 @@ allowedLogLevels =
         ( "EquationWarnings"
         , "Log warnings indicating soft-violations of conditions, i.e. exceeding the equation recursion/iteration limit "
         )
+    , ("TimeProfile", "Logs for timing analysis")
+    , ("Timing", "Formerly --print-stats")
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -244,49 +263,64 @@ levelToContext =
         [
             ( "Simplify"
             ,
-                [ [ctxt| booster|kore>function*|simplification*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>function*|simplification*,match,failure|abort |]
+                [ [ctxt| request*,booster|kore>function*|simplification*|hook*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>function*|simplification*,match,failure|abort |]
                 ]
             )
         ,
             ( "SimplifySuccess"
             ,
-                [ [ctxt| booster|kore>function*|simplification*,success|detail |]
+                [ [ctxt| request*,booster|kore>function*|simplification*|hook*,success|detail |]
                 ]
             )
         ,
             ( "Rewrite"
             ,
-                [ [ctxt| booster|kore>rewrite*,success|failure|abort|detail |]
-                , [ctxt| booster|kore>rewrite*,match|definedness|constraint,failure|abort |]
+                [ [ctxt| request*,booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>rewrite*,match|definedness|constraint,failure|abort |]
                 ]
             )
         ,
             ( "RewriteSuccess"
             ,
-                [ [ctxt| booster|kore>rewrite*,success|detail |]
+                [ [ctxt| request*,booster|kore>rewrite*,success|detail |]
                 ]
             )
         ,
             ( "SMT"
             ,
-                [ [ctxt| booster|kore>smt |]
+                [ [ctxt| request*,booster|kore>smt |]
                 ]
             )
         ,
             ( "Aborts"
             ,
-                [ [ctxt| booster>rewrite*,detail. |]
-                , [ctxt| booster>rewrite*,match|definedness|constraint,abort. |]
+                [ [ctxt| request*,booster>rewrite*,detail. |]
+                , [ctxt| request*,booster>rewrite*,match|definedness|constraint,abort. |]
                 , [ctxt| proxy. |]
                 , [ctxt| proxy,abort. |]
-                , [ctxt| booster>failure,abort |]
+                , [ctxt| request*,booster>failure,abort |]
                 ]
             )
         ,
             ( "EquationWarnings"
             ,
-                [ [ctxt| booster>(simplification *|function *)>warning |]
+                [ [ctxt| request*,booster>(simplification *|function *)>warning |]
+                ]
+            )
+        ,
+            ( "TimeProfile"
+            ,
+                [ [ctxt| request*,booster|kore>rewrite*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>rewrite*,match|definedness|condition,failure|abort |]
+                , [ctxt| request*,booster|kore>function*|simplification*,success|failure|abort|detail |]
+                , [ctxt| request*,booster|kore>function*|simplification*,match,failure|abort |]
+                ]
+            )
+        ,
+            ( "Timing"
+            ,
+                [ [ctxt| *>timing |]
                 ]
             )
         ]
