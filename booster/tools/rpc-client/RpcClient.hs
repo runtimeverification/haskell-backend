@@ -542,11 +542,11 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
     throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
     throwAnyError = either throwIO throwIO
 
-    -- unpack all rpc_*/*.json files into dir and return their names
+    -- unpack all */*.json files into dir and return their names
     unpackIfRpc :: FilePath -> Tar.Entry -> IO [FilePath] -> IO [FilePath]
     unpackIfRpc tmpDir entry acc = do
         case splitFileName (Tar.entryPath entry) of
-            -- unpack all directories "rpc_<something>" containing "*.json" files
+            -- unpack all directories "<something>" containing "*.json" files
             (dir, "") -- directory
                 | Tar.Directory <- Tar.entryContent entry -> do
                     createDirectoryIfMissing True dir -- create rpc dir so we can unpack files there
