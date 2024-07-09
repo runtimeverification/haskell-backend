@@ -18,7 +18,7 @@ module USE-PATH-CONDITION-IN-EQUATIONS
 
   ////////////////////////////////////////////////////////////////////////////////
   // Here the simplification's side condition is syntactically present          //
-  // in the path conditon and is not checked.                                   //
+  // in the path condition and is not checked.                                   //
   // Result: Stuck at depth 2 in state test1State2()                            //
   //         after applying rules test1-init,test1-1-2                          //
   ////////////////////////////////////////////////////////////////////////////////
@@ -33,9 +33,9 @@ module USE-PATH-CONDITION-IN-EQUATIONS
   rule [test1F-simplify]: test1F(X:Int) => X requires X ==Int 42 [simplification]
 
   ////////////////////////////////////////////////////////////////////////////////
-  // Here the simplification's side condition is implied by the path conditon,  //
+  // Here the simplification's side condition is implied by the path condition,  //
   // but we need an SMT solver to establish that.                               //
-  // Result: Aborted at depth 1 due to indeterniante conditon of rule test2-1-2 //
+  // Result: Aborted at depth 1 due to indeterminate condition of rule test2-1-2 //
   ////////////////////////////////////////////////////////////////////////////////
   rule [test2-init]: <k> test2Init() => test2State1() ... </k>
                      <int> _         => ?X                </int>
