@@ -71,11 +71,8 @@ instance Entry DebugAppliedRewriteRules where
             "failed to apply " <> pretty (length appliedRewriteRules) <> " rewrite rules"
         | otherwise =
             "applied " <> pretty (length appliedRewriteRules) <> " rewrite rules"
-    oneLineJson DebugAppliedRewriteRules{appliedRewriteRules}
-        | null appliedRewriteRules = Json.Null
-        | otherwise =
-            Json.toJSON $
-                "applied " <> show (length appliedRewriteRules) <> " rewrite rules"
+    oneLineJson DebugAppliedRewriteRules{appliedRewriteRules} =
+        Json.toJSON $ "applied " <> show (length appliedRewriteRules) <> " rewrite rules"
     oneLineContextDoc DebugAppliedRewriteRules{appliedRewriteRules}
         | null appliedRewriteRules =
             single CtxFailure
