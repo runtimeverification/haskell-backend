@@ -688,42 +688,7 @@
                         ]
                     }
                 },
-                "rule-id": "62ea7f9228e3bae8eb12055ebf3fae372d764d720959f832e268e97421ad571c",
-                "rule-predicate": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "Equals",
-                        "argSort": {
-                            "tag": "SortApp",
-                            "name": "SortBool",
-                            "args": []
-                        },
-                        "sort": {
-                            "tag": "SortApp",
-                            "name": "SortGeneratedTopCell",
-                            "args": []
-                        },
-                        "first": {
-                            "tag": "DV",
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortBool",
-                                "args": []
-                            },
-                            "value": "true"
-                        },
-                        "second": {
-                            "tag": "DV",
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortBool",
-                                "args": []
-                            },
-                            "value": "true"
-                        }
-                    }
-                }
+                "rule-id": "62ea7f9228e3bae8eb12055ebf3fae372d764d720959f832e268e97421ad571c"
             }
         ]
     }
