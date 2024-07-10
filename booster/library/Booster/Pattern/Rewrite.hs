@@ -302,16 +302,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                             withContext CtxFailure $ logPretty' @mods reason
                             returnNotApplied
                         MatchIndeterminate remainder -> do
-                            withContext CtxIndeterminate $
-                                logMessage $
-                                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                                        renderOneLineText $
-                                            "Uncertain about match with rule. Remainder:"
-                                                <+> ( hsep $
-                                                        punctuate comma $
-                                                            map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
-                                                                NE.toList remainder
-                                                    )
+                            withContext CtxIndeterminate $ logIndeterminateMatch remainder
                             failRewrite $ RuleApplicationUnclear rule pat.term remainder
                         MatchSuccess substitution -> do
                             withContext CtxSuccess $ do
@@ -818,20 +809,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             case pat of
                                 Simplified pat' -> do
                                     -- was already simplified, emit an abort log entry
-                                    -- TODO factor-out common code with the non-abort message
-                                    --      search for "Uncertain about match with rule. Remainder:"
-                                    withRuleContext rule . withContext CtxMatch . withContext CtxAbort $
-                                        getPrettyModifiers >>= \case
-                                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                                                logMessage $
-                                                    WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                                                        renderOneLineText $
-                                                            "Uncertain about match with rule. Remainder:"
-                                                                <+> ( hsep $
-                                                                        punctuate comma $
-                                                                            map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
-                                                                                NE.toList remainder
-                                                                    )
+                                    withRuleContext rule . withContext CtxMatch . withContext CtxAbort $ logIndeterminateMatch remainder
                                     logMessage ("Aborted after " <> showCounter counter) >> pure (RewriteAborted failure pat')
                                 _ ->
                                     simplify pat >>= \case
@@ -967,3 +945,17 @@ rewriteStart =
         , simplifierCache = mempty
         , smtSolver = Nothing
         }
+
+logIndeterminateMatch :: forall io. LoggerMIO io => NonEmpty (Term, Term) -> io ()
+logIndeterminateMatch remainder =
+    getPrettyModifiers >>= \case
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+            logMessage $
+                WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                    renderOneLineText $
+                        "Uncertain about match with rule. Remainder:"
+                            <+> ( hsep $
+                                    punctuate comma $
+                                        map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                            NE.toList remainder
+                                )
