@@ -911,11 +911,6 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                                         <> ( Text.intercalate ", " $ map (\(r, _, _subst) -> getUniqueId $ uniqueId r) nextPats'
                                                                            )
                                                                     )
-                                                        let mkRulePredicate :: RewriteRule "Rewrite" -> Substitution -> Predicate
-                                                            mkRulePredicate rule subst =
-                                                                collapseAndBools $
-                                                                    concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
-
                                                         pure $
                                                             RewriteBranch pat' $
                                                                 NE.fromList $
@@ -924,7 +919,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                                                             ( ruleLabelOrLocT r
                                                                             , uniqueId r
                                                                             , n
-                                                                            , Just (mkRulePredicate r subst)
+                                                                            , mkRulePredicate r subst
                                                                             , subst
                                                                             )
                                                                         )
@@ -945,6 +940,17 @@ rewriteStart =
         , simplifierCache = mempty
         , smtSolver = Nothing
         }
+
+{- | Instantiate a rewrite rule's requires clause with a substitution.
+     Returns Nothing is the resulting @Predicate@ is trivially @True@.
+-}
+mkRulePredicate :: RewriteRule a -> Substitution -> Maybe Predicate
+mkRulePredicate rule subst =
+    case concatMap
+        (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
+        rule.requires of
+        [] -> Nothing
+        xs -> Just $ collapseAndBools xs
 
 logIndeterminateMatch :: forall io. LoggerMIO io => NonEmpty (Term, Term) -> io ()
 logIndeterminateMatch remainder =
