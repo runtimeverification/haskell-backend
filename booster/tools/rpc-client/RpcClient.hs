@@ -483,7 +483,7 @@ parseMode =
         maybeReader $ \s -> case split (== '=') s of [k, v] -> Just (k, v); _ -> Nothing
 
 ----------------------------------------
--- Running all requests contained in the `rpc_*` directory of a tarball
+-- Running all requests contained in the subdirectories of the tarball
 
 runTarball ::
     CommonOptions ->
@@ -542,27 +542,25 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
     throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
     throwAnyError = either throwIO throwIO
 
-    -- unpack all rpc_*/*.json files into dir and return their names
+    -- unpack all */*.json files into dir and return their names
     unpackIfRpc :: FilePath -> Tar.Entry -> IO [FilePath] -> IO [FilePath]
     unpackIfRpc tmpDir entry acc = do
         case splitFileName (Tar.entryPath entry) of
-            -- unpack all directories "rpc_<something>" containing "*.json" files
+            -- unpack all directories "<something>" containing "*.json" files
             (dir, "") -- directory
-                | Tar.Directory <- Tar.entryContent entry
-                , "rpc_" `isPrefixOf` dir -> do
-                    createDirectoryIfMissing False dir -- create rpc dir so we can unpack files there
+                | Tar.Directory <- Tar.entryContent entry -> do
+                    createDirectoryIfMissing True dir -- create rpc dir so we can unpack files there
                     acc -- no additional file to return
                 | otherwise ->
                     acc -- skip other directories and top-level files
             (dir, file)
-                | "rpc_" `isPrefixOf` dir
-                , ".json" `isSuffixOf` file
+                | ".json" `isSuffixOf` file
                 , not ("." `isPrefixOf` file)
                 , Tar.NormalFile bs _size <- Tar.entryContent entry -> do
                     -- unpack json files into tmp directory
                     let newPath = dir </> file
                     -- current tarballs do not have dir entries, create dir here
-                    createDirectoryIfMissing False $ tmpDir </> dir
+                    createDirectoryIfMissing True $ tmpDir </> dir
                     BS.writeFile (tmpDir </> newPath) bs
                     (newPath :) <$> acc
                 | otherwise ->
