@@ -224,34 +224,32 @@ rewriteStep pat = do
                 -- proceed to lower priority rules if we have not applied any rules at this priority level
                 processGroups lowerPriorityRules
             _xs -> do
-                getSolver >>= \case
-                    Just solver ->
-                        SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
-                            Right False -> do
-                                -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
-                                setRemainder mempty
-                                withContext CtxRemainder $ logMessage ("remainder is UNSAT" :: Text)
-                                pure resultsWithoutRemainders
-                            Right True -> do
-                                withContext CtxRemainder $ logMessage ("remainder is SAT" :: Text)
-                                -- the remainder condition is satisfiable.
-                                --  Have to construct the remainder branch and consider it
-                                -- To construct the "remainder pattern",
-                                -- we add the remainder condition to the predicates of the @pattr@
-                                (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
-                            Left SMT.SMTSolverUnknown{} -> do
-                                withContext CtxRemainder $ logMessage ("remainder is UNKNWON" :: Text)
-                                -- solver cannot solve the remainder. Descend into the remainder branch anyway
-                                (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
-                            Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
-                    Nothing ->
-                        -- using poor-man's SMT solver, for unit-tests, as otherwise the branch due to False
-                        -- remainders produces by unconditional rules
-                        if any isFalse (pat.constraints <> newRemainder)
-                            then do
-                                setRemainder mempty
-                                pure resultsWithoutRemainders
-                            else (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                if any isFalse newRemainder -- no need to call SMT if any of the conditions is trivially false
+                    then do
+                        setRemainder mempty
+                        pure resultsWithoutRemainders
+                    else
+                        getSolver >>= \case
+                            Just solver ->
+                                SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
+                                    Right False -> do
+                                        -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
+                                        setRemainder mempty
+                                        withContext CtxRemainder $ logMessage ("remainder is UNSAT" :: Text)
+                                        pure resultsWithoutRemainders
+                                    Right True -> do
+                                        withContext CtxRemainder $ logMessage ("remainder is SAT" :: Text)
+                                        -- the remainder condition is satisfiable.
+                                        --  Have to construct the remainder branch and consider it
+                                        -- To construct the "remainder pattern",
+                                        -- we add the remainder condition to the predicates of the @pattr@
+                                        (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                                    Left SMT.SMTSolverUnknown{} -> do
+                                        withContext CtxRemainder $ logMessage ("remainder is UNKNWON" :: Text)
+                                        -- solver cannot solve the remainder. Descend into the remainder branch anyway
+                                        (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                                    Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
+                            Nothing -> (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
 
 ruleGroupPriority :: [RewriteRule a] -> Maybe Priority
 ruleGroupPriority = \case
