@@ -350,7 +350,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                     <+> (hsep . punctuate comma . map (pretty' @mods) $ knownTrue)
 
                     unclearRequires <-
-                        catMaybes <$> mapM (checkConstraint returnNotApplied) toCheck
+                        catMaybes <$> mapM (checkConstraint returnNotApplied prior) toCheck
 
                     -- check unclear requires-clauses in the context of known constraints (prior)
                     mbSolver <- lift getSolver
@@ -398,7 +398,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                             concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
                                 Set.toList rule.ensures
                     newConstraints <-
-                        catMaybes <$> mapM (checkConstraint returnTrivial) ruleEnsures
+                        catMaybes <$> mapM (checkConstraint returnTrivial prior) ruleEnsures
 
                     -- check all new constraints together with the known side constraints
                     whenJust mbSolver $ \solver ->
@@ -450,17 +450,17 @@ applyRule pat@Pattern{ceilConditions} rule =
 
     checkConstraint ::
         RewriteRuleAppT (RewriteT io) (Maybe Predicate) ->
+        Set.Set Predicate ->
         Predicate ->
         RewriteRuleAppT (RewriteT io) (Maybe Predicate)
-    checkConstraint onBottom p = do
+    checkConstraint onBottom knownPredicates p = do
         RewriteConfig{definition, llvmApi, smtSolver} <- lift getConfig
         (oldCache, _) <- lift . RewriteT . lift $ get
         (simplified, cache) <-
             withContext CtxConstraint $
-                simplifyConstraint definition llvmApi smtSolver oldCache p
+                simplifyConstraint definition llvmApi smtSolver oldCache knownPredicates p
         -- update cache
         lift . RewriteT . lift . modify $ \(_, rems) -> (cache, rems)
-        -- TODO should we keep the traces? Or only on success?
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing

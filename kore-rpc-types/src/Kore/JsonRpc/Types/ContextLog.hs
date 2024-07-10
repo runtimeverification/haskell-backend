@@ -182,6 +182,7 @@ instance FromJSON CLMessage where
     parseJSON (JSON.String msg) = pure $ CLText msg
     parseJSON obj@JSON.Object{} = pure $ CLValue obj
     parseJSON arr@JSON.Array{} = pure $ CLValue arr
+    parseJSON JSON.Null = pure $ CLValue JSON.Null
     parseJSON other =
         JSON.typeMismatch "Object, array, or string" other
 
@@ -234,6 +235,6 @@ instance ToJSON LogLine where
       where
         formatted = formatTime defaultTimeLocale timestampFormat . systemToUTCTime
 
--- same format as the one used in Booster.Util
+-- similar to the one used in Booster.Util, but not setting a length for the sub-second digits
 timestampFormat :: String
-timestampFormat = "%Y-%m-%dT%H:%M:%S%6Q"
+timestampFormat = "%Y-%m-%dT%H:%M:%S%Q"

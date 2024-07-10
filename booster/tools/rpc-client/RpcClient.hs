@@ -542,14 +542,14 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
     throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
     throwAnyError = either throwIO throwIO
 
-    -- unpack all rpc_*/*.json files into dir and return their names
+    -- unpack all */*.json files into dir and return their names
     unpackIfRpc :: FilePath -> Tar.Entry -> IO [FilePath] -> IO [FilePath]
     unpackIfRpc tmpDir entry acc = do
         case splitFileName (Tar.entryPath entry) of
-            -- unpack all directories "rpc_<something>" containing "*.json" files
+            -- unpack all directories "<something>" containing "*.json" files
             (dir, "") -- directory
                 | Tar.Directory <- Tar.entryContent entry -> do
-                    createDirectoryIfMissing False dir -- create rpc dir so we can unpack files there
+                    createDirectoryIfMissing True dir -- create rpc dir so we can unpack files there
                     acc -- no additional file to return
                 | otherwise ->
                     acc -- skip other directories and top-level files
@@ -560,7 +560,7 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
                     -- unpack json files into tmp directory
                     let newPath = dir </> file
                     -- current tarballs do not have dir entries, create dir here
-                    createDirectoryIfMissing False $ tmpDir </> dir
+                    createDirectoryIfMissing True $ tmpDir </> dir
                     BS.writeFile (tmpDir </> newPath) bs
                     (newPath :) <$> acc
                 | otherwise ->
