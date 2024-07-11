@@ -632,7 +632,24 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         }
                             | length filteredNexts == 1 ->
                                 -- all but one next states are bottom, execution should proceed
-                                Left (execStateToKoreJson $ head filteredNexts, logsOnly <> filteredNextLogs)
+                                -- Note that we've effectively made a rewrite step here, so we need to
+                                -- extract the rule-id information from the result we proceed with
+                                let onlyNext = head filteredNexts
+                                    rewriteRuleId = fromMaybe "UNKNOWN" onlyNext.ruleId
+                                    proxyRewriteStepLog =
+                                        RPCLog.Rewrite
+                                            { result =
+                                                RPCLog.Success
+                                                    { rewrittenTerm = Nothing
+                                                    , substitution = Nothing
+                                                    , ruleId = rewriteRuleId
+                                                    }
+                                            , origin = RPCLog.Proxy
+                                            }
+                                 in Left
+                                        ( execStateToKoreJson onlyNext
+                                        , logsOnly <> filteredNextLogs <> [Just [proxyRewriteStepLog]]
+                                        )
                         -- otherwise falling through to _otherReason
                         CutPointRule
                             | null filteredNexts ->
