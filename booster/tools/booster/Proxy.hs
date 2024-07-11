@@ -412,18 +412,18 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 , koreResult.logs
                                                 , fallbackLog
                                                 ]
-                                        loopState newLogs =
-                                            ( currentDepth + boosterResult.depth + koreResult.depth
+                                        loopState incDepth newLogs =
+                                            ( currentDepth + boosterResult.depth + koreResult.depth + if incDepth then 1 else 0
                                             , time + bTime + kTime
                                             , koreTime + kTime
                                             , postProcessLogs
                                                 <$> combineLogs (accumulatedLogs : newLogs)
                                             )
-                                        continueWith newLogs nextState =
+                                        continueWith incDepth newLogs nextState =
                                             executionLoop
                                                 logSettings
                                                 def
-                                                (loopState newLogs)
+                                                (loopState incDepth newLogs)
                                                 r{ExecuteRequest.state = nextState}
                                     case (boosterResult.reason, koreResult.reason) of
                                         (Aborted, res) ->
@@ -455,7 +455,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                         "kore depth-bound, continuing... (currently at "
                                                             <> show (currentDepth + boosterResult.depth + koreResult.depth)
                                                             <> ")"
-                                            continueWith [] (execStateToKoreJson koreResult.state)
+                                            continueWith False [] (execStateToKoreJson koreResult.state)
                                         _ -> do
                                             -- otherwise we have hit a different
                                             -- HaltReason, at which point we should
@@ -471,7 +471,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                             case postExecResult of
                                                 Left (nextState, newLogs) -> do
                                                     -- simplification revealed that we should actually proceed
-                                                    continueWith newLogs nextState
+                                                    continueWith True newLogs nextState
                                                 Right result -> do
                                                     logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
                                                     pure $
