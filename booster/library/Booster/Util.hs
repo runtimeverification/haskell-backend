@@ -10,7 +10,6 @@ module Booster.Util (
     Flag (..),
     Bound (..),
     constructorName,
-    handleOutput,
     withFastLogger,
     newTimeCache,
     pattern PrettyTimestamps,
@@ -20,7 +19,6 @@ module Booster.Util (
 import Control.AutoUpdate (defaultUpdateSettings, mkAutoUpdate, updateAction, updateFreq)
 import Control.DeepSeq (NFData (..))
 import Control.Exception (bracket, catch, throwIO)
-import Control.Monad.Logger.CallStack qualified as Log
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
@@ -36,14 +34,12 @@ import Language.Haskell.TH.Syntax (Lift)
 import System.Directory (removeFile)
 import System.IO.Error (isDoesNotExistError)
 import System.Log.FastLogger (
-    FastLogger,
     LogStr,
     LogType,
     LogType' (..),
     defaultBufSize,
     newFastLogger,
     newTimedFastLogger,
-    toLogStr,
  )
 import System.Log.FastLogger.Types (FormattedTime)
 
@@ -131,28 +127,25 @@ encodeLabel = BS.concatMap encodeChar
     encodeChar c = fromMaybe (BS.singleton c) $ Map.lookup c encodeMap
 
 -------------------------------------------------------------------
--- logging helpers, some are adapted from monad-logger-aeson
-handleOutput ::
-    FastLogger ->
-    Log.Loc ->
-    Log.LogSource ->
-    Log.LogLevel ->
-    Log.LogStr ->
-    IO ()
-handleOutput stderrLogger loc src level msg =
-    stderrLogger $ Log.defaultLogStr loc src level msg
+-- logging helpers
 
-newFastLoggerMaybeWithTime :: Maybe (IO FormattedTime) -> LogType -> IO (LogStr -> IO (), IO ())
-newFastLoggerMaybeWithTime = \case
-    Nothing -> newFastLogger
-    Just formattedTime -> \typ -> do
+newFastLoggerMaybeWithTime ::
+    Maybe (IO FormattedTime) -> LogType -> IO ((Maybe FormattedTime -> LogStr) -> IO (), IO ())
+newFastLoggerMaybeWithTime mTimer typ = case mTimer of
+    Nothing -> do
+        (logger, cleanup) <- newFastLogger typ
+        pure (\mkMsg -> logger $ mkMsg Nothing, cleanup)
+    Just formattedTime -> do
         (logger, cleanup) <- newTimedFastLogger formattedTime typ
-        pure (\msg -> logger (\time -> toLogStr time <> " " <> msg), cleanup)
+        pure (\mkMsg -> logger $ mkMsg . Just, cleanup)
 
 withFastLogger ::
     Maybe (IO FormattedTime) ->
     Maybe FilePath ->
-    (FastLogger -> Maybe FastLogger -> IO a) ->
+    ( ((Maybe FormattedTime -> LogStr) -> IO ()) ->
+      Maybe ((Maybe FormattedTime -> LogStr) -> IO ()) ->
+      IO a
+    ) ->
     IO a
 withFastLogger mFormattedTime Nothing log' =
     let typStderr = LogStderr defaultBufSize
@@ -162,7 +155,7 @@ withFastLogger mFormattedTime (Just fp) log' =
         typFile = LogFileNoRotate fp defaultBufSize
      in bracket (newFastLoggerMaybeWithTime mFormattedTime typStderr) snd $ \(loggerStderr, _) -> do
             removeFileIfExists fp
-            bracket (newFastLogger typFile) snd $ \(loggerFile, _) ->
+            bracket (newFastLoggerMaybeWithTime mFormattedTime typFile) snd $ \(loggerFile, _) ->
                 log' loggerStderr (Just loggerFile)
   where
     removeFileIfExists :: FilePath -> IO ()
@@ -192,7 +185,7 @@ pattern NoPrettyTimestamps = Flag False
 -- | Format time either as a human-readable date and time or as nanoseconds
 formatSystemTime :: Flag "PrettyTimestamp" -> SystemTime -> ByteString
 formatSystemTime prettyTimestamp =
-    let formatString = BS.unpack "%Y-%m-%dT%H:%M:%S.%6Q"
+    let formatString = "%Y-%m-%dT%H:%M:%S%6Q"
         formatter =
             if coerce prettyTimestamp
                 then formatTime defaultTimeLocale formatString . systemToUTCTime

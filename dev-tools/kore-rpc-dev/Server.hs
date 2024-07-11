@@ -16,13 +16,10 @@ import Control.Monad.Catch (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
     LogLevel (..),
-    LoggingT (runLoggingT),
-    MonadLoggerIO (askLoggerIO),
-    ToLogStr (toLogStr),
  )
-import Control.Monad.Logger qualified as Log
-import Control.Monad.Logger qualified as Logger
+import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson.Types (Value (..))
+import Data.ByteString.Char8 qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -36,7 +33,6 @@ import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
     Clock (..),
-    TimeSpec (..),
     getTime,
  )
 import System.Exit
@@ -44,7 +40,9 @@ import System.IO (hPutStrLn, stderr)
 import System.Log.FastLogger (newTimeCache)
 
 import Booster.CLOptions
+import Booster.Log
 import Booster.Log.Context qualified
+import Booster.Pattern.Pretty
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
@@ -63,7 +61,6 @@ import Kore.JsonRpc.Types
 import Kore.Log.BoosterAdaptor (
     ExeName (..),
     KoreLogType (..),
-    LogAction (LogAction),
     TimestampsSwitch (TimestampsDisable),
     defaultKoreLogOptions,
     koreSomeEntryLogAction,
@@ -95,15 +92,17 @@ data KoreServer = KoreServer
 
 respond ::
     forall m.
-    Log.MonadLogger m =>
+    LoggerMIO m =>
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
 respond kore req = case req of
     Execute _ ->
         loggedKore ExecuteM req >>= \case
             Right (Execute koreResult) -> do
-                Log.logInfoNS "proxy" . Text.pack $
-                    "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
+                withContext CtxKore $
+                    logMessage $
+                        Text.pack $
+                            "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
                 pure . Right . Execute $ koreResult
             res -> pure res
     Implies _ -> loggedKore ImpliesM req
@@ -129,7 +128,10 @@ respond kore req = case req of
                 pure koreError
 
     loggedKore method r = do
-        Log.logInfoNS "proxy" . Text.pack $ show method <> " (using kore)"
+        withContext CtxKore $
+            logMessage' $
+                Text.pack $
+                    show method <> " (using kore)"
         kore r
 
 main :: IO ()
@@ -147,15 +149,13 @@ main = do
                     , eventlogEnabledUserEvents
                     , logFile
                     , logTimeStamps
+                    , prettyPrintOptions
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
         logContextsWithcustomLevelContexts =
             logContexts
                 <> concatMap (\case LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
-        levelFilter :: Logger.LogSource -> LogLevel -> Bool
-        levelFilter _source lvl =
-            lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
         koreLogExtraLevels =
             if not (null logContextsWithcustomLevelContexts)
                 then -- context logging: enable all Proxy-required Kore log entries
@@ -166,83 +166,90 @@ main = do
 
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
-    Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger ->
-        flip runLoggingT (Booster.handleOutput stderrLogger) . Logger.filterLogger levelFilter $ do
-            liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
-                putStrLn $ "Tracing " <> show t
-                enableCustomUserEvent t
+    Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
+        liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
+            putStrLn $ "Tracing " <> show t
+            enableCustomUserEvent t
 
-            monadLogger <- askLoggerIO
+        let koreLogActions ::
+                forall m.
+                MonadIO m =>
+                [Log.LogAction m Log.SomeEntry]
+            koreLogActions = [koreLogAction]
+              where
+                koreLogRenderer = case logFormat of
+                    Standard -> renderStandardPretty
+                    OneLine -> renderOnelinePretty
+                    Json -> renderJson
+                koreLogFilter = case logFormat of
+                    Standard -> const True
+                    _ -> \l@(Log.SomeEntry ctxt _) -> not (Log.isEmpty l) && koreFilterContext (ctxt <> [l])
+                koreFilterContext ctxt =
+                    null logContextsWithcustomLevelContexts
+                        || ( let contextStrs =
+                                    concatMap
+                                        ( \(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c
+                                        )
+                                        ctxt
+                              in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
+                           )
 
-            let koreLogActions ::
-                    forall m.
-                    MonadIO m =>
-                    [LogAction m Log.SomeEntry]
-                koreLogActions = [koreLogAction]
-                  where
-                    koreLogRenderer = case logFormat of
-                        Standard -> renderStandardPretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                        OneLine -> renderOnelinePretty (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                        Json -> renderJson (ExeName "") (TimeSpec 0 0) TimestampsDisable
-                    koreLogEarlyFilter = case logFormat of
-                        Json -> \l@(Log.SomeEntry ctxt e) ->
-                            Log.oneLineJson e /= Null && koreFilterContext (ctxt <> [l])
-                        OneLine -> \l@(Log.SomeEntry ctxt _) -> koreFilterContext $ ctxt <> [l]
-                        Standard -> const True
-                    koreFilterContext ctxt =
-                        null logContextsWithcustomLevelContexts
-                            || ( let contextStrs =
-                                        concatMap
-                                            ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
-                                            )
-                                            ctxt
-                                  in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
-                               )
+                koreLogAction =
+                    koreSomeEntryLogAction
+                        koreLogRenderer
+                        koreLogFilter
+                        (fromMaybe stderrLogger mFileLogger)
 
-                    koreLogAction =
-                        koreSomeEntryLogAction
-                            koreLogRenderer
-                            koreLogEarlyFilter
-                            (const True)
-                            ( LogAction $ \txt -> liftIO $
-                                case mFileLogger of
-                                    Just fileLogger -> fileLogger $ toLogStr $ txt <> "\n"
-                                    Nothing -> stderrLogger $ toLogStr $ txt <> "\n"
-                            )
+            coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
+            koreLogOptions =
+                (defaultKoreLogOptions (ExeName "") startTime)
+                    { Log.logLevel = coLogLevel
+                    , Log.logEntries = koreLogExtraLevels
+                    , Log.timestampsSwitch = TimestampsDisable
+                    , Log.debugSolverOptions =
+                        Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
+                    , Log.logType = LogProxy (mconcat koreLogActions)
+                    , Log.logFormat = Log.Standard
+                    }
+            srvSettings = serverSettings port "*"
 
-            let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
-                koreLogOptions =
-                    (defaultKoreLogOptions (ExeName "") startTime)
-                        { Log.logLevel = coLogLevel
-                        , Log.logEntries = koreLogExtraLevels
-                        , Log.timestampsSwitch = TimestampsDisable
-                        , Log.debugSolverOptions =
-                            Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                        , Log.logType = LogProxy (mconcat koreLogActions)
-                        , Log.logFormat = Log.Standard
-                        }
-                srvSettings = serverSettings port "*"
+            boosterContextLogger = case logFormat of
+                Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
+                _ -> Booster.Log.textLogger $ fromMaybe stderrLogger mFileLogger
 
-            liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
-                withLogger koreLogOptions $ \actualLogAction -> do
-                    mvarLogAction <- newMVar actualLogAction
-                    let logAction = swappableLogger mvarLogAction
-                    kore@KoreServer{runSMT} <-
-                        mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
-                    runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
+            filteredBoosterContextLogger =
+                flip filterLogger boosterContextLogger $ \(LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
+                    alwaysDisplay
+                        || let ctxt = map (Text.encodeUtf8 . toTextualLog) ctxts
+                            in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
-                    let koreRespond :: Respond (API 'Req) (LoggingT IO) (API 'Res)
-                        koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                        server =
-                            jsonRpcServer
-                                srvSettings
-                                (const $ respond koreRespond)
-                                [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
-                        interruptHandler _ = do
-                            when (logLevel >= LevelInfo) $
-                                hPutStrLn stderr "[Info#proxy] Server shutting down"
-                            exitSuccess
-                    handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger
+            runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
+            runBoosterLogger =
+                flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
+                    . Booster.Log.unLoggerT
+
+        liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
+            Kore.Log.BoosterAdaptor.withLogger koreLogOptions $ \actualLogAction -> do
+                mvarLogAction <- newMVar actualLogAction
+                let logAction = swappableLogger mvarLogAction
+                kore@KoreServer{runSMT} <-
+                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                runBoosterLogger $
+                    Booster.Log.withContext CtxKore $
+                        Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
+
+                let koreRespond :: Id -> Respond (API 'Req) (LoggerT IO) (API 'Res)
+                    koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
+                    server =
+                        jsonRpcServer
+                            srvSettings
+                            (\rawReq -> runBoosterLogger . respond (koreRespond $ getReqId rawReq))
+                            [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
+                    interruptHandler _ = do
+                        when (logLevel >= LevelInfo) $
+                            hPutStrLn stderr "[proxy] Server shutting down"
+                        exitSuccess
+                handleJust isInterrupt interruptHandler $ runBoosterLogger server
   where
     clParser =
         info

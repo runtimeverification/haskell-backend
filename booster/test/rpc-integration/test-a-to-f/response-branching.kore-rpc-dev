@@ -182,7 +182,7 @@
                                 },
                                 "first": {
                                     "tag": "EVar",
-                                    "name": "Var'Unds'DotVar0",
+                                    "name": "RuleVar'Unds'DotVar0",
                                     "sort": {
                                         "tag": "SortApp",
                                         "name": "SortGeneratedCounterCell",
@@ -220,7 +220,7 @@
                                 },
                                 "first": {
                                     "tag": "EVar",
-                                    "name": "Var'Unds'DotVar1",
+                                    "name": "RuleVar'Unds'DotVar1",
                                     "sort": {
                                         "tag": "SortApp",
                                         "name": "SortK",
@@ -339,7 +339,7 @@
                                 },
                                 "first": {
                                     "tag": "EVar",
-                                    "name": "Var'Unds'DotVar0",
+                                    "name": "RuleVar'Unds'DotVar0",
                                     "sort": {
                                         "tag": "SortApp",
                                         "name": "SortGeneratedCounterCell",
@@ -377,7 +377,7 @@
                                 },
                                 "first": {
                                     "tag": "EVar",
-                                    "name": "Var'Unds'DotVar1",
+                                    "name": "RuleVar'Unds'DotVar1",
                                     "sort": {
                                         "tag": "SortApp",
                                         "name": "SortK",

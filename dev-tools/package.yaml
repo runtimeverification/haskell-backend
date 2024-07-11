@@ -1,5 +1,5 @@
 name: hs-backend-booster-dev-tools
-version: '0.0.0'
+version: '0.1.0'
 github: "runtimeverification/hs-backend-booster"
 license: BSD3
 author: "Runtime Verification Inc"
@@ -87,6 +87,55 @@ executables:
       - prettyprinter
       - text
       - transformers
+    ghc-options:
+      - -rtsopts
+  count-aborts:
+    source-dirs: count-aborts
+    main: Main.hs
+    dependencies:
+      - aeson
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - kore-rpc-types
+      - text
+    ghc-options:
+      - -rtsopts
+  process-logs:
+    source-dirs: process-logs
+    main: Main.hs
+    dependencies:
+      - aeson
+      - aeson-pretty
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - hs-backend-booster
+      - kore-rpc-types
+      - optparse-applicative
+      - text
+      - time
+    ghc-options:
+      - -rtsopts
+  time-profile:
+    source-dirs: time-profile
+    main: Main.hs
+    dependencies:
+      - aeson
+      - base
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - kore-rpc-types
+      - profiteur
+      - text
+      - unordered-containers
+      - vector
     ghc-options:
       - -rtsopts
   parsetest-binary:
@@ -191,6 +240,7 @@ executables:
       - monad-logger
       - optparse-applicative
       - text
+      - transformers
     ghc-options:
     - -rtsopts
     - -threaded

@@ -25,6 +25,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.String (fromString)
 import Data.Text (Text, pack)
+import Data.Text qualified as Text
 import Data.Text.Encoding (encodeUtf8)
 import GlobalMain (
     LoadedDefinition (..),
@@ -81,11 +82,12 @@ import Kore.Rewrite (
 import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewriteStep (EnableAssumeInitialDefined (..))
 import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
+    RewritingVariableName (..),
     getRewritingPattern,
     getRewritingVariable,
     isSomeConfigVariable,
     isSomeEquationVariable,
+    isSomeRuleVariable,
     mkRewritingPattern,
     mkRewritingTerm,
  )
@@ -112,6 +114,7 @@ import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
+import Network.JSONRPC (fromId)
 import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
@@ -119,6 +122,7 @@ import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 respond ::
     forall m.
     MonadIO m =>
+    String ->
     MVar.MVar ServerState ->
     ModuleName ->
     ( forall a.
@@ -128,7 +132,7 @@ respond ::
       IO a
     ) ->
     Respond (API 'Req) m (API 'Res)
-respond serverState moduleName runSMT =
+respond reqId serverState moduleName runSMT =
     \case
         Execute
             ExecuteRequest
@@ -158,23 +162,22 @@ respond serverState moduleName runSMT =
                         traversalResult <-
                             liftIO
                                 ( runSMT (Exec.metadataTools serializedModule) lemmas $
-                                    Log.logWhile (Log.DebugContext "kore") $
-                                        Log.logWhile (Log.DebugContext "execute") $
-                                            Exec.rpcExec
-                                                (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
-                                                (coerce stepTimeout)
-                                                ( if fromMaybe False movingAverageStepTimeout
-                                                    then EnableMovingAverage
-                                                    else DisableMovingAverage
-                                                )
-                                                ( if fromMaybe False assumeStateDefined
-                                                    then EnableAssumeInitialDefined
-                                                    else DisableAssumeInitialDefined
-                                                )
-                                                tracingEnabled
-                                                serializedModule
-                                                (toStopLabels cutPointRules terminalRules)
-                                                verifiedPattern
+                                    withContextLog Log.CtxExecute $
+                                        Exec.rpcExec
+                                            (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
+                                            (coerce stepTimeout)
+                                            ( if fromMaybe False movingAverageStepTimeout
+                                                then EnableMovingAverage
+                                                else DisableMovingAverage
+                                            )
+                                            ( if fromMaybe False assumeStateDefined
+                                                then EnableAssumeInitialDefined
+                                                else DisableAssumeInitialDefined
+                                            )
+                                            tracingEnabled
+                                            serializedModule
+                                            (toStopLabels cutPointRules terminalRules)
+                                            verifiedPattern
                                 )
 
                         stop <- liftIO $ getTime Monotonic
@@ -386,7 +389,14 @@ respond serverState moduleName runSMT =
                                         else Just $ Kore.Syntax.Json.fromTermLike $ foldl TermLike.mkAnd pr' $ map toEquals predsFromSub
                              in ( getRewritingPattern p'
                                 , finalPr
-                                , PatternJson.fromSubstitution sort $ Substitution.mapVariables getRewritingVariable sub
+                                , PatternJson.fromSubstitution sort
+                                    $ Substitution.mapVariables
+                                        ( pure $ \case
+                                            ConfigVariableName v -> v
+                                            RuleVariableName v@SomeVariable.VariableName{base = TermLike.Id{getId = nm, idLocation = loc}} -> v{SomeVariable.base = TermLike.Id{getId = "Rule" <> nm, idLocation = loc}}
+                                            EquationVariableName v@SomeVariable.VariableName{base = TermLike.Id{getId = nm, idLocation = loc}} -> v{SomeVariable.base = TermLike.Id{getId = "Eq" <> nm, idLocation = loc}}
+                                        )
+                                    $ Substitution.filter isSomeRuleVariable sub
                                 , rid
                                 )
 
@@ -421,8 +431,7 @@ respond serverState moduleName runSMT =
                     result <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
-                            . Log.logWhile (Log.DebugContext "kore")
-                            . Log.logWhile (Log.DebugContext "implies")
+                            . withContextLog Log.CtxImplies
                             . evalInSimplifierContext serializedModule
                             . runExceptT
                             $ Claim.checkSimpleImplication
@@ -505,8 +514,7 @@ respond serverState moduleName runSMT =
                     result <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
-                            . Log.logWhile (Log.DebugContext "kore")
-                            . Log.logWhile (Log.DebugContext "simplify")
+                            . withContextLog Log.CtxSimplify
                             . evalInSimplifierContext serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
@@ -602,8 +610,7 @@ respond serverState moduleName runSMT =
                         serializedModule <-
                             liftIO
                                 . runSMT metadataTools lemmas
-                                . Log.logWhile (Log.DebugContext "kore")
-                                . Log.logWhile (Log.DebugContext "add-module")
+                                . withContextLog Log.CtxAddModule
                                 $ Exec.makeSerializedModule newModule
                         internedTextCacheHash <- liftIO $ readIORef globalInternedTextCache
 
@@ -662,8 +669,7 @@ respond serverState moduleName runSMT =
                                 else
                                     liftIO
                                         . runSMT tools lemmas
-                                        . Log.logWhile (Log.DebugContext "kore")
-                                        . Log.logWhile (Log.DebugContext "get-model")
+                                        . withContextLog Log.CtxGetModel
                                         . SMT.Evaluator.getModelFor tools
                                         $ NonEmpty.fromList preds
 
@@ -690,6 +696,12 @@ respond serverState moduleName runSMT =
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left cancelUnsupportedInBatchMode
   where
+    withContextLog :: Log.SimpleContext -> SMT.SMT a -> SMT.SMT a
+    withContextLog method =
+        Log.logWhile (Log.DebugContext $ Log.CLWithId $ Log.CtxRequest $ Text.pack reqId)
+            . Log.inContext Log.CtxKore
+            . Log.inContext method
+
     withMainModule module' act = do
         let mainModule = fromMaybe moduleName module'
         ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
@@ -752,7 +764,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
             srvSettings
             ( \req parsed ->
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
-                    >> respond serverState mainModule runSMT parsed
+                    >> respond (fromId $ getReqId req) serverState mainModule runSMT parsed
             )
             [ handleDecidePredicateUnknown
             , handleErrorCall

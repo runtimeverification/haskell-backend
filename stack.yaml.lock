@@ -57,6 +57,24 @@ packages:
     version: 0.1.1.4
   original:
     url: https://github.com/goodlyrottenapple/tasty-test-reporter/archive/b704130545aa3925a8487bd3e92f1dd5ce0512e2.tar.gz
+- completed:
+    name: profiteur
+    pantry-tree:
+      sha256: 0aeb13dd17b44a10f92040844224e27bf9d436f48d9436060f6e5e745576ca7e
+      size: 1806
+    sha256: 674623e6590230f69b0841c2b430e7c58fe7d9ea4bc875c2c1c6a98ee80d105e
+    size: 71475
+    url: https://github.com/goodlyrottenapple/profiteur/archive/7b30bbe6b2a6b72a5b4896f3a0eed5587a5bf465.tar.gz
+    version: 0.4.7.0
+  original:
+    url: https://github.com/goodlyrottenapple/profiteur/archive/7b30bbe6b2a6b72a5b4896f3a0eed5587a5bf465.tar.gz
+- completed:
+    hackage: ghc-prof-1.4.1.12@sha256:0146d3324470db81f6ed1d84b445f1d1aadaeb2e4e045876f5cd231a0946b713,2117
+    pantry-tree:
+      sha256: 37a45db4d22b7b20bd06343cfc9517cadf84536da9cb694a822f6c857d385675
+      size: 687
+  original:
+    hackage: ghc-prof-1.4.1.12@sha256:0146d3324470db81f6ed1d84b445f1d1aadaeb2e4e045876f5cd231a0946b713,2117
 snapshots:
 - completed:
     sha256: 73ad581de7c5306278aec7706cafaf3b1c2eb7abf4ab586e4d9dc675c6106c4e

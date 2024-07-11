@@ -12,6 +12,7 @@ module Kore.Log.DebugAttemptedRewriteRules (
     whileDebugAttemptRewriteRule,
 ) where
 
+import Data.Aeson (object, (.=))
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Kore.Attribute.Axiom (
@@ -30,7 +31,7 @@ import Kore.Internal.Variable (
 import Kore.Rewrite.RewritingVariable
 import Kore.Unparser
 import Kore.Util (showHashHex)
-import Log
+import Log hiding (UniqueId)
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -69,13 +70,13 @@ instance Entry DebugAttemptedRewriteRules where
     helpDoc _ = "log attempted rewrite rules"
 
     oneLineContextDoc = \case
-        (DebugAttemptedRewriteRules{configuration, ruleId, label}) ->
-            [ "term " <> (showHashHex $ hash configuration)
-            , "rewrite" <> shortRuleIdTxt ruleId <> fromMaybe "" label
+        DebugAttemptedRewriteRules{configuration, ruleId} ->
+            [ CtxTerm `withShortId` showHashHex (hash configuration)
+            , CtxRewrite `withId` fromMaybe "UNKNOWN" (getUniqueId ruleId)
             ]
 
     oneLineDoc entry@(DebugAttemptedRewriteRules{configuration, label, ruleId, attemptedRewriteRule}) =
-        let context = map Pretty.brackets (pretty <$> oneLineContextDoc entry <> ["detail"])
+        let context = map Pretty.brackets (pretty . show <$> oneLineContextDoc entry <> single CtxDetail)
             logMsg =
                 ( Pretty.hsep . concat $
                     [ ["attempting to apply rewrite rule", Pretty.pretty (shortRuleIdTxt ruleId), Pretty.pretty label]
@@ -84,6 +85,14 @@ instance Entry DebugAttemptedRewriteRules where
                     ]
                 )
          in mconcat context <> logMsg
+
+    oneLineJson DebugAttemptedRewriteRules{label, attemptedRewriteRule} =
+        -- add the "detail" context here (floated out in BoosterAdaptor)
+        object
+            [ "context" .= CtxDetail
+            , "message"
+                .= renderDefault (maybe (Pretty.pretty attemptedRewriteRule) Pretty.pretty label)
+            ]
 
 whileDebugAttemptRewriteRule ::
     MonadLog log =>

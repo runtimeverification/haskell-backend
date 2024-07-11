@@ -275,13 +275,31 @@ deriveResults Result.Results{results, remainders} =
         | otherwise = do
             (_, simplifyRules :: Seq SimplifierTrace) <- lift get
             lift $ modify $ \(cache, _rules) -> (cache, mempty)
-            addRule (RewriteRule $ extract appliedRule, simplifyRules)
+            let rulePattern = extract appliedRule
+            let
+                ruleLabel :: Attribute.Label = from rulePattern
+                ruleUniqueId :: UniqueId = from rulePattern
+            addRule (RewriteRule rulePattern, simplifyRules)
             pure $
                 Rewritten
-                    (RuleInfo (predicate appliedRule) (substitution appliedRule) $ from $ extract appliedRule)
+                    ( RuleInfo
+                        (predicate appliedRule)
+                        (substitution appliedRule)
+                        (uniqueIdWithFallback ruleUniqueId ruleLabel)
+                    )
                     result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
+
+    -- Some rewrite rules are dynamically generated and injected into
+    -- a running server using the RPC "add-module" endpoint.
+    -- These rules, for historical reasons, are not given unique ids. Hopefully they will be in future.
+    -- Until then, we use the rule label, if available, in place of the ID.
+    uniqueIdWithFallback :: UniqueId -> Attribute.Label -> UniqueId
+    uniqueIdWithFallback (Attribute.UniqueId mbUniqueId) (Attribute.Label mbLabel) = Attribute.UniqueId . Just $
+        case mbUniqueId of
+            Just uid -> uid
+            Nothing -> fromMaybe "UNKNOWN" mbLabel
 
 groupRewritesByPriority ::
     [RewriteRule variable] -> [[RewriteRule variable]]

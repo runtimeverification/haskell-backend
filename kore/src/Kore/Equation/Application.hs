@@ -89,6 +89,7 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DebugContext (SimpleContext (CtxConstraint), inContext)
 import Kore.Log.DecidePredicateUnknown (
     OnDecidePredicateUnknown (..),
     srcLoc,
@@ -361,24 +362,25 @@ checkRequires ::
     Predicate RewritingVariableName ->
     ExceptT (CheckRequiresError RewritingVariableName) Simplifier ()
 checkRequires onUnknown sideCondition predicate requires =
-    do
-        let requires' = makeAndPredicate predicate requires
-            -- The condition to refute:
-            condition :: Condition RewritingVariableName
-            condition = from @(Predicate _) (makeNotPredicate requires')
-        return condition
-            -- First try to refute 'condition' without user-defined axioms:
-            >>= withoutAxioms . simplifyCondition
-            -- Next try to refute 'condition' including user-defined axioms:
-            >>= withAxioms . simplifyCondition
-            -- Finally, try to refute the simplified 'condition' using the
-            -- external solver:
-            >>= filterBranch
+    inContext CtxConstraint $
+        do
+            let requires' = makeAndPredicate predicate requires
+                -- The condition to refute:
+                condition :: Condition RewritingVariableName
+                condition = from @(Predicate _) (makeNotPredicate requires')
+            return condition
+                -- First try to refute 'condition' without user-defined axioms:
+                >>= withoutAxioms . simplifyCondition
+                -- Next try to refute 'condition' including user-defined axioms:
+                >>= withAxioms . simplifyCondition
+                -- Finally, try to refute the simplified 'condition' using the
+                -- external solver:
+                >>= filterBranch
 
-        -- Collect the simplified results. If they are \bottom, then \and(predicate,
-        -- requires) is valid; otherwise, the required pre-conditions are not met
-        -- and the rule will not be applied.
-        & (OrCondition.observeAllT >=> assertBottom)
+            -- Collect the simplified results. If they are \bottom, then \and(predicate,
+            -- requires) is valid; otherwise, the required pre-conditions are not met
+            -- and the rule will not be applied.
+            & (OrCondition.observeAllT >=> assertBottom)
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 

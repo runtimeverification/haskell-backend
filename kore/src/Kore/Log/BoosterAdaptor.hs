@@ -14,7 +14,6 @@ module Kore.Log.BoosterAdaptor (
     ExeName (..),
 ) where
 
-import Colog qualified
 import Control.Monad.Cont (
     ContT (..),
     runContT,
@@ -22,22 +21,13 @@ import Control.Monad.Cont (
 import Data.Aeson qualified as JSON
 import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.Aeson.KeyMap qualified as JSON
-import Data.Functor.Contravariant (
-    contramap,
- )
-import Data.Text (
-    Text,
- )
 import Data.Text.Encoding qualified as Text
 import Data.Vector qualified as Vec
 import Pretty qualified
-import System.Clock (
-    TimeSpec (..),
-    diffTimeSpec,
-    toNanoSecs,
- )
 
+import Control.Monad.Logger (LogStr, ToLogStr (toLogStr))
 import Data.Aeson.Encode.Pretty (Config (confIndent), Indent (Spaces))
+import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BSL
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.Log (WithTimestamp (..), swappableLogger, withTimestamp)
@@ -75,67 +65,69 @@ withMainLogger koreLogOptions = runContT $ do
 koreSomeEntryLogAction ::
     MonadIO m =>
     -- | how to render a timestamped 'SomeEntry' into Text
-    (WithTimestamp -> Text) ->
+    (Maybe ByteString -> SomeEntry -> LogStr) ->
     -- | filter log entries, applies BEFORE rendering to text
     (SomeEntry -> Bool) ->
-    -- | filter log entries, applies AFTER rendering to text
-    (Text -> Bool) ->
-    LogAction m Text ->
+    ((Maybe ByteString -> LogStr) -> IO ()) ->
     LogAction m SomeEntry
-koreSomeEntryLogAction renderer earlyFilter lateFilter textLogAction =
-    textLogAction
-        & Colog.cfilter lateFilter
-        & contramap renderer
-        & Colog.cmapM withTimestamp
-        & Colog.cfilter earlyFilter
+koreSomeEntryLogAction renderer earlyFilter logger =
+    LogAction $ \se -> liftIO $
+        when (earlyFilter se) $
+            logger $
+                \mTime -> renderer mTime se <> "\n"
 
-renderJson :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
-renderJson _exeName _startTime _timestampSwitch (WithTimestamp e@(SomeEntry context actualEntry) _entryTime) =
-    Text.decodeUtf8 . BSL.toStrict . JSON.encodePretty' rpcJsonConfig{confIndent = Spaces 0} $ json
+renderJson :: Maybe ByteString -> SomeEntry -> LogStr
+renderJson mTime e@(SomeEntry context actualEntry) =
+    toLogStr . Text.decodeUtf8 . BSL.toStrict . JSON.encodePretty' rpcJsonConfig{confIndent = Spaces 0} $
+        json
   where
     jsonContext =
-        foldr
-            ( \(SomeEntry _ c) cs -> case oneLineContextJson c of
-                JSON.Array cs' -> cs' <> cs
-                j -> Vec.cons j cs
-            )
-            mempty
-            (context <> [e])
+        Vec.fromList $
+            concatMap (\(SomeEntry _ c) -> map JSON.toJSON (oneLineContextDoc c)) (context <> [e])
 
     json = case oneLineJson actualEntry of
         JSON.Object o
             | Just (JSON.Array ctxt) <- JSON.lookup "context" o ->
-                JSON.Object $ JSON.insert "context" (JSON.Array $ jsonContext <> ctxt) o
+                JSON.Object
+                    $ ( case mTime of
+                            Nothing -> id
+                            Just time -> JSON.insert "timestamp" (JSON.String $ Text.decodeUtf8 time)
+                      )
+                    $ JSON.insert "context" (JSON.Array $ jsonContext <> ctxt) o
         other ->
-            JSON.object
+            JSON.object $
                 [ "message" JSON..= other
                 , "context" JSON..= jsonContext
                 ]
+                    <> case mTime of
+                        Nothing -> []
+                        Just time -> ["timestamp" JSON..= Text.decodeUtf8 time]
 
-renderOnelinePretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
-renderOnelinePretty _exeName _startTime _timestampSwitch (WithTimestamp entry@(SomeEntry entryContext _actualEntry) _entryTime) =
+renderOnelinePretty :: Maybe ByteString -> SomeEntry -> LogStr
+renderOnelinePretty mTime entry@(SomeEntry entryContext _actualEntry) =
     let cs =
             (entryContext <> [entry])
-                & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> Pretty.pretty <$> oneLineContextDoc e))
+                & concatMap (map Pretty.brackets . (\(SomeEntry _ e) -> Pretty.pretty . show <$> oneLineContextDoc e))
         leaf = oneLineDoc entry
-     in mconcat cs Pretty.<+> leaf
-            & Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
-            & Pretty.renderText
+     in maybe mempty ((<> " ") . toLogStr) mTime
+            <> ( mconcat cs Pretty.<+> leaf
+                    & Pretty.layoutPretty Pretty.defaultLayoutOptions{Pretty.layoutPageWidth = Pretty.Unbounded}
+                    & Pretty.renderText
+                    & toLogStr
+               )
 
-renderStandardPretty :: ExeName -> TimeSpec -> TimestampsSwitch -> WithTimestamp -> Text
-renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(SomeEntry entryContext actualEntry) entryTime) =
+renderStandardPretty :: Maybe ByteString -> SomeEntry -> LogStr
+renderStandardPretty mTime entry@(SomeEntry entryContext actualEntry) =
     prettyActualEntry
         & Pretty.layoutPretty Pretty.defaultLayoutOptions
         & Pretty.renderText
+        & toLogStr
   where
     timestamp =
-        case timestampSwitch of
-            TimestampsDisable -> Nothing
-            TimestampsEnable ->
-                Just . Pretty.brackets . Pretty.pretty $
-                    toMicroSecs (diffTimeSpec startTime entryTime)
-    toMicroSecs = (`div` 1000) . toNanoSecs
-    exeName' = Pretty.pretty exeName <> Pretty.colon
+        case mTime of
+            Nothing -> Nothing
+            Just time ->
+                Just $ Pretty.brackets $ Pretty.pretty $ Text.decodeUtf8 time
     prettyActualEntry =
         Pretty.vsep . concat $
             [ [header]
@@ -145,8 +137,7 @@ renderStandardPretty exeName startTime timestampSwitch (WithTimestamp entry@(Som
       where
         header =
             (Pretty.hsep . catMaybes)
-                [ Just exeName'
-                , timestamp
+                [ timestamp
                 , Just severity'
                 , Just (Pretty.parens $ type' entry)
                 ]

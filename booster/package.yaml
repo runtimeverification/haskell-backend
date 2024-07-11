@@ -1,5 +1,5 @@
 name: hs-backend-booster
-version: '0.0.0'
+version: '0.1.0'
 github: "runtimeverification/hs-backend-booster"
 license: BSD3
 author: "Runtime Verification Inc"
@@ -148,6 +148,7 @@ executables:
       - conduit-extra
       - containers
       - deepseq
+      - deriving-aeson
       - exceptions
       - extra
       - fast-logger

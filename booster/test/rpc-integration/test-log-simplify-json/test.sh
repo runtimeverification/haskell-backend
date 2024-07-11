@@ -8,7 +8,7 @@ echo "client=$client"
 echo "dir=$dir"
 echo "arguments=$*"
 
-diff="git diff --no-index"
+diff="git --no-pager diff --no-index"
 # remove "--regenerate" and tweak $diff if it is present
 
 regenerate () {
@@ -34,6 +34,6 @@ ${client} \
     send $dir/state.send ${client_args} > /dev/null
 
 if [ -n "${SERVER_PID}" ]; then
-    kill -2 ${SERVER_PID}
+    timeout 10s bash -c "while kill -2 ${SERVER_PID} 2>/dev/null; do sleep 1; done"
 fi
 ${diff} $dir/simplify-log.txt.golden $dir/simplify-log.txt

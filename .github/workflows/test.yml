@@ -115,20 +115,6 @@ jobs:
       - name: Build
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
 
-      - name: Cache Cabal package database and store
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
-          restore-keys: |
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}
-
       - name: Test
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
 
@@ -185,23 +171,8 @@ jobs:
       - name: Build
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
 
-      - name: Cache Cabal package database and store
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
-          restore-keys: |
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('cabal.project') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('flake.lock') }}
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
-
       - name: Run booster integration tests
-        if: ${{ (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
+        if: ${{ (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/booster-integration-tests.sh"
 
@@ -220,7 +191,7 @@ jobs:
     steps:
       - name: Install prerequisites
         run: |
-          sudo apt install --yes z3 libsecp256k1-dev
+          sudo apt install --yes debhelper z3 libsecp256k1-dev
 
       - uses: actions/checkout@v4
         with:
@@ -258,6 +229,9 @@ jobs:
 
       - name: Run unit tests
         run: stack test kore:kore-test hs-backend-booster:unit-tests
+
+      - name: Build Ubuntu package
+        run: ./package/debian/build-package jammy k-haskell-backend.deb
 
   hlint:
     name: 'HLint'

@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.60.0.0
+version:        0.1.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/runtimeverification/haskell-backend#readme
@@ -11,9 +11,6 @@ copyright:      2018-2021 Runtime Verification Inc
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-extra-source-files:
-  README.md
-  CHANGELOG.md
 
 source-repository head
   type: git
@@ -355,6 +352,7 @@ library
     Kore.Log.DebugRewriteTrace
     Kore.Log.DebugSolver
     Kore.Log.DebugSubstitutionSimplifier
+    Kore.Log.DebugRewriteRulesRemainder
     Kore.Log.DebugTransition
     Kore.Log.DebugUnification
     Kore.Log.DebugUnifyBottom
