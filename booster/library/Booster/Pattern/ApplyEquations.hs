@@ -833,23 +833,26 @@ applyEquation term rule =
                                             pure Nothing -- liftIO $ Exception.throw other
                                         Right result ->
                                             pure result
-
                              in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
                                     Nothing -> do
                                         -- no solver or still unclear: abort
                                         throwE
-                                            ( \ctx -> ctx . logMessage $
-                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                    renderOneLineText ("Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear))
+                                            ( \ctx ->
+                                                ctx . logMessage $
+                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                        renderOneLineText
+                                                            ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                                            )
                                             , IndeterminateCondition stillUnclear
                                             )
                                     Just False -> do
                                         -- actually false given path condition: fail
                                         let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
                                         throwE
-                                            ( \ctx -> ctx . logMessage $
-                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                    renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                                            ( \ctx ->
+                                                ctx . logMessage $
+                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                        renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
                                             , ConditionFalse failedP
                                             )
                                     Just True -> do
@@ -875,7 +878,8 @@ applyEquation term rule =
                                 Right (Just False) -> do
                                     let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
                                     throwE
-                                        ( \ctx -> ctx . logMessage $
+                                        ( \ctx ->
+                                            ctx . logMessage $
                                                 WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
                                                     renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
                                         , EnsuresFalse falseEnsures
@@ -886,7 +890,6 @@ applyEquation term rule =
                                     pure ()
                                 Left _other ->
                                     pure () -- liftIO $ Exception.throw other
-
                         lift $ pushConstraints $ Set.fromList ensuredConditions
                         pure $ substituteInTerm subst rule.rhs
   where
