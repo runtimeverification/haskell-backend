@@ -26,7 +26,7 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
--- import Control.Exception qualified as Exception (throw)
+import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -827,10 +827,9 @@ applyEquation term rule =
                                 checkWithSmt smt =
                                     SMT.checkPredicates smt knownPredicates mempty (Set.fromList stillUnclear) >>= \case
                                         Left SMT.SMTSolverUnknown{} -> do
-                                            -- FIXME logging?
                                             pure Nothing
-                                        Left _other ->
-                                            pure Nothing -- liftIO $ Exception.throw other
+                                        Left other ->
+                                            liftIO $ Exception.throw other
                                         Right result ->
                                             pure result
                              in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
@@ -888,8 +887,8 @@ applyEquation term rule =
                                     pure ()
                                 Left SMT.SMTSolverUnknown{} ->
                                     pure ()
-                                Left _other ->
-                                    pure () -- liftIO $ Exception.throw other
+                                Left other ->
+                                    liftIO $ Exception.throw other
                         lift $ pushConstraints $ Set.fromList ensuredConditions
                         pure $ substituteInTerm subst rule.rhs
   where
