@@ -111,7 +111,7 @@ PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir
 mkdir -p $PYTEST_TEMP_DIR
 FOUNDRY_DIR=$TEMPD/foundry
 mkdir -p $FOUNDRY_DIR
-feature_shell "make test-integration TEST_ARGS='--basetemp=$PYTEST_TEMP_DIR -n0 --dist=no -k test_foundry_kompile'"
+feature_shell "make test-integration TEST_ARGS='--basetemp=$PYTEST_TEMP_DIR -n0 --dist=no -k test_foundry_kompile --update-expected-output'"
 cp -r $PYTEST_TEMP_DIR/foundry/* $FOUNDRY_DIR
 
 mkdir -p $SCRIPT_DIR/logs
