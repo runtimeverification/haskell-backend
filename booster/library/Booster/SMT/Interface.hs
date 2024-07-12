@@ -28,6 +28,7 @@ import Data.Coerce
 import Data.Data (Proxy)
 import Data.Either (isLeft)
 import Data.Either.Extra (fromLeft', fromRight')
+import Data.IORef
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -111,11 +112,14 @@ swapSmtOptions smtOptions = do
 -- | Stop the solver, initialise a new one and put in the @SMTContext@
 hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 hardResetSolver smtOptions = do
-    Log.logMessage ("Starting new SMT solver" :: Text)
+    Log.logMessage ("Restarting SMT solver" :: Text)
     ctxt <- SMT get
-    liftIO ctxt.solverClose
+    liftIO $ join $ readIORef ctxt.solverClose
     (solver, handle) <- connectToSolver
-    SMT $ put ctxt{solver, solverClose = Backend.close handle}
+    liftIO $ do
+        writeIORef ctxt.solver solver
+        writeIORef ctxt.solverClose $ Backend.close handle
+
     checkPrelude
     swapSmtOptions smtOptions
 
