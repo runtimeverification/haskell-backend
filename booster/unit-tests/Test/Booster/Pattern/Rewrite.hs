@@ -283,19 +283,19 @@ rewrites :: Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
 rewrites (Steps n) t t' f = do
     let expected = (n, f t')
     actual <- runRewrite t
-    second withoutRulePredAndSubst actual @?= expected
+    second withoutRuleSubst actual @?= expected
 
 mkRewriteBranch :: a -> NE.NonEmpty (Text, UniqueId, a) -> RewriteResult a
 mkRewriteBranch pre branches = RewriteBranch pre (fmap withEmptyPredandSubst branches)
   where
     withEmptyPredandSubst (l, uid, post) = (l, uid, post, Nothing, Map.empty)
 
-withoutRulePredAndSubst :: RewriteResult a -> RewriteResult a
-withoutRulePredAndSubst = \case
-    RewriteBranch pre branches -> RewriteBranch pre (fmap ignorePredandSubst branches)
+withoutRuleSubst :: RewriteResult a -> RewriteResult a
+withoutRuleSubst = \case
+    RewriteBranch pre branches -> RewriteBranch pre (fmap ignoreRuleSubst branches)
     other -> other
   where
-    ignorePredandSubst (l, uid, post, _, _) = (l, uid, post, Nothing, Map.empty)
+    ignoreRuleSubst (l, uid, post, rulePred, _) = (l, uid, post, rulePred, Map.empty)
 
 canRewrite :: TestTree
 canRewrite =
@@ -430,7 +430,7 @@ supportsDepthControl =
             runNoLoggingT $
                 performRewrite NoCollectRewriteTraces def Nothing Nothing (Just depth) [] [] $
                     Pattern_ t
-        (counter, withoutRulePredAndSubst $ fmap (.term) res) @?= (n, f t')
+        (counter, withoutRuleSubst $ fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
 supportsCutPoints =
@@ -484,7 +484,7 @@ supportsCutPoints =
             runNoLoggingT $
                 performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [lbl] [] $
                     Pattern_ t
-        (counter, withoutRulePredAndSubst $ fmap (.term) res) @?= (n, f t')
+        (counter, withoutRuleSubst $ fmap (.term) res) @?= (n, f t')
 
 supportsTerminalRules :: TestTree
 supportsTerminalRules =
