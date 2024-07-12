@@ -645,22 +645,25 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                 -- extract the rule-id information from the result we proceed with
                                 let onlyNext = head filteredNexts
                                     rewriteRuleId = fromMaybe "UNKNOWN" onlyNext.ruleId
-                                    proxyRewriteStepLog =
-                                        RPCLog.Rewrite
-                                            { result =
-                                                RPCLog.Success
-                                                    { rewrittenTerm = Nothing
-                                                    , substitution = Nothing
-                                                    , ruleId = rewriteRuleId
+                                    proxyRewriteStepLogs
+                                        | Just True <- logSettings.logSuccessfulRewrites =
+                                            Just . (: []) $
+                                                RPCLog.Rewrite
+                                                    { result =
+                                                        RPCLog.Success
+                                                            { rewrittenTerm = Nothing
+                                                            , substitution = Nothing
+                                                            , ruleId = rewriteRuleId
+                                                            }
+                                                    , origin = RPCLog.Proxy
                                                     }
-                                            , origin = RPCLog.Proxy
-                                            }
+                                        | otherwise = Nothing
                                 Booster.Log.withContext CtxProxy $
                                     Booster.Log.logMessage' ("Continuing after rewriting with rule " <> rewriteRuleId)
                                 pure $
                                     Left
                                         ( execStateToKoreJson onlyNext
-                                        , logsOnly <> filteredNextLogs <> [Just [proxyRewriteStepLog]]
+                                        , logsOnly <> filteredNextLogs <> [proxyRewriteStepLogs]
                                         )
                         -- otherwise falling through to _otherReason
                         CutPointRule
