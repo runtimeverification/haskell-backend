@@ -412,18 +412,18 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 , koreResult.logs
                                                 , fallbackLog
                                                 ]
-                                        loopState newLogs =
-                                            ( currentDepth + boosterResult.depth + koreResult.depth
+                                        loopState incDepth newLogs =
+                                            ( currentDepth + boosterResult.depth + koreResult.depth + if incDepth then 1 else 0
                                             , time + bTime + kTime
                                             , koreTime + kTime
                                             , postProcessLogs
                                                 <$> combineLogs (accumulatedLogs : newLogs)
                                             )
-                                        continueWith newLogs nextState =
+                                        continueWith incDepth newLogs nextState =
                                             executionLoop
                                                 logSettings
                                                 def
-                                                (loopState newLogs)
+                                                (loopState incDepth newLogs)
                                                 r{ExecuteRequest.state = nextState}
                                     case (boosterResult.reason, koreResult.reason) of
                                         (Aborted, res) ->
@@ -455,7 +455,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                         "kore depth-bound, continuing... (currently at "
                                                             <> show (currentDepth + boosterResult.depth + koreResult.depth)
                                                             <> ")"
-                                            continueWith [] (execStateToKoreJson koreResult.state)
+                                            continueWith False [] (execStateToKoreJson koreResult.state)
                                         _ -> do
                                             -- otherwise we have hit a different
                                             -- HaltReason, at which point we should
@@ -471,7 +471,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                             case postExecResult of
                                                 Left (nextState, newLogs) -> do
                                                     -- simplification revealed that we should actually proceed
-                                                    continueWith newLogs nextState
+                                                    continueWith True newLogs nextState
                                                 Right result -> do
                                                     logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
                                                     pure $
@@ -621,32 +621,62 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                             second unzip $ partitionEithers simplifiedNexts
                         newLogs = simplifiedStateLogs : logsOnly <> filteredNextLogs
 
-                    pure $ case reason of
+                    when (length filteredNexts < maybe 0 length nextStates) $
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.logMessage'
+                                (Text.pack ("Pruned #Bottom states: " <> show (length nextStates)))
+
+                    case reason of
                         Branching
-                            | null filteredNexts ->
-                                Right
-                                    res
-                                        { reason = Stuck
-                                        , nextStates = Nothing
-                                        , logs = combineLogs $ res.logs : simplifiedStateLogs : logsOnly
-                                        }
-                            | length filteredNexts == 1 ->
+                            | null filteredNexts -> do
+                                pure $
+                                    Right
+                                        res
+                                            { reason = Stuck
+                                            , nextStates = Nothing
+                                            , logs = combineLogs $ res.logs : simplifiedStateLogs : logsOnly
+                                            }
+                            | length filteredNexts == 1 -> do
                                 -- all but one next states are bottom, execution should proceed
-                                Left (execStateToKoreJson $ head filteredNexts, logsOnly <> filteredNextLogs)
+                                -- Note that we've effectively made a rewrite step here, so we need to
+                                -- extract the rule-id information from the result we proceed with
+                                let onlyNext = head filteredNexts
+                                    rewriteRuleId = fromMaybe "UNKNOWN" onlyNext.ruleId
+                                    proxyRewriteStepLogs
+                                        | Just True <- logSettings.logSuccessfulRewrites =
+                                            Just . (: []) $
+                                                RPCLog.Rewrite
+                                                    { result =
+                                                        RPCLog.Success
+                                                            { rewrittenTerm = Nothing
+                                                            , substitution = Nothing
+                                                            , ruleId = rewriteRuleId
+                                                            }
+                                                    , origin = RPCLog.Proxy
+                                                    }
+                                        | otherwise = Nothing
+                                Booster.Log.withContext CtxProxy $
+                                    Booster.Log.logMessage' ("Continuing after rewriting with rule " <> rewriteRuleId)
+                                pure $
+                                    Left
+                                        ( execStateToKoreJson onlyNext
+                                        , logsOnly <> filteredNextLogs <> [proxyRewriteStepLogs]
+                                        )
                         -- otherwise falling through to _otherReason
                         CutPointRule
                             | null filteredNexts ->
-                                Right $ makeVacuous (combineLogs $ res.logs : newLogs) res
+                                pure $ Right $ makeVacuous (combineLogs $ res.logs : newLogs) res
                         _otherReason ->
-                            Right $
-                                res
-                                    { state = simplifiedState
-                                    , nextStates =
-                                        if null filteredNexts
-                                            then Nothing
-                                            else Just filteredNexts
-                                    , logs = combineLogs $ res.logs : newLogs
-                                    }
+                            pure $
+                                Right $
+                                    res
+                                        { state = simplifiedState
+                                        , nextStates =
+                                            if null filteredNexts
+                                                then Nothing
+                                                else Just filteredNexts
+                                        , logs = combineLogs $ res.logs : newLogs
+                                        }
 
 data LogSettings = LogSettings
     { logSuccessfulRewrites :: Maybe Bool

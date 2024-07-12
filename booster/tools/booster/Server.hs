@@ -319,9 +319,8 @@ main = do
 
                 let koreRespond, boosterRespond :: JSONRPC.Id -> Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
                     koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
-                    boosterRespond reqId =
-                        Booster.Log.withContextFor reqId
-                            . Booster.Log.withContext CtxBooster
+                    boosterRespond _reqId =
+                        Booster.Log.withContext CtxBooster
                             . Booster.respond boosterState
 
                     proxyConfig =
@@ -339,9 +338,10 @@ main = do
                             srvSettings
                             ( \rawReq req ->
                                 let reqId = getReqId rawReq
-                                 in runBoosterLogger $
+                                 in runBoosterLogger $ do
                                         logRequestId reqId
-                                            >> Proxy.respondEither proxyConfig (boosterRespond reqId) (koreRespond reqId) req
+                                        Booster.Log.withContextFor reqId $
+                                            Proxy.respondEither proxyConfig (boosterRespond reqId) (koreRespond reqId) req
                             )
                             [ Kore.handleDecidePredicateUnknown
                             , Booster.handleSmtError
