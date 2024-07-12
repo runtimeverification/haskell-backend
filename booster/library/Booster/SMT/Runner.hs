@@ -73,9 +73,9 @@ defaultSMTOptions =
 
 data SMTContext = SMTContext
     { options :: SMTOptions
-      -- use IORef here to ensure we only ever retain one pointer to the solver, 
+    , -- use IORef here to ensure we only ever retain one pointer to the solver,
       -- otherwise the solverClose action does not actually terminate the solver instance
-    , solver :: IORef Backend.Solver
+      solver :: IORef Backend.Solver
     , solverClose :: IORef (IO ())
     , mbTranscriptHandle :: Maybe Handle
     , prelude :: [DeclareCommand]
