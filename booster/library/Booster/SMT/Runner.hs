@@ -29,6 +29,7 @@ import Control.Monad.Logger
 import Control.Monad.Trans.State
 import Data.ByteString.Builder qualified as BS
 import Data.ByteString.Char8 qualified as BS
+import Data.IORef
 import Data.Text (Text, pack)
 import SMTLIB.Backends qualified as Backend
 import SMTLIB.Backends.Process qualified as Backend
@@ -72,8 +73,10 @@ defaultSMTOptions =
 
 data SMTContext = SMTContext
     { options :: SMTOptions
-    , solver :: Backend.Solver
-    , solverClose :: IO ()
+    , -- use IORef here to ensure we only ever retain one pointer to the solver,
+      -- otherwise the solverClose action does not actually terminate the solver instance
+      solver :: IORef Backend.Solver
+    , solverClose :: IORef (IO ())
     , mbTranscriptHandle :: Maybe Handle
     , prelude :: [DeclareCommand]
     }
@@ -93,7 +96,9 @@ mkContext ::
     io SMTContext
 mkContext opts prelude = do
     logMessage ("Starting SMT solver" :: Text)
-    (solver, handle) <- connectToSolver
+    (solver', handle) <- connectToSolver
+    solver <- liftIO $ newIORef solver'
+    solverClose <- liftIO $ newIORef $ Backend.close handle
     mbTranscriptHandle <- forM opts.transcript $ \path -> do
         logMessage $ "Transcript in file " <> pack path
         liftIO $ do
@@ -107,7 +112,7 @@ mkContext opts prelude = do
     pure
         SMTContext
             { solver
-            , solverClose = Backend.close handle
+            , solverClose
             , mbTranscriptHandle
             , prelude
             , options = opts
@@ -122,7 +127,7 @@ closeContext ctxt = do
     logMessage ("Stopping SMT solver" :: Text)
     whenJust ctxt.mbTranscriptHandle $ \h -> liftIO $ do
         BS.hPutStrLn h "; stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
-    liftIO ctxt.solverClose
+    liftIO $ join $ readIORef ctxt.solverClose
 
 {- | Close the connection to the SMT solver process and all other resources in  @SMTContext@.
  Using this function means completely stopping the solver with no intention of using it any more.
@@ -133,7 +138,7 @@ destroyContext ctxt = do
     whenJust ctxt.mbTranscriptHandle $ \h -> liftIO $ do
         BS.hPutStrLn h "; permanently stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
         hClose h
-    liftIO ctxt.solverClose
+    liftIO $ join $ readIORef ctxt.solverClose
 
 connectToSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
 connectToSolver = do
@@ -179,7 +184,7 @@ runCmd cmd = do
         whenJust (comment cmd) $ \c ->
             liftIO (BS.hPutBuilder h c)
         liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
-    output <- run_ cmd ctxt.solver cmdBS
+    output <- (liftIO $ readIORef ctxt.solver) >>= \solver -> run_ cmd solver cmdBS
     let result = readResponse output
     whenJust ctxt.mbTranscriptHandle $
         liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
