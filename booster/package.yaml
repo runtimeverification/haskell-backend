@@ -119,6 +119,7 @@ executables:
       - bz2
       - casing
       - clock
+      - containers
       - directory
       - extra
       - filepath

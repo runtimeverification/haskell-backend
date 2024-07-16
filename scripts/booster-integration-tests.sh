@@ -45,7 +45,7 @@ for dir in $(ls -d test-*); do
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             SERVER=$BOOSTER_DEV SERVER_OPTS="--no-smt" ./runDirectoryTest.sh test-$name $@
             ;;
-        "questionmark-vars")
+        "questionmark-vars" | "simplify-smt")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
             ;;

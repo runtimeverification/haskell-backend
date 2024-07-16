@@ -44,20 +44,12 @@ module USE-PATH-CONDITION-IN-EQUATIONS
 
   rule [test1F-simplify]: test1F(X:Int) => X requires X ==Int 42 [simplification]
 
-  /////////////////////////////////////////////////////////////////////////////////
-  // Here the simplification's side condition is implied by the path condition,  //
-  // but we need an SMT solver to establish that. Booster proceeds by assuming   //
-  // the condition without applying test2F-simplify.                             //
-  // In Kore, the simplification is applied.                                     //
-  // Result booster-dev:                                                         //
-  //   Stuck at depth 2 in state test2State2()                                   //
-  //   after applying rules test2-init,test1-2-2.                                //
-  //   The constraints contain test2F, unevaluated.                              //
-  // Result kore-rpc-booster:                                                    //
-  //   Stuck at depth 2 in state test2State2()                                   //
-  //   after applying rules test2-init,test1-2-2.                                //
-  //   No mention of test2F.                                                     //
-  /////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
+  // Here the simplification's side condition is implied by the path condition, //
+  // but we need an SMT solver to establish that.                               //
+  // Result: Stuck at depth 2 in state test2State2(),                           //
+  //         after applying rules test2-init, test2-1-2.                        //
+  ////////////////////////////////////////////////////////////////////////////////
   rule [test2-init]: <k> test2Init() => test2State1() ... </k>
                      <int> _         => ?X                </int>
                      ensures ?X ==Int 42
