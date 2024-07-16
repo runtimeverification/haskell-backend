@@ -345,32 +345,31 @@ applyRule pat@Pattern{ceilConditions} rule =
                         notAppliedIfBottom = RewriteRuleAppT $ pure NotApplied
                     -- filter out any predicates known to be _syntactically_ present in the known prior
                     let prior = pat.constraints
-                        (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
-                    unless (null knownTrue) $
-                        logMessage $
-                            renderOneLineText $
-                                "Known true side conditions (won't check):"
-                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ knownTrue)
+                    toCheck <- lift $ filterOutKnownConstraints prior ruleRequires
 
                     unclearRequires <-
                         catMaybes <$> mapM (checkConstraint id notAppliedIfBottom prior) toCheck
+
+                    -- unclear conditions may have been simplified and
+                    -- could now be syntactically present in the path constraints, filter again
+                    stillUnclear <- lift $ filterOutKnownConstraints prior unclearRequires
 
                     -- check unclear requires-clauses in the context of known constraints (prior)
                     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
                     let smtUnclear = do
                             withContext CtxConstraint . withContext CtxAbort . logMessage $
-                                WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> unclearRequires)]) $
+                                WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
                                     renderOneLineText $
                                         "Uncertain about condition(s) in a rule:"
-                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ stillUnclear)
                             failRewrite $
                                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
-                                    map coerce unclearRequires
+                                    map coerce stillUnclear
                     case mbSolver of
                         Just solver -> do
                             checkAllRequires <-
-                                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
+                                SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
 
                             case checkAllRequires of
                                 Left SMT.SMTSolverUnknown{} ->
@@ -386,15 +385,15 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 Right Nothing ->
                                     smtUnclear -- no implication could be determined
                         Nothing ->
-                            unless (null unclearRequires) $ do
+                            unless (null stillUnclear) $ do
                                 withContext CtxConstraint . withContext CtxAbort $
                                     logMessage $
-                                        WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> unclearRequires)]) $
+                                        WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
                                             renderOneLineText $
                                                 "Uncertain about a condition(s) in rule, no SMT solver:"
-                                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ stillUnclear)
                                 failRewrite $
-                                    RuleConditionUnclear rule (head unclearRequires)
+                                    RuleConditionUnclear rule (head stillUnclear)
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
@@ -444,6 +443,18 @@ applyRule pat@Pattern{ceilConditions} rule =
                         withPatternContext rewritten $
                             return (rule, rewritten)
   where
+    filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
+    filterOutKnownConstraints priorKnowledge constraitns = do
+        let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
+        unless (null knownTrue) $
+            getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    logMessage $
+                        renderOneLineText $
+                            "Known true side conditions (won't check):"
+                                <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
+        pure toCheck
+
     failRewrite :: RewriteFailed "Rewrite" -> RewriteRuleAppT (RewriteT io) a
     failRewrite = lift . (throw)
 
