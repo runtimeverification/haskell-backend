@@ -49,23 +49,22 @@ module MAP-VAL-TO-VAL
 
   syntax MapValToVal [hook(MAP.Map)]
   syntax MapValToVal ::= MapValToVal MapValToVal
-         [ left, function, hook(MAP.concat), klabel(_MapValToVal_),
-           symbol, assoc, comm, unit(.MapValToVal), element(_Val2Val|->_)
+         [ left, function, hook(MAP.concat), symbol(_MapValToVal_),
+           assoc, comm, unit(.MapValToVal), element(_Val2Val|->_)
          ]
   syntax MapValToVal ::= ".MapValToVal"
-         [function, total, hook(MAP.unit),klabel(.MapValToVal), symbol]
+         [function, total, hook(MAP.unit),symbol(.MapValToVal)]
   syntax MapValToVal ::= Val "Val2Val|->" Val
-         [function, total, hook(MAP.element), klabel(_Val2Val|->_), symbol]
+         [function, total, hook(MAP.element), symbol(_Val2Val|->_)]
 
-  syntax MapValToVal ::= MapValToVal "[" key: Val "<-" value: Val "]" [function, total, klabel(MapVal2Val:update), symbol, hook(MAP.update), prefer]
+  syntax MapValToVal ::= MapValToVal "[" key: Val "<-" value: Val "]"
+         [function, total, symbol(MapVal2Val:update), hook(MAP.update), prefer]
 
   syntax priority _Val2Val|->_ > _MapValToVal_ .MapValToVal
   syntax non-assoc _Val2Val|->_
 
   syntax MapValToVal ::= MapValToVal "{{" key: Val "<-" value: Val "}}"
-                 [ function, total, klabel(MapValToVal:primitiveUpdate), symbol,
-                   prefer
-                 ]
+         [ function, total, symbol(MapValToVal:primitiveUpdate), prefer]
   rule M:MapValToVal {{ Key:Val <- Value:Val }}
       => M[Key <- Value]
 
@@ -74,10 +73,11 @@ endmodule
 module WRAPPED-INT
   imports INT
 
-  syntax WrappedInt ::= wrap(Int)  [symbol, klabel(wrapInt)]
+  syntax WrappedInt ::= wrap(Int)  [symbol(wrapInt)]
   // -------------------------------------------------------
 
-  syntax Int ::= unwrap(WrappedInt)  [function, total, injective, symbol, klabel(unwrapInt)]
+  syntax Int ::= unwrap(WrappedInt)
+         [function, total, injective, symbol(unwrapInt)]
   // ---------------------------------------------------------------------------------------
   rule unwrap(wrap(A:Int)) => A
 endmodule

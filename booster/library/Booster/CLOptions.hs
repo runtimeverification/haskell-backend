@@ -297,8 +297,8 @@ levelToContext =
             ,
                 [ [ctxt| request*,booster>rewrite*,detail. |]
                 , [ctxt| request*,booster>rewrite*,match|definedness|constraint,abort. |]
-                , [ctxt| proxy. |]
-                , [ctxt| proxy,abort. |]
+                , [ctxt| request*,proxy. |]
+                , [ctxt| request*,proxy,abort. |]
                 , [ctxt| request*,booster>failure,abort |]
                 ]
             )
