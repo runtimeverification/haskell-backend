@@ -1,5 +1,4 @@
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
