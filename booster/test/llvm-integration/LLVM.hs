@@ -42,11 +42,13 @@ import Booster.Definition.Base
 import Booster.LLVM qualified as LLVM
 import Booster.LLVM.Internal qualified as Internal
 import Booster.Pattern.Base
+import Booster.SMT.Base (SExpr (..), SMTId (..))
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.Json.Internalise (pattern AllowAlias, pattern IgnoreSubsorts)
 import Booster.Syntax.Json.Internalise qualified as Syntax
-import Booster.Syntax.ParsedKore.Internalise (buildDefinitions, symb)
+import Booster.Syntax.ParsedKore.Internalise (buildDefinitions)
 import Booster.Syntax.ParsedKore.Parser (parseDefinition)
+import Booster.Util (Flag (..))
 import Kore.Syntax.Json.Types qualified as Syntax
 
 -- A prerequisite for all tests in this suite is that a fixed K
@@ -403,72 +405,72 @@ defSorts =
     Map.fromList
         [
             ( "SortBool"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortBool"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortBool"])
             )
         ,
             ( "SortBytes"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortBytes"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortBytes"])
             )
         ,
             ( "SortEndianness"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortEndianness"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortEndianness"])
             )
         ,
             ( "SortEven"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortEven"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortEven"])
             )
         ,
             ( "SortGeneratedCounterCell"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList ["SortGeneratedCounterCell"]
                 )
             )
         ,
             ( "SortGeneratedCounterCellOpt"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList ["SortGeneratedCounterCell", "SortGeneratedCounterCellOpt"]
                 )
             )
         ,
             ( "SortGeneratedTopCell"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList ["SortGeneratedTopCell"]
                 )
             )
         ,
             ( "SortGeneratedTopCellFragment"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList ["SortGeneratedTopCellFragment"]
                 )
             )
         ,
             ( "SortInt"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortInt"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortInt"])
             )
-        , ("SortK", (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortK"]))
+        , ("SortK", (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortK"]))
         ,
             ( "SortKCell"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortKCell"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortKCell"])
             )
         ,
             ( "SortKCellOpt"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList ["SortKCell", "SortKCellOpt"]
                 )
             )
         ,
             ( "SortKConfigVar"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortKConfigVar"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortKConfigVar"])
             )
         ,
             ( "SortKItem"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList
                     [ "SortBool"
                     , "SortBytes"
@@ -485,57 +487,118 @@ defSorts =
                     , "SortKItem"
                     , "SortList"
                     , "SortMap"
+                    , "SortMapValToVal"
                     , "SortNum"
                     , "SortOdd"
                     , "SortSet"
                     , "SortSignedness"
                     , "SortString"
+                    , "SortVal"
+                    , "SortWrappedInt"
                     ]
                 )
             )
         ,
             ( "SortList"
             ,
-                ( SortAttributes{collectionAttributes = Just (sortListKList.symbolNames, KListTag), argCount = 0}
+                ( SortAttributes
+                    { argCount = 0
+                    , collectionAttributes =
+                        Just
+                            ( KCollectionSymbolNames
+                                { unitSymbolName = "Lbl'Stop'List"
+                                , elementSymbolName = "LblListItem"
+                                , concatSymbolName = "Lbl'Unds'List'Unds'"
+                                }
+                            , KListTag
+                            )
+                    }
                 , Set.fromList ["SortList"]
-                )
-            )
-        ,
-            ( "SortSet"
-            ,
-                ( SortAttributes{collectionAttributes = Just (sortSetKSet.symbolNames, KSetTag), argCount = 0}
-                , Set.fromList ["SortSet"]
                 )
             )
         ,
             ( "SortMap"
             ,
-                ( SortAttributes{collectionAttributes = Just (sortMapKmap.symbolNames, KMapTag), argCount = 0}
+                ( SortAttributes
+                    { argCount = 0
+                    , collectionAttributes =
+                        Just
+                            ( KCollectionSymbolNames
+                                { unitSymbolName = "Lbl'Stop'Map"
+                                , elementSymbolName = "Lbl'UndsPipe'-'-GT-Unds'"
+                                , concatSymbolName = "Lbl'Unds'Map'Unds'"
+                                }
+                            , KMapTag
+                            )
+                    }
                 , Set.fromList ["SortMap"]
+                )
+            )
+        ,
+            ( "SortMapValToVal"
+            ,
+                ( SortAttributes
+                    { argCount = 0
+                    , collectionAttributes =
+                        Just
+                            ( KCollectionSymbolNames
+                                { unitSymbolName = "Lbl'Stop'MapValToVal"
+                                , elementSymbolName = "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
+                                , concatSymbolName = "Lbl'Unds'MapValToVal'Unds'"
+                                }
+                            , KMapTag
+                            )
+                    }
+                , Set.fromList ["SortMapValToVal"]
                 )
             )
         ,
             ( "SortNum"
             ,
-                ( SortAttributes{collectionAttributes = Nothing, argCount = 0}
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
                 , Set.fromList ["SortEven", "SortNum", "SortOdd"]
                 )
             )
         ,
             ( "SortOdd"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortOdd"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortOdd"])
             )
         ,
             ( "SortSet"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortSet"])
+            ,
+                ( SortAttributes
+                    { argCount = 0
+                    , collectionAttributes =
+                        Just
+                            ( KCollectionSymbolNames
+                                { unitSymbolName = "Lbl'Stop'Set"
+                                , elementSymbolName = "LblSetItem"
+                                , concatSymbolName = "Lbl'Unds'Set'Unds'"
+                                }
+                            , KSetTag
+                            )
+                    }
+                , Set.fromList ["SortSet"]
+                )
             )
         ,
             ( "SortSignedness"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortSignedness"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortSignedness"])
             )
         ,
             ( "SortString"
-            , (SortAttributes{collectionAttributes = Nothing, argCount = 0}, Set.fromList ["SortString"])
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortString"])
+            )
+        ,
+            ( "SortVal"
+            ,
+                ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
+                , Set.fromList ["SortVal", "SortWrappedInt"]
+                )
+            )
+        ,
+            ( "SortWrappedInt"
+            , (SortAttributes{argCount = 0, collectionAttributes = Nothing}, Set.fromList ["SortWrappedInt"])
             )
         ]
 
@@ -551,12 +614,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -571,12 +634,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -591,12 +654,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCellFragment" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -611,33 +674,12 @@ defSymbols =
                 , resultSort = SortApp "SortKCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort"
-            , Symbol
-                { name =
-                    "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort"
-                , sortVars = ["SortSort"]
-                , argSorts = [SortApp "SortBool" [], SortVar "SortSort", SortVar "SortSort"]
-                , resultSort = SortVar "SortSort"
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -652,14 +694,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.empty"
                         }
                 }
             )
@@ -672,14 +714,14 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KListMeta sortListKList
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KListMeta sortListKList
+                        , smt = Just (SMTLib "smt_seq_nil")
+                        , hook = Just "LIST.unit"
                         }
                 }
             )
@@ -692,14 +734,49 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KMapMeta sortMapKmap
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KMapMeta sortMapKmap
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.unit"
+                        }
+                }
+            )
+        ,
+            ( "Lbl'Stop'MapValToVal"
+            , Symbol
+                { name = "Lbl'Stop'MapValToVal"
+                , sortVars = []
+                , argSorts = []
+                , resultSort = SortApp "SortMapValToVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata =
+                            Just
+                                ( KMapMeta
+                                    ( KMapDefinition
+                                        { symbolNames =
+                                            KCollectionSymbolNames
+                                                { unitSymbolName = "Lbl'Stop'MapValToVal"
+                                                , elementSymbolName = "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
+                                                , concatSymbolName = "Lbl'Unds'MapValToVal'Unds'"
+                                                }
+                                        , keySortName = "SortVal"
+                                        , elementSortName = "SortVal"
+                                        , mapSortName = "SortMapValToVal"
+                                        }
+                                    )
+                                )
+                        , smt = Nothing
+                        , hook = Just "MAP.unit"
                         }
                 }
             )
@@ -712,14 +789,14 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KSetMeta sortSetKSet
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KSetMeta sortSetKSet
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.unit"
                         }
                 }
             )
@@ -732,14 +809,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "notInt")
+                        , hook = Just "INT.not"
                         }
                 }
             )
@@ -752,14 +829,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "-"})))
+                        , hook = Just "INT.sub"
                         }
                 }
             )
@@ -772,14 +849,14 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.difference"
                         }
                 }
             )
@@ -792,14 +869,14 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KListMeta sortListKList
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KListMeta sortListKList
+                        , smt = Just (SMTLib "smt_seq_concat")
+                        , hook = Just "LIST.concat"
                         }
                 }
             )
@@ -812,14 +889,49 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KMapMeta sortMapKmap
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KMapMeta sortMapKmap
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.concat"
+                        }
+                }
+            )
+        ,
+            ( "Lbl'Unds'MapValToVal'Unds'"
+            , Symbol
+                { name = "Lbl'Unds'MapValToVal'Unds'"
+                , sortVars = []
+                , argSorts = [SortApp "SortMapValToVal" [], SortApp "SortMapValToVal" []]
+                , resultSort = SortApp "SortMapValToVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata =
+                            Just
+                                ( KMapMeta
+                                    ( KMapDefinition
+                                        { symbolNames =
+                                            KCollectionSymbolNames
+                                                { unitSymbolName = "Lbl'Stop'MapValToVal"
+                                                , elementSymbolName = "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
+                                                , concatSymbolName = "Lbl'Unds'MapValToVal'Unds'"
+                                                }
+                                        , keySortName = "SortVal"
+                                        , elementSortName = "SortVal"
+                                        , mapSortName = "SortMapValToVal"
+                                        }
+                                    )
+                                )
+                        , smt = Nothing
+                        , hook = Just "MAP.concat"
                         }
                 }
             )
@@ -832,14 +944,49 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KSetMeta sortSetKSet
-                        , symbolType = Function Partial
-                        , isIdem = IsIdem
-                        , isAssoc = IsAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag True
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KSetMeta sortSetKSet
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.concat"
+                        }
+                }
+            )
+        ,
+            ( "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
+            , Symbol
+                { name = "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
+                , sortVars = []
+                , argSorts = [SortApp "SortVal" [], SortApp "SortVal" []]
+                , resultSort = SortApp "SortMapValToVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata =
+                            Just
+                                ( KMapMeta
+                                    ( KMapDefinition
+                                        { symbolNames =
+                                            KCollectionSymbolNames
+                                                { unitSymbolName = "Lbl'Stop'MapValToVal"
+                                                , elementSymbolName = "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
+                                                , concatSymbolName = "Lbl'Unds'MapValToVal'Unds'"
+                                                }
+                                        , keySortName = "SortVal"
+                                        , elementSortName = "SortVal"
+                                        , mapSortName = "SortMapValToVal"
+                                        }
+                                    )
+                                )
+                        , smt = Nothing
+                        , hook = Just "MAP.element"
                         }
                 }
             )
@@ -852,14 +999,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "and"})))
+                        , hook = Just "BOOL.and"
                         }
                 }
             )
@@ -872,14 +1019,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "and"})))
+                        , hook = Just "BOOL.andThen"
                         }
                 }
             )
@@ -892,14 +1039,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "div"})))
+                        , hook = Just "INT.ediv"
                         }
                 }
             )
@@ -912,12 +1059,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -932,14 +1079,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "=>"})))
+                        , hook = Just "BOOL.implies"
                         }
                 }
             )
@@ -952,34 +1099,34 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.in_keys"
                         }
                 }
             )
         ,
-            ( "Lbl'Unds'in'UndsUnds'LIST'Unds'Bool'Unds'KItem'Unds'List"
+            ( "Lbl'Unds'inList'Unds'"
             , Symbol
-                { name = "Lbl'Unds'in'UndsUnds'LIST'Unds'Bool'Unds'KItem'Unds'List"
+                { name = "Lbl'Unds'inList'Unds'"
                 , sortVars = []
                 , argSorts = [SortApp "SortKItem" [], SortApp "SortList" []]
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "LIST.in"
                         }
                 }
             )
@@ -992,14 +1139,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "mod"})))
+                        , hook = Just "INT.emod"
                         }
                 }
             )
@@ -1012,14 +1159,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "or"})))
+                        , hook = Just "BOOL.or"
                         }
                 }
             )
@@ -1032,14 +1179,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "or"})))
+                        , hook = Just "BOOL.orElse"
                         }
                 }
             )
@@ -1052,14 +1199,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "xor"})))
+                        , hook = Just "BOOL.xor"
                         }
                 }
             )
@@ -1072,14 +1219,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "xorInt")
+                        , hook = Just "INT.xor"
                         }
                 }
             )
@@ -1092,14 +1239,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = ">"})))
+                        , hook = Just "INT.gt"
                         }
                 }
             )
@@ -1112,14 +1259,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "shrInt")
+                        , hook = Just "INT.shr"
                         }
                 }
             )
@@ -1132,14 +1279,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = ">="})))
+                        , hook = Just "INT.ge"
                         }
                 }
             )
@@ -1152,14 +1299,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "<"})))
+                        , hook = Just "INT.lt"
                         }
                 }
             )
@@ -1172,14 +1319,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "shlInt")
+                        , hook = Just "INT.shl"
                         }
                 }
             )
@@ -1192,14 +1339,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "<="})))
+                        , hook = Just "INT.le"
                         }
                 }
             )
@@ -1212,14 +1359,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.inclusion"
                         }
                 }
             )
@@ -1232,14 +1379,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.inclusion"
                         }
                 }
             )
@@ -1252,14 +1399,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "andInt")
+                        , hook = Just "INT.and"
                         }
                 }
             )
@@ -1272,14 +1419,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "="})))
+                        , hook = Just "BOOL.eq"
                         }
                 }
             )
@@ -1292,14 +1439,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "="})))
+                        , hook = Just "INT.eq"
                         }
                 }
             )
@@ -1312,14 +1459,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "="})))
+                        , hook = Just "KEQUAL.eq"
                         }
                 }
             )
@@ -1332,14 +1479,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "distinct"})))
+                        , hook = Just "BOOL.ne"
                         }
                 }
             )
@@ -1352,14 +1499,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "distinct"})))
+                        , hook = Just "INT.ne"
                         }
                 }
             )
@@ -1372,14 +1519,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "distinct"})))
+                        , hook = Just "KEQUAL.ne"
                         }
                 }
             )
@@ -1392,34 +1539,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lbl'UndsLSqBUnds-LT-'-'UndsRSqBUnds'LIST'Unds'List'Unds'List'Unds'Int'Unds'KItem"
-            , Symbol
-                { name = "Lbl'UndsLSqBUnds-LT-'-'UndsRSqBUnds'LIST'Unds'List'Unds'List'Unds'Int'Unds'KItem"
-                , sortVars = []
-                , argSorts = [SortApp "SortList" [], SortApp "SortInt" [], SortApp "SortKItem" []]
-                , resultSort = SortApp "SortList" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.update"
                         }
                 }
             )
@@ -1432,34 +1559,14 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lbl'UndsLSqBUndsRSqB'orDefault'UndsUnds'MAP'Unds'KItem'Unds'Map'Unds'KItem'Unds'KItem"
-            , Symbol
-                { name = "Lbl'UndsLSqBUndsRSqB'orDefault'UndsUnds'MAP'Unds'KItem'Unds'Map'Unds'KItem'Unds'KItem"
-                , sortVars = []
-                , argSorts = [SortApp "SortMap" [], SortApp "SortKItem" [], SortApp "SortKItem" []]
-                , resultSort = SortApp "SortKItem" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.remove"
                         }
                 }
             )
@@ -1472,14 +1579,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.get"
                         }
                 }
             )
@@ -1492,14 +1599,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "mod"})))
+                        , hook = Just "INT.tmod"
                         }
                 }
             )
@@ -1512,14 +1619,14 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KMapMeta sortMapKmap
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KMapMeta sortMapKmap
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.element"
                         }
                 }
             )
@@ -1532,14 +1639,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "orInt")
+                        , hook = Just "INT.or"
                         }
                 }
             )
@@ -1552,14 +1659,14 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.union"
                         }
                 }
             )
@@ -1572,14 +1679,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.concat"
                         }
                 }
             )
@@ -1592,14 +1699,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "+"})))
+                        , hook = Just "INT.add"
                         }
                 }
             )
@@ -1612,14 +1719,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "div"})))
+                        , hook = Just "INT.tdiv"
                         }
                 }
             )
@@ -1632,14 +1739,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "*"})))
+                        , hook = Just "INT.mul"
                         }
                 }
             )
@@ -1652,14 +1759,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "^"})))
+                        , hook = Just "INT.pow"
                         }
                 }
             )
@@ -1672,14 +1779,23 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt =
+                            Just
+                                ( SMTHook
+                                    ( List
+                                        [ Atom (SMTId{bs = "mod"})
+                                        , List [Atom (SMTId{bs = "^"}), Atom (SMTId{bs = "#1"}), Atom (SMTId{bs = "#2"})]
+                                        , Atom (SMTId{bs = "#3"})
+                                        ]
+                                    )
+                                )
+                        , hook = Just "INT.powmod"
                         }
                 }
             )
@@ -1693,14 +1809,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.bytes2int"
                         }
                 }
             )
@@ -1713,14 +1829,14 @@ defSymbols =
                 , resultSort = SortApp "SortString" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.bytes2string"
                         }
                 }
             )
@@ -1733,12 +1849,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -1753,12 +1869,12 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -1773,33 +1889,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "LblInt2Bytes'LParUndsCommUndsCommUndsRParUnds'BYTES-HOOKED'Unds'Bytes'Unds'Int'Unds'Endianness'Unds'Signedness"
-            , Symbol
-                { name =
-                    "LblInt2Bytes'LParUndsCommUndsCommUndsRParUnds'BYTES-HOOKED'Unds'Bytes'Unds'Int'Unds'Endianness'Unds'Signedness"
-                , sortVars = []
-                , argSorts = [SortApp "SortInt" [], SortApp "SortEndianness" [], SortApp "SortSignedness" []]
-                , resultSort = SortApp "SortBytes" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -1815,12 +1910,32 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "BYTES.int2bytes"
+                        }
+                }
+            )
+        ,
+            ( "LblInt2BytesNoLen"
+            , Symbol
+                { name = "LblInt2BytesNoLen"
+                , sortVars = []
+                , argSorts = [SortApp "SortInt" [], SortApp "SortEndianness" [], SortApp "SortSignedness" []]
+                , resultSort = SortApp "SortBytes" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -1835,14 +1950,14 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "LIST.get"
                         }
                 }
             )
@@ -1855,14 +1970,34 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "LIST.range"
+                        }
+                }
+            )
+        ,
+            ( "LblList'Coln'set"
+            , Symbol
+                { name = "LblList'Coln'set"
+                , sortVars = []
+                , argSorts = [SortApp "SortList" [], SortApp "SortInt" [], SortApp "SortKItem" []]
+                , resultSort = SortApp "SortList" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "LIST.update"
                         }
                 }
             )
@@ -1875,14 +2010,34 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KListMeta sortListKList
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KListMeta sortListKList
+                        , smt = Just (SMTLib "smt_seq_elem")
+                        , hook = Just "LIST.element"
+                        }
+                }
+            )
+        ,
+            ( "LblMap'Coln'choice"
+            , Symbol
+                { name = "LblMap'Coln'choice"
+                , sortVars = []
+                , argSorts = [SortApp "SortMap" []]
+                , resultSort = SortApp "SortKItem" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.choice"
                         }
                 }
             )
@@ -1895,14 +2050,34 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.lookup"
+                        }
+                }
+            )
+        ,
+            ( "LblMap'Coln'lookupOrDefault"
+            , Symbol
+                { name = "LblMap'Coln'lookupOrDefault"
+                , sortVars = []
+                , argSorts = [SortApp "SortMap" [], SortApp "SortKItem" [], SortApp "SortKItem" []]
+                , resultSort = SortApp "SortKItem" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "MAP.lookupOrDefault"
                         }
                 }
             )
@@ -1915,12 +2090,52 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "MAP.update"
+                        }
+                }
+            )
+        ,
+            ( "LblMapVal2Val'Coln'update"
+            , Symbol
+                { name = "LblMapVal2Val'Coln'update"
+                , sortVars = []
+                , argSorts = [SortApp "SortMapValToVal" [], SortApp "SortVal" [], SortApp "SortVal" []]
+                , resultSort = SortApp "SortMapValToVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "MAP.update"
+                        }
+                }
+            )
+        ,
+            ( "LblMapValToVal'Coln'primitiveUpdate"
+            , Symbol
+                { name = "LblMapValToVal'Coln'primitiveUpdate"
+                , sortVars = []
+                , argSorts = [SortApp "SortMapValToVal" [], SortApp "SortVal" [], SortApp "SortVal" []]
+                , resultSort = SortApp "SortMapValToVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -1935,12 +2150,12 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -1955,14 +2170,34 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "LblSet'Coln'choice"
+            , Symbol
+                { name = "LblSet'Coln'choice"
+                , sortVars = []
+                , argSorts = [SortApp "SortSet" []]
+                , resultSort = SortApp "SortKItem" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "SET.choice"
                         }
                 }
             )
@@ -1975,14 +2210,14 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.difference"
                         }
                 }
             )
@@ -1995,14 +2230,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.in"
                         }
                 }
             )
@@ -2015,14 +2250,14 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Just $ KSetMeta sortSetKSet
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Just $ KSetMeta sortSetKSet
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.element"
                         }
                 }
             )
@@ -2035,12 +2270,12 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2055,12 +2290,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2075,14 +2310,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.string2bytes"
                         }
                 }
             )
@@ -2095,12 +2330,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2115,12 +2350,12 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2135,12 +2370,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2155,12 +2390,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2175,14 +2410,24 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt =
+                            Just
+                                ( SMTHook
+                                    ( List
+                                        [ Atom (SMTId{bs = "ite"})
+                                        , List [Atom (SMTId{bs = "<"}), Atom (SMTId{bs = "#1"}), Atom (SMTId{bs = "0"})]
+                                        , List [Atom (SMTId{bs = "-"}), Atom (SMTId{bs = "0"}), Atom (SMTId{bs = "#1"})]
+                                        , Atom (SMTId{bs = "#1"})
+                                        ]
+                                    )
+                                )
+                        , hook = Just "INT.abs"
                         }
                 }
             )
@@ -2195,12 +2440,12 @@ defSymbols =
                 , resultSort = SortApp "SortEndianness" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2216,54 +2461,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lblchoice'LParUndsRParUnds'MAP'Unds'KItem'Unds'Map"
-            , Symbol
-                { name = "Lblchoice'LParUndsRParUnds'MAP'Unds'KItem'Unds'Map"
-                , sortVars = []
-                , argSorts = [SortApp "SortMap" []]
-                , resultSort = SortApp "SortKItem" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lblchoice'LParUndsRParUnds'SET'Unds'KItem'Unds'Set"
-            , Symbol
-                { name = "Lblchoice'LParUndsRParUnds'SET'Unds'KItem'Unds'Set"
-                , sortVars = []
-                , argSorts = [SortApp "SortSet" []]
-                , resultSort = SortApp "SortKItem" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "INT.bitRange"
                         }
                 }
             )
@@ -2276,12 +2481,12 @@ defSymbols =
                 , resultSort = SortApp "SortNum" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2296,12 +2501,12 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2318,14 +2523,14 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "LIST.fill"
                         }
                 }
             )
@@ -2338,12 +2543,12 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2358,12 +2563,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2378,12 +2583,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2398,12 +2603,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2418,12 +2623,12 @@ defSymbols =
                 , resultSort = SortApp "SortKCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2438,14 +2643,14 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.intersection"
                         }
                 }
             )
@@ -2458,12 +2663,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2478,12 +2683,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2498,12 +2703,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2518,12 +2723,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2538,12 +2743,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2558,12 +2763,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2578,12 +2783,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2598,12 +2803,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2618,12 +2823,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2638,12 +2843,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2658,12 +2863,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2678,12 +2883,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2698,12 +2903,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2718,12 +2923,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2738,12 +2943,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2758,12 +2963,32 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "LblisMapValToVal"
+            , Symbol
+                { name = "LblisMapValToVal"
+                , sortVars = []
+                , argSorts = [SortApp "SortK" []]
+                , resultSort = SortApp "SortBool" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2778,12 +3003,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2798,12 +3023,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2818,12 +3043,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2838,12 +3063,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2858,14 +3083,74 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "LblisVal"
+            , Symbol
+                { name = "LblisVal"
+                , sortVars = []
+                , argSorts = [SortApp "SortK" []]
+                , resultSort = SortApp "SortBool" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "LblisWrappedInt"
+            , Symbol
+                { name = "LblisWrappedInt"
+                , sortVars = []
+                , argSorts = [SortApp "SortK" []]
+                , resultSort = SortApp "SortBool" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "Lblite"
+            , Symbol
+                { name = "Lblite"
+                , sortVars = ["SortSort"]
+                , argSorts = [SortApp "SortBool" [], SortVar "SortSort", SortVar "SortSort"]
+                , resultSort = SortVar "SortSort"
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "ite"})))
+                        , hook = Just "KEQUAL.ite"
                         }
                 }
             )
@@ -2878,14 +3163,14 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.keys"
                         }
                 }
             )
@@ -2898,14 +3183,14 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.keys_list"
                         }
                 }
             )
@@ -2918,14 +3203,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "lengthBytes")
+                        , hook = Just "BYTES.length"
                         }
                 }
             )
@@ -2938,12 +3223,12 @@ defSymbols =
                 , resultSort = SortApp "SortEndianness" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -2958,14 +3243,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "INT.log2"
                         }
                 }
             )
@@ -2978,14 +3263,14 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "LIST.make"
                         }
                 }
             )
@@ -2998,14 +3283,46 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt =
+                            Just
+                                ( SMTHook
+                                    ( List
+                                        [ Atom (SMTId{bs = "ite"})
+                                        , List [Atom (SMTId{bs = "<"}), Atom (SMTId{bs = "#1"}), Atom (SMTId{bs = "#2"})]
+                                        , Atom (SMTId{bs = "#2"})
+                                        , Atom (SMTId{bs = "#1"})
+                                        ]
+                                    )
+                                )
+                        , hook = Just "INT.max"
+                        }
+                }
+            )
+        ,
+            ( "LblmemsetBytes'LParUndsCommUndsCommUndsCommUndsRParUnds'BYTES-HOOKED'Unds'Bytes'Unds'Bytes'Unds'Int'Unds'Int'Unds'Int"
+            , Symbol
+                { name =
+                    "LblmemsetBytes'LParUndsCommUndsCommUndsCommUndsRParUnds'BYTES-HOOKED'Unds'Bytes'Unds'Bytes'Unds'Int'Unds'Int'Unds'Int"
+                , sortVars = []
+                , argSorts =
+                    [SortApp "SortBytes" [], SortApp "SortInt" [], SortApp "SortInt" [], SortApp "SortInt" []]
+                , resultSort = SortApp "SortBytes" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.memset"
                         }
                 }
             )
@@ -3018,14 +3335,24 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt =
+                            Just
+                                ( SMTHook
+                                    ( List
+                                        [ Atom (SMTId{bs = "ite"})
+                                        , List [Atom (SMTId{bs = "<"}), Atom (SMTId{bs = "#1"}), Atom (SMTId{bs = "#2"})]
+                                        , Atom (SMTId{bs = "#1"})
+                                        , Atom (SMTId{bs = "#2"})
+                                        ]
+                                    )
+                                )
+                        , hook = Just "INT.min"
                         }
                 }
             )
@@ -3038,12 +3365,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3058,12 +3385,12 @@ defSymbols =
                 , resultSort = SortApp "SortKCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3078,14 +3405,14 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTHook (Atom (SMTId{bs = "not"})))
+                        , hook = Just "BOOL.not"
                         }
                 }
             )
@@ -3099,14 +3426,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.padLeft"
                         }
                 }
             )
@@ -3120,14 +3447,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.padRight"
                         }
                 }
             )
@@ -3140,12 +3467,12 @@ defSymbols =
                 , resultSort = SortApp "SortNum" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3160,12 +3487,12 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3180,12 +3507,12 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3200,12 +3527,12 @@ defSymbols =
                 , resultSort = SortApp "SortEndianness" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3220,12 +3547,12 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3240,12 +3567,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3260,12 +3587,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3280,12 +3607,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3300,12 +3627,12 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCellFragment" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3320,12 +3647,12 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3340,12 +3667,12 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3360,12 +3687,12 @@ defSymbols =
                 , resultSort = SortApp "SortKCell" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3380,12 +3707,12 @@ defSymbols =
                 , resultSort = SortApp "SortKCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3400,12 +3727,12 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3420,12 +3747,12 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3440,12 +3767,32 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "Lblproject'Coln'MapValToVal"
+            , Symbol
+                { name = "Lblproject'Coln'MapValToVal"
+                , sortVars = []
+                , argSorts = [SortApp "SortK" []]
+                , resultSort = SortApp "SortMapValToVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3460,12 +3807,12 @@ defSymbols =
                 , resultSort = SortApp "SortNum" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3480,12 +3827,12 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3500,12 +3847,12 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3520,12 +3867,12 @@ defSymbols =
                 , resultSort = SortApp "SortSignedness" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3540,14 +3887,74 @@ defSymbols =
                 , resultSort = SortApp "SortString" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "Lblproject'Coln'Val"
+            , Symbol
+                { name = "Lblproject'Coln'Val"
+                , sortVars = []
+                , argSorts = [SortApp "SortK" []]
+                , resultSort = SortApp "SortVal" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "Lblproject'Coln'WrappedInt"
+            , Symbol
+                { name = "Lblproject'Coln'WrappedInt"
+                , sortVars = []
+                , argSorts = [SortApp "SortK" []]
+                , resultSort = SortApp "SortWrappedInt" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "LblpushList"
+            , Symbol
+                { name = "LblpushList"
+                , sortVars = []
+                , argSorts = [SortApp "SortKItem" [], SortApp "SortList" []]
+                , resultSort = SortApp "SortList" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "LIST.push"
                         }
                 }
             )
@@ -3560,14 +3967,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "INT.rand"
                         }
                 }
             )
@@ -3580,14 +3987,14 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.removeAll"
                         }
                 }
             )
@@ -3601,14 +4008,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.replaceAt"
                         }
                 }
             )
@@ -3621,14 +4028,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.reverse"
                         }
                 }
             )
@@ -3642,14 +4049,14 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "INT.signExtendBitRange"
                         }
                 }
             )
@@ -3662,52 +4069,12 @@ defSymbols =
                 , resultSort = SortApp "SortSignedness" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lblsize'LParUndsRParUnds'LIST'Unds'Int'Unds'List"
-            , Symbol
-                { name = "Lblsize'LParUndsRParUnds'LIST'Unds'Int'Unds'List"
-                , sortVars = []
-                , argSorts = [SortApp "SortList" []]
-                , resultSort = SortApp "SortInt" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
-                        , smt = Nothing
-                        , hook = Nothing
-                        }
-                }
-            )
-        ,
-            ( "Lblsize'LParUndsRParUnds'MAP'Unds'Int'Unds'Map"
-            , Symbol
-                { name = "Lblsize'LParUndsRParUnds'MAP'Unds'Int'Unds'Map"
-                , sortVars = []
-                , argSorts = [SortApp "SortMap" []]
-                , resultSort = SortApp "SortInt" []
-                , attributes =
-                    SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3722,14 +4089,54 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "SET.size"
+                        }
+                }
+            )
+        ,
+            ( "LblsizeList"
+            , Symbol
+                { name = "LblsizeList"
+                , sortVars = []
+                , argSorts = [SortApp "SortList" []]
+                , resultSort = SortApp "SortInt" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Just (SMTLib "smt_seq_len")
+                        , hook = Just "LIST.size"
+                        }
+                }
+            )
+        ,
+            ( "LblsizeMap"
+            , Symbol
+                { name = "LblsizeMap"
+                , sortVars = []
+                , argSorts = [SortApp "SortMap" []]
+                , resultSort = SortApp "SortInt" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "MAP.size"
                         }
                 }
             )
@@ -3742,14 +4149,14 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "INT.srand"
                         }
                 }
             )
@@ -3763,14 +4170,14 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "BYTES.substr"
                         }
                 }
             )
@@ -3783,12 +4190,32 @@ defSymbols =
                 , resultSort = SortApp "SortSignedness" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Nothing
+                        }
+                }
+            )
+        ,
+            ( "LblunwrapInt"
+            , Symbol
+                { name = "LblunwrapInt"
+                , sortVars = []
+                , argSorts = [SortApp "SortWrappedInt" []]
+                , resultSort = SortApp "SortInt" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3803,14 +4230,14 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "LIST.updateAll"
                         }
                 }
             )
@@ -3823,14 +4250,14 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
-                        , hook = Nothing
+                        , hook = Just "MAP.updateAll"
                         }
                 }
             )
@@ -3843,12 +4270,32 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Partial
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Partial
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
+                        , smt = Nothing
+                        , hook = Just "MAP.values"
+                        }
+                }
+            )
+        ,
+            ( "LblwrapInt"
+            , Symbol
+                { name = "LblwrapInt"
+                , sortVars = []
+                , argSorts = [SortApp "SortInt" []]
+                , resultSort = SortApp "SortWrappedInt" []
+                , attributes =
+                    SymbolAttributes
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3863,12 +4310,12 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Function Total
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Function Total
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3883,12 +4330,12 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3903,12 +4350,12 @@ defSymbols =
                 , resultSort = SortVar "To"
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
@@ -3923,31 +4370,15 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
-                        , symbolType = Constructor
-                        , isIdem = IsNotIdem
-                        , isAssoc = IsNotAssoc
-                        , isMacroOrAlias = IsNotMacroOrAlias
-                        , hasEvaluators = CanBeEvaluated
+                        { symbolType = Constructor
+                        , isIdem = Flag False
+                        , isAssoc = Flag False
+                        , isMacroOrAlias = Flag False
+                        , hasEvaluators = Flag True
+                        , collectionMetadata = Nothing
                         , smt = Nothing
                         , hook = Nothing
                         }
                 }
-            )
-        ,
-            ( "LblwrapInt"
-            , [symb| symbol LblwrapInt{}(SortInt{}) : SortWrappedInt{} [constructor{}(), functional{}(), injective{}()] |]
-            )
-        ,
-            ( "Lbl'Stop'MapValToVal"
-            , [symb| symbol Lbl'Stop'MapValToVal{}() : SortMapValToVal{} [function{}(), functional{}(), total{}()] |]
-            )
-        ,
-            ( "LblMapValToVal'Coln'primitiveUpdate"
-            , [symb| symbol LblMapValToVal'Coln'primitiveUpdate{}(SortMapValToVal{}, SortVal{}, SortVal{}) : SortMapValToVal{} [function{}(), functional{}(), klabel{}("MapValToVal:primitiveUpdate"), total{}()] |]
-            )
-        ,
-            ( "Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'"
-            , [symb| symbol Lbl'Unds'Val2Val'Pipe'-'-GT-Unds'{}(SortVal{}, SortVal{}) : SortMapValToVal{} [function{}(), functional{}(), klabel{}("_Val2Val|->_"), total{}()] |]
             )
         ]
