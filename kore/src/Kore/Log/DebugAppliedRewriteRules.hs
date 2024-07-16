@@ -67,19 +67,17 @@ instance Entry DebugAppliedRewriteRules where
         | null appliedRewriteRules = True
         | otherwise = False
     oneLineDoc DebugAppliedRewriteRules{appliedRewriteRules}
-        | null appliedRewriteRules = mempty
+        | null appliedRewriteRules =
+            "failed to apply " <> pretty (length appliedRewriteRules) <> " rewrite rules"
         | otherwise =
             "applied " <> pretty (length appliedRewriteRules) <> " rewrite rules"
-    oneLineJson DebugAppliedRewriteRules{appliedRewriteRules}
-        | null appliedRewriteRules = Json.Null
-        | otherwise =
-            Json.toJSON $
-                "applied " <> show (length appliedRewriteRules) <> " rewrite rules"
+    oneLineJson DebugAppliedRewriteRules{appliedRewriteRules} =
+        Json.toJSON $ "applied " <> show (length appliedRewriteRules) <> " rewrite rules"
     oneLineContextDoc DebugAppliedRewriteRules{appliedRewriteRules}
         | null appliedRewriteRules =
-            ["failure"]
+            single CtxFailure
         | otherwise =
-            ["success"]
+            single CtxSuccess
 
 debugAppliedRewriteRules ::
     MonadLog log =>
@@ -126,8 +124,7 @@ instance Entry DebugAppliedLabeledRewriteRule where
     oneLineDoc DebugAppliedLabeledRewriteRule{label, sourceLocation} =
         maybe (pretty sourceLocation) pretty label
     oneLineJson = toJSON . renderDefault . oneLineDoc
-    oneLineContextDoc DebugAppliedLabeledRewriteRule{} = ["success"]
-    oneLineContextJson DebugAppliedLabeledRewriteRule{} = toJSON ("success" :: Text)
+    oneLineContextDoc DebugAppliedLabeledRewriteRule{} = single CtxSuccess
 
 debugAppliedLabeledRewriteRule ::
     MonadLog log =>

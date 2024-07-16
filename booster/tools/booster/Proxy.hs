@@ -35,7 +35,7 @@ import System.Clock (Clock (Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoS
 import Booster.Definition.Base (KoreDefinition)
 import Booster.JsonRpc as Booster (ServerState (..), execStateToKoreJson, toExecState)
 import Booster.JsonRpc.Utils
-import Booster.Log qualified
+import Booster.Log
 import Booster.Syntax.Json.Internalise
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
@@ -49,7 +49,7 @@ import Kore.Log qualified
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 import SMT qualified
-import Stats (StatsVar, addStats, microsWithUnit, timed)
+import Stats (MethodTiming (..), StatsVar, addStats, microsWithUnit, timed)
 
 data KoreServer = KoreServer
     { serverState :: MVar.MVar Kore.ServerState
@@ -64,7 +64,7 @@ data KoreServer = KoreServer
     }
 
 data ProxyConfig = ProxyConfig
-    { statsVar :: Maybe StatsVar
+    { statsVar :: StatsVar
     , forceFallback :: Maybe Depth
     , boosterState :: MVar.MVar Booster.ServerState
     , fallbackReasons :: [HaltReason]
@@ -83,7 +83,7 @@ respondEither ::
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case req of
+respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
@@ -111,7 +111,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     logStats ImpliesM (boosterTime, 0)
                     pure res
                 Left err -> do
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage' $
                             Text.pack $
                                 "implies error in booster: " <> fromError err
@@ -140,7 +140,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         (result, kTime) <-
             case bResult of
                 Left err -> do
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage' $
                             Text.pack $
                                 "get-model error in booster: " <> fromError err
@@ -148,13 +148,13 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 Right (GetModel res@GetModelResult{})
                     -- re-check with legacy-kore if result is unknown
                     | Unknown <- res.satisfiable -> do
-                        Booster.Log.withContext "proxy" $
-                            Booster.Log.withContext "abort" $
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.withContext CtxAbort $
                                 Booster.Log.logMessage $
                                     Text.pack "Re-checking a get-model result Unknown"
                         r@(kResult, _) <- Stats.timed $ kore req
-                        Booster.Log.withContext "proxy" $
-                            Booster.Log.withContext "abort" $
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.withContext CtxAbort $
                                 Booster.Log.logMessage $
                                     "Double-check returned " <> toStrict (encodeToLazyText kResult)
                         pure r
@@ -187,9 +187,9 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         when (koreRes.state /= boosterRes.state) $ do
                             bState <- liftIO (MVar.readMVar boosterState)
 
-                            Booster.Log.withContext "proxy" $
-                                Booster.Log.withContext "abort" $
-                                    Booster.Log.withContext "detail" $
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.withContext CtxAbort $
+                                    Booster.Log.withContext CtxDetail $
                                         Booster.Log.logMessage $
                                             let m = fromMaybe bState.defaultMain simplifyReq._module
                                                 def =
@@ -234,7 +234,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     fromString (String s) = s
                     fromString other = Text.pack (show other)
 
-                Booster.Log.withContext "proxy" $
+                Booster.Log.withContext CtxProxy $
                     Booster.Log.logMessage' $
                         Text.unwords
                             ["Problem with simplify request: ", Text.pack getErrMsg, "-", boosterError]
@@ -244,7 +244,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 pure . Left $ ErrorObj "Wrong result type" (-32002) $ toJSON _wrong
 
     loggedKore method r = do
-        Booster.Log.withContext "proxy" $
+        Booster.Log.withContext CtxProxy $
             Booster.Log.logMessage' $
                 Text.pack $
                     show method <> " (using kore)"
@@ -252,21 +252,10 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         logStats method (time, time)
         pure result
 
-    logStats method (time, koreTime)
-        | Just v <- statsVar = do
-            addStats v method time koreTime
-            Booster.Log.withContext "proxy" $
-                Booster.Log.logMessage' $
-                    Text.pack $
-                        unwords
-                            [ "Performed"
-                            , show method
-                            , "in"
-                            , microsWithUnit time
-                            , "(" <> microsWithUnit koreTime <> " kore time)"
-                            ]
-        | otherwise =
-            pure ()
+    logStats method (time, koreTime) = do
+        let timing = MethodTiming{method, time, koreTime}
+        addStats cfg.statsVar timing
+        Booster.Log.withContexts [CtxProxy, CtxTiming] $ Booster.Log.logMessage timing
 
     handleExecute ::
         LogSettings ->
@@ -305,7 +294,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         ExecuteRequest ->
         m (Either ErrorObj (API 'Res))
     executionLoop logSettings def (currentDepth@(Depth cDepth), !time, !koreTime, !rpcLogs) r = do
-        Booster.Log.withContext "proxy" $
+        Booster.Log.withContext CtxProxy $
             Booster.Log.logMessage $
                 Text.pack $
                     if currentDepth == 0
@@ -328,7 +317,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 | DepthBound <- boosterResult.reason
                 , Just forceDepth <- cfg.forceFallback
                 , forceDepth == boosterResult.depth -> do
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage $
                             Text.pack $
                                 "Forced simplification at " <> show (currentDepth + boosterResult.depth)
@@ -336,7 +325,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     case simplifyResult of
                         Left logsOnly -> do
                             -- state was simplified to \bottom, return vacuous
-                            Booster.Log.withContext "proxy" $
+                            Booster.Log.withContext CtxProxy $
                                 Booster.Log.logMessage $
                                     Text.pack "Vacuous state after simplification"
                             pure . Right . Execute $
@@ -365,12 +354,12 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck, Branching],
                 -- revert to the old backend to re-confirm and possibly proceed
                 | boosterResult.reason `elem` cfg.fallbackReasons -> do
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage $
                             Text.pack $
                                 "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
                     -- simplify Booster's state with Kore's simplifier
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage ("Simplifying booster state and falling back to Kore" :: Text)
                     simplifyResult <-
                         if cfg.simplifyBeforeFallback
@@ -379,13 +368,13 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     case simplifyResult of
                         Left logsOnly -> do
                             -- state was simplified to \bottom, return vacuous
-                            Booster.Log.withContext "proxy" $
+                            Booster.Log.withContext CtxProxy $
                                 Booster.Log.logMessage $
                                     Text.pack "Vacuous state after simplification"
                             pure . Right . Execute $ makeVacuous (postProcessLogs <$> logsOnly) boosterResult
                         Right (simplifiedBoosterState, boosterStateSimplificationLogs) -> do
                             -- attempt to do one step in the old backend
-                            Booster.Log.withContext "proxy" $
+                            Booster.Log.withContext CtxProxy $
                                 Booster.Log.logMessage ("Executing fall-back request" :: Text)
                             (kResult, kTime) <-
                                 Stats.timed $
@@ -397,11 +386,17 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                                 , assumeStateDefined = Just True
                                                 }
                                         )
-                            when (isJust statsVar) $ do
-                                Booster.Log.withContext "proxy" $
-                                    Booster.Log.logMessage $
-                                        Text.pack $
-                                            "Kore fall-back in " <> microsWithUnit kTime
+                            Booster.Log.withContexts [CtxProxy, CtxTiming, CtxKore] $
+                                Booster.Log.logMessage $
+                                    WithJsonMessage
+                                        ( toJSON
+                                            MethodTiming
+                                                { method = ExecuteM
+                                                , time = kTime
+                                                , koreTime = kTime
+                                                }
+                                        )
+                                        ("Kore fall-back in " <> microsWithUnit kTime)
                             case kResult of
                                 Right (Execute koreResult) -> do
                                     let
@@ -417,34 +412,34 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                                 , koreResult.logs
                                                 , fallbackLog
                                                 ]
-                                        loopState newLogs =
-                                            ( currentDepth + boosterResult.depth + koreResult.depth
+                                        loopState incDepth newLogs =
+                                            ( currentDepth + boosterResult.depth + koreResult.depth + if incDepth then 1 else 0
                                             , time + bTime + kTime
                                             , koreTime + kTime
                                             , postProcessLogs
                                                 <$> combineLogs (accumulatedLogs : newLogs)
                                             )
-                                        continueWith newLogs nextState =
+                                        continueWith incDepth newLogs nextState =
                                             executionLoop
                                                 logSettings
                                                 def
-                                                (loopState newLogs)
+                                                (loopState incDepth newLogs)
                                                 r{ExecuteRequest.state = nextState}
                                     case (boosterResult.reason, koreResult.reason) of
                                         (Aborted, res) ->
-                                            Booster.Log.withContext "proxy" $
-                                                Booster.Log.withContext "abort" $
+                                            Booster.Log.withContext CtxProxy $
+                                                Booster.Log.withContext CtxAbort $
                                                     Booster.Log.logMessage $
                                                         "Booster aborted, kore yields " <> Text.pack (show res)
                                         (bRes, kRes)
                                             | bRes /= kRes ->
-                                                Booster.Log.withContext "proxy" $
-                                                    Booster.Log.withContext "abort" $
+                                                Booster.Log.withContext CtxProxy $
+                                                    Booster.Log.withContext CtxAbort $
                                                         Booster.Log.logMessage $
                                                             "Booster and kore disagree: " <> Text.pack (show (bRes, kRes))
                                             | otherwise ->
-                                                Booster.Log.withContext "proxy" $
-                                                    Booster.Log.withContext "abort" $
+                                                Booster.Log.withContext CtxProxy $
+                                                    Booster.Log.withContext CtxAbort $
                                                         Booster.Log.logMessage $
                                                             "kore confirms result " <> Text.pack (show bRes)
 
@@ -454,18 +449,18 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             -- steps we have taken to the counter and
                                             -- attempt with booster again
                                             when (koreResult.depth == 0) $ error "Expected kore-rpc to take at least one step"
-                                            Booster.Log.withContext "proxy" $
+                                            Booster.Log.withContext CtxProxy $
                                                 Booster.Log.logMessage $
                                                     Text.pack $
                                                         "kore depth-bound, continuing... (currently at "
                                                             <> show (currentDepth + boosterResult.depth + koreResult.depth)
                                                             <> ")"
-                                            continueWith [] (execStateToKoreJson koreResult.state)
+                                            continueWith False [] (execStateToKoreJson koreResult.state)
                                         _ -> do
                                             -- otherwise we have hit a different
                                             -- HaltReason, at which point we should
                                             -- return, setting the correct depth
-                                            Booster.Log.withContext "proxy" . Booster.Log.logMessage . Text.pack $
+                                            Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
                                                 "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
                                             -- perform post-exec simplification.
                                             -- NB This has been found to make a difference,
@@ -476,7 +471,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             case postExecResult of
                                                 Left (nextState, newLogs) -> do
                                                     -- simplification revealed that we should actually proceed
-                                                    continueWith newLogs nextState
+                                                    continueWith True newLogs nextState
                                                 Right result -> do
                                                     logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
                                                     pure $
@@ -499,7 +494,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     -- we were successful with the booster, thus we
                     -- return the booster result with the updated
                     -- depth, in case we previously looped
-                    Booster.Log.withContext "proxy" . Booster.Log.logMessage . Text.pack $
+                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
                     -- perform post-exec simplification
                     postExecResult <-
@@ -543,7 +538,8 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         mbModule
         def
         s = do
-            Booster.Log.withContext "proxy" . Booster.Log.logMessage . Text.pack $ "Simplifying execution state"
+            Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
+                "Simplifying execution state"
             simplResult <-
                 handleSimplify (toSimplifyRequest s) Nothing
             case simplResult of
@@ -576,13 +572,13 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                         , simplified.logs
                                         )
                             Left err -> do
-                                Booster.Log.withContext "proxy" . Booster.Log.logMessage $
+                                Booster.Log.withContext CtxProxy . Booster.Log.logMessage $
                                     "Error processing execute state simplification result: "
                                         <> Text.pack (show err)
                                 pure $ Right (s, Nothing)
                 _other -> do
                     -- if we hit an error here, return the original
-                    Booster.Log.withContext "proxy" . Booster.Log.logMessage . Text.pack $
+                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
                         "Unexpected failure when calling Kore simplifier, returning original term"
                     pure $ Right (s, Nothing)
           where
@@ -606,13 +602,13 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
     simplifyExecResult logSettings mbModule def res@ExecuteResult{reason, state, nextStates}
         | not cfg.simplifyAtEnd = pure $ Right res
         | otherwise = do
-            Booster.Log.withContext "proxy" . Booster.Log.logMessage . Text.pack $
+            Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
                 "Simplifying state in " <> show reason <> " result"
             simplified <- simplifyExecuteState logSettings mbModule def state
             case simplified of
                 Left logsOnly -> do
                     -- state simplified to \bottom, return vacuous
-                    Booster.Log.withContext "proxy" . Booster.Log.logMessage . Text.pack $
+                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
                         "Vacuous after simplifying result state"
                     pure . Right $ makeVacuous logsOnly res
                 Right (simplifiedState, simplifiedStateLogs) -> do
@@ -625,32 +621,62 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                             second unzip $ partitionEithers simplifiedNexts
                         newLogs = simplifiedStateLogs : logsOnly <> filteredNextLogs
 
-                    pure $ case reason of
+                    when (length filteredNexts < maybe 0 length nextStates) $
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.logMessage'
+                                (Text.pack ("Pruned #Bottom states: " <> show (length nextStates)))
+
+                    case reason of
                         Branching
-                            | null filteredNexts ->
-                                Right
-                                    res
-                                        { reason = Stuck
-                                        , nextStates = Nothing
-                                        , logs = combineLogs $ res.logs : simplifiedStateLogs : logsOnly
-                                        }
-                            | length filteredNexts == 1 ->
+                            | null filteredNexts -> do
+                                pure $
+                                    Right
+                                        res
+                                            { reason = Stuck
+                                            , nextStates = Nothing
+                                            , logs = combineLogs $ res.logs : simplifiedStateLogs : logsOnly
+                                            }
+                            | length filteredNexts == 1 -> do
                                 -- all but one next states are bottom, execution should proceed
-                                Left (execStateToKoreJson $ head filteredNexts, logsOnly <> filteredNextLogs)
+                                -- Note that we've effectively made a rewrite step here, so we need to
+                                -- extract the rule-id information from the result we proceed with
+                                let onlyNext = head filteredNexts
+                                    rewriteRuleId = fromMaybe "UNKNOWN" onlyNext.ruleId
+                                    proxyRewriteStepLogs
+                                        | Just True <- logSettings.logSuccessfulRewrites =
+                                            Just . (: []) $
+                                                RPCLog.Rewrite
+                                                    { result =
+                                                        RPCLog.Success
+                                                            { rewrittenTerm = Nothing
+                                                            , substitution = Nothing
+                                                            , ruleId = rewriteRuleId
+                                                            }
+                                                    , origin = RPCLog.Proxy
+                                                    }
+                                        | otherwise = Nothing
+                                Booster.Log.withContext CtxProxy $
+                                    Booster.Log.logMessage' ("Continuing after rewriting with rule " <> rewriteRuleId)
+                                pure $
+                                    Left
+                                        ( execStateToKoreJson onlyNext
+                                        , logsOnly <> filteredNextLogs <> [proxyRewriteStepLogs]
+                                        )
                         -- otherwise falling through to _otherReason
                         CutPointRule
                             | null filteredNexts ->
-                                Right $ makeVacuous (combineLogs $ res.logs : newLogs) res
+                                pure $ Right $ makeVacuous (combineLogs $ res.logs : newLogs) res
                         _otherReason ->
-                            Right $
-                                res
-                                    { state = simplifiedState
-                                    , nextStates =
-                                        if null filteredNexts
-                                            then Nothing
-                                            else Just filteredNexts
-                                    , logs = combineLogs $ res.logs : newLogs
-                                    }
+                            pure $
+                                Right $
+                                    res
+                                        { state = simplifiedState
+                                        , nextStates =
+                                            if null filteredNexts
+                                                then Nothing
+                                                else Just filteredNexts
+                                        , logs = combineLogs $ res.logs : newLogs
+                                        }
 
 data LogSettings = LogSettings
     { logSuccessfulRewrites :: Maybe Bool

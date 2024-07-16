@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- |
@@ -13,7 +14,6 @@ import Control.DeepSeq (force)
 import Control.Exception (AsyncException (UserInterrupt), evaluate, handleJust)
 import Control.Monad (forM_, unless, void)
 import Control.Monad.Catch (bracket)
-import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
     LogLevel (..),
@@ -22,6 +22,7 @@ import Control.Monad.Logger (
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson qualified as JSON
 import Data.Bifunctor (bimap)
+import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
@@ -35,6 +36,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text (decodeUtf8, encodeUtf8)
+import Network.JSONRPC qualified as JSONRPC
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -47,7 +49,6 @@ import System.IO (hPutStrLn, stderr)
 import Booster.CLOptions
 import Booster.Definition.Attributes.Base (
     ComputedAxiomAttributes (notPreservesDefinednessReasons),
-    NotPreservesDefinednessReason (UndefinedSymbol),
  )
 import Booster.Definition.Base (
     KoreDefinition (..),
@@ -57,9 +58,10 @@ import Booster.Definition.Ceil (ComputeCeilSummary (..), computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
-import Booster.Log qualified
-import Booster.Log.Context qualified
+import Booster.Log hiding (withLogger)
+import Booster.Log.Context qualified as Ctxt
 import Booster.Pattern.Base (Predicate (..))
+import Booster.Pattern.Pretty
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
@@ -67,6 +69,7 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
 import Booster.Util qualified as Booster
+import Data.Data (Proxy)
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
@@ -133,12 +136,12 @@ main = do
                     , smtOptions
                     , equationOptions
                     , indexCells
+                    , prettyPrintOptions
                     , eventlogEnabledUserEvents
                     }
             , proxyOptions =
                 ProxyOptions
-                    { printStats
-                    , forceFallback
+                    { forceFallback
                     , boosterSMT
                     , fallbackReasons
                     , simplifyAtEnd
@@ -174,10 +177,10 @@ main = do
                 not contextLoggingEnabled
                     || ( let contextStrs =
                                 concatMap
-                                    ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
+                                    ( \(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c
                                     )
                                     ctxt
-                          in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
+                          in any (flip Ctxt.mustMatch contextStrs) logContextsWithcustomLevelContexts
                        )
 
             koreLogEntries =
@@ -193,11 +196,13 @@ main = do
             filteredBoosterContextLogger =
                 flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                     alwaysDisplay
-                        || let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
-                            in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
+                        || let ctxt = map (Text.encodeUtf8 . Booster.Log.toTextualLog) ctxts
+                            in any (flip Ctxt.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
-            runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
+            runBoosterLogger =
+                flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
+                    . Booster.Log.unLoggerT
 
             koreLogActions :: forall m. MonadIO m => [Log.LogAction m Log.SomeEntry]
             koreLogActions = [koreLogAction]
@@ -209,7 +214,7 @@ main = do
                         (fromMaybe stderrLogger mFileLogger)
 
         runBoosterLogger $
-            Booster.Log.withContext "proxy" $
+            Booster.Log.withContext CtxProxy $
                 Booster.Log.logMessage' $
                     Text.pack $
                         "Loading definition from "
@@ -239,54 +244,55 @@ main = do
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
                     runBoosterLogger $
-                        Booster.Log.withContext "proxy" $
+                        Booster.Log.withContext CtxProxy $
                             Booster.Log.logMessage' $
                                 "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                     liftIO exitFailure
 
                 liftIO $
                     runBoosterLogger $
-                        Booster.Log.withContext "ceil" $
-                            forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
-                                forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
-                                    Booster.Log.withRuleContext rule $ do
-                                        Booster.Log.withContext "partial-symbols"
-                                            $ Booster.Log.logMessage
-                                            $ Booster.Log.WithJsonMessage
-                                                (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
-                                            $ renderOneLineText
-                                            $ Pretty.hsep
-                                            $ Pretty.punctuate Pretty.comma
-                                            $ map
-                                                (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
-                                                rule.computedAttributes.notPreservesDefinednessReasons
-                                        unless (null ceils)
-                                            $ Booster.Log.withContext "computed-ceils"
-                                            $ Booster.Log.logMessage
-                                            $ Booster.Log.WithJsonMessage
-                                                ( JSON.object
-                                                    ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
-                                                )
-                                            $ renderOneLineText
-                                            $ Pretty.hsep
-                                            $ Pretty.punctuate Pretty.comma
-                                            $ map
-                                                (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
-                                                (Set.toList ceils)
+                        getPrettyModifiers >>= \case
+                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> Booster.Log.withContext CtxInfo $ -- FIXME "ceil" $
+                                forM_ (Map.elems definitionsWithCeilSummaries) $ \(KoreDefinition{simplifications}, summaries) -> do
+                                    forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
+                                        Booster.Log.withRuleContext rule $ do
+                                            Booster.Log.withContext CtxInfo -- FIXME "partial-symbols"
+                                                $ Booster.Log.logMessage
+                                                $ Booster.Log.WithJsonMessage
+                                                    (JSON.toJSON rule.computedAttributes.notPreservesDefinednessReasons)
+                                                $ renderOneLineText
+                                                $ Pretty.hsep
+                                                $ Pretty.punctuate Pretty.comma
+                                                $ map
+                                                    (pretty' @mods)
+                                                    rule.computedAttributes.notPreservesDefinednessReasons
+                                            unless (null ceils)
+                                                $ Booster.Log.withContext CtxInfo -- FIXME"computed-ceils"
+                                                $ Booster.Log.logMessage
+                                                $ Booster.Log.WithJsonMessage
+                                                    ( JSON.object
+                                                        ["ceils" JSON..= (bimap (externaliseTerm . coerce) externaliseTerm <$> Set.toList ceils)]
+                                                    )
+                                                $ renderOneLineText
+                                                $ Pretty.hsep
+                                                $ Pretty.punctuate Pretty.comma
+                                                $ map
+                                                    (either (pretty' @mods) (\t -> "#Ceil(" Pretty.<+> pretty' @mods t Pretty.<+> ")"))
+                                                    (Set.toList ceils)
 
-                                forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
-                                    unless (null s.computedAttributes.notPreservesDefinednessReasons)
-                                        $ Booster.Log.withRuleContext s
-                                        $ Booster.Log.withContext "partial-symbols"
-                                        $ Booster.Log.logMessage
-                                        $ Booster.Log.WithJsonMessage
-                                            (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
-                                        $ renderOneLineText
-                                        $ Pretty.hsep
-                                        $ Pretty.punctuate Pretty.comma
-                                        $ map
-                                            (\(UndefinedSymbol sym) -> Pretty.pretty $ Text.decodeUtf8 $ Booster.decodeLabel' sym)
-                                            s.computedAttributes.notPreservesDefinednessReasons
+                                    forM_ (concat $ concatMap Map.elems simplifications) $ \s ->
+                                        unless (null s.computedAttributes.notPreservesDefinednessReasons)
+                                            $ Booster.Log.withRuleContext s
+                                            $ Booster.Log.withContext CtxInfo -- FIXME"partial-symbols"
+                                            $ Booster.Log.logMessage
+                                            $ Booster.Log.WithJsonMessage
+                                                (JSON.toJSON s.computedAttributes.notPreservesDefinednessReasons)
+                                            $ renderOneLineText
+                                            $ Pretty.hsep
+                                            $ Pretty.punctuate Pretty.comma
+                                            $ map
+                                                (pretty' @mods)
+                                                s.computedAttributes.notPreservesDefinednessReasons
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
 
@@ -303,18 +309,18 @@ main = do
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
                                 , addedModules = mempty
                                 }
-                statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
+                statsVar <- Stats.newStats
 
                 writeGlobalEquationOptions equationOptions
 
                 runBoosterLogger $
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text)
 
-                let koreRespond, boosterRespond :: Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
-                    koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
-                    boosterRespond =
-                        Booster.Log.withContext "booster"
+                let koreRespond, boosterRespond :: JSONRPC.Id -> Respond (API 'Req) (Booster.Log.LoggerT IO) (API 'Res)
+                    koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
+                    boosterRespond _reqId =
+                        Booster.Log.withContext CtxBooster
                             . Booster.respond boosterState
 
                     proxyConfig =
@@ -331,9 +337,11 @@ main = do
                         jsonRpcServer
                             srvSettings
                             ( \rawReq req ->
-                                runBoosterLogger $
-                                    logRequestId (fromId $ getReqId rawReq)
-                                        >> Proxy.respondEither proxyConfig boosterRespond koreRespond req
+                                let reqId = getReqId rawReq
+                                 in runBoosterLogger $ do
+                                        logRequestId reqId
+                                        Booster.Log.withContextFor reqId $
+                                            Proxy.respondEither proxyConfig (boosterRespond reqId) (koreRespond reqId) req
                             )
                             [ Kore.handleDecidePredicateUnknown
                             , Booster.handleSmtError
@@ -341,10 +349,11 @@ main = do
                             , handleSomeException
                             ]
                     interruptHandler _ =
-                        runBoosterLogger . Booster.Log.withContext "proxy" $ do
+                        runBoosterLogger . Booster.Log.withContext CtxProxy $ do
                             Booster.Log.logMessage' @_ @Text "Server shutting down"
-                            whenJust statsVar $ \var ->
-                                liftIO (Stats.finaliseStats var) >>= Booster.Log.logMessage'
+                            ( liftIO (Stats.finaliseStats statsVar)
+                                    >>= Booster.Log.withContext CtxTiming . Booster.Log.logMessage
+                                )
                             liftIO exitSuccess
                 handleJust isInterrupt interruptHandler $ runBoosterLogger server
   where
@@ -357,10 +366,10 @@ main = do
     withMDLib (Just fp) f = withDLib fp $ \dl -> f (Just dl)
 
     logRequestId rid =
-        Booster.Log.withContext "proxy" $
+        Booster.Log.withContext CtxProxy $
             Booster.Log.logMessage' $
                 Text.pack $
-                    "Processing request " <> rid
+                    "Processing request " <> fromId rid
 
     isInterrupt :: AsyncException -> Maybe ()
     isInterrupt UserInterrupt = Just ()
@@ -389,6 +398,7 @@ logLevelToKoreLogEntryMap =
                 [ "DebugAttemptedRewriteRules"
                 , "DebugAppliedLabeledRewriteRule"
                 , "DebugAppliedRewriteRules"
+                , "DebugRewriteRulesRemainder"
                 , "DebugTerm"
                 ]
             )
@@ -402,9 +412,7 @@ data CLProxyOptions = CLProxyOptions
     }
 
 data ProxyOptions = ProxyOptions
-    { printStats :: Bool
-    -- ^ print timing statistics per request and on shutdown
-    , forceFallback :: Maybe Depth
+    { forceFallback :: Maybe Depth
     -- ^ force fallback every n-steps
     , boosterSMT :: Bool
     -- ^ whether to use an SMT solver in booster code (but keeping kore-rpc's SMT solver)
@@ -429,11 +437,7 @@ clProxyOptionsParser =
   where
     parseProxyOptions =
         ProxyOptions
-            <$> switch
-                ( long "print-stats"
-                    <> help "(development) Print timing information per request and on shutdown"
-                )
-            <*> optional
+            <$> optional
                 ( option
                     (Depth <$> auto)
                     ( metavar "INTERIM_SIMPLIFICATION"
@@ -505,7 +509,7 @@ translateSMTOpts = \case
 mkKoreServer ::
     Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
 mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
-    flip Log.runLoggerT logAction $ Log.logWhile (Log.DebugContext "kore") $ do
+    flip Log.runLoggerT logAction $ Log.logWhile (Log.DebugContext $ Log.CLNullary CtxKore) $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
             GlobalMain.deserializeDefinition
                 koreSolverOptions

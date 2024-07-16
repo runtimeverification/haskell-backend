@@ -65,7 +65,7 @@
             "args": [
               {
                 "tag": "EVar",
-                "name": "X",
+                "name": "VarX",
                 "sort": {
                     "tag": "SortApp",
                     "name": "SortInt",

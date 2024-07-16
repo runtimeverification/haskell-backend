@@ -19,6 +19,7 @@ import Control.Monad.Logger (
  )
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson.Types (Value (..))
+import Data.ByteString.Char8 qualified as BS
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -41,6 +42,7 @@ import System.Log.FastLogger (newTimeCache)
 import Booster.CLOptions
 import Booster.Log
 import Booster.Log.Context qualified
+import Booster.Pattern.Pretty
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
@@ -97,7 +99,7 @@ respond kore req = case req of
     Execute _ ->
         loggedKore ExecuteM req >>= \case
             Right (Execute koreResult) -> do
-                withContext "proxy" $
+                withContext CtxKore $
                     logMessage $
                         Text.pack $
                             "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
@@ -126,7 +128,7 @@ respond kore req = case req of
                 pure koreError
 
     loggedKore method r = do
-        withContext "proxy" $
+        withContext CtxKore $
             logMessage' $
                 Text.pack $
                     show method <> " (using kore)"
@@ -147,6 +149,7 @@ main = do
                     , eventlogEnabledUserEvents
                     , logFile
                     , logTimeStamps
+                    , prettyPrintOptions
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -185,7 +188,7 @@ main = do
                     null logContextsWithcustomLevelContexts
                         || ( let contextStrs =
                                     concatMap
-                                        ( \(Log.SomeEntry _ c) -> Text.encodeUtf8 <$> Log.oneLineContextDoc c
+                                        ( \(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c
                                         )
                                         ctxt
                               in any (flip Booster.Log.Context.mustMatch contextStrs) logContextsWithcustomLevelContexts
@@ -217,11 +220,13 @@ main = do
             filteredBoosterContextLogger =
                 flip filterLogger boosterContextLogger $ \(LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                     alwaysDisplay
-                        || let ctxt = map (\(LogContext lc) -> Text.encodeUtf8 $ toTextualLog lc) ctxts
+                        || let ctxt = map (Text.encodeUtf8 . toTextualLog) ctxts
                             in any (flip Booster.Log.Context.mustMatch ctxt) logContextsWithcustomLevelContexts
 
             runBoosterLogger :: Booster.Log.LoggerT IO a -> IO a
-            runBoosterLogger = flip runReaderT filteredBoosterContextLogger . Booster.Log.unLoggerT
+            runBoosterLogger =
+                flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
+                    . Booster.Log.unLoggerT
 
         liftIO $ void $ withBugReport (ExeName "kore-rpc-dev") BugReportOnError $ \_reportDirectory ->
             Kore.Log.BoosterAdaptor.withLogger koreLogOptions $ \actualLogAction -> do
@@ -230,15 +235,15 @@ main = do
                 kore@KoreServer{runSMT} <-
                     mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
                 runBoosterLogger $
-                    Booster.Log.withContext "proxy" $
+                    Booster.Log.withContext CtxKore $
                         Booster.Log.logMessage' ("Starting RPC server" :: Text.Text)
 
-                let koreRespond :: Respond (API 'Req) (LoggerT IO) (API 'Res)
-                    koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
+                let koreRespond :: Id -> Respond (API 'Req) (LoggerT IO) (API 'Res)
+                    koreRespond reqId = Kore.respond (fromId reqId) kore.serverState (ModuleName kore.mainModule) runSMT
                     server =
                         jsonRpcServer
                             srvSettings
-                            (const $ runBoosterLogger . respond koreRespond)
+                            (\rawReq -> runBoosterLogger . respond (koreRespond $ getReqId rawReq))
                             [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
                     interruptHandler _ = do
                         when (logLevel >= LevelInfo) $

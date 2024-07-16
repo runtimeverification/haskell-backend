@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RankNTypes #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -24,6 +26,8 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
+import Booster.Pattern.Existential (instantiateExistentials)
+import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -35,9 +39,10 @@ import Data.Aeson (object, (.=))
 import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
-import Data.Data (Data)
+import Data.Data (Data, Proxy)
 import Data.Foldable (foldl', toList, traverse_)
-import Data.List (intersperse, partition)
+import Data.List (foldl1', intersperse, partition)
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
@@ -48,7 +53,6 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
-import GHC.TypeLits (KnownSymbol)
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -60,14 +64,15 @@ import Booster.LLVM qualified as LLVM
 import Booster.Log
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
-import Booster.Pattern.Existential (instantiateExistentials)
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
+import Booster.Pattern.Pretty
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..))
+import Kore.JsonRpc.Types.ContextLog (CLContext (CLWithId), IdContext (CtxCached))
 import Kore.Util (showHashHex)
 
 newtype EquationT io a
@@ -77,6 +82,7 @@ newtype EquationT io a
 
 instance MonadIO io => LoggerMIO (EquationT io) where
     getLogger = EquationT $ asks logger
+    getPrettyModifiers = EquationT $ asks prettyModifiers
     withLogger modL (EquationT m) = EquationT $ withReaderT (\cfg@EquationConfig{logger} -> cfg{logger = modL logger}) m
 
 throw :: Monad io => EquationFailure -> EquationT io a
@@ -105,31 +111,31 @@ data EquationFailure
     | UndefinedTerm Term LLVM.LlvmError
     deriving stock (Eq, Show, Data)
 
-instance Pretty EquationFailure where
-    pretty = \case
+instance Pretty (PrettyWithModifiers mods EquationFailure) where
+    pretty (PrettyWithModifiers f) = case f of
         IndexIsNone t ->
-            "Index 'None' for term " <> pretty t
+            "Index 'None' for term " <> pretty' @mods t
         TooManyIterations count start end ->
             vsep
                 [ "Unable to finish evaluation in " <> pretty count <> " iterations"
-                , "Started with: " <> pretty start
-                , "Stopped at: " <> pretty end
+                , "Started with: " <> pretty' @mods start
+                , "Stopped at: " <> pretty' @mods end
                 ]
         EquationLoop ts ->
-            vsep $ "Evaluation produced a loop:" : map pretty ts
+            vsep $ "Evaluation produced a loop:" : map (pretty' @mods) ts
         TooManyRecursions ts ->
             vsep $
                 "Recursion limit exceeded. The following terms were evaluated:"
-                    : map pretty ts
+                    : map (pretty' @mods) ts
         SideConditionFalse p ->
             vsep
                 [ "A side condition was found to be false during evaluation (pruning)"
-                , pretty p
+                , pretty' @mods p
                 ]
         UndefinedTerm t (LLVM.LlvmError err) ->
             vsep
                 [ "Term"
-                , pretty t
+                , pretty' @mods t
                 , "is undefined: "
                 , pretty (BS.unpack err)
                 ]
@@ -143,6 +149,7 @@ data EquationConfig = EquationConfig
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
+    , prettyModifiers :: ModifiersRep
     }
 
 data EquationState = EquationState
@@ -166,6 +173,10 @@ instance Monoid SimplifierCache where
 data CacheTag = LLVM | Equations
     deriving stock (Show)
 
+instance ContextFor CacheTag where
+    withContextFor t =
+        withContext_ (CLWithId . CtxCached $ Text.toLower $ Text.pack $ show t)
+
 data EquationMetadata = EquationMetadata
     { location :: Maybe Location
     , label :: Maybe Label
@@ -173,13 +184,13 @@ data EquationMetadata = EquationMetadata
     }
     deriving stock (Eq, Show)
 
-startState :: SimplifierCache -> EquationState
-startState cache =
+startState :: SimplifierCache -> Set Predicate -> EquationState
+startState cache known =
     EquationState
         { termStack = mempty
         , recursionStack = []
         , changed = False
-        , predicates = mempty
+        , predicates = known
         , cache
         }
 
@@ -219,7 +230,7 @@ popRecursion = do
     s <- getState
     if null s.recursionStack
         then do
-            withContext "abort" $
+            withContext CtxAbort $
                 logMessage ("Trying to pop an empty recursion stack" :: Text)
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
@@ -240,16 +251,16 @@ fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
-    withContext "warning" $
+    withContext CtxWarn $
         logMessage msg
 
 checkForLoop :: LoggerMIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
     whenJust (Seq.elemIndexL t termStack) $ \i -> do
-        withContext "abort" $ do
+        withContext CtxAbort $ do
             logWarn "Equation loop detected."
-            withContext "detail" $
+            withContext CtxDetail $
                 logMessage $
                     renderOneLineText $
                         hsep
@@ -273,13 +284,15 @@ runEquationT ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
+    Set Predicate ->
     EquationT io a ->
     io (Either EquationFailure a, SimplifierCache)
-runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
+runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
+    prettyModifiers <- getPrettyModifiers
     (res, endState) <-
-        flip runStateT (startState sCache) $
+        flip runStateT (startState sCache known) $
             runExceptT $
                 runReaderT
                     m
@@ -290,6 +303,7 @@ runEquationT definition llvmApi smtSolver sCache (EquationT m) = do
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
                         , logger
+                        , prettyModifiers
                         }
     pure (res, endState.cache)
 
@@ -305,7 +319,7 @@ iterateEquations direction preference startTerm = do
     checkCounter counter = do
         config <- getConfig
         when (counter > config.maxRecursion) $ do
-            withContext "abort" $ do
+            withContext CtxAbort $ do
                 logWarn
                     "Recursion limit exceeded. The limit can be increased by \
                     \ restarting the server with '--equation-max-recursion N'."
@@ -318,12 +332,15 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                withContext "abort" $ do
+                withContext CtxAbort $ do
                     logWarn $
                         renderOneLineText $
                             "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                    withContext "detail" . logMessage . renderOneLineText $
-                        "Final term:" <+> pretty currentTerm
+                    withContext CtxDetail $
+                        getPrettyModifiers >>= \case
+                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                logMessage . renderOneLineText $
+                                    "Final term:" <+> pretty' @mods currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -352,18 +369,18 @@ llvmSimplify term = do
   where
     evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
-        | isConcrete t && attributes.canBeEvaluated = withContext "llvm" $ do
+        | isConcrete t && attributes.canBeEvaluated = withContext CtxLlvm . withTermContext t $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
-                        withContext "abort" $
+                        withContext CtxAbort $
                             logWarn $
                                 "LLVM backend error detected: " <> Text.decodeUtf8 e
                         throw $ UndefinedTerm t $ LlvmError e
                     Right result -> do
                         when (result /= t) $ do
                             setChanged
-                            withContext "success" $
+                            withContext CtxSuccess $
                                 withTermContext result $
                                     pure ()
                         pure result
@@ -380,10 +397,11 @@ evaluateTerm ::
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
+    Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm direction def llvmApi smtSolver =
-    runEquationT def llvmApi smtSolver mempty
+evaluateTerm direction def llvmApi smtSolver knownPredicates =
+    runEquationT def llvmApi smtSolver mempty knownPredicates
         . evaluateTerm' direction
 
 -- version for internal nested evaluation
@@ -405,16 +423,15 @@ evaluatePattern ::
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
-evaluatePattern def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache . evaluatePattern'
+evaluatePattern def mLlvmLibrary smtSolver cache pat =
+    runEquationT def mLlvmLibrary smtSolver cache pat.constraints . evaluatePattern' $ pat
 
 -- version for internal nested evaluation
 evaluatePattern' ::
     LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
-    pushConstraints constraints
+evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     newTerm <- withTermContext term $ evaluateTerm' BottomUp term
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
@@ -441,7 +458,7 @@ evaluateConstraints ::
     Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
 evaluateConstraints def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache . evaluateConstraints'
+    runEquationT def mLlvmLibrary smtSolver cache mempty . evaluateConstraints'
 
 evaluateConstraints' ::
     LoggerMIO io =>
@@ -532,10 +549,11 @@ cached cacheTag cb t@(Term attributes _)
             Just cachedTerm -> do
                 when (t /= cachedTerm) $ do
                     setChanged
-                    withContext "success" $
-                        withContext "cached" $
-                            withTermContext cachedTerm $
-                                pure ()
+                    withTermContext t $
+                        withContext CtxSuccess $
+                            withContextFor cacheTag $
+                                withTermContext cachedTerm $
+                                    pure ()
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
@@ -564,12 +582,11 @@ applyHooksAndEquations pref term = do
         case term of
             SymbolApplication sym _sorts args
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
-                    let hookName = maybe "UNKNOWN" Text.decodeUtf8 sym.attributes.hook
-                        onError e = do
-                            withContext "abort" $
+                    let onError e = do
+                            withContext CtxAbort $
                                 logWarn e
                             throw (InternalError e)
-                    withContext (LogContext $ HookCtxt hookName) $
+                    withContextFor sym $
                         either onError checkChanged $
                             runExcept (hook args)
             _other -> pure Nothing
@@ -578,9 +595,9 @@ applyHooksAndEquations pref term = do
     -- cannot blindly set the changed flag when we have applied a hook
     checkChanged :: Maybe Term -> EquationT io (Maybe Term)
     checkChanged Nothing =
-        withContext "failure" (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
+        withContext CtxFailure (logMessage ("Hook returned no result" :: Text)) >> pure Nothing
     checkChanged (Just t) =
-        withContext "success" $ withTermContext t $ do
+        withContext CtxSuccess $ withTermContext t $ do
             unless (t == term) setChanged
             pure (Just t)
 
@@ -622,7 +639,7 @@ handleFunctionEquation continue abort = \case
     IndeterminateCondition{} -> abort
     ConditionFalse _ -> continue
     EnsuresFalse p -> do
-        withContext "abort" $
+        withContext CtxAbort $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> abort
@@ -635,7 +652,7 @@ handleSimplificationEquation continue _abort = \case
     IndeterminateCondition{} -> continue
     ConditionFalse _ -> continue
     EnsuresFalse p -> do
-        withContext "abort" $
+        withContext CtxAbort $
             logMessage ("A side condition was found to be false during evaluation (pruning)" :: Text)
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> continue
@@ -643,7 +660,7 @@ handleSimplificationEquation continue _abort = \case
 
 applyEquations ::
     forall io tag.
-    KnownSymbol tag =>
+    ContextFor (RewriteRule tag) =>
     LoggerMIO io =>
     Theory (RewriteRule tag) ->
     ResultHandler io ->
@@ -652,7 +669,7 @@ applyEquations ::
 applyEquations theory handler term = do
     let index = Idx.termTopIndex term
     when (Idx.hasNone index) $ do
-        withContext "abort" $ logMessage ("Index 'None'" :: Text)
+        withContext CtxAbort $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
     let
         indexes = Set.toList $ Idx.coveringIndexes index
@@ -680,18 +697,18 @@ applyEquations theory handler term = do
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
         withRuleContext eq (applyEquation term eq) >>= \case
-            Right t -> setChanged >> (withContext (LogContext eq) $ withContext "success" $ withTermContext t $ pure t)
+            Right t -> setChanged >> (withContextFor eq $ withContext CtxSuccess $ withTermContext t $ pure t)
             Left (m, err) ->
                 handler
-                    ( ( withContext (LogContext eq) $
+                    ( ( withContextFor eq $
                             m $
-                                withContext "failure" . withContext "continue"
+                                withContext CtxFailure . withContext CtxContinue
                       )
                         >> processEquations rest
                     )
-                    ( ( withContext (LogContext eq) $
+                    ( ( withContextFor eq $
                             m $
-                                withContext "failure" . withContext "break"
+                                withContext CtxFailure . withContext CtxBreak
                       )
                         >> pure term
                     )
@@ -699,174 +716,232 @@ applyEquations theory handler term = do
 
 applyEquation ::
     forall io tag.
-    KnownSymbol tag =>
     LoggerMIO io =>
     Term ->
     RewriteRule tag ->
     EquationT
         io
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
-applyEquation term rule = runExceptT $ do
-    -- ensured by internalisation: no existentials in equations
-    -- TODO: allow existentials in the requires clause
-    unless (null rule.existentials) $ do
-        withContext "abort" $
-            logMessage ("Equation with existentials" :: Text)
-        lift . throw . InternalError $
-            "Equation with existentials: " <> Text.pack (show rule)
-    -- immediately cancel if not preserving definedness
-    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-        throwE
-            ( \ctxt ->
-                ctxt $
-                    logMessage $
-                        renderOneLineText $
-                            "Uncertain about definedness of rule due to:"
-                                <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-            , RuleNotPreservingDefinedness
-            )
-    -- immediately cancel if rule has concrete() flag and term has variables
-    when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
-        throwE
-            ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
-            , MatchConstraintViolated Concrete "* (term has variables)"
-            )
-    -- match lhs
-    koreDef <- (.definition) <$> lift getConfig
-    case matchTerms Eval koreDef rule.lhs term of
-        MatchFailed failReason ->
-            throwE
-                ( \ctxt ->
-                    withContext "match" $
-                        ctxt $
-                            logPretty failReason
-                , FailedMatch failReason
-                )
-        MatchIndeterminate remainder ->
-            throwE
-                ( \ctxt ->
-                    withContext "match" $
-                        ctxt $
-                            logMessage $
-                                WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+applyEquation term rule =
+    runExceptT $
+        getPrettyModifiers >>= \case
+            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
+                -- ensured by internalisation: no existentials in equations
+                unless (null rule.existentials) $ do
+                    withContext CtxAbort $
+                        logMessage ("Equation with existentials" :: Text)
+                    lift . throw . InternalError $
+                        "Equation with existentials: " <> Text.pack (show rule)
+                -- immediately cancel if not preserving definedness
+                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+                    throwE
+                        ( \ctxt ->
+                            ctxt $
+                                logMessage $
                                     renderOneLineText $
-                                        "Uncertain about match with rule. Remainder:" <+> pretty remainder
-                , IndeterminateMatch
-                )
-        MatchSuccess subst -> do
-            -- cancel if condition
-            -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
-            --                        symbolic(v) -> not $ t isConstructorLike(t)
-            -- is violated
-            withContext "match" $ checkConcreteness rule.attributes.concreteness subst
-
-            withContext "match" $ withContext "success" $ do
-                logMessage rule
-                withContext "substitution"
-                    $ logMessage
-                    $ WithJsonMessage
-                        (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
-                    $ renderOneLineText
-                    $ "Substitution:"
-                        <+> (hsep $ intersperse "," $ map (\(k, v) -> pretty k <+> "->" <+> pretty v) $ Map.toList subst)
-
-            -- instantiate the requires clause with the obtained substitution
-            let required =
-                    concatMap
-                        (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
-                        rule.requires
-
-            knownPredicates <- (.predicates) <$> lift getState
-
-            let partitionExistentialRequires :: [Predicate] -> ([Predicate], [Predicate])
-                partitionExistentialRequires = foldl' decide ([], [])
-                  where
-                    decide (hasEx, noHasEx) p
-                        | hasExistentials p = (p : hasEx, noHasEx)
-                        | otherwise = (hasEx, p : noHasEx)
-
-                hasExistentials :: Predicate -> Bool
-                hasExistentials (Predicate t) = any (isExVar . (.variableName)) (freeVariables t)
-
-                listExistentials :: Predicate -> Set VarName
-                listExistentials (Predicate t) = Set.filter isExVar . Set.map (.variableName) . freeVariables $ t
-
-            -- If we get an equation with existentials in the requires clause, we must have them all instantiated
-            let (predicateWithEx, predicatesWithNoEx) = partitionExistentialRequires required
-                instantiatedExistentialPredicates = map (instantiateExistentials knownPredicates) predicateWithEx
-
-            -- detect if any existentials still remain
-            when (any hasExistentials instantiatedExistentialPredicates) $ do
-                -- what to do here? Abort equation or simply throw away the clauses with existentials?
-                -- Let's abort for now.
-
-                let remainingExistentials =
-                        Set.toList . Set.map Text.decodeLatin1 . Set.unions . map listExistentials $
-                            instantiatedExistentialPredicates
-
-                withContext "abort" $
-                    logMessage $
-                        "Could not instantiate existentials: " <> (Text.intercalate "," remainingExistentials)
-
-            -- all existentials are instantiated: assemble the requires clause again
-            let requiredWithInstantiatedExistentials = predicatesWithNoEx <> instantiatedExistentialPredicates
-
-            -- If the required condition is _syntactically_ present in
-            -- the prior (known constraints), we don't check it.
-            toCheck <- lift $ filterOutKnownConstraints knownPredicates requiredWithInstantiatedExistentials
-
-            -- check the filtered requires clause conditions
-            unclearConditions <-
-                catMaybes
-                    <$> mapM
-                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                                        "Uncertain about definedness of rule due to:"
+                                            <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+                        , RuleNotPreservingDefinedness
                         )
-                        toCheck
-
-            -- unclear conditions may have been simplified and
-            -- could now be syntactically present in the path constraints, filter again
-            stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
-
-            -- abort if any of the conditions is still unclear at that point
-            unless (null stillUnclear) $
-                throwE
-                    ( \ctxt ->
-                        ctxt $
-                            logMessage $
-                                renderOneLineText $
-                                    "Uncertain about a condition(s) in rule:" <+> hsep (intersperse "," $ map pretty unclearConditions)
-                    , IndeterminateCondition unclearConditions
-                    )
-
-            -- check ensured conditions, filter any
-            -- true ones, prune if any is false
-            let ensured =
-                    concatMap
-                        (splitBoolPredicates . substituteInPredicate subst)
-                        (Set.toList rule.ensures)
-            ensuredConditions <-
-                -- throws if an ensured condition found to be false
-                catMaybes
-                    <$> mapM
-                        ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                -- immediately cancel if rule has concrete() flag and term has variables
+                when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
+                    throwE
+                        ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
+                        , MatchConstraintViolated Concrete "* (term has variables)"
                         )
-                        ensured
-            lift $ pushConstraints $ Set.fromList ensuredConditions
-            pure $ substituteInTerm subst rule.rhs
+                -- match lhs
+                koreDef <- (.definition) <$> lift getConfig
+                case matchTerms Eval koreDef rule.lhs term of
+                    MatchFailed failReason ->
+                        throwE
+                            ( \ctxt ->
+                                withContext CtxMatch $
+                                    ctxt $
+                                        logPretty' @mods failReason
+                            , FailedMatch failReason
+                            )
+                    MatchIndeterminate remainder ->
+                        throwE
+                            ( \ctxt ->
+                                withContext CtxMatch $
+                                    ctxt $
+                                        logMessage $
+                                            WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                                renderOneLineText $
+                                                    "Uncertain about match with rule. Remainder:"
+                                                        <+> ( hsep $
+                                                                punctuate comma $
+                                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                        NonEmpty.toList remainder
+                                                            )
+                            , IndeterminateMatch
+                            )
+                    MatchSuccess subst -> do
+                        -- cancel if condition
+                        -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
+                        --                        symbolic(v) -> not $ t isConstructorLike(t)
+                        -- is violated
+                        withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
+
+                        withContext CtxMatch $ withContext CtxSuccess $ do
+                            logMessage rule
+                            withContext CtxSubstitution
+                                $ logMessage
+                                $ WithJsonMessage
+                                    (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
+                                $ renderOneLineText
+                                $ "Substitution:"
+                                    <+> ( hsep $
+                                            intersperse "," $
+                                                map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
+                                                    Map.toList subst
+                                        )
+
+                        -- instantiate the requires clause with the obtained substitution
+                        let required =
+                                concatMap
+                                    (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
+                                    rule.requires
+                        -- If the required condition is _syntactically_ present in
+                        -- the prior (known constraints), we don't check it.
+                        knownPredicates <- (.predicates) <$> lift getState
+
+                        let partitionExistentialRequires :: [Predicate] -> ([Predicate], [Predicate])
+                            partitionExistentialRequires = foldl' decide ([], [])
+                              where
+                                decide (hasEx, noHasEx) p
+                                    | hasExistentials p = (p : hasEx, noHasEx)
+                                    | otherwise = (hasEx, p : noHasEx)
+
+                            hasExistentials :: Predicate -> Bool
+                            hasExistentials (Predicate t) = any (isExVar . (.variableName)) (freeVariables t)
+
+                            listExistentials :: Predicate -> Set VarName
+                            listExistentials (Predicate t) = Set.filter isExVar . Set.map (.variableName) . freeVariables $ t
+
+                        -- If we get an equation with existentials in the requires clause, we must have them all instantiated
+                        let (predicateWithEx, predicatesWithNoEx) = partitionExistentialRequires required
+                            instantiatedExistentialPredicates = map (instantiateExistentials knownPredicates) predicateWithEx
+
+                        -- detect if any existentials still remain
+                        when (any hasExistentials instantiatedExistentialPredicates) $ do
+                            -- what to do here? Abort equation or simply throw away the clauses with existentials?
+                            -- Let's abort for now.
+                            let remainingExistentials =
+                                    Set.toList . Set.map Text.decodeLatin1 . Set.unions . map listExistentials $
+                                        instantiatedExistentialPredicates
+
+                            withContext CtxAbort $
+                                logMessage $
+                                    "Could not instantiate existentials: " <> (Text.intercalate "," remainingExistentials)
+
+                        -- all existentials are instantiated: assemble the requires clause again
+                        let requiredWithInstantiatedExistentials = predicatesWithNoEx <> instantiatedExistentialPredicates
+
+                        toCheck <- lift $ filterOutKnownConstraints knownPredicates requiredWithInstantiatedExistentials
+
+                        -- check the filtered requires clause conditions
+                        unclearConditions <-
+                            catMaybes
+                                <$> mapM
+                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                                    )
+                                    toCheck
+
+                        -- unclear conditions may have been simplified and
+                        -- could now be syntactically present in the path constraints, filter again
+                        stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
+
+                        mbSolver :: Maybe SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+
+                        -- check any conditions that are still unclear with the SMT solver
+                        -- (or abort if no solver is being used), abort if still unclear after
+                        unless (null stillUnclear) $
+                            let checkWithSmt :: SMT.SMTContext -> EquationT io (Maybe Bool)
+                                checkWithSmt smt =
+                                    SMT.checkPredicates smt knownPredicates mempty (Set.fromList stillUnclear) >>= \case
+                                        Left SMT.SMTSolverUnknown{} -> do
+                                            pure Nothing
+                                        Left other ->
+                                            liftIO $ Exception.throw other
+                                        Right result ->
+                                            pure result
+                             in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
+                                    Nothing -> do
+                                        -- no solver or still unclear: abort
+                                        throwE
+                                            ( \ctx ->
+                                                ctx . logMessage $
+                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                        renderOneLineText
+                                                            ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                                            )
+                                            , IndeterminateCondition stillUnclear
+                                            )
+                                    Just False -> do
+                                        -- actually false given path condition: fail
+                                        let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
+                                        throwE
+                                            ( \ctx ->
+                                                ctx . logMessage $
+                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                        renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                                            , ConditionFalse failedP
+                                            )
+                                    Just True -> do
+                                        -- can proceed
+                                        pure ()
+
+                        -- check ensured conditions, filter any
+                        -- true ones, prune if any is false
+                        let ensured =
+                                concatMap
+                                    (splitBoolPredicates . substituteInPredicate subst)
+                                    (Set.toList rule.ensures)
+                        ensuredConditions <-
+                            -- throws if an ensured condition found to be false
+                            catMaybes
+                                <$> mapM
+                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                                    )
+                                    ensured
+                        -- check all ensured conditions together with the path condition
+                        whenJust mbSolver $ \solver -> do
+                            lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+                                Right (Just False) -> do
+                                    let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
+                                    throwE
+                                        ( \ctx ->
+                                            ctx . logMessage $
+                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
+                                                    renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
+                                        , EnsuresFalse falseEnsures
+                                        )
+                                Right _other ->
+                                    pure ()
+                                Left SMT.SMTSolverUnknown{} ->
+                                    pure ()
+                                Left other ->
+                                    liftIO $ Exception.throw other
+                        lift $ pushConstraints $ Set.fromList ensuredConditions
+                        pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
         let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
         unless (null knownTrue) $
-            logMessage $
-                renderOneLineText $
-                    "Known true side conditions (won't check):" <+> hsep (intersperse "," $ map pretty knownTrue)
+            getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    logMessage $
+                        renderOneLineText $
+                            "Known true side conditions (won't check):"
+                                <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
         pure toCheck
 
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
-    checkConstraint whenBottom (Predicate p) = withContext "constraint" $ do
+    checkConstraint whenBottom (Predicate p) = withContext CtxConstraint $ do
         let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
             fallBackToUnsimplifiedOrBottom = \case
                 UndefinedTerm{} -> pure FalseBool
@@ -955,10 +1030,11 @@ simplifyConstraint ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     SimplifierCache ->
+    Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi mbSMT cache (Predicate p) = do
-    runEquationT def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi mbSMT cache knownPredicates (Predicate p) = do
+    runEquationT def mbApi mbSMT cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     LoggerMIO io =>
@@ -969,7 +1045,7 @@ simplifyConstraints ::
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)
 simplifyConstraints def mbApi mbSMT cache ps =
-    runEquationT def mbApi mbSMT cache $
+    runEquationT def mbApi mbSMT cache mempty $
         concatMap splitAndBools
             <$> mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
@@ -984,10 +1060,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    withContext "llvm" $
+                    withContext CtxLlvm $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
-                                withContext "abort" $
+                                withContext CtxAbort $
                                     logWarn $
                                         "LLVM backend error detected: " <> Text.decodeUtf8 e
                                 throw $ UndefinedTerm t $ LlvmError e
@@ -996,7 +1072,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
                                         if res
                                             then TrueBool
                                             else FalseBool
-                                withContext "success" $
+                                withContext CtxSuccess $
                                     withTermContext result $
                                         pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t

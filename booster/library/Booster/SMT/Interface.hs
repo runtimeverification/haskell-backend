@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -22,19 +25,22 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
+import Data.Data (Proxy)
 import Data.Either (isLeft)
 import Data.Either.Extra (fromLeft', fromRight')
+import Data.IORef
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
-import Prettyprinter (Pretty, hsep, pretty)
+import Prettyprinter (Pretty, hsep)
 import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
 import Booster.Log qualified as Log
 import Booster.Pattern.Base
+import Booster.Pattern.Pretty
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
@@ -82,16 +88,16 @@ declareVariables transState = do
      - set user-specified timeout for queries
 -}
 initSolver :: Log.LoggerMIO io => KoreDefinition -> SMTOptions -> io SMT.SMTContext
-initSolver def smtOptions = Log.withContext "smt" $ do
+initSolver def smtOptions = Log.withContext Log.CtxSMT $ do
     prelude <- translatePrelude def
 
     Log.logMessage ("Starting new SMT solver" :: Text)
     ctxt <- mkContext smtOptions prelude
 
     evalSMT ctxt $ do
-        checkPrelude
         -- set timeout value for the general queries
         runCmd_ $ SetTimeout smtOptions.timeout
+        checkPrelude
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
@@ -106,11 +112,14 @@ swapSmtOptions smtOptions = do
 -- | Stop the solver, initialise a new one and put in the @SMTContext@
 hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 hardResetSolver smtOptions = do
-    Log.logMessage ("Starting new SMT solver" :: Text)
+    Log.logMessage ("Restarting SMT solver" :: Text)
     ctxt <- SMT get
-    liftIO ctxt.solverClose
+    liftIO $ join $ readIORef ctxt.solverClose
     (solver, handle) <- connectToSolver
-    SMT $ put ctxt{solver, solverClose = Backend.close handle}
+    liftIO $ do
+        writeIORef ctxt.solver solver
+        writeIORef ctxt.solverClose $ Backend.close handle
+
     checkPrelude
     swapSmtOptions smtOptions
 
@@ -168,13 +177,13 @@ getModelFor ::
     Map Variable Term -> -- supplied substitution
     io (Either SMTError (Either SMT.Response (Map Variable Term)))
 getModelFor ctxt ps subst
-    | null ps && Map.null subst = Log.withContext "smt" $ do
+    | null ps && Map.null subst = Log.withContext Log.CtxSMT $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
         pure . Right . Right $ Map.empty
-    | Left errMsg <- translated = Log.withContext "smt" $ do
+    | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
         Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
-    | Right (smtAsserts, transState) <- translated = Log.withContext "smt" $ do
+    | Right (smtAsserts, transState) <- translated = Log.withContext Log.CtxSMT $ do
         evalSMT ctxt . runExceptT $ do
             lift $ hardResetSolver ctxt.options
             solve smtAsserts transState
@@ -266,8 +275,10 @@ getModelFor ctxt ps subst
                     (const . ((`Set.member` sortsToTranslate) . (.variableSort)))
                     freeVarsMap
         unless (Map.null untranslatableVars) $
-            let vars = Pretty.renderText . hsep . map pretty $ Map.keys untranslatableVars
-             in Log.logMessage ("Untranslatable variables in model: " <> vars)
+            Log.getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    let vars = Pretty.renderText . hsep . map (pretty' @mods) $ Map.keys untranslatableVars
+                     in Log.logMessage ("Untranslatable variables in model: " <> vars)
 
         response <-
             if Map.null freeVarsMap
@@ -293,8 +304,8 @@ getModelFor ctxt ps subst
             other ->
                 throwSMT' $ "Unexpected SMT response to GetValue: " <> show other
 
-mkComment :: Pretty a => a -> BS.ByteString
-mkComment = BS.pack . Pretty.renderDefault . pretty
+mkComment :: Pretty (PrettyWithModifiers '[Decoded] a) => a -> BS.ByteString
+mkComment = BS.pack . Pretty.renderDefault . pretty' @'[Decoded]
 
 {- | Check a predicates, given a set of predicates as known truth.
 
@@ -330,10 +341,10 @@ checkPredicates ::
     io (Either SMTError (Maybe Bool))
 checkPredicates ctxt givenPs givenSubst psToCheck
     | null psToCheck = pure . Right $ Just True
-    | Left errMsg <- translated = Log.withContext "smt" $ do
-        Log.withContext "abort" $ Log.logMessage $ "SMT translation error: " <> errMsg
+    | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
+        Log.withContext Log.CtxAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
         pure . Left . SMTTranslationError $ errMsg
-    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext "smt" $ do
+    | Right ((smtGiven, sexprsToCheck), transState) <- translated = Log.withContext Log.CtxSMT $ do
         evalSMT ctxt . runExceptT $ do
             lift $ hardResetSolver ctxt.options
             solve smtGiven sexprsToCheck transState
@@ -354,8 +365,10 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 , "assertions and a substitution of size"
                 , pack (show $ Map.size givenSubst)
                 ]
-        Log.logMessage . Pretty.renderOneLineText $
-            hsep ("Predicates to check:" : map pretty (Set.toList psToCheck))
+        Log.getPrettyModifiers >>= \case
+            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                Log.logMessage . Pretty.renderOneLineText $
+                    hsep ("Predicates to check:" : map (pretty' @mods) (Set.toList psToCheck))
         result <- interactWithSolver smtGiven sexprsToCheck
         Log.logMessage $
             "Check of Given ∧ P and Given ∧ !P produced "
@@ -400,13 +413,13 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     failBecauseUnknown =
         smtRun GetReasonUnknown >>= \case
             ReasonUnknown reason -> do
-                Log.withContext "abort" $
+                Log.withContext Log.CtxAbort $
                     Log.logMessage $
                         "Returned Unknown. Reason: " <> reason
                 throwE $ SMTSolverUnknown reason givenPs psToCheck
             other -> do
                 let msg = "Unexpected result while calling ':reason-unknown': " <> show other
-                Log.withContext "abort" $ Log.logMessage $ Text.pack msg
+                Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
                 throwSMT' msg
 
     -- Given the known truth and the expressions to check,

@@ -31,6 +31,7 @@ import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Log qualified
 import Booster.Log.Context qualified as Booster.Log
+import Booster.Pattern.Pretty
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
@@ -60,6 +61,7 @@ main = do
             , smtOptions
             , equationOptions
             , indexCells
+            , prettyPrintOptions
             , eventlogEnabledUserEvents
             , logFile
             } = options
@@ -98,6 +100,7 @@ main = do
             logTimeStamps
             timeStampsFormat
             logFormat
+            prettyPrintOptions
   where
     withLlvmLib libFile m = case libFile of
         Nothing -> m Nothing
@@ -128,8 +131,9 @@ runServer ::
     Bool ->
     TimestampFormat ->
     LogFormat ->
+    [ModifierT] ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat =
+runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
     do
         let timestampFlag = case timeStampsFormat of
                 Pretty -> PrettyTimestamps
@@ -143,7 +147,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLev
                 filteredBoosterContextLogger =
                     flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                         alwaysDisplay
-                            || let ctxt = map (\(Booster.Log.LogContext lc) -> Text.encodeUtf8 $ Booster.Log.toTextualLog lc) ctxts
+                            || let ctxt = map (Text.encodeUtf8 . Booster.Log.toTextualLog) ctxts
                                 in any (flip Booster.Log.mustMatch ctxt) $
                                     logContexts
                                         <> concatMap (\case Log.LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
@@ -159,9 +163,9 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLev
             jsonRpcServer
                 (serverSettings port "*")
                 ( const $
-                    flip runReaderT filteredBoosterContextLogger
+                    flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                         . Booster.Log.unLoggerT
-                        . Booster.Log.withContext "booster"
+                        . Booster.Log.withContext Booster.Log.CtxBooster
                         . respond stateVar
                 )
                 [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]

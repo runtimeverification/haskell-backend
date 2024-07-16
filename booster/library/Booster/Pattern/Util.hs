@@ -31,6 +31,7 @@ module Booster.Pattern.Util (
     cellVariableStats,
     stripMarker,
     markAsExVar,
+    isExVar,
     markAsRuleVar,
     incrementNameCounter,
 ) where
@@ -125,6 +126,9 @@ markAsRuleVar = ("Rule#" <>)
 
 markAsExVar :: VarName -> VarName
 markAsExVar = ("Ex#" <>)
+
+isExVar :: VarName -> Bool
+isExVar = BS.isPrefixOf "Ex#"
 
 {- | Strip variable provenance prefixes introduced using "markAsRuleVar" and "markAsExVar"
 in "Syntax.ParsedKore.Internalize"
