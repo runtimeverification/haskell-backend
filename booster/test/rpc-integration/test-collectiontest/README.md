@@ -8,7 +8,7 @@ while adding the numbers it counts down from to the `Collection`.
 
 * `state-from-12.execute` request: starts from `State ( .Set, 12 )`
    - Expected response: `State( {1..12}, 0}`
-* `state-map-lookup.simplify` request for `{ 1 -> 111, 2 -> AVARIABLE }[1] orDefault 0`
+* `state-map-lookup.simplify` request for `{ 1 -> 111, 2 -> AVARIABLE }[1]`
    - Expected response: `111` (as a `KItem`)
 * `state-map-lookupOrDefault.simplify` request for `{ 1 -> 111, 2 -> AVARIABLE }[0] orDefault 0`
    - Expected response: `0` (as a `KItem`)
