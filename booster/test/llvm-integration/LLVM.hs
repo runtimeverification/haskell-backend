@@ -310,6 +310,7 @@ testDef =
         Map.empty -- no rules
         Map.empty -- no function equations
         Map.empty -- no simplifications
+        Map.empty -- no existential rules
         Map.empty -- no ceils
 
 {- To refresh the definition below, run this using the repl and fix up
