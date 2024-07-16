@@ -58,13 +58,69 @@
                                                             ]
                                                         },
                                                         {
-                                                            "tag": "EVar",
-                                                            "name": "VarCONTINUATION",
-                                                            "sort": {
-                                                                "tag": "SortApp",
-                                                                "name": "SortK",
-                                                                "args": []
-                                                            }
+                                                            "tag": "App",
+                                                            "name": "kseq",
+                                                            "sorts": [],
+                                                            "args": [
+                                                                {
+                                                                    "tag": "App",
+                                                                    "name": "inj",
+                                                                    "sorts": [
+                                                                        {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortInternalOp",
+                                                                            "args": []
+                                                                        },
+                                                                        {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortKItem",
+                                                                            "args": []
+                                                                        }
+                                                                    ],
+                                                                    "args": [
+                                                                        {
+                                                                            "tag": "App",
+                                                                            "name": "Lbl'Hash'pc'LSqBUndsRSqBUnds'EVM'Unds'InternalOp'Unds'OpCode",
+                                                                            "sorts": [],
+                                                                            "args": [
+                                                                                {
+                                                                                    "tag": "App",
+                                                                                    "name": "inj",
+                                                                                    "sorts": [
+                                                                                        {
+                                                                                            "tag": "SortApp",
+                                                                                            "name": "SortBinStackOp",
+                                                                                            "args": []
+                                                                                        },
+                                                                                        {
+                                                                                            "tag": "SortApp",
+                                                                                            "name": "SortOpCode",
+                                                                                            "args": []
+                                                                                        }
+                                                                                    ],
+                                                                                    "args": [
+                                                                                        {
+                                                                                            "tag": "App",
+                                                                                            "name": "LblJUMPI'Unds'EVM'Unds'BinStackOp",
+                                                                                            "sorts": [],
+                                                                                            "args": []
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "tag": "EVar",
+                                                                    "name": "VarCONTINUATION",
+                                                                    "sort": {
+                                                                        "tag": "SortApp",
+                                                                        "name": "SortK",
+                                                                        "args": []
+                                                                    }
+                                                                }
+                                                            ]
                                                         }
                                                     ]
                                                 }
@@ -8534,10 +8590,10 @@
             },
             {
                 "tag": "rewrite",
-                "origin": "booster",
+                "origin": "proxy",
                 "result": {
                     "tag": "success",
-                    "rule-id": "20bc9774d59030dcada92e997351315ed198a464546f5b36d67578cfd12938d1"
+                    "rule-id": "0ee7a2c1d6ff36a91ac9e9ed19a2c624ba21b97f4511af22044f6169bb8adfa1"
                 }
             },
             {
@@ -8545,7 +8601,7 @@
                 "origin": "booster",
                 "result": {
                     "tag": "success",
-                    "rule-id": "d40db55be13c107a708382df2ae9cea0d6305bbf5d6804de46250d7076a392e2"
+                    "rule-id": "20bc9774d59030dcada92e997351315ed198a464546f5b36d67578cfd12938d1"
                 }
             }
         ]
