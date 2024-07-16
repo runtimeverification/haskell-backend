@@ -26,6 +26,7 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
+import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -39,7 +40,7 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data, Proxy)
 import Data.Foldable (toList, traverse_)
-import Data.List (intersperse, partition)
+import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -817,17 +818,45 @@ applyEquation term rule =
                         -- could now be syntactically present in the path constraints, filter again
                         stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
 
-                        -- abort if any of the conditions is still unclear at that point
+                        mbSolver :: Maybe SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+
+                        -- check any conditions that are still unclear with the SMT solver
+                        -- (or abort if no solver is being used), abort if still unclear after
                         unless (null stillUnclear) $
-                            throwE
-                                ( \ctxt ->
-                                    ctxt $
-                                        logMessage $
-                                            renderOneLineText $
-                                                "Uncertain about a condition(s) in rule:"
-                                                    <+> hsep (intersperse "," $ map (pretty' @mods) unclearConditions)
-                                , IndeterminateCondition unclearConditions
-                                )
+                            let checkWithSmt :: SMT.SMTContext -> EquationT io (Maybe Bool)
+                                checkWithSmt smt =
+                                    SMT.checkPredicates smt knownPredicates mempty (Set.fromList stillUnclear) >>= \case
+                                        Left SMT.SMTSolverUnknown{} -> do
+                                            pure Nothing
+                                        Left other ->
+                                            liftIO $ Exception.throw other
+                                        Right result ->
+                                            pure result
+                             in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
+                                    Nothing -> do
+                                        -- no solver or still unclear: abort
+                                        throwE
+                                            ( \ctx ->
+                                                ctx . logMessage $
+                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                        renderOneLineText
+                                                            ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                                            )
+                                            , IndeterminateCondition stillUnclear
+                                            )
+                                    Just False -> do
+                                        -- actually false given path condition: fail
+                                        let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
+                                        throwE
+                                            ( \ctx ->
+                                                ctx . logMessage $
+                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                        renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                                            , ConditionFalse failedP
+                                            )
+                                    Just True -> do
+                                        -- can proceed
+                                        pure ()
 
                         -- check ensured conditions, filter any
                         -- true ones, prune if any is false
@@ -842,6 +871,24 @@ applyEquation term rule =
                                     ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
                                     )
                                     ensured
+                        -- check all ensured conditions together with the path condition
+                        whenJust mbSolver $ \solver -> do
+                            lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+                                Right (Just False) -> do
+                                    let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
+                                    throwE
+                                        ( \ctx ->
+                                            ctx . logMessage $
+                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
+                                                    renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
+                                        , EnsuresFalse falseEnsures
+                                        )
+                                Right _other ->
+                                    pure ()
+                                Left SMT.SMTSolverUnknown{} ->
+                                    pure ()
+                                Left other ->
+                                    liftIO $ Exception.throw other
                         lift $ pushConstraints $ Set.fromList ensuredConditions
                         pure $ substituteInTerm subst rule.rhs
   where
