@@ -370,10 +370,6 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 Log.logMessage . Pretty.renderOneLineText $
                     hsep ("Predicates to check:" : map (pretty' @mods) (Set.toList psToCheck))
         result <- interactWithSolver smtGiven sexprsToCheck
-        Log.logMessage $
-            "Check of Given ∧ P and Given ∧ !P produced "
-                <> (Text.pack $ show result)
-
         case result of
             (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
             (Sat, Sat) -> do
