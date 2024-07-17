@@ -727,6 +727,7 @@ applyEquation term rule =
         getPrettyModifiers >>= \case
             ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
                 -- ensured by internalisation: no existentials in equations
+                -- TODO allow existentials, but only in the requires clause
                 unless (null rule.existentials) $ do
                     withContext CtxAbort $
                         logMessage ("Equation with existentials" :: Text)
