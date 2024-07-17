@@ -1,5 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{-# OPTIONS -fforce-recomp #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2022
 License     : BSD-3-Clause
@@ -70,6 +72,7 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
+import Data.Version (Version (..), showVersion)
 import GHC.Compact (getCompact)
 import GHC.Generics qualified as GHC
 import GHC.Stack (
@@ -178,6 +181,7 @@ import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
  )
+import Paths_kore (version)
 import Prelude.Kore
 import Pretty qualified as KorePretty
 import SMT (
@@ -358,14 +362,17 @@ mainGlobal exeName maybeEnv localOptionsParser modifiers = do
 
 -- | main function to print version information
 mainVersion :: IO ()
-mainVersion =
-    mapM_
-        putStrLn
-        [ "Git:"
-        , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
-        , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
-        , "  last commit:\t" ++ gitCommitDate
-        ]
+mainVersion
+    | version == Version [0, 1, 0] [] =
+        mapM_
+            putStrLn
+            [ "kore custom build:"
+            , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
+            , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
+            , "  last commit:\t" ++ gitCommitDate
+            ]
+    | otherwise =
+        putStrLn $ showVersion version
   where
     VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
 
