@@ -3,7 +3,7 @@
     "version": 1,
     "term": {
         "tag": "App",
-        "name": "Lbl'UndsLSqBUndsRSqB'orDefault'UndsUnds'MAP'Unds'KItem'Unds'Map'Unds'KItem'Unds'KItem",
+        "name": "LblMap'Coln'lookup",
         "sorts": [],
         "args": [
             {
@@ -159,33 +159,6 @@
                             "args": []
                         },
                         "value": "1"
-                    }
-                ]
-            },
-            {
-                "tag": "App",
-                "name": "inj",
-                "sorts": [
-                    {
-                        "tag": "SortApp",
-                        "name": "SortInt",
-                        "args": []
-                    },
-                    {
-                        "tag": "SortApp",
-                        "name": "SortKItem",
-                        "args": []
-                    }
-                ],
-                "args": [
-                    {
-                        "tag": "DV",
-                        "sort": {
-                            "tag": "SortApp",
-                            "name": "SortInt",
-                            "args": []
-                        },
-                        "value": "0"
                     }
                 ]
             }
