@@ -431,29 +431,34 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         -- assert ground truth
         mapM_ smtRun smtGiven
 
-        consistent <- smtRun CheckSat
-        unless (consistent == Sat) $ do
-            let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
-            Log.logMessage errMsg
-        let ifConsistent check = if (consistent == Sat) then check else pure Unsat
+        groundTruthCheckSmtResult <- smtRun CheckSat
+        Log.logMessage ("Ground truth check returned: " <> show groundTruthCheckSmtResult)
+        case groundTruthCheckSmtResult of
+            Unsat -> do
+                Log.logMessage ("Inconsistent ground truth" :: Text)
+                pure (Unsat, Unsat)
+            Unknown -> do
+                Log.logMessage ("Unknown ground truth" :: Text)
+                pure (Unknown, Unknown)
+            _ -> do
+                -- save ground truth for 2nd check
+                smtRun_ Push
 
-        -- save ground truth for 2nd check
-        smtRun_ Push
+                -- run check for K ∧ P and then for K ∧ !P
+                let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
 
-        -- run check for K ∧ P and then for K ∧ !P
-        let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
+                positive <- do
+                    smtRun_ $ Assert "P" allToCheck
+                    smtRun CheckSat
+                smtRun_ Pop
 
-        positive <- ifConsistent $ do
-            smtRun_ $ Assert "P" allToCheck
-            smtRun CheckSat
-        smtRun_ Pop
-        negative <- ifConsistent $ do
-            smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
-            smtRun CheckSat
-        smtRun_ Pop
+                negative <- do
+                    smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
+                    smtRun CheckSat
+                smtRun_ Pop
 
-        Log.logMessage $
-            "Check of Given ∧ P and Given ∧ !P produced "
-                <> pack (show (positive, negative))
+                Log.logMessage $
+                    "Check of Given ∧ P and Given ∧ !P produced "
+                        <> pack (show (positive, negative))
 
-        pure (positive, negative)
+                pure (positive, negative)
