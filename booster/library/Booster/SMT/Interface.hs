@@ -461,4 +461,12 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                     "Check of Given ∧ P and Given ∧ !P produced "
                         <> pack (show (positive, negative))
 
-                pure (positive, negative)
+                let (positive', negative') =
+                        case (positive, negative) of
+                            (Unsat, _) -> (Unsat, Sat)
+                            (_, Unsat) -> (Sat, Unsat)
+                            _ -> (positive, negative)
+                Log.logMessage $
+                    "Given ∧ P and Given ∧ !P interpreted as "
+                        <> pack (show (positive', negative'))
+                pure (positive', negative')
