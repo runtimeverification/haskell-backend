@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 {-# OPTIONS -fforce-recomp #-}
 
 {- |
@@ -362,14 +363,14 @@ mainGlobal exeName maybeEnv localOptionsParser modifiers = do
 -- | main function to print version information
 mainVersion :: IO ()
 mainVersion
-    | version == Version [0, 1, 0] []
-        = mapM_
-        putStrLn
-        [ "kore custom build:"
-        , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
-        , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
-        , "  last commit:\t" ++ gitCommitDate
-        ]
+    | version == Version [0, 1, 0] [] =
+        mapM_
+            putStrLn
+            [ "kore custom build:"
+            , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
+            , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
+            , "  last commit:\t" ++ gitCommitDate
+            ]
     | otherwise =
         putStrLn $ showVersion version
   where

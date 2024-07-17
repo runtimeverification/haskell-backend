@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
+
 {-# OPTIONS -fforce-recomp #-}
 
 module Booster.CLOptions (
@@ -18,12 +19,12 @@ import Data.ByteString.Char8 qualified as BS (pack)
 import Data.Char (isAscii, isPrint)
 import Data.List (intercalate, partition)
 import Data.List.Extra (splitOn, trim)
-import Data.Version (Version (..), showVersion)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeASCII)
+import Data.Version (Version (..), showVersion)
 import Options.Applicative
 import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
 import Text.Read (readMaybe)
@@ -440,13 +441,13 @@ versionInfoParser =
 
 versionInfoStr :: String
 versionInfoStr
-    | version == dummyVersion
-        = unlines
-              [ "hs-backend-booster custom build:"
-              , "  revision:\t" <> gitHash <> if gitDirty then " (dirty)" else ""
-              , "  branch:\t" <> fromMaybe "<unknown>" gitBranch
-              , "  last commit:\t" <> gitCommitDate
-              ]
+    | version == dummyVersion =
+        unlines
+            [ "hs-backend-booster custom build:"
+            , "  revision:\t" <> gitHash <> if gitDirty then " (dirty)" else ""
+            , "  branch:\t" <> fromMaybe "<unknown>" gitBranch
+            , "  last commit:\t" <> gitCommitDate
+            ]
     | otherwise = showVersion version
   where
     VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
