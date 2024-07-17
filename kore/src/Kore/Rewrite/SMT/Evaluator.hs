@@ -193,12 +193,17 @@ decidePredicate onUnknown sideCondition sideConditionPredicates predicate =
     query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         Morph.hoist SMT.liftSMT $ do
-            sideConditionPredicates' <-
+            sideConditionPredicates' <- concatMap SMT.splitAnd <$>
                 traverse
                     (translatePredicate sideCondition tools)
                     sideConditionPredicates
-            predicate' <- translatePredicate sideCondition tools predicate 
-            traverse_ SMT.assert $ SMT.transitiveClosure (Set.singleton predicate') $ Set.fromList sideConditionPredicates'
+            predicate' <- SMT.splitAnd <$> translatePredicate sideCondition tools predicate 
+            let predicates' = SMT.transitiveClosure (Set.fromList predicate') $ Set.fromList sideConditionPredicates'
+            -- when (Set.fromList predicate' /= predicates') $ liftIO $ do
+            --     putStrLn $ "predicate: " <> show (Set.fromList predicate')
+            --     putStrLn $ "sideConditionPredicates: " <> show sideConditionPredicates'
+            --     putStrLn $ "pruned to: " <> show predicates'
+            traverse_ SMT.assert predicates'
             SMT.check >>= maybe empty return
 
     onErrorUnknown action =
