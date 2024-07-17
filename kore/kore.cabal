@@ -560,6 +560,7 @@ library
     Log.Entry
     Logic
     Options.SMT
+    Paths_kore
     Pair
     Partial
     Prelude.Kore
