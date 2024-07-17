@@ -51,6 +51,7 @@ import System.Time.Extra (Seconds, sleep)
 import Text.Casing (fromKebab, toPascal)
 import Text.Read (readMaybe)
 
+import Booster.CLOptions (versionInfoParser)
 import Booster.JsonRpc (rpcJsonConfig)
 import Booster.JsonRpc.Utils (
     DiffResult (DifferentType),
@@ -336,7 +337,7 @@ parseCommonOptions =
 parseOptions :: ParserInfo Options
 parseOptions =
     info
-        (parseOptions' <**> helper)
+        (parseOptions' <**> versionInfoParser <**> helper)
         ( fullDesc
             <> progDesc "Simple RPC test client"
         )
