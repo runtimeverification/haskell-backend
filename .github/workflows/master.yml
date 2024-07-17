@@ -79,5 +79,5 @@ jobs:
           if git add --update && git commit --no-edit --allow-empty --message "Set Version: $(cat package/version)"; then
             git push origin release
             git tag "v$(cat package/version)" origin/master
-            git push "v$(cat package/version)"
+            git push origin "v$(cat package/version)"
           fi
