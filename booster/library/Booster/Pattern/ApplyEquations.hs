@@ -26,7 +26,7 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
-import Booster.Pattern.Existential (instantiateExistentials)
+import Booster.Pattern.Existential (instantiateExistentialsMany)
 import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
@@ -821,7 +821,7 @@ applyEquation term rule =
 
                         -- If we get an equation with existentials in the requires clause, we must have them all instantiated
                         let (predicateWithEx, predicatesWithNoEx) = partitionExistentialRequires required
-                            instantiatedExistentialPredicates = map (instantiateExistentials knownPredicates) predicateWithEx
+                            instantiatedExistentialPredicates = instantiateExistentialsMany knownPredicates predicateWithEx
 
                         -- detect if any existentials still remain
                         when (any hasExistentials instantiatedExistentialPredicates) $ do
@@ -837,6 +837,21 @@ applyEquation term rule =
 
                         -- all existentials are instantiated: assemble the requires clause again
                         let requiredWithInstantiatedExistentials = predicatesWithNoEx <> instantiatedExistentialPredicates
+
+                        -- TODO these logs need to either go or be assigned a more specific context
+                        withContext CtxConstraint . withContext CtxDetail $ do
+                            logMessage $
+                                renderOneLineText $
+                                    "Requires clause after substitution:"
+                                        <+> hsep (intersperse "," $ map (pretty' @mods) required)
+                            logMessage $
+                                renderOneLineText $
+                                    "Known predicates:"
+                                        <+> hsep (intersperse "," $ map (pretty' @mods) (Set.toList knownPredicates))
+                            logMessage $
+                                renderOneLineText $
+                                    "Requires clause predicate after instantiating existential:"
+                                        <+> hsep (intersperse "," $ map (pretty' @mods) requiredWithInstantiatedExistentials)
 
                         toCheck <- lift $ filterOutKnownConstraints knownPredicates requiredWithInstantiatedExistentials
 

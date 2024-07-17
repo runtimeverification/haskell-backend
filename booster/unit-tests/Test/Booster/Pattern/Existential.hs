@@ -1,6 +1,7 @@
 module Test.Booster.Pattern.Existential (
     test_matchExistential,
     test_instantiateExistentials,
+    test_instantiateExistentialsMany,
 ) where
 
 import Data.Map.Strict (Map)
@@ -112,10 +113,29 @@ test_instantiateExistentials =
     test :: String -> Predicate -> [Predicate] -> Predicate -> TestTree
     test name target known expected =
         testCase name $
-            instantiateExistentials (Set.fromList known) target
-                @?= expected
+            let (actual, _subst) = instantiateExistentials (Set.fromList known) target
+             in actual @?= expected
 
-----------------------------------------
+test_instantiateExistentialsMany :: TestTree
+test_instantiateExistentialsMany =
+    testGroup
+        "instantiateExistentialsMany"
+        [ testGroup
+            "positive cases -- changed predicate"
+            [ test
+                "Earlier bindings are preferred, learned occurrences in consecrative predicates are substituted"
+                [Predicate $ LtInt (varTerm "A") (varTerm "Ex#B"), Predicate $ LtInt (varTerm "Ex#B") (varTerm "C")]
+                [ Predicate $ LtInt (varTerm "A") (varTerm "D")
+                ]
+                [Predicate $ LtInt (varTerm "A") (varTerm "D"), Predicate $ LtInt (varTerm "D") (varTerm "C")]
+            ]
+        ]
+  where
+    test :: String -> [Predicate] -> [Predicate] -> [Predicate] -> TestTree
+    test name targets known expected =
+        testCase name $
+            let actual = instantiateExistentialsMany (Set.fromList known) targets
+             in actual @?= expected
 
 someSort :: Sort
 someSort = SortApp "SomeSort" []
