@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS -fforce-recomp #-}
 
 module Booster.CLOptions (
     CLOptions (..),

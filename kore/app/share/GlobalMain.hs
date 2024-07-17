@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS -fforce-recomp #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2020-2022
