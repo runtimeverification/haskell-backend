@@ -180,7 +180,7 @@ jobs:
         # do not run this unless anything has changed in a relevant directory
         if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
-          GC_DONT_GC=1 nix develop github:runtimeverification/k/HOTFIX-restore-hs-backend-integration-test-nix-shell#kore-integration-tests \
+          GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
                 --command bash -c "cd test && make -j2 --output-sync test"
 
