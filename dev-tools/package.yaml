@@ -163,27 +163,6 @@ executables:
       - transformers
     ghc-options:
       - -rtsopts
-  eventlog-parser:
-    source-dirs: eventlog-parser
-    main: EventlogParser.hs
-    dependencies:
-      - aeson
-      - base
-      - binary
-      - bytestring
-      - containers
-      - directory
-      - filepath
-      - ghc-events
-      - hashable
-      - hs-backend-booster
-      - optparse-applicative
-      - text
-      - transformers
-      - unix
-      - unordered-containers
-    ghc-options:
-      - -rtsopts
   kore-json-differ:
     source-dirs: kore-json-differ
     main: Main.hs
