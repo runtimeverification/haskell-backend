@@ -9,7 +9,7 @@ module Main (main) where
 import Control.Concurrent (newMVar)
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
-import Control.Monad (forM_, when)
+import Control.Monad (when)
 import Control.Monad.Logger (runNoLoggingT)
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Logger.CallStack (LogLevel)
@@ -34,7 +34,6 @@ import Booster.Log.Context qualified as Booster.Log
 import Booster.Pattern.Pretty
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
-import Booster.Trace
 import Booster.Util (
     newTimeCache,
     withFastLogger,
@@ -62,13 +61,9 @@ main = do
             , equationOptions
             , indexCells
             , prettyPrintOptions
-            , eventlogEnabledUserEvents
             , logFile
             } = options
 
-    forM_ eventlogEnabledUserEvents $ \t -> do
-        putStrLn $ "Tracing " <> show t
-        enableCustomUserEvent t
     putStrLn $
         "Loading definition from "
             <> definitionFile
