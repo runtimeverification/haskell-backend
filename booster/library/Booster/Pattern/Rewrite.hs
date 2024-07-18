@@ -340,15 +340,14 @@ applyRule pat@Pattern{ceilConditions} rule =
                             concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
                     -- filter out any predicates known to be _syntactically_ present in the known prior
                     let prior = pat.constraints
-                        (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
-                    unless (null knownTrue) $
-                        logMessage $
-                            renderOneLineText $
-                                "Known true side conditions (won't check):"
-                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ knownTrue)
+                    toCheck <- lift $ filterOutKnownConstraints prior ruleRequires
 
                     unclearRequires <-
                         catMaybes <$> mapM (checkConstraint returnNotApplied prior) toCheck
+
+                    -- unclear conditions may have been simplified and
+                    -- could now be syntactically present in the path constraints, filter again
+                    stillUnclear <- lift $ filterOutKnownConstraints prior unclearRequires
 
                     -- check unclear requires-clauses in the context of known constraints (prior)
                     mbSolver <- lift getSolver
@@ -356,7 +355,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                     unclearRequiresAfterSmt <- case mbSolver of
                         Just solver -> do
                             checkAllRequires <-
-                                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
+                                SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
 
                             case checkAllRequires of
                                 Left SMT.SMTSolverUnknown{} -> do
@@ -443,6 +442,18 @@ applyRule pat@Pattern{ceilConditions} rule =
                                         pure
                                             (rewritten', Just $ Predicate $ NotBool $ coerce $ collapseAndBools unclearRequiresAfterSmt, subst)
   where
+    filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
+    filterOutKnownConstraints priorKnowledge constraitns = do
+        let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
+        unless (null knownTrue) $
+            getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    logMessage $
+                        renderOneLineText $
+                            "Known true side conditions (won't check):"
+                                <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
+        pure toCheck
+
     failRewrite :: RewriteFailed "Rewrite" -> RewriteRuleAppT (RewriteT io) a
     failRewrite = lift . (throw)
 

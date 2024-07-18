@@ -3,7 +3,7 @@
     "version": 1,
     "term": {
         "tag": "App",
-        "name": "Lbl'UndsLSqBUndsRSqB'orDefault'UndsUnds'MAP'Unds'KItem'Unds'Map'Unds'KItem'Unds'KItem",
+        "name": "LblMap'Coln'lookupOrDefault",
         "sorts": [],
         "args": [
             {
