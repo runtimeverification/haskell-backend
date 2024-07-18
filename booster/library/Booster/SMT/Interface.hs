@@ -476,7 +476,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                             (Unsat, _) -> (Unsat, Sat)
                             (_, Unsat) -> (Sat, Unsat)
                             _ -> (positive, negative)
-                Log.logMessage $
-                    "Given ∧ P and Given ∧ !P interpreted as "
-                        <> pack (show (positive', negative'))
+                unless (positive, negative) == (positive', negative') $ 
+                    Log.logMessage $
+                        "Given ∧ P and Given ∧ !P interpreted as "
+                            <> pack (show (positive', negative'))
                 pure (positive', negative')
