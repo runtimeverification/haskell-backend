@@ -23,6 +23,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
+import Data.Aeson (object, (.=))
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
 import Data.Data (Proxy)
@@ -34,7 +35,7 @@ import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
-import Prettyprinter (Pretty, hsep)
+import Prettyprinter (Pretty, comma, hsep, punctuate, (<+>))
 import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
@@ -46,6 +47,7 @@ import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
+import Booster.Syntax.Json.Externalise (externaliseTerm)
 
 data SMTError
     = GeneralSMTError Text
@@ -438,7 +440,15 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 Log.logMessage ("Inconsistent ground truth" :: Text)
                 pure (Unsat, Unsat)
             Unknown -> do
-                Log.logMessage ("Unknown ground truth" :: Text)
+                Log.getPrettyModifiers >>= \case
+                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
+                        Log.withContext Log.CtxDetail
+                            $ Log.logMessage
+                            $ Log.WithJsonMessage
+                                (object ["conditions" .= (map (externaliseTerm . coerce) . Set.toList $ givenPs)])
+                            $ Pretty.renderOneLineText
+                            $ "Unknown ground truth: "
+                                <+> (hsep . punctuate comma . map (pretty' @mods) . Set.toList $ givenPs)
                 pure (Unknown, Unknown)
             _ -> do
                 -- save ground truth for 2nd check
