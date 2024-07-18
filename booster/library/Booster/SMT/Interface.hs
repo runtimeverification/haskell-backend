@@ -35,7 +35,7 @@ import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
-import Prettyprinter (Pretty, comma, hsep, punctuate, (<+>))
+import Prettyprinter (Pretty, backslash, hsep, punctuate, slash, (<+>))
 import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
@@ -448,7 +448,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                                 (object ["conditions" .= (map (externaliseTerm . coerce) . Set.toList $ givenPs)])
                             $ Pretty.renderOneLineText
                             $ "Unknown ground truth: "
-                                <+> (hsep . punctuate comma . map (pretty' @mods) . Set.toList $ givenPs)
+                                <+> (hsep . punctuate (slash <> backslash) . map (pretty' @mods) . Set.toList $ givenPs)
                 pure (Unknown, Unknown)
             _ -> do
                 -- save ground truth for 2nd check
