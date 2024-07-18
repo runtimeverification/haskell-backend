@@ -26,15 +26,12 @@ import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeASCII)
 import Data.Version (Version (..), showVersion)
 import Options.Applicative
-import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
-import Text.Read (readMaybe)
 
 import Booster.GlobalState (EquationOptions (..))
 import Booster.Log.Context (ContextFilter, ctxt, readContextFilter)
 import Booster.Pattern.Pretty
 import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
 import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
-import Booster.Trace (CustomUserEventType)
 import Booster.Util (Bound (..), encodeLabel)
 import Booster.VersionInfo (VersionInfo (..), versionInfo)
 import Paths_hs_backend_booster (version)
@@ -54,8 +51,6 @@ data CLOptions = CLOptions
     , equationOptions :: EquationOptions
     , indexCells :: [Text]
     , prettyPrintOptions :: [ModifierT]
-    , -- developer options below
-      eventlogEnabledUserEvents :: [CustomUserEventType]
     }
     deriving (Show)
 
@@ -176,21 +171,6 @@ clOptionsParser =
                 <> help "Prety print options for kore terms: decode, infix, truncated"
                 <> showDefault
             )
-        -- developer options below
-        <*> many
-            ( option
-                (eitherReader readEventLogTracing)
-                ( metavar "TRACE"
-                    <> long "trace"
-                    <> short 't'
-                    <> help
-                        ( "Eventlog tracing options: "
-                            <> intercalate
-                                ", "
-                                [toKebab $ fromHumps $ show t | t <- [minBound .. maxBound] :: [CustomUserEventType]]
-                        )
-                )
-            )
   where
     readLogLevel :: String -> Either String LogLevel
     readLogLevel = \case
@@ -201,12 +181,6 @@ clOptionsParser =
         other
             | other `elem` map fst allowedLogLevels -> Right (LevelOther $ pack other)
             | otherwise -> Left $ other <> ": Unsupported log level"
-
-    readEventLogTracing :: String -> Either String CustomUserEventType
-    readEventLogTracing =
-        (\s -> maybe (Left $ s <> " not supported in eventlog tracing") Right $ readMaybe s)
-            . toPascal
-            . fromKebab
 
     readLogFormat :: String -> Either String LogFormat
     readLogFormat = \case
