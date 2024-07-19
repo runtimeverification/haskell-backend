@@ -42,6 +42,7 @@ import Network.Socket
 import Network.Socket.ByteString.Lazy
 import Options.Applicative
 import Prettyprinter (pretty)
+import Prettyprinter qualified as Pretty
 import System.Clock
 import System.Directory
 import System.Exit
@@ -55,7 +56,7 @@ import Booster.CLOptions (versionInfoParser)
 import Booster.JsonRpc (rpcJsonConfig)
 import Booster.JsonRpc.Utils (
     DiffResult (DifferentType),
-    KoreRpcJson (RpcRequest),
+    KoreRpcJson (RpcRequest, RpcResponse),
     decodeKoreRpc,
     diffJson,
     isIdentical,
@@ -90,7 +91,9 @@ handleRunOptions common@CommonOptions{dryRun} s = \case
         Just sock -> shutdown sock ShutdownReceive
         Nothing -> pure ()
     (RunTarball tarFile keepGoing runOnly noDetails : xs) -> do
-        runTarball common s tarFile keepGoing runOnly (not noDetails)
+        if dryRun
+            then dryRunTarball common tarFile
+            else runTarball common s tarFile keepGoing runOnly (not noDetails)
         handleRunOptions common s xs
     (RunSingle mode optionFile options processingOptions : xs) -> do
         let ProcessingOptions{postProcessing, prettify, time} = processingOptions
@@ -573,6 +576,58 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
                         if expectedType == actualType
                             then pure Nothing
                             else pure . Just $ showResult (DifferentType expectedType actualType)
+
+{- | Given a bug report tarball, traverse the requests and their corresponding responses and for each pair, output:
+     * request type and response summary
+-}
+dryRunTarball ::
+    CommonOptions ->
+    FilePath ->
+    IO ()
+dryRunTarball common tarFile = do
+    -- unpack tar files, determining type from extension(s)
+    let unpackTar
+            | ".tar" == takeExtension tarFile = Tar.read
+            | ".tgz" == takeExtension tarFile = Tar.read . GZip.decompress
+            | ".tar.gz" `isSuffixOf` takeExtensions tarFile = Tar.read . GZip.decompress
+            | ".tar.bz2" `isSuffixOf` takeExtensions tarFile = Tar.read . BZ2.decompress
+            | otherwise = Tar.read
+
+    containedFiles <- unpackTar <$> BS.readFile tarFile
+    let checked = Tar.checkSecurity containedFiles
+    withTempDir $ \tmpDir ->
+        withLogLevel common.logLevel $ do
+            -- unpack relevant tar files (rpc_* directories only)
+            logInfo_ $ unwords ["unpacking json files from tarball", tarFile, "into", tmpDir]
+            (jsonFiles, sequenceMap) <-
+                liftIO $ Tar.foldEntries (unpackIfRpc tmpDir) (pure mempty) throwAnyError checked
+
+            -- we should not rely on the requests being returned in a sorted order and
+            -- should therefore sort them explicitly
+            let requests = mapMaybe (stripSuffix "_request.json") $ sortBy (compareSequence sequenceMap) jsonFiles
+
+            forM_ requests $ \basename -> do
+                request <- liftIO $ do
+                    let requestFile = tmpDir </> basename <> "_request.json"
+                    doesFileExist requestFile >>= \case
+                        True -> fmap Just . BS.readFile $ tmpDir </> basename <> "_request.json"
+                        False -> pure Nothing
+                expected <- liftIO $ do
+                    let responseFile = tmpDir </> basename <> "_response.json"
+                    doesFileExist responseFile >>= \case
+                        True -> fmap Just . BS.readFile $ tmpDir </> basename <> "_response.json"
+                        False -> pure Nothing
+                case (decodeKoreRpc <$> request, decodeKoreRpc <$> expected) of
+                    (Just (RpcRequest req), Just (RpcResponse resp)) -> do
+                        logInfo_ $
+                            renderDefault . Pretty.hsep . Pretty.punctuate Pretty.comma $
+                                [pretty basename, pretty req, pretty resp]
+                    (Just (RpcRequest req), _) -> do
+                        logInfo_ $
+                            renderDefault . Pretty.hsep . Pretty.punctuate Pretty.comma $
+                                [pretty basename, pretty req, "no response"]
+                    _ -> do
+                        logWarn_ "Expected an RPC request and response pair. Skipping..."
 
 -- complain on any errors in the tarball
 throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
