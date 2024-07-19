@@ -543,50 +543,6 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
             liftIO $ shutdown skt ShutdownReceive
             liftIO $ exitWith (if all isNothing results then ExitSuccess else ExitFailure 2)
 
-    -- complain on any errors in the tarball
-    throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
-    throwAnyError = either throwIO throwIO
-
-    compareSequence :: Ord a => Ord b => Map.Map a b -> a -> a -> Ordering
-    compareSequence seqMap a b = case (Map.lookup a seqMap, Map.lookup b seqMap) of
-        (Nothing, Nothing) -> compare a b
-        (Just{}, Nothing) -> LT
-        (Nothing, Just{}) -> GT
-        (Just a', Just b') -> compare a' b'
-
-    -- unpack all */*.json files into dir and return their names
-    unpackIfRpc ::
-        FilePath ->
-        Tar.Entry ->
-        IO ([FilePath], Map.Map FilePath Int) ->
-        IO ([FilePath], Map.Map FilePath Int)
-    unpackIfRpc tmpDir entry acc = do
-        case splitFileName (Tar.entryPath entry) of
-            -- unpack all directories "<something>" containing "*.json" files
-            (dir, "") -- directory
-                | Tar.Directory <- Tar.entryContent entry -> do
-                    createDirectoryIfMissing True dir -- create rpc dir so we can unpack files there
-                    acc -- no additional file to return
-                | otherwise ->
-                    acc -- skip other directories and top-level files
-            (dir, file)
-                | ".json" `isSuffixOf` file
-                , not ("." `isPrefixOf` file)
-                , Tar.NormalFile bs _size <- Tar.entryContent entry -> do
-                    -- unpack json files into tmp directory
-                    let newPath = dir </> file
-                    -- current tarballs do not have dir entries, create dir here
-                    createDirectoryIfMissing True $ tmpDir </> dir
-                    BS.writeFile (tmpDir </> newPath) bs
-                    (first (newPath :)) <$> acc
-                | "sequence" `isInfixOf` dir
-                , Just (idx :: Int) <- readMaybe file
-                , Tar.NormalFile bs _size <- Tar.entryContent entry ->
-                    (second $ Map.insert (BS.unpack bs) idx) <$> acc
-                | otherwise -> do
-                    -- skip anything else
-                    acc
-
     -- Runs one request, checking that a response is available for
     -- comparison. Returns Nothing if successful (identical
     -- response), or rendered diff or error message if failing
@@ -617,6 +573,50 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
                         if expectedType == actualType
                             then pure Nothing
                             else pure . Just $ showResult (DifferentType expectedType actualType)
+
+-- complain on any errors in the tarball
+throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
+throwAnyError = either throwIO throwIO
+
+compareSequence :: Ord a => Ord b => Map.Map a b -> a -> a -> Ordering
+compareSequence seqMap a b = case (Map.lookup a seqMap, Map.lookup b seqMap) of
+    (Nothing, Nothing) -> compare a b
+    (Just{}, Nothing) -> LT
+    (Nothing, Just{}) -> GT
+    (Just a', Just b') -> compare a' b'
+
+-- unpack all */*.json files into dir and return their names
+unpackIfRpc ::
+    FilePath ->
+    Tar.Entry ->
+    IO ([FilePath], Map.Map FilePath Int) ->
+    IO ([FilePath], Map.Map FilePath Int)
+unpackIfRpc tmpDir entry acc = do
+    case splitFileName (Tar.entryPath entry) of
+        -- unpack all directories "<something>" containing "*.json" files
+        (dir, "") -- directory
+            | Tar.Directory <- Tar.entryContent entry -> do
+                createDirectoryIfMissing True dir -- create rpc dir so we can unpack files there
+                acc -- no additional file to return
+            | otherwise ->
+                acc -- skip other directories and top-level files
+        (dir, file)
+            | ".json" `isSuffixOf` file
+            , not ("." `isPrefixOf` file)
+            , Tar.NormalFile bs _size <- Tar.entryContent entry -> do
+                -- unpack json files into tmp directory
+                let newPath = dir </> file
+                -- current tarballs do not have dir entries, create dir here
+                createDirectoryIfMissing True $ tmpDir </> dir
+                BS.writeFile (tmpDir </> newPath) bs
+                (first (newPath :)) <$> acc
+            | "sequence" `isInfixOf` dir
+            , Just (idx :: Int) <- readMaybe file
+            , Tar.NormalFile bs _size <- Tar.entryContent entry ->
+                (second $ Map.insert (BS.unpack bs) idx) <$> acc
+            | otherwise -> do
+                -- skip anything else
+                acc
 
 noServerError :: MonadLoggerIO m => CommonOptions -> IOException -> m ()
 noServerError common e@IOError{ioe_type = NoSuchThing} = do
