@@ -30,7 +30,7 @@ module USE-PATH-CONDITION-IN-EQUATIONS
   ////////////////////////////////////////////////////////////////////////////////
   // Here the simplification's side condition is syntactically present          //
   // in the path condition and is not checked.                                  //
-  // Result booster-dev, kore-rpc-booster                                       //
+  // Result                                                                     //
   //   Stuck at depth 2 in state test1State2()                                  //
   //   after applying rules test1-init,test1-1-2                                //
   ////////////////////////////////////////////////////////////////////////////////
@@ -45,8 +45,7 @@ module USE-PATH-CONDITION-IN-EQUATIONS
   rule [test1F-simplify]: test1F(X:Int) => X requires X ==Int 42 [simplification]
 
   ////////////////////////////////////////////////////////////////////////////////
-  // Here the simplification's side condition is implied by the path condition, //
-  // but we need an SMT solver to establish that.                               //
+  // Here the simplification's side condition is implied by the path condition. //
   // Result: Stuck at depth 2 in state test2State2(),                           //
   //         after applying rules test2-init, test2-1-2.                        //
   ////////////////////////////////////////////////////////////////////////////////
@@ -62,16 +61,11 @@ module USE-PATH-CONDITION-IN-EQUATIONS
 
   /////////////////////////////////////////////////////////////////////////////////
   // Exactly like test2, but the function now has actual evaluators, rather than //
-  // a simplification-based semantics. Booster over-approximates and rewrites,   //
-  // as it cannot determine the condition of rule test3-1-2.                     //
-  // Simplification in Kore detects a vacuous result.                            //
-  // Result booster-dev:                                                         //
-  //   Stuck at depth 2 in state test3State2()                                   //
-  //   after applying rules test3-init,test3-1-2.                                //
-  //   The constraints contain test2F, unevaluated.                              //
+  // a simplification-based semantics. Using the SMT solver Booster determines   //
+  // that the condition of rule test3-1-2 is False.                              //
   // Result kore-rpc-booster:                                                    //
-  //   Vacuous at depth 2 in state test2State2()                                 //
-  //   after applying rules test3-init,test3-1-2.                                //
+  //   Stuck at depth  in state test3State1()                                    //
+  //   after applying rules test3-init          .                                //
   /////////////////////////////////////////////////////////////////////////////////
   rule [test3-init]: <k> test3Init() => test3State1() ... </k>
                      <int> _         => ?X                </int>
@@ -85,14 +79,10 @@ module USE-PATH-CONDITION-IN-EQUATIONS
   rule [test3F-one-if-not-x-nonpositive]: test3F(X:Int) => 1 requires X <=Int 0
 
   /////////////////////////////////////////////////////////////////////////////////
-  // Similar to test3, but now there are two rules. Booster rewrites with both,  //
-  // and Kore then prunes the vacuous branch.                                    //
-  // Result booster-dev:                                                         //
-  //   Branching at depth 1                                                      //
-  //   The constraints contain test4F, unevaluated.                              //
-  // Result kore-rpc-booster:                                                    //
+  // Similar to test3, but now there are two rules. Using the solver, Booster    //
+  // determines that the condition of rule test4-1-2 is False.                   //
+  // Result:                                                                     //
   //   Stuck at depth 2 in state test2State3()                                   //
-  //   The vacuous branch leading to state test2State3() is pruned               //
   /////////////////////////////////////////////////////////////////////////////////
   rule [test4-init]: <k> test4Init() => test4State1() ... </k>
                      <int> _         => ?X                </int>

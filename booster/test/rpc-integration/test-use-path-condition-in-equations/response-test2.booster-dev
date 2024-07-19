@@ -96,115 +96,51 @@
                 "format": "KORE",
                 "version": 1,
                 "term": {
-                    "tag": "And",
+                    "tag": "Equals",
+                    "argSort": {
+                        "tag": "SortApp",
+                        "name": "SortBool",
+                        "args": []
+                    },
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortGeneratedTopCell",
                         "args": []
                     },
-                    "patterns": [
-                        {
-                            "tag": "Equals",
-                            "argSort": {
-                                "tag": "SortApp",
-                                "name": "SortBool",
-                                "args": []
-                            },
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortGeneratedTopCell",
-                                "args": []
-                            },
-                            "first": {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortBool",
-                                    "args": []
-                                },
-                                "value": "true"
-                            },
-                            "second": {
-                                "tag": "App",
-                                "name": "Lbl'UndsEqlsEqls'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "EVar",
-                                        "name": "Var'Ques'X",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        }
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "42"
-                                    }
-                                ]
-                            }
+                    "first": {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortBool",
+                            "args": []
                         },
-                        {
-                            "tag": "Equals",
-                            "argSort": {
-                                "tag": "SortApp",
-                                "name": "SortBool",
-                                "args": []
+                        "value": "true"
+                    },
+                    "second": {
+                        "tag": "App",
+                        "name": "Lbl'UndsEqlsEqls'Int'Unds'",
+                        "sorts": [],
+                        "args": [
+                            {
+                                "tag": "EVar",
+                                "name": "Var'Ques'X",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                }
                             },
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortGeneratedTopCell",
-                                "args": []
-                            },
-                            "first": {
+                            {
                                 "tag": "DV",
                                 "sort": {
                                     "tag": "SortApp",
-                                    "name": "SortBool",
+                                    "name": "SortInt",
                                     "args": []
                                 },
-                                "value": "true"
-                            },
-                            "second": {
-                                "tag": "App",
-                                "name": "Lbl'Unds-GT-'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "App",
-                                        "name": "Lbltest2F'LParUndsRParUnds'USE-PATH-CONDITION-IN-EQUATIONS'Unds'Int'Unds'Int",
-                                        "sorts": [],
-                                        "args": [
-                                            {
-                                                "tag": "EVar",
-                                                "name": "Var'Ques'X",
-                                                "sort": {
-                                                    "tag": "SortApp",
-                                                    "name": "SortInt",
-                                                    "args": []
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "0"
-                                    }
-                                ]
+                                "value": "42"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         }

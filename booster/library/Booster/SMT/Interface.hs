@@ -24,6 +24,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
+import Data.Aeson (object, (.=))
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
 import Data.Data (Proxy)
@@ -35,7 +36,7 @@ import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
-import Prettyprinter (Pretty, hsep)
+import Prettyprinter (Pretty, backslash, hsep, punctuate, slash, (<+>))
 import SMTLIB.Backends.Process qualified as Backend
 
 import Booster.Definition.Base
@@ -47,6 +48,7 @@ import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.Runner as SMT
 import Booster.SMT.Translate as SMT
+import Booster.Syntax.Json.Externalise (externaliseTerm)
 
 data SMTError
     = GeneralSMTError Text
@@ -371,10 +373,6 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 Log.logMessage . Pretty.renderOneLineText $
                     hsep ("Predicates to check:" : map (pretty' @mods) (Set.toList psToCheck))
         result <- interactWithSolver smtGiven sexprsToCheck
-        Log.logMessage $
-            "Check of Given ∧ P and Given ∧ !P produced "
-                <> (Text.pack $ show result)
-
         case result of
             (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
             (Sat, Sat) -> do
@@ -436,32 +434,54 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         -- assert ground truth
         mapM_ smtRun smtGiven
 
-        consistent <- smtRun CheckSat
-        unless (consistent == Sat) $ do
-            let errMsg = ("Inconsistent ground truth, check returns Nothing" :: Text)
-            Log.logMessage errMsg
-        let ifConsistent check = if (consistent == Sat) then check else pure Unsat
+        groundTruthCheckSmtResult <- smtRun CheckSat
+        Log.logMessage ("Ground truth check returned: " <> show groundTruthCheckSmtResult)
+        case groundTruthCheckSmtResult of
+            Unsat -> do
+                Log.logMessage ("Inconsistent ground truth" :: Text)
+                pure (Unsat, Unsat)
+            Unknown -> do
+                Log.getPrettyModifiers >>= \case
+                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
+                        Log.withContext Log.CtxDetail
+                            $ Log.logMessage
+                            $ Log.WithJsonMessage
+                                (object ["conditions" .= (map (externaliseTerm . coerce) . Set.toList $ givenPs)])
+                            $ Pretty.renderOneLineText
+                            $ "Unknown ground truth: "
+                                <+> (hsep . punctuate (slash <> backslash) . map (pretty' @mods) . Set.toList $ givenPs)
+                pure (Unknown, Unknown)
+            _ -> do
+                -- save ground truth for 2nd check
+                smtRun_ Push
 
-        -- save ground truth for 2nd check
-        smtRun_ Push
+                -- run check for K ∧ P and then for K ∧ !P
+                let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
 
-        -- run check for K ∧ P and then for K ∧ !P
-        let allToCheck = SMT.List (Atom "and" : sexprsToCheck)
+                positive <- do
+                    smtRun_ $ Assert "P" allToCheck
+                    smtRun CheckSat
+                smtRun_ Pop
 
-        positive <- ifConsistent $ do
-            smtRun_ $ Assert "P" allToCheck
-            smtRun CheckSat
-        smtRun_ Pop
-        negative <- ifConsistent $ do
-            smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
-            smtRun CheckSat
-        smtRun_ Pop
+                negative <- do
+                    smtRun_ $ Assert "not P" (SMT.smtnot allToCheck)
+                    smtRun CheckSat
+                smtRun_ Pop
 
-        Log.logMessage $
-            "Check of Given ∧ P and Given ∧ !P produced "
-                <> pack (show (positive, negative))
+                Log.logMessage $
+                    "Check of Given ∧ P and Given ∧ !P produced "
+                        <> pack (show (positive, negative))
 
-        pure (positive, negative)
+                let (positive', negative') =
+                        case (positive, negative) of
+                            (Unsat, _) -> (Unsat, Sat)
+                            (_, Unsat) -> (Sat, Unsat)
+                            _ -> (positive, negative)
+                unless ((positive, negative) == (positive', negative')) $
+                    Log.logMessage $
+                        "Given ∧ P and Given ∧ !P interpreted as "
+                            <> pack (show (positive', negative'))
+                pure (positive', negative')
 
 isSat ::
     forall io.

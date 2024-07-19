@@ -67,7 +67,6 @@ import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.ParsedKore (loadDefinition)
-import Booster.Trace
 import Booster.Util qualified as Booster
 import Data.Data (Proxy)
 import GlobalMain qualified
@@ -137,7 +136,6 @@ main = do
                     , equationOptions
                     , indexCells
                     , prettyPrintOptions
-                    , eventlogEnabledUserEvents
                     }
             , proxyOptions =
                 ProxyOptions
@@ -162,10 +160,6 @@ main = do
         if logTimeStamps then Just <$> Booster.newTimeCache timestampFlag else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
-        liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
-            putStrLn $ "Tracing " <> show t
-            enableCustomUserEvent t
-
         let koreLogRenderer = case logFormat of
                 Standard -> renderStandardPretty
                 OneLine -> renderOnelinePretty
