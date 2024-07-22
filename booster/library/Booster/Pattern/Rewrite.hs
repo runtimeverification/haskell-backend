@@ -761,6 +761,9 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                 Left r@UndefinedTerm{} -> do
                     emitRewriteTrace $ RewriteSimplified (Just r)
                     pure Nothing
+                Left r@(TooManyIterations _ _ end) -> do
+                    emitRewriteTrace $ RewriteSimplified (Just r)
+                    pure $ Just p{term = end}
                 Left other -> do
                     emitRewriteTrace $ RewriteSimplified (Just other)
                     pure $ Just p
