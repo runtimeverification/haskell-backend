@@ -234,6 +234,9 @@ popRecursion = do
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
+getRecusionDepth :: LoggerMIO io => EquationT io Int
+getRecusionDepth = (length . (.recursionStack)) <$> getState
+
 toCache :: Monad io => CacheTag -> Term -> Term -> EquationT io ()
 toCache tag orig result = eqState . modify $ \s -> s{cache = updateCache tag s.cache}
   where
@@ -331,6 +334,9 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
+                -- FIXME if this exception is caught in evaluatePattern',
+                --       then CtxAbort is a wrong context for it.
+                --       We should emit this log  entry somewhere else.
                 withContext CtxAbort $ do
                     logWarn $
                         renderOneLineText $
@@ -409,7 +415,8 @@ evaluateTerm' ::
     Direction ->
     Term ->
     EquationT io Term
-evaluateTerm' direction = iterateEquations direction PreferFunctions
+evaluateTerm' direction =
+    iterateEquations direction PreferFunctions
 
 {- | Simplify a Pattern, processing its constraints independently.
      Returns either the first failure or the new pattern if no failure was encountered
@@ -431,13 +438,24 @@ evaluatePattern' ::
     Pattern ->
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
-    newTerm <- withTermContext term $ evaluateTerm' BottomUp term
+    newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
     pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+  where
+    -- when TooManyIterations exception occurs while evaluating the top-level term (not a side-condition),
+    -- it is safe to keep the partial result and ignore the exception. Otherwise we
+    -- would be throwing away useful work.
+    keepTopLevelResults :: LoggerMIO io => EquationFailure -> EquationT io Term
+    keepTopLevelResults = \case
+        err@(TooManyIterations _ _ partialResult) ->
+            getRecusionDepth >>= \case
+                0 -> pure partialResult
+                _ -> throw err
+        err -> throw err
 
 -- evaluate the given predicate assuming all others
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
