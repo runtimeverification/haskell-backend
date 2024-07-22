@@ -102,7 +102,7 @@ catch_ (EquationT op) hdlr = EquationT $ do
 
 data EquationFailure
     = IndexIsNone Term
-    | TooManyIterations Int Term Term
+    | TooManyIterations Int Int Term Term
     | EquationLoop [Term]
     | TooManyRecursions [Term]
     | SideConditionFalse Predicate
@@ -114,9 +114,10 @@ instance Pretty (PrettyWithModifiers mods EquationFailure) where
     pretty (PrettyWithModifiers f) = case f of
         IndexIsNone t ->
             "Index 'None' for term " <> pretty' @mods t
-        TooManyIterations count start end ->
+        TooManyIterations depth count start end ->
             vsep
                 [ "Unable to finish evaluation in " <> pretty count <> " iterations"
+                , "at recursion depth " <> pretty depth
                 , "Started with: " <> pretty' @mods start
                 , "Stopped at: " <> pretty' @mods end
                 ]
@@ -334,6 +335,7 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
+                currentRecursionDepth <- getRecusionDepth
                 -- FIXME if this exception is caught in evaluatePattern',
                 --       then CtxAbort is a wrong context for it.
                 --       We should emit this log  entry somewhere else.
@@ -347,7 +349,7 @@ iterateEquations direction preference startTerm = do
                                 logMessage . renderOneLineText $
                                     "Final term:" <+> pretty' @mods currentTerm
                 throw $
-                    TooManyIterations currentCount startTerm currentTerm
+                    TooManyIterations currentRecursionDepth currentCount startTerm currentTerm
             pushTerm currentTerm
             -- simplify the term using the LLVM backend first
             llvmResult <- llvmSimplify currentTerm
@@ -446,13 +448,14 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     evaluatedConstraints <- predicates <$> getState
     pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
   where
-    -- when TooManyIterations exception occurs while evaluating the top-level term (not a side-condition),
-    -- it is safe to keep the partial result and ignore the exception. Otherwise we
-    -- would be throwing away useful work.
+    -- when TooManyIterations exception occurred while evaluating the top-level term,
+    -- i.e. not in a recursive evaluation of a side-condition,
+    -- it is safe to keep the partial result and ignore the exception.
+    -- Otherwise we would be throwing away useful work.
     keepTopLevelResults :: LoggerMIO io => EquationFailure -> EquationT io Term
     keepTopLevelResults = \case
-        err@(TooManyIterations _ _ partialResult) ->
-            getRecusionDepth >>= \case
+        err@(TooManyIterations recursionDepth _ _ partialResult) ->
+            case recursionDepth of
                 0 -> pure partialResult
                 _ -> throw err
         err -> throw err
