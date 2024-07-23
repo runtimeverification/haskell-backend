@@ -102,7 +102,7 @@ catch_ (EquationT op) hdlr = EquationT $ do
 
 data EquationFailure
     = IndexIsNone Term
-    | TooManyIterations Int Int Term Term
+    | TooManyIterations Int Term Term
     | EquationLoop [Term]
     | TooManyRecursions [Term]
     | SideConditionFalse Predicate
@@ -114,10 +114,9 @@ instance Pretty (PrettyWithModifiers mods EquationFailure) where
     pretty (PrettyWithModifiers f) = case f of
         IndexIsNone t ->
             "Index 'None' for term " <> pretty' @mods t
-        TooManyIterations depth count start end ->
+        TooManyIterations count start end ->
             vsep
                 [ "Unable to finish evaluation in " <> pretty count <> " iterations"
-                , "at recursion depth " <> pretty depth
                 , "Started with: " <> pretty' @mods start
                 , "Stopped at: " <> pretty' @mods end
                 ]
@@ -235,9 +234,6 @@ popRecursion = do
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
-getRecusionDepth :: LoggerMIO io => EquationT io Int
-getRecusionDepth = (length . (.recursionStack)) <$> getState
-
 toCache :: Monad io => CacheTag -> Term -> Term -> EquationT io ()
 toCache tag orig result = eqState . modify $ \s -> s{cache = updateCache tag s.cache}
   where
@@ -335,7 +331,6 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                currentRecursionDepth <- getRecusionDepth
                 -- FIXME if this exception is caught in evaluatePattern',
                 --       then CtxAbort is a wrong context for it.
                 --       We should emit this log  entry somewhere else.
@@ -349,7 +344,7 @@ iterateEquations direction preference startTerm = do
                                 logMessage . renderOneLineText $
                                     "Final term:" <+> pretty' @mods currentTerm
                 throw $
-                    TooManyIterations currentRecursionDepth currentCount startTerm currentTerm
+                    TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
             -- simplify the term using the LLVM backend first
             llvmResult <- llvmSimplify currentTerm
@@ -452,12 +447,11 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     -- i.e. not in a recursive evaluation of a side-condition,
     -- it is safe to keep the partial result and ignore the exception.
     -- Otherwise we would be throwing away useful work.
+    -- The exceptions thrown in recursion is caught in applyEquation.checkConstraint
     keepTopLevelResults :: LoggerMIO io => EquationFailure -> EquationT io Term
     keepTopLevelResults = \case
-        err@(TooManyIterations recursionDepth _ _ partialResult) ->
-            case recursionDepth of
-                0 -> pure partialResult
-                _ -> throw err
+        TooManyIterations _ _ partialResult ->
+            pure partialResult
         err -> throw err
 
 -- evaluate the given predicate assuming all others
