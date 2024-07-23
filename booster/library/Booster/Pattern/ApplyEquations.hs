@@ -408,8 +408,7 @@ evaluateTerm' ::
     Direction ->
     Term ->
     EquationT io Term
-evaluateTerm' direction =
-    iterateEquations direction PreferFunctions
+evaluateTerm' direction = iterateEquations direction PreferFunctions
 
 {- | Simplify a Pattern, processing its constraints independently.
      Returns either the first failure or the new pattern if no failure was encountered
