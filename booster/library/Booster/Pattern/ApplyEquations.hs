@@ -331,18 +331,14 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                -- FIXME if this exception is caught in evaluatePattern',
-                --       then CtxAbort is a wrong context for it.
-                --       We should emit this log  entry somewhere else.
-                withContext CtxAbort $ do
-                    logWarn $
-                        renderOneLineText $
-                            "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                    withContext CtxDetail $
-                        getPrettyModifiers >>= \case
-                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                                logMessage . renderOneLineText $
-                                    "Final term:" <+> pretty' @mods currentTerm
+                logWarn $
+                    renderOneLineText $
+                        "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                withContext CtxDetail $
+                    getPrettyModifiers >>= \case
+                        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                            logMessage . renderOneLineText $
+                                "Final term:" <+> pretty' @mods currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
