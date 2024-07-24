@@ -15,7 +15,7 @@ module RpcClient (
 ) where
 
 import Codec.Archive.Tar qualified as Tar
-import Codec.Archive.Tar.Check qualified as Tar
+import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Compression.BZip qualified as BZ2
 import Codec.Compression.GZip qualified as GZip
 import Control.Exception
@@ -508,20 +508,20 @@ runTarball common (Just sock) tarFile keepGoing runOnly compareDetails = do
             | ".tar.bz2" `isSuffixOf` takeExtensions tarFile = Tar.read . BZ2.decompress
             | otherwise = Tar.read
 
-    containedFiles <- unpackTar <$> BS.readFile tarFile
-    let checked = Tar.checkSecurity containedFiles
+    entries <- Tar.decodeLongNames . unpackTar <$> BS.readFile tarFile
+    -- let checked = Tar.checkSecurity containedFiles
     -- probe server connection before doing anything, display
     -- instructions unless server was found.
-    runAllRequests checked sock
+    runAllRequests entries sock
   where
-    runAllRequests ::
-        Tar.Entries (Either Tar.FormatError Tar.FileNameError) -> Socket -> IO ()
+    -- runAllRequests ::
+    --     Tar.Entries Tar.FormatError -> Socket -> IO ()
     runAllRequests checked skt = cancelIfInterrupted skt $ do
         withTempDir $ \tmp -> withLogLevel common.logLevel $ do
             -- unpack relevant tar files (rpc_* directories only)
             logInfo_ $ unwords ["unpacking json files from tarball", tarFile, "into", tmp]
             (jsonFiles, sequenceMap) <-
-                liftIO $ Tar.foldEntries (unpackIfRpc tmp) (pure mempty) throwAnyError checked
+                liftIO $ Tar.foldEntries (unpackIfRpc tmp) (pure mempty) (error . show) checked
             logInfo_ $ "RPC data:" <> show jsonFiles
             logInfo_ $ "Sequence data:" <> show sequenceMap
 
@@ -593,14 +593,13 @@ dryRunTarball common tarFile = do
             | ".tar.bz2" `isSuffixOf` takeExtensions tarFile = Tar.read . BZ2.decompress
             | otherwise = Tar.read
 
-    containedFiles <- unpackTar <$> BS.readFile tarFile
-    let checked = Tar.checkSecurity containedFiles
+    entries <- Tar.decodeLongNames . unpackTar <$> BS.readFile tarFile
     withTempDir $ \tmpDir ->
         withLogLevel common.logLevel $ do
             -- unpack relevant tar files (rpc_* directories only)
             logInfo_ $ unwords ["unpacking json files from tarball", tarFile, "into", tmpDir]
             (jsonFiles, sequenceMap) <-
-                liftIO $ Tar.foldEntries (unpackIfRpc tmpDir) (pure mempty) throwAnyError checked
+                liftIO $ Tar.foldEntries (unpackIfRpc tmpDir) (pure mempty) (error . show) entries
 
             -- we should not rely on the requests being returned in a sorted order and
             -- should therefore sort them explicitly
@@ -629,10 +628,6 @@ dryRunTarball common tarFile = do
                     _ -> do
                         logWarn_ "Expected an RPC request and response pair. Skipping..."
 
--- complain on any errors in the tarball
-throwAnyError :: Either Tar.FormatError Tar.FileNameError -> IO a
-throwAnyError = either throwIO throwIO
-
 compareSequence :: Ord a => Ord b => Map.Map a b -> a -> a -> Ordering
 compareSequence seqMap a b = case (Map.lookup a seqMap, Map.lookup b seqMap) of
     (Nothing, Nothing) -> compare a b
@@ -640,14 +635,14 @@ compareSequence seqMap a b = case (Map.lookup a seqMap, Map.lookup b seqMap) of
     (Nothing, Just{}) -> GT
     (Just a', Just b') -> compare a' b'
 
--- unpack all */*.json files into dir and return their names
+-- unpack all */*. json files into dir and return their names
 unpackIfRpc ::
     FilePath ->
-    Tar.Entry ->
+    Tar.GenEntry FilePath a ->
     IO ([FilePath], Map.Map FilePath Int) ->
     IO ([FilePath], Map.Map FilePath Int)
 unpackIfRpc tmpDir entry acc = do
-    case splitFileName (Tar.entryPath entry) of
+    case splitFileName (Tar.entryTarPath entry) of
         -- unpack all directories "<something>" containing "*.json" files
         (dir, "") -- directory
             | Tar.Directory <- Tar.entryContent entry -> do
