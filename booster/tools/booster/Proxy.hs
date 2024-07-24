@@ -351,7 +351,72 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                     <$> accumulatedLogs
                                 )
                                 r{ExecuteRequest.state = execStateToKoreJson simplifiedBoosterState}
-                -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck],
+                -- TODO this is an experimental code path. It needs to be guarded with an CLI option before merging
+                -- if we stop because of branching, simplify the next states to prune them and optionally
+                -- execute a fallback rewrite step from the pre-state in Kore con confirm the branch
+                | boosterResult.reason == Branching -> do
+                    Booster.Log.withContext CtxProxy $
+                        Booster.Log.logMessage $
+                            "Booster " <> displayExecuteResultVerbose boosterResult
+                    prunedBoosterResult <- simplifyExecResult logSettings r._module def boosterResult
+                    case prunedBoosterResult of
+                        Left (_prunedToOneNext, _logs) -> do
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage $
+                                    "After simplification: Booster "
+                                        <> displayExecuteResultVerbose boosterResult{nextStates = take 1 <$> boosterResult.nextStates}
+                        Right stillBranching ->
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage $
+                                    "After simplification: Booster " <> displayExecuteResultVerbose stillBranching
+
+                    -- attempt to do one step in the old backend
+                    Booster.Log.withContext CtxProxy $
+                        Booster.Log.logMessage ("Executing fall-back request" :: Text)
+                    (koreResult, _kTime) <-
+                        Stats.timed $
+                            kore
+                                ( Execute
+                                    r
+                                        { state = execStateToKoreJson boosterResult.state
+                                        , maxDepth = Just $ Depth 1
+                                        , assumeStateDefined = Just True
+                                        }
+                                )
+                    case koreResult of
+                        Right (Execute result) ->
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage $
+                                    "Kore " <> displayExecuteResultVerbose result
+                        _err ->
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.withContext CtxWarn $
+                                    Booster.Log.logMessage ("Kore returned error" :: Text)
+                    -- continue with the pruned Booster's result
+                    case prunedBoosterResult of
+                        Left (nextState, newLogs) -> do
+                            let prunedBoosterBranchStep
+                                    | boosterResult.reason == Branching = 1
+                                    | otherwise = 0
+                            executionLoop
+                                logSettings
+                                def
+                                ( currentDepth + boosterResult.depth + prunedBoosterBranchStep
+                                , time + bTime
+                                , koreTime
+                                , postProcessLogs <$> combineLogs (rpcLogs : boosterResult.logs : newLogs)
+                                )
+                                r{ExecuteRequest.state = nextState}
+                        Right result -> do
+                            logStats ExecuteM (time + bTime, koreTime)
+                            pure . Right $
+                                Execute
+                                    result
+                                        { depth = currentDepth + boosterResult.depth
+                                        , logs = postProcessLogs <$> combineLogs [rpcLogs, result.logs]
+                                        }
+
+                -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck]),
                 -- revert to the old backend to re-confirm and possibly proceed
                 | boosterResult.reason `elem` cfg.fallbackReasons -> do
                     Booster.Log.withContext CtxProxy $
