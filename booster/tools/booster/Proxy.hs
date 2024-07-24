@@ -356,8 +356,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                 | boosterResult.reason `elem` cfg.fallbackReasons -> do
                     Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage $
-                            Text.pack $
-                                "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                            "Booster " <> displayExecuteResultVerbose boosterResult
                     -- simplify Booster's state with Kore's simplifier
                     Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage ("Simplifying booster state and falling back to Kore" :: Text)
@@ -494,8 +493,8 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     -- we were successful with the booster, thus we
                     -- return the booster result with the updated
                     -- depth, in case we previously looped
-                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
-                        "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage $
+                        "Booster " <> displayExecuteResultVerbose boosterResult
                     -- perform post-exec simplification
                     postExecResult <-
                         simplifyExecResult logSettings r._module def boosterResult
@@ -753,3 +752,13 @@ mkFallbackLogEntry boosterResult koreResult =
     getRewriteSuccessRuleId = \case
         RPCLog.Rewrite{result = RPCLog.Success{ruleId}} -> Just ruleId
         _ -> Nothing
+
+displayExecuteResultVerbose :: ExecuteResult -> Text
+displayExecuteResultVerbose result =
+    Text.pack $
+        show result.reason
+            <> " at "
+            <> show result.depth
+            <> " with "
+            <> show (length <$> result.nextStates)
+            <> " next states"
