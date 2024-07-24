@@ -134,7 +134,7 @@ main = do
                     , logFile
                     , smtOptions
                     , equationOptions
-                    , indexCells
+                    , rewriteOptions
                     , prettyPrintOptions
                     }
             , proxyOptions =
@@ -233,7 +233,7 @@ main = do
                 mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                 definitionsWithCeilSummaries <-
                     liftIO $
-                        loadDefinition indexCells definitionFile
+                        loadDefinition rewriteOptions.indexCells definitionFile
                             >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
@@ -301,6 +301,7 @@ main = do
                                 , defaultMain = mainModuleName
                                 , mLlvmLibrary
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
+                                , rewriteOptions
                                 , addedModules = mempty
                                 }
                 statsVar <- Stats.newStats

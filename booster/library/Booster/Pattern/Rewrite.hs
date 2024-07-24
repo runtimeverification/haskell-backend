@@ -721,9 +721,11 @@ performRewrite ::
     [Text] ->
     -- | terminal rule labels
     [Text] ->
+    -- | interim-simplification frequency
+    (Maybe Natural) ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalLabels pat = do
+performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalLabels mbSimplify pat = do
     (rr, RewriteStepsState{counter, traces}) <-
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
@@ -807,11 +809,19 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     doSteps wasSimplified pat' = do
         RewriteStepsState{counter, simplifierCache} <- get
         logDepth $ showCounter counter
-        if depthReached counter
-            then do
-                logDepth $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
-                (if wasSimplified then pure else simplifyResult pat') $ RewriteFinished Nothing Nothing pat'
-            else
+
+        case counter of
+            c | depthReached c -> do
+                    logDepth $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
+                    (if wasSimplified then pure else simplifyResult pat') $ RewriteFinished Nothing Nothing pat'
+              | counter > 0
+              , not wasSimplified
+              , maybe False ((== 0) . (counter `mod`)) mbSimplify -> do
+                    logDepth $ "Interim simplification after " <> maybe "??" showCounter mbSimplify
+                    simplifyP pat' >>= \case
+                        Nothing -> pure $ RewriteTrivial pat'
+                        Just newPat -> doSteps True newPat
+              | otherwise ->
                 runRewriteT
                     doTracing
                     def

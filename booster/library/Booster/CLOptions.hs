@@ -7,6 +7,7 @@ module Booster.CLOptions (
     CLOptions (..),
     EquationOptions (..),
     LogFormat (..),
+    RewriteOptions (..),
     TimestampFormat (..),
     clOptionsParser,
     adjustLogLevels,
@@ -25,6 +26,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeASCII)
 import Data.Version (Version (..), showVersion)
+import Numeric.Natural (Natural)
 import Options.Applicative
 
 import Booster.GlobalState (EquationOptions (..))
@@ -49,10 +51,17 @@ data CLOptions = CLOptions
     , logFile :: Maybe FilePath
     , smtOptions :: Maybe SMTOptions
     , equationOptions :: EquationOptions
-    , indexCells :: [Text]
+    , rewriteOptions :: RewriteOptions
     , prettyPrintOptions :: [ModifierT]
     }
     deriving (Show)
+
+
+data RewriteOptions = RewriteOptions
+    { indexCells :: [Text]
+    , interimSimplification :: Maybe Natural
+    }
+    deriving stock (Show, Eq)
 
 data LogFormat
     = Standard
@@ -156,13 +165,7 @@ clOptionsParser =
             )
         <*> parseSMTOptions
         <*> parseEquationOptions
-        <*> option
-            (eitherReader $ mapM (readCellName . trim) . splitOn ",")
-            ( metavar "CELL-NAME[,CELL-NAME]"
-                <> long "index-cells"
-                <> help "Names of configuration cells to index rewrite rules with (default: 'k')"
-                <> value []
-            )
+        <*> parseRewriteOptions
         <*> option
             (eitherReader $ mapM (readModifierT . trim) . splitOn ",")
             ( metavar "PRETTY_PRINT"
@@ -201,18 +204,6 @@ clOptionsParser =
         "pretty" -> Right Pretty
         "nanoseconds" -> Right Nanoseconds
         other -> Left $ other <> ": Unsupported timestamp format"
-
-    readCellName :: String -> Either String Text
-    readCellName input
-        | null input =
-            Left "Empty cell name"
-        | all isAscii input
-        , all isPrint input =
-            Right $ "Lbl'-LT-'" <> enquote input <> "'-GT-'"
-        | otherwise =
-            Left $ "Illegal non-ascii characters in `" <> input <> "'"
-
-    enquote = decodeASCII . encodeLabel . BS.pack
 
 -- custom log levels that can be selected
 allowedLogLevels :: [(String, String)]
@@ -364,13 +355,6 @@ parseSMTOptions =
   where
     smtDefaults = defaultSMTOptions
 
-    nonnegativeInt :: ReadM Int
-    nonnegativeInt =
-        auto >>= \case
-            i
-                | i < 0 -> readerError "must be a non-negative integer."
-                | otherwise -> pure i
-
     readTactic =
         either (readerError . ("Invalid s-expression. " <>)) pure . SMT.parseSExpr . BS.pack =<< str
 
@@ -397,12 +381,46 @@ parseEquationOptions =
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
 
-    nonnegativeInt :: ReadM Int
-    nonnegativeInt =
-        auto >>= \case
-            i
-                | i < 0 -> readerError "must be a non-negative integer."
-                | otherwise -> pure i
+nonnegativeInt :: Integral i => ReadM i
+nonnegativeInt =
+    auto @Integer >>= \case
+       i
+           | i < 0 -> readerError "must be a non-negative integer."
+           | otherwise -> pure (fromIntegral i)
+
+parseRewriteOptions :: Parser RewriteOptions
+parseRewriteOptions =
+    RewriteOptions
+        <$> option
+            (eitherReader $ mapM (readCellName . trim) . splitOn ",")
+            ( metavar "CELL-NAME[,CELL-NAME]"
+                <> long "index-cells"
+                <> help "Names of configuration cells to index rewrite rules with (default: 'k')"
+                <> value []
+            )
+        <*> optional
+            ( option
+              nonnegativeInt
+              ( metavar "DEPTH"
+                  <> long "booster-interim-simplification"
+                  <> help "If given: Simplify the term each time the given rewrite depth is reached"
+              )
+            )
+  where
+    readCellName :: String -> Either String Text
+    readCellName input
+        | null input =
+            Left "Empty cell name"
+        | all isAscii input
+        , all isPrint input =
+            Right $ "Lbl'-LT-'" <> enquote input <> "'-GT-'"
+        | otherwise =
+            Left $ "Illegal non-ascii characters in `" <> input <> "'"
+
+    enquote = decodeASCII . encodeLabel . BS.pack
+
+
+
 
 versionInfoParser :: Parser (a -> a)
 versionInfoParser =

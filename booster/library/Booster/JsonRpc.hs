@@ -42,6 +42,7 @@ import Numeric.Natural
 import Prettyprinter (comma, hsep, punctuate, (<+>))
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
+import Booster.CLOptions (RewriteOptions (..))
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
@@ -108,7 +109,7 @@ respond stateVar request =
                 | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
                 | isJust req.movingAverageStepTimeout ->
                     pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-            RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxExecute $ do
+            RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, rewriteOpts) -> Booster.Log.withContext CtxExecute $ do
                 start <- liftIO $ getTime Monotonic
                 -- internalise given constrained term
                 let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -147,7 +148,7 @@ respond stateVar request =
 
                         solver <- traverse (SMT.initSolver def) mSMTOptions
                         result <-
-                            performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
+                            performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals rewriteOpts.interimSimplification substPat
                         whenJust solver SMT.finaliseSolver
                         stop <- liftIO $ getTime Monotonic
                         let duration =
@@ -218,7 +219,7 @@ respond stateVar request =
                     Booster.Log.logMessage $
                         "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                     pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
-            RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxSimplify $ do
+            RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxSimplify $ do
                 start <- liftIO $ getTime Monotonic
                 let internalised =
                         runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -309,11 +310,11 @@ respond stateVar request =
                             RpcTypes.SimplifyResult{state, logs = mkTraces duration}
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
-                (_, _, Nothing) -> do
+                (_, _, Nothing, _) -> do
                     withContext CtxGetModel $
                         logMessage' ("get-model request, not supported without SMT solver" :: Text)
                     pure $ Left RpcError.notImplemented
-                (def, _, Just smtOptions) -> do
+                (def, _, Just smtOptions, _) -> do
                     let internalised =
                             runExcept $
                                 internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -418,7 +419,7 @@ respond stateVar request =
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
                                             }
-            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxImplies $ do
+            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
                 -- internalise given constrained term
                 let internalised =
                         runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
@@ -503,7 +504,7 @@ respond stateVar request =
   where
     withModule ::
         Maybe Text ->
-        ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions) ->
+        ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions, RewriteOptions) ->
           m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
         ) ->
         m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
@@ -512,7 +513,7 @@ respond stateVar request =
         let mainName = fromMaybe state.defaultMain mbMainModule
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
-            Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
+            Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions)
 
     doesNotImply s l r =
         pure $
@@ -567,9 +568,11 @@ data ServerState = ServerState
     , defaultMain :: Text
     -- ^ default main module (initially from command line, could be changed later)
     , mLlvmLibrary :: Maybe LLVM.API
-    -- ^ optional LLVM simplification library
+    -- ^ Read-only: optional LLVM simplification library
     , mSMTOptions :: Maybe SMT.SMTOptions
-    -- ^ (optional) SMT solver options
+    -- ^ Read-only: (optional) SMT solver options
+    , rewriteOptions :: RewriteOptions
+    -- ^ Read-only: configuration related to booster rewriting
     , addedModules :: Map Text Text
     -- ^ map of raw modules added via add-module
     }
