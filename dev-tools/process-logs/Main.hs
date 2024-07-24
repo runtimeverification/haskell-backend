@@ -7,12 +7,10 @@ module Main (
     main,
 ) where
 
-import Control.Monad (unless)
 import Data.Aeson qualified as JSON
 import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.ByteString.Char8 qualified as BSS
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.Either (partitionEithers)
 import Data.Foldable (toList)
 import Data.List (foldl', maximumBy, sortBy)
 import Data.Map (Map)
@@ -24,7 +22,6 @@ import Data.Sequence qualified as Seq
 import Data.Time.Clock
 import Data.Time.Clock.System (systemToUTCTime)
 import Options.Applicative
-import System.Exit
 import Text.Printf
 
 import Booster.Log.Context (ContextFilter, mustMatch, readContextFilter)
