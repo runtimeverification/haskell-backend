@@ -27,7 +27,7 @@ module Main (
 ) where
 
 import Codec.Archive.Tar qualified as Tar
-import Codec.Archive.Tar.Check qualified as Tar
+import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Compression.BZip qualified as BZ2
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad (forM, forM_, unless, when)
@@ -74,7 +74,7 @@ main =
         [tarFile] -> do
             contents <- readToTar tarFile
             case unpackBugReports contents of
-                Left err -> either print print err
+                Left err -> print err
                 Right bugReports ->
                     forM_ (Map.toList bugReports) $
                         mapM_ BS.putStrLn . uncurry checkDiff
@@ -89,14 +89,15 @@ main =
             mapM_ BS.putStrLn $ checkDiff (tar1 <> "<->" <> tar2) bugReportDiff
         _ -> putStrLn "incorrect args"
   where
-    readToTar :: FilePath -> IO (Tar.Entries (Either Tar.FormatError Tar.FileNameError))
+    readToTar ::
+        FilePath -> IO (Tar.GenEntries FilePath FilePath (Either Tar.FormatError Tar.DecodeLongNamesError))
     readToTar file
         | ".tar" == takeExtension file =
-            Tar.checkSecurity . Tar.read <$> BS.readFile file
+            Tar.decodeLongNames . Tar.read <$> BS.readFile file
         | ".tgz" == takeExtension file || ".tar.gz" `isSuffixOf` takeExtensions file =
-            Tar.checkSecurity . Tar.read . GZip.decompress <$> BS.readFile file
+            Tar.decodeLongNames . Tar.read . GZip.decompress <$> BS.readFile file
         | ".tar.bz2" `isSuffixOf` takeExtensions file =
-            Tar.checkSecurity . Tar.read . BZ2.decompress <$> BS.readFile file
+            Tar.decodeLongNames . Tar.read . BZ2.decompress <$> BS.readFile file
         | otherwise = do
             isDir <- doesDirectoryExist file
             if isDir
@@ -118,30 +119,40 @@ main =
                     entries <- Tar.pack "." $ defFile : files
                     -- need to force the tar entries, withCurrentDirectory is not retained
                     mapM_ (`seq` pure ()) entries
-                    pure $ foldr Tar.Next Tar.Done entries
+                    error "Unimplemented: can't make it typecheck!!" -- pure $ foldr Tar.Next Tar.Done entries
                 else -- if a differently-named file was given. try to read a tarball
-                    Tar.checkSecurity . Tar.read <$> BS.readFile file
+                    Tar.decodeLongNames . Tar.read <$> BS.readFile file
 
 unpackBugReports ::
-    Tar.Entries (Either Tar.FormatError Tar.FileNameError) ->
-    Either (Either Tar.FormatError Tar.FileNameError) (Map FilePath BugReportDiff)
+    forall linkTarget.
+    Tar.GenEntries
+        FilePath
+        linkTarget
+        (Either Tar.FormatError Tar.DecodeLongNamesError) ->
+    Either
+        (Either Tar.FormatError Tar.DecodeLongNamesError)
+        (Map String BugReportDiff)
 unpackBugReports = Tar.foldEntries unpackBugReportData (Right mempty) Left
   where
     unpackBugReportData ::
-        Tar.Entry ->
-        Either (Either Tar.FormatError Tar.FileNameError) (Map FilePath BugReportDiff) ->
-        Either (Either Tar.FormatError Tar.FileNameError) (Map FilePath BugReportDiff)
+        Tar.GenEntry FilePath linkTarget ->
+        Either
+            (Either Tar.FormatError Tar.DecodeLongNamesError)
+            (Map String BugReportDiff) ->
+        Either
+            (Either Tar.FormatError Tar.DecodeLongNamesError)
+            (Map String BugReportDiff)
     unpackBugReportData _ err@(Left _) = err
     unpackBugReportData entry acc@(Right m)
         | Tar.NormalFile bs _size <- Tar.entryContent entry
         , ".tar" `isSuffixOf` file
-        , contents <- Tar.read bs =
+        , contents <- Tar.decodeLongNames $ Tar.read bs =
             case unpackBugReportDataFrom contents of
-                Left err -> Left $ Left err
+                Left err -> Left err
                 Right bugReport -> Right $ Map.alter (insertBugReport bugReport) file m
         | otherwise = acc
       where
-        (dir, file) = splitFileName (Tar.entryPath entry)
+        (dir, file) = splitFileName (Tar.entryTarPath entry)
         insertBugReport b bDiff =
             Just
                 $ ( \bugReportDiff ->
@@ -157,15 +168,13 @@ unpackBugReports = Tar.foldEntries unpackBugReportData (Right mempty) Left
    There may be multiple rpc_* directories in a single tarball, therefore
    the map keys have to contain the directory name.
 -}
-unpackBugReportDataFrom ::
-    Tar.Entries err ->
-    Either err BugReportData
+unpackBugReportDataFrom :: Tar.GenEntries FilePath linkTarget a -> Either a BugReportData
 unpackBugReportDataFrom = Tar.foldEntries unpackRpc (Right emptyBugReport) Left
   where
-    unpackRpc ::
-        Tar.Entry ->
-        Either err BugReportData ->
-        Either err BugReportData
+    -- unpackRpc ::
+    --     Tar.Entry ->
+    --     Either err BugReportData ->
+    --     Either err BugReportData
     unpackRpc _ err@(Left _) = err
     unpackRpc entry acc@(Right bugReportData)
         | Tar.NormalFile bs _size <- Tar.entryContent entry
@@ -187,7 +196,7 @@ unpackBugReportDataFrom = Tar.foldEntries unpackRpc (Right emptyBugReport) Left
             Right bugReportData{definition = bs}
         | otherwise = acc
       where
-        (rpcDir, file) = splitFileName (Tar.entryPath entry)
+        (rpcDir, file) = splitFileName (Tar.entryTarPath entry)
 
 dirPrefix, requestSuffix, responseSuffix :: FilePath
 dirPrefix = "rpc_"
