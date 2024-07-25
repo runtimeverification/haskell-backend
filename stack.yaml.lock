@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: tar-0.6.3.0@sha256:e9f151d9999be8953443e730524b2792e9c0a4fb5b1463097fa1a8230870fd8a,4634
+    pantry-tree:
+      sha256: e59e0d0224352033c32356d517f90d4c6a41cee4fa0d386885df146302d1ba3b
+      size: 2241
+  original:
+    hackage: tar-0.6.3.0
+- completed:
     hackage: hashable-1.4.2.0@sha256:585792335d5541dba78fa8dfcb291a89cd5812a281825ff7a44afa296ab5d58a,4520
     pantry-tree:
       sha256: 792a6cab3f15c5db29d759c8ca735d0be5f4c94f363329652f8b9780009d0829
