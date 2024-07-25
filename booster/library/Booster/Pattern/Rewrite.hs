@@ -902,6 +902,22 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 emitRewriteTrace $ RewriteStepFailed failure
                                 logMessage $ "Aborted after " <> showCounter counter
                                 pure (RewriteAborted failure pat')
+                        -- if a rule condition was unclear and the pattern was
+                        -- unsimplified, simplify and retry rewriting once
+                        Left failure@(RuleConditionUnclear rule unclearCondition)
+                            | not wasSimplified -> do
+                                withSimplified pat' "Retrying with simplified pattern" (doSteps True)
+                            | otherwise -> do
+                                -- was already simplified, emit an abort log entry
+                                getPrettyModifiers >>= \case
+                                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                                        withRuleContext rule . withContext CtxAbort . logMessage $
+                                            WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce $ unclearCondition)]) $
+                                                renderOneLineText $
+                                                    "Uncertain about condition(s) in a rule:"
+                                                        <+> (pretty' @mods unclearCondition)
+                                emitRewriteTrace $ RewriteStepFailed failure
+                                pure (RewriteAborted failure pat')
                         Left failure -> do
                             emitRewriteTrace $ RewriteStepFailed failure
                             let msg = "Aborted after " <> showCounter counter
