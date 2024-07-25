@@ -104,8 +104,8 @@
           # this need to be bumped if changing the stack resolver
           all-cabal-hashes = final.fetchurl {
             url =
-              "https://github.com/commercialhaskell/all-cabal-hashes/archive/8b0d7c881466c603de7975596cb203e3fd4890ad.tar.gz";
-            sha256 = "sha256-jTNSwG37bHY5vLMo5yqtk93sTUzlsp/jeYCfXJGaivU=";
+              "https://github.com/commercialhaskell/all-cabal-hashes/archive/ce857734d7d4c0fad3f6dda3a4db052836ed4619.tar.gz";
+            sha256 = "sha256-Q7Zg32v5ubjVJMQXGiyyMmeFg08jTzVRKC18laiHCPE=";
           };
         };
       };

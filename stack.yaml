@@ -14,6 +14,7 @@ packages:
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 extra-deps:
+  - tar-0.6.3.0
   - hashable-1.4.2.0
   - decision-diagrams-0.2.0.0
   - smtlib-backends-0.3
