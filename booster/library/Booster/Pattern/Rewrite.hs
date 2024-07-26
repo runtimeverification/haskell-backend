@@ -26,7 +26,7 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
-import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
+import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify, put)
 import Data.Aeson (object, (.=))
 import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
@@ -746,7 +746,10 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
 
     updateCache simplifierCache = modify $ \rss -> rss{simplifierCache}
 
-    purgeCache = modify $ \rss -> rss{simplifierCache = mempty}
+    -- purgeCache = modify $ \rss -> rss{simplifierCache = mempty}
+
+    updateSolver :: SMT.SMTContext -> RewriteStepsState -> RewriteStepsState
+    updateSolver solver s = s{smtSolver = Just solver}
 
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
     simplifyP p = withContext CtxSimplify $ do
@@ -912,9 +915,13 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             | not wasSimplified -> do
                                 -- start new solver because it was already stopped permanently...
                                 solver <- SMT.initSolver def SMT.defaultSMTOptions
-                                _ <- modify $ \rss -> rss{smtSolver = Just solver}
+                                let act = do
+                                        rss <- get
+                                        let rss' = updateSolver solver rss
+                                        put rss'
+                                act
                                 -- purge simplification cache
-                                purgeCache
+                                -- purgeCache
                                 -- TODO: perform some sort of cache sanitation and log the difference.
                                 --       For example: simplify all keys in the cache under the current conditions
                                 --                    and see if any produce different results
