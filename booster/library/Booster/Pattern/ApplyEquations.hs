@@ -696,7 +696,10 @@ applyEquations theory handler term = do
             concatMap snd . Map.toAscList . Map.unionsWith (<>) $
                 map equationsFor indexes
 
-    processEquations equations
+    withTermContext term $ do
+        logMessage $
+            "Trying equations: " <> show (map (.attributes.uniqueId) equations)
+        processEquations equations
   where
     -- process one equation at a time, until something has happened
     processEquations ::
