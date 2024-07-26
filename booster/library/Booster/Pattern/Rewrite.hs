@@ -36,7 +36,7 @@ import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromJust, fromMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack)
@@ -67,6 +67,8 @@ import Booster.Pattern.Pretty
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
+import Booster.SMT.Runner (SMTContext (..))
+import Booster.SMT.Runner qualified as SMT (evalSMT)
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..))
 
@@ -908,6 +910,9 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                         -- unsimplified, simplify and retry rewriting once
                         Left failure@(RuleConditionUnclear rule unclearCondition)
                             | not wasSimplified -> do
+                                -- start new solver because it was already stopped permanently...
+                                solver <- SMT.initSolver def SMT.defaultSMTOptions
+                                _ <- modify $ \rss -> rss{smtSolver = Just solver}
                                 -- purge simplification cache
                                 purgeCache
                                 -- TODO: perform some sort of cache sanitation and log the difference.
