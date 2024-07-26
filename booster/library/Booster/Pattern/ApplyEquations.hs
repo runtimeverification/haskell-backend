@@ -1013,6 +1013,8 @@ simplifyConstraint ::
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
 simplifyConstraint def mbApi mbSMT cache knownPredicates (Predicate p) = do
+    logMessage
+        ("simplifyConstraint with cache of size " <> show (Map.size cache.llvm, Map.size cache.equations))
     runEquationT def mbApi mbSMT cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
