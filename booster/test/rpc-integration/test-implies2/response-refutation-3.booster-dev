@@ -1,0 +1,9 @@
+{
+    "jsonrpc": "2.0",
+    "id": "4573738480-001",
+    "error": {
+        "code": 6,
+        "data": "unknown constrains",
+        "message": "Aborted"
+    }
+}
