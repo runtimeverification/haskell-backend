@@ -421,7 +421,14 @@ evaluatePattern ::
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
-evaluatePattern def mLlvmLibrary smtSolver cache pat =
+evaluatePattern def mLlvmLibrary smtSolver cache pat = do
+    logMessage
+        ( "evaluatePattern assuming "
+            <> show (length pat.constraints)
+            <> "constraints and with cache of size "
+            <> show (Map.size cache.llvm, Map.size cache.equations)
+        )
+
     runEquationT def mLlvmLibrary smtSolver cache pat.constraints . evaluatePattern' $ pat
 
 -- version for internal nested evaluation
