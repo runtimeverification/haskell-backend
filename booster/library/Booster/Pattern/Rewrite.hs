@@ -746,7 +746,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
 
     updateCache simplifierCache = modify $ \rss -> rss{simplifierCache}
 
-    -- purgeCache = modify $ \rss -> rss{simplifierCache = mempty}
+    purgeCache = modify $ \rss -> rss{simplifierCache = mempty}
 
     updateSolver :: SMT.SMTContext -> RewriteStepsState -> RewriteStepsState
     updateSolver solver s = s{smtSolver = Just solver}
@@ -921,7 +921,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                         put rss'
                                 act
                                 -- purge simplification cache
-                                -- purgeCache
+                                purgeCache
                                 -- TODO: perform some sort of cache sanitation and log the difference.
                                 --       For example: simplify all keys in the cache under the current conditions
                                 --                    and see if any produce different results
