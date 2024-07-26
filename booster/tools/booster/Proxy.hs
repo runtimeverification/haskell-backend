@@ -370,28 +370,28 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                 Booster.Log.logMessage $
                                     "After simplification: Booster " <> displayExecuteResultVerbose stillBranching
 
-                    -- attempt to do one step in the old backend
-                    Booster.Log.withContext CtxProxy $
-                        Booster.Log.logMessage ("Executing fall-back request" :: Text)
-                    (koreResult, _kTime) <-
-                        Stats.timed $
-                            kore
-                                ( Execute
-                                    r
-                                        { state = execStateToKoreJson boosterResult.state
-                                        , maxDepth = Just $ Depth 1
-                                        , assumeStateDefined = Just True
-                                        }
-                                )
-                    case koreResult of
-                        Right (Execute result) ->
-                            Booster.Log.withContext CtxProxy $
-                                Booster.Log.logMessage $
-                                    "Kore " <> displayExecuteResultVerbose result
-                        _err ->
-                            Booster.Log.withContext CtxProxy $
-                                Booster.Log.withContext CtxWarn $
-                                    Booster.Log.logMessage ("Kore returned error" :: Text)
+                    -- -- attempt to do one step in the old backend
+                    -- Booster.Log.withContext CtxProxy $
+                    --     Booster.Log.logMessage ("Executing fall-back request" :: Text)
+                    -- (koreResult, _kTime) <-
+                    --     Stats.timed $
+                    --         kore
+                    --             ( Execute
+                    --                 r
+                    --                     { state = execStateToKoreJson boosterResult.state
+                    --                     , maxDepth = Just $ Depth 1
+                    --                     , assumeStateDefined = Just True
+                    --                     }
+                    --             )
+                    -- case koreResult of
+                    --     Right (Execute result) ->
+                    --         Booster.Log.withContext CtxProxy $
+                    --             Booster.Log.logMessage $
+                    --                 "Kore " <> displayExecuteResultVerbose result
+                    --     _err ->
+                    --         Booster.Log.withContext CtxProxy $
+                    --             Booster.Log.withContext CtxWarn $
+                    --                 Booster.Log.logMessage ("Kore returned error" :: Text)
                     -- continue with the pruned Booster's result
                     case prunedBoosterResult of
                         Left (nextState, newLogs) -> do
