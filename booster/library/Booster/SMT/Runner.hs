@@ -180,7 +180,7 @@ runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd cmd = do
     let cmdBS = encode cmd
     ctxt <- SMT get
-    case ctxt.mbSolver of 
+    case ctxt.mbSolver of
         Nothing -> pure Unknown
         Just solverRef -> do
             whenJust ctxt.mbTranscriptHandle $ \h -> do

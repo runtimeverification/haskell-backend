@@ -713,7 +713,7 @@ performRewrite ::
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
 performRewrite doTracing def mLlvmLibrary smtSolver mbMaxDepth cutLabels terminalLabels pat = do
     (rr, RewriteStepsState{counter, traces}) <-
-        flip runStateT (rewriteStart smtSolver) $ doSteps False pat
+        flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
     logDepth = withContext CtxDepth . logMessage
@@ -736,8 +736,7 @@ performRewrite doTracing def mLlvmLibrary smtSolver mbMaxDepth cutLabels termina
     simplifyP p = withContext CtxSimplify $ do
         st <- get
         let cache = st.simplifierCache
-            smt = st.smtSolver
-        evaluatePattern def mLlvmLibrary smt cache p >>= \(res, newCache) -> do
+        evaluatePattern def mLlvmLibrary smtSolver cache p >>= \(res, newCache) -> do
             updateCache newCache
             case res of
                 Right newPattern -> do
@@ -910,14 +909,12 @@ data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace ()))
     , simplifierCache :: SimplifierCache
-    , smtSolver :: SMT.SMTContext
     }
 
-rewriteStart :: SMT.SMTContext -> RewriteStepsState
-rewriteStart smt =
+rewriteStart :: RewriteStepsState
+rewriteStart =
     RewriteStepsState
         { counter = 0
         , traces = mempty
         , simplifierCache = mempty
-        , smtSolver = smt
         }

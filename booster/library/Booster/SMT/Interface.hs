@@ -104,7 +104,6 @@ initSolver def smtOptions = Log.withContext Log.CtxSMT $ do
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
-
 noSolver :: MonadIO io => io SMT.SMTContext
 noSolver = do
     solverClose <- liftIO $ newIORef $ pure ()
@@ -116,7 +115,6 @@ noSolver = do
             , prelude = []
             , options = defaultSMTOptions
             }
-
 
 -- | Hot-swap @SMTOptions@ in the active @SMTContext@, update the query timeout
 swapSmtOptions :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()

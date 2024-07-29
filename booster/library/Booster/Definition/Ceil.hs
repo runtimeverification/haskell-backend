@@ -18,6 +18,7 @@ import Booster.Log
 import Booster.Pattern.Bool
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util (isConcrete, sortOfTerm)
+import Booster.SMT.Interface
 import Booster.Util (Flag (..))
 import Control.DeepSeq (NFData)
 import Control.Monad (foldM)
@@ -35,7 +36,6 @@ import Data.Set qualified as Set
 import GHC.Generics qualified as GHC
 import Prettyprinter (Pretty (..))
 import Prettyprinter qualified as Pretty
-import Booster.SMT.Interface
 
 data ComputeCeilSummary = ComputeCeilSummary
     { rule :: RewriteRule.RewriteRule "Rewrite"

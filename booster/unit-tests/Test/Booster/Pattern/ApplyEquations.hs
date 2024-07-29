@@ -30,10 +30,10 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Util (sortOfTerm)
+import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
-import Booster.SMT.Interface (noSolver)
 
 inj :: Symbol
 inj = injectionSymbol
