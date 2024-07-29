@@ -772,8 +772,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         Unsimplified p -> withPatternContext p $ withContext CtxSimplify $ do
             st <- get
             let cache = st.simplifierCache
-                smt = st.smtSolver
-            evaluatePattern def mLlvmLibrary smt cache p >>= \(res, newCache) -> do
+            evaluatePattern def mLlvmLibrary mSolver cache p >>= \(res, newCache) -> do
                 updateCache newCache
                 case res of
                     Right newPattern -> do
@@ -938,7 +937,6 @@ data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace ()))
     , simplifierCache :: SimplifierCache
-    , smtSolver :: Maybe SMT.SMTContext
     }
 
 rewriteStart :: RewriteStepsState
@@ -947,7 +945,6 @@ rewriteStart =
         { counter = 0
         , traces = mempty
         , simplifierCache = mempty
-        , smtSolver = Nothing
         }
 
 {- | Instantiate a rewrite rule's requires clause with a substitution.
