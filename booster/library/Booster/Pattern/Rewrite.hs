@@ -891,6 +891,13 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 emitRewriteTrace $ RewriteStepFailed failure
                                 -- simplify remainders, substitute and rerun.
                                 -- If failed, do the pattern-wide simplfication and rerun again
+                                -- start new solver because it was already stopped permanently...
+                                solver <- SMT.initSolver def SMT.defaultSMTOptions
+                                let act = do
+                                        rss <- get
+                                        let rss' = updateSolver solver rss
+                                        put rss'
+                                act
                                 withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                             | otherwise -> do
                                 -- was already simplified, emit an abort log entry
