@@ -181,7 +181,7 @@ runCmd cmd = do
     let cmdBS = encode cmd
     ctxt <- SMT get
     case ctxt.mbSolver of
-        Nothing -> pure $ Unknown Nothing
+        Nothing -> pure $ Unknown (Just "server started without SMT solver")
         Just solverRef -> do
             whenJust ctxt.mbTranscriptHandle $ \h -> do
                 whenJust (comment cmd) $ \c ->
