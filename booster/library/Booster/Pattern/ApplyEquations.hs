@@ -563,13 +563,12 @@ cached cacheTag cb t@(Term attributes _)
                 toCache cacheTag t simplified
                 pure simplified
             Just cachedTerm -> do
-                when (t /= cachedTerm) $ do
-                    setChanged
-                    withTermContext t $
-                        withContext CtxSuccess $
-                            withContextFor cacheTag $
-                                withTermContext cachedTerm $
-                                    pure ()
+                when (t /= cachedTerm) setChanged
+                withTermContext t $
+                    withContext CtxSuccess $
+                        withContextFor cacheTag $
+                            withTermContext cachedTerm $
+                                pure ()
                 pure cachedTerm
 
 elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
