@@ -361,7 +361,7 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ Left SMT.Unknown
+                                        pure $ Left $ SMT.Unknown $ Just "No predicates or substitutions given"
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
@@ -379,12 +379,7 @@ respond stateVar request =
                                         { satisfiable = RpcTypes.Unsat
                                         , substitution = Nothing
                                         }
-                                Left SMT.ReasonUnknown{} ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unknown
-                                        , substitution = Nothing
-                                        }
-                                Left SMT.Unknown ->
+                                Left SMT.Unknown{} ->
                                     RpcTypes.GetModelResult
                                         { satisfiable = RpcTypes.Unknown
                                         , substitution = Nothing
@@ -554,7 +549,7 @@ handleSmtError = JsonRpcHandler $ \case
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
             allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
-        pure $ RpcError.backendError $ RpcError.SmtSolverError $ RpcError.ErrorWithTerm reason allPreds
+        pure $ RpcError.backendError $ RpcError.SmtSolverError $ RpcError.ErrorWithTerm (fromMaybe "UNKNOWN" reason) allPreds
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err

@@ -181,7 +181,7 @@ runCmd cmd = do
     let cmdBS = encode cmd
     ctxt <- SMT get
     case ctxt.mbSolver of
-        Nothing -> pure Unknown
+        Nothing -> pure $ Unknown Nothing
         Just solverRef -> do
             whenJust ctxt.mbTranscriptHandle $ \h -> do
                 whenJust (comment cmd) $ \c ->
@@ -191,14 +191,16 @@ runCmd cmd = do
             let result = readResponse output
             whenJust ctxt.mbTranscriptHandle $
                 liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
-            when (isError result) $
-                logMessage $
-                    "SMT solver reports: " <> pack (show result)
-            pure result
-  where
-    isError :: Response -> Bool
-    isError Error{} = True
-    isError _other = False
+            case result of
+                Error{} -> do
+                    logMessage $
+                        "SMT solver reports: " <> pack (show result)
+                    pure result
+                Unknown Nothing ->
+                    runCmd GetReasonUnknown >>= \case
+                        unknownWithReason@(Unknown (Just _)) -> pure unknownWithReason
+                        _ -> pure result
+                _ -> pure result
 
 instance SMTEncode DeclareCommand where
     encode = encodeDeclaration
