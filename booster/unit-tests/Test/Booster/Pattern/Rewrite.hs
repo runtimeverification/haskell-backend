@@ -25,6 +25,7 @@ import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Rewrite
+import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 import Booster.Util (Flag (..))
@@ -243,10 +244,10 @@ rulePriority =
 runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteResult Pattern)
 runWith t =
     second fst $
-        unsafePerformIO
-            ( runNoLoggingT $
-                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty (rewriteStep [] [] $ Pattern_ t)
-            )
+        unsafePerformIO $ do
+            ns <- noSolver
+            runNoLoggingT $
+                runRewriteT NoCollectRewriteTraces def Nothing ns mempty (rewriteStep [] [] $ Pattern_ t)
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
@@ -271,8 +272,9 @@ failsWith t err =
 
 runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
+    ns <- noSolver
     (counter, _, res) <-
-        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [] [] $ Pattern_ t
+        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing ns Nothing [] [] $ Pattern_ t
     pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
@@ -413,9 +415,10 @@ supportsDepthControl =
   where
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToDepth (MaxDepth depth) (Steps n) t t' f = do
+        ns <- noSolver
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing Nothing (Just depth) [] [] $
+                performRewrite NoCollectRewriteTraces def Nothing ns (Just depth) [] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -467,9 +470,10 @@ supportsCutPoints =
   where
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToCutPoint lbl (Steps n) t t' f = do
+        ns <- noSolver
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [lbl] [] $
+                performRewrite NoCollectRewriteTraces def Nothing ns Nothing [lbl] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -501,5 +505,6 @@ supportsTerminalRules =
     rewritesToTerminal lbl (Steps n) t t' f = do
         (counter, _, res) <-
             runNoLoggingT $ do
-                performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [] [lbl] $ Pattern_ t
+                ns <- noSolver
+                performRewrite NoCollectRewriteTraces def Nothing ns Nothing [] [lbl] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')

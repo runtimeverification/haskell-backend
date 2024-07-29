@@ -33,11 +33,13 @@ import Booster.Pattern.Util (sortOfTerm)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
+import Booster.SMT.Interface (noSolver)
 
 inj :: Symbol
 inj = injectionSymbol
 
 test_evaluateFunction :: TestTree
+{-# NOINLINE test_evaluateFunction #-}
 test_evaluateFunction =
     testGroup
         "Evaluating functions using rules without side conditions"
@@ -94,17 +96,17 @@ test_evaluateFunction =
             eval BottomUp subj @?= Right result
         ]
   where
-    eval direction =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . evaluateTerm direction funDef Nothing Nothing mempty
+    eval direction t =
+        unsafePerformIO $ do
+            ns <- noSolver
+            runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty t
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
     isTooManyIterations (Right r) = assertFailure $ "Unexpected result" <> show r
 
 test_simplify :: TestTree
+{-# NOINLINE test_simplify #-}
 test_simplify =
     testGroup
         "Performing simplifications"
@@ -125,14 +127,14 @@ test_simplify =
             simpl BottomUp subj @?= Right result
         ]
   where
-    simpl direction =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . evaluateTerm direction simplDef Nothing Nothing mempty
+    simpl direction t =
+        unsafePerformIO $ do
+            ns <- noSolver
+            runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing ns mempty t
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
+{-# NOINLINE test_simplifyPattern #-}
 test_simplifyPattern =
     testGroup
         "Performing Pattern simplifications"
@@ -155,14 +157,14 @@ test_simplifyPattern =
             simpl subj @?= Right result
         ]
   where
-    simpl =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . evaluatePattern simplDef Nothing Nothing mempty
+    simpl t =
+        unsafePerformIO $ do
+            ns <- noSolver
+            runNoLoggingT $ fst <$> evaluatePattern simplDef Nothing ns mempty t
     a = var "A" someSort
 
 test_simplifyConstraint :: TestTree
+{-# NOINLINE test_simplifyConstraint #-}
 test_simplifyConstraint =
     testGroup
         "Performing Predicate simplifications"
@@ -225,11 +227,10 @@ test_simplifyConstraint =
              in simpl (Predicate subj) @?= Right (Predicate (exp2 subj))
         ]
 
-    simpl =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . simplifyConstraint testDefinition Nothing Nothing mempty mempty
+    simpl t =
+        unsafePerformIO $ do
+            ns <- noSolver
+            runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =
@@ -241,8 +242,10 @@ test_errors =
                 subj = f $ app con1 [a]
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
-            isLoop loopTerms . unsafePerformIO . runNoLoggingT $
-                fst <$> evaluateTerm TopDown loopDef Nothing Nothing mempty subj
+            isLoop loopTerms . unsafePerformIO $ do
+                ns <- noSolver
+                runNoLoggingT $
+                    fst <$> evaluateTerm TopDown loopDef Nothing ns mempty subj
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'

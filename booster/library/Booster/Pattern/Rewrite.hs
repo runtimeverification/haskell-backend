@@ -79,7 +79,7 @@ newtype RewriteT io a = RewriteT
 data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
     , doTracing :: Flag "CollectRewriteTraces"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
@@ -102,7 +102,7 @@ runRewriteT ::
     Flag "CollectRewriteTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     RewriteT io a ->
     io (Either (RewriteFailed "Rewrite") (a, SimplifierCache))
@@ -355,7 +355,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                     stillUnclear <- lift $ filterOutKnownConstraints prior unclearRequires
 
                     -- check unclear requires-clauses in the context of known constraints (prior)
-                    mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
+                    solver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
                     let smtUnclear = do
                             withContext CtxConstraint . withContext CtxAbort . logMessage $
@@ -366,34 +366,23 @@ applyRule pat@Pattern{ceilConditions} rule =
                             failRewrite $
                                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
                                     map coerce stillUnclear
-                    case mbSolver of
-                        Just solver -> do
-                            checkAllRequires <-
-                                SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
 
-                            case checkAllRequires of
-                                Left SMT.SMTSolverUnknown{} ->
-                                    smtUnclear -- abort rewrite if a solver result was Unknown
-                                Left other ->
-                                    liftIO $ Exception.throw other -- fail hard on other SMT errors
-                                Right (Just False) -> do
-                                    -- requires is actually false given the prior
-                                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
-                                    RewriteRuleAppT $ pure NotApplied
-                                Right (Just True) ->
-                                    pure () -- can proceed
-                                Right Nothing ->
-                                    smtUnclear -- no implication could be determined
-                        Nothing ->
-                            unless (null stillUnclear) $ do
-                                withContext CtxConstraint . withContext CtxAbort $
-                                    logMessage $
-                                        WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
-                                            renderOneLineText $
-                                                "Uncertain about a condition(s) in rule, no SMT solver:"
-                                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ stillUnclear)
-                                failRewrite $
-                                    RuleConditionUnclear rule (head stillUnclear)
+                    checkAllRequires <-
+                        SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
+
+                    case checkAllRequires of
+                        Left SMT.SMTSolverUnknown{} ->
+                            smtUnclear -- abort rewrite if a solver result was Unknown
+                        Left other ->
+                            liftIO $ Exception.throw other -- fail hard on other SMT errors
+                        Right (Just False) -> do
+                            -- requires is actually false given the prior
+                            withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                            RewriteRuleAppT $ pure NotApplied
+                        Right (Just True) ->
+                            pure () -- can proceed
+                        Right Nothing ->
+                            smtUnclear -- no implication could be determined
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
@@ -405,17 +394,16 @@ applyRule pat@Pattern{ceilConditions} rule =
                         catMaybes <$> mapM (checkConstraint id trivialIfBottom prior) ruleEnsures
 
                     -- check all new constraints together with the known side constraints
-                    whenJust mbSolver $ \solver ->
-                        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                            Right (Just False) -> do
-                                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                                RewriteRuleAppT $ pure Trivial
-                            Right _other ->
-                                pure ()
-                            Left SMT.SMTSolverUnknown{} ->
-                                pure ()
-                            Left other ->
-                                liftIO $ Exception.throw other
+                    (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
+                        Right (Just False) -> do
+                            withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                            RewriteRuleAppT $ pure Trivial
+                        Right _other ->
+                            pure ()
+                        Left SMT.SMTSolverUnknown{} ->
+                            pure ()
+                        Left other ->
+                            liftIO $ Exception.throw other
 
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
@@ -714,7 +702,7 @@ performRewrite ::
     Flag "CollectRewriteTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     -- | maximum depth
     Maybe Natural ->
     -- | cut point rule labels
@@ -723,9 +711,9 @@ performRewrite ::
     [Text] ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalLabels pat = do
+performRewrite doTracing def mLlvmLibrary smtSolver mbMaxDepth cutLabels terminalLabels pat = do
     (rr, RewriteStepsState{counter, traces}) <-
-        flip runStateT rewriteStart $ doSteps False pat
+        flip runStateT (rewriteStart smtSolver) $ doSteps False pat
     pure (counter, traces, rr)
   where
     logDepth = withContext CtxDepth . logMessage
@@ -816,7 +804,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     doTracing
                     def
                     mLlvmLibrary
-                    mSolver
+                    smtSolver
                     simplifierCache
                     (withPatternContext pat' $ rewriteStep cutLabels terminalLabels pat')
                     >>= \case
@@ -922,14 +910,14 @@ data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace ()))
     , simplifierCache :: SimplifierCache
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
     }
 
-rewriteStart :: RewriteStepsState
-rewriteStart =
+rewriteStart :: SMT.SMTContext -> RewriteStepsState
+rewriteStart smt =
     RewriteStepsState
         { counter = 0
         , traces = mempty
         , simplifierCache = mempty
-        , smtSolver = Nothing
+        , smtSolver = smt
         }

@@ -11,6 +11,7 @@ module Booster.SMT.Interface (
     defaultSMTOptions, -- re-export
     SMTError (..),
     initSolver,
+    noSolver,
     finaliseSolver,
     getModelFor,
     checkPredicates,
@@ -103,6 +104,20 @@ initSolver def smtOptions = Log.withContext Log.CtxSMT $ do
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
+
+noSolver :: MonadIO io => io SMT.SMTContext
+noSolver = do
+    solverClose <- liftIO $ newIORef $ pure ()
+    pure
+        SMTContext
+            { mbSolver = Nothing
+            , solverClose
+            , mbTranscriptHandle = Nothing
+            , prelude = []
+            , options = defaultSMTOptions
+            }
+
+
 -- | Hot-swap @SMTOptions@ in the active @SMTContext@, update the query timeout
 swapSmtOptions :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 swapSmtOptions smtOptions = do
@@ -116,11 +131,14 @@ hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 hardResetSolver smtOptions = do
     Log.logMessage ("Restarting SMT solver" :: Text)
     ctxt <- SMT get
-    liftIO $ join $ readIORef ctxt.solverClose
-    (solver, handle) <- connectToSolver
-    liftIO $ do
-        writeIORef ctxt.solver solver
-        writeIORef ctxt.solverClose $ Backend.close handle
+    case ctxt.mbSolver of
+        Nothing -> pure ()
+        Just solverRef -> do
+            liftIO $ join $ readIORef ctxt.solverClose
+            (solver, handle) <- connectToSolver
+            liftIO $ do
+                writeIORef solverRef solver
+                writeIORef ctxt.solverClose $ Backend.close handle
 
     checkPrelude
     swapSmtOptions smtOptions
