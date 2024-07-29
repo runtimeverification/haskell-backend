@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: k-haskell-backend
-Upstream-Contact: Bruce Collie <bruce.collie@runtimeverification.com>
+Upstream-Contact: Georgy Lukyanov <georgy.lukyanov@runtimeverification.com>
 Source: https://github.com/runtimeverification/haskell-backend
 
 Files: *
