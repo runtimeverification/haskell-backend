@@ -3,7 +3,7 @@
     "id": "4428832288-001",
     "error": {
         "code": 6,
-        "data": "unknown constrains",
+        "data": "unknown constraints",
         "message": "Aborted"
     }
 }
