@@ -494,7 +494,7 @@ respond stateVar request =
                                             (Right newPreds, _) ->
                                                 if all (== Pattern.Predicate TrueBool) newPreds
                                                     then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
+                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
                                             (Left other, _) ->
                                                 pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
