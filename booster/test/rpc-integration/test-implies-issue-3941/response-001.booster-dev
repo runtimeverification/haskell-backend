@@ -1,0 +1,11 @@
+{
+    "jsonrpc": "2.0",
+    "id": 61298,
+    "error": {
+        "code": 4,
+        "data": {
+            "error": "match remainder: Map:update(VarS:SortMap{}, \"0\", \"0\") == Map:update(\n    VarS:SortMap{},\n    \"0\",\n    chop(_)_WORD_Int_Int(_+Int_(lookup(VarS:SortMap{}, \"0\"), \"1\"))\n), \"\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL\\NUL...truncated\" == buf(\n    \"32\",\n    chop(_)_WORD_Int_Int(_+Int_(lookup(VarS:SortMap{}, \"0\"), \"1\"))\n)"
+        },
+        "message": "Implication check error"
+    }
+}

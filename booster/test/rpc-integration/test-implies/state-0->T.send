@@ -1,0 +1,1 @@
+{"jsonrpc": "2.0", "id": "4420703856-001", "method": "implies", "params": {"antecedent": {"format": "KORE", "version": 1, "term": {"tag": "DV", "sort": {"tag": "SortApp", "name": "SortInt", "args": []}, "value": "0"}}, "consequent": {"format": "KORE", "version": 1, "term": {"tag": "Top", "sort": {"tag": "SortApp", "name": "SortInt", "args": []}}}}}
