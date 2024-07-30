@@ -19,7 +19,6 @@ import Control.Monad.Logger (runNoLoggingT)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
-import GHC.IO.Unsafe (unsafePerformIO)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -30,9 +29,11 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Util (sortOfTerm)
+import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
+import Test.Booster.Util ((@?>>=))
 
 inj :: Symbol
 inj = injectionSymbol
@@ -43,21 +44,21 @@ test_evaluateFunction =
         "Evaluating functions using rules without side conditions"
         [ -- f1(a) => a
           testCase "Simple function evaluation" $ do
-            eval TopDown [trm| f1{}(con2{}(A:SomeSort{})) |] @?= Right [trm| con2{}(A:SomeSort{}) |]
-            eval BottomUp [trm| f1{}(con2{}(A:SomeSort{})) |] @?= Right [trm| con2{}(A:SomeSort{}) |]
+            eval TopDown [trm| f1{}(con2{}(A:SomeSort{})) |] @?>>= Right [trm| con2{}(A:SomeSort{}) |]
+            eval BottomUp [trm| f1{}(con2{}(A:SomeSort{})) |] @?>>= Right [trm| con2{}(A:SomeSort{}) |]
         , -- f2(f1(f1(con2(a)))) => f2(con2(a)). f2 is marked as partial, so not evaluating
           testCase "Nested function applications, one not to be evaluated" $ do
             let subj = [trm| f2{}(f1{}(f1{}(con2{}(A:SomeSort{})))) |]
                 goal = [trm| f2{}(con2{}(A:SomeSort{})) |]
-            eval TopDown subj @?= Right goal
-            eval BottomUp subj @?= Right goal
+            eval TopDown subj @?>>= Right goal
+            eval BottomUp subj @?>>= Right goal
         , -- f1(f2(f1(con2(a)))) => f1(f2(con2(a))). Again f2 partial, so not evaluating,
           -- therefore f1(x) => x not applied to unevaluated value
           testCase "Nested function applications with partial function inside" $ do
             let subj = [trm| f1{}(f2{}(f1{}(con2{}(A:SomeSort{})))) |]
                 goal = [trm| f1{}(f2{}(con2{}(A:SomeSort{}))) |]
-            eval TopDown subj @?= Right goal
-            eval BottomUp subj @?= Right goal
+            eval TopDown subj @?>>= Right goal
+            eval BottomUp subj @?>>= Right goal
         , -- f1(con1(con1(..con1(con2(a))..))) => con2(con2(..con2(a)..))
           -- using f1(con1(X)) => con2(X) repeatedly
           testCase "Recursive evaluation" $ do
@@ -66,39 +67,37 @@ test_evaluateFunction =
                 apply f = app f . (: [])
                 n `times` f = foldr (.) id (replicate n $ apply f)
             -- top-down evaluation: a single iteration is enough
-            eval TopDown (subj 101) @?= Right (101 `times` con2 $ a)
+            eval TopDown (subj 101) @?>>= Right (101 `times` con2 $ a)
             -- bottom-up evaluation: `depth` many iterations
-            eval BottomUp (subj 100) @?= Right (100 `times` con2 $ a)
-            isTooManyIterations $ eval BottomUp (subj 101)
+            eval BottomUp (subj 100) @?>>= Right (100 `times` con2 $ a)
+            isTooManyIterations =<< eval BottomUp (subj 101)
         , -- con3(f1(con2(a)), f1(con1(con2(b)))) => con3(con2(a), con2(con2(b)))
           testCase "Several function calls inside a constructor" $ do
             eval TopDown [trm| con3{}(f1{}(con2{}(A:SomeSort{})), f1{}(con1{}(con2{}(B:SomeSort{})))) |]
-                @?= Right [trm| con3{}(con2{}(A:SomeSort{}), con2{}(con2{}(B:SomeSort{}))) |]
+                @?>>= Right [trm| con3{}(con2{}(A:SomeSort{}), con2{}(con2{}(B:SomeSort{}))) |]
         , -- f1(inj{sub,some}(con4(a, b))) => f1(a) => a (not using f1-is-identity)
           testCase "Matching uses priorities" $ do
             eval TopDown [trm| f1{}(inj{AnotherSort{}, SomeSort{}}(con4{}(A:SomeSort{}, B:SomeSort{}))) |]
-                @?= Right [trm| A:SomeSort{} |]
+                @?>>= Right [trm| A:SomeSort{} |]
         , -- f1(con1("hey")) unmodified, since "hey" is concrete
           testCase "f1 with concrete argument, constraints prevent rule application" $ do
             let subj = [trm| f1{}(con1{}( \dv{SomeSort{}}("hey")) ) |]
-            eval TopDown subj @?= Right subj
-            eval BottomUp subj @?= Right subj
+            eval TopDown subj @?>>= Right subj
+            eval BottomUp subj @?>>= Right subj
         , testCase "f2 with symbolic argument, constraint prevents rule application" $ do
             let subj = [trm| f2{}(con1{}(A:SomeSort{})) |]
-            eval TopDown subj @?= Right subj
-            eval BottomUp subj @?= Right subj
+            eval TopDown subj @?>>= Right subj
+            eval BottomUp subj @?>>= Right subj
         , testCase "f2 with concrete argument, satisfying constraint" $ do
             let subj = [trm| f2{}(con1{}(\dv{SomeSort{}}("hey"))) |]
                 result = [trm| f2{}(\dv{SomeSort{}}("hey")) |]
-            eval TopDown subj @?= Right result
-            eval BottomUp subj @?= Right result
+            eval TopDown subj @?>>= Right result
+            eval BottomUp subj @?>>= Right result
         ]
   where
-    eval direction =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . evaluateTerm direction funDef Nothing Nothing mempty
+    eval direction t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty t
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
@@ -110,26 +109,24 @@ test_simplify =
         "Performing simplifications"
         [ testCase "No simplification applies" $ do
             let subj = [trm| f1{}(f2{}(A:SomeSort{})) |]
-            simpl TopDown subj @?= Right subj
-            simpl BottomUp subj @?= Right subj
+            simpl TopDown subj @?>>= Right subj
+            simpl BottomUp subj @?>>= Right subj
         , -- con1(con2(f2(a))) => con2(f2(a))
           testCase "Simplification of constructors" $ do
             let subj = app con1 [app con2 [app f2 [a]]]
-            simpl TopDown subj @?= Right (app con2 [app f2 [a]])
-            simpl BottomUp subj @?= Right (app con2 [app f2 [a]])
+            simpl TopDown subj @?>>= Right (app con2 [app f2 [a]])
+            simpl BottomUp subj @?>>= Right (app con2 [app f2 [a]])
         , -- con3(f2(a), f2(a)) => inj{sub,some}(con4(f2(a), f2(a)))
           testCase "Simplification with argument match" $ do
             let subj = [trm| con3{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{})) |]
                 result = [trm| inj{AnotherSort{}, SomeSort{}}(con4{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{}))) |]
-            simpl TopDown subj @?= Right result
-            simpl BottomUp subj @?= Right result
+            simpl TopDown subj @?>>= Right result
+            simpl BottomUp subj @?>>= Right result
         ]
   where
-    simpl direction =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . evaluateTerm direction simplDef Nothing Nothing mempty
+    simpl direction t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing ns mempty t
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
@@ -138,28 +135,26 @@ test_simplifyPattern =
         "Performing Pattern simplifications"
         [ testCase "No simplification applies" $ do
             let subj = [trm| f1{}(f2{}(A:SomeSort{})) |]
-            simpl (Pattern_ subj) @?= Right (Pattern_ subj)
-            simpl (Pattern_ subj) @?= Right (Pattern_ subj)
+            simpl (Pattern_ subj) @?>>= Right (Pattern_ subj)
+            simpl (Pattern_ subj) @?>>= Right (Pattern_ subj)
         , -- con1(con2(f2(a))) => con2(f2(a))
           testCase "Simplification of constructors" $ do
             let subj = app con1 [app con2 [app f2 [a]]]
             simpl (Pattern_ subj)
-                @?= Right (Pattern_ $ app con2 [app f2 [a]])
+                @?>>= Right (Pattern_ $ app con2 [app f2 [a]])
             simpl (Pattern_ subj)
-                @?= Right (Pattern_ $ app con2 [app f2 [a]])
+                @?>>= Right (Pattern_ $ app con2 [app f2 [a]])
         , -- con3(f2(a), f2(a)) => inj{sub,some}(con4(f2(a), f2(a)))
           testCase "Simplification with argument match" $ do
             let subj = Pattern_ [trm| con3{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{})) |]
                 result =
                     Pattern_ [trm| inj{AnotherSort{}, SomeSort{}}(con4{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{}))) |]
-            simpl subj @?= Right result
+            simpl subj @?>>= Right result
         ]
   where
-    simpl =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . evaluatePattern simplDef Nothing Nothing mempty
+    simpl t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluatePattern simplDef Nothing ns mempty t
     a = var "A" someSort
 
 test_simplifyConstraint :: TestTree
@@ -218,18 +213,17 @@ test_simplifyConstraint =
         [ testCase name $
             let subj =
                     EqualsK (KSeq (sortOfTerm lhs) lhs) (KSeq (sortOfTerm rhs) rhs)
-             in simpl (Predicate subj) @?= Right (Predicate (exp1 subj))
+             in simpl (Predicate subj) @?>>= Right (Predicate (exp1 subj))
         , testCase (name <> " (flipped)") $
             let subj =
                     EqualsK (KSeq (sortOfTerm rhs) rhs) (KSeq (sortOfTerm lhs) lhs)
-             in simpl (Predicate subj) @?= Right (Predicate (exp2 subj))
+             in simpl (Predicate subj) @?>>= Right (Predicate (exp2 subj))
         ]
 
-    simpl =
-        unsafePerformIO
-            . runNoLoggingT
-            . (fst <$>)
-            . simplifyConstraint testDefinition Nothing Nothing mempty mempty
+    simpl t =
+        do
+            ns <- noSolver
+            runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =
@@ -241,8 +235,8 @@ test_errors =
                 subj = f $ app con1 [a]
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
-            isLoop loopTerms . unsafePerformIO . runNoLoggingT $
-                fst <$> evaluateTerm TopDown loopDef Nothing Nothing mempty subj
+            ns <- noSolver
+            isLoop loopTerms =<< (runNoLoggingT $ fst <$> evaluateTerm TopDown loopDef Nothing ns mempty subj)
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'

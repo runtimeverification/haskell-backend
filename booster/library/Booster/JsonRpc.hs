@@ -20,7 +20,6 @@ import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
 import Control.Exception qualified as Exception
 import Control.Monad
-import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
@@ -149,12 +148,13 @@ respond stateVar request =
                             substVars =
                                 Set.unions
                                     [ Set.singleton v <> freeVariables e
-                                    | (v, e) <- Map.assocs substitution]
+                                    | (v, e) <- Map.assocs substitution
+                                    ]
 
-                        solver <- traverse (SMT.initSolver def) mSMTOptions
+                        solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
                         result <-
                             performRewrite doTracing def mLlvmLibrary solver substVars mbDepth cutPoints terminals substPat
-                        whenJust solver SMT.finaliseSolver
+                        SMT.finaliseSolver solver
                         stop <- liftIO $ getTime Monotonic
                         let duration =
                                 if fromMaybe False req.logTiming
@@ -234,7 +234,7 @@ respond stateVar request =
                         | otherwise =
                             Nothing
 
-                solver <- traverse (SMT.initSolver def) mSMTOptions
+                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
                 result <- case internalised of
                     Left patternErrors -> do
@@ -305,7 +305,7 @@ respond stateVar request =
                                             pure $ Right (addHeader $ Syntax.KJAnd predicateSort result)
                                         (Left something, _) ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty' @mods something
-                whenJust solver SMT.finaliseSolver
+                SMT.finaliseSolver solver
                 stop <- liftIO $ getTime Monotonic
 
                 let duration =
@@ -368,7 +368,7 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ Left SMT.Unknown
+                                        pure $ Left $ SMT.Unknown $ Just "No predicates or substitutions given"
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
@@ -386,12 +386,7 @@ respond stateVar request =
                                         { satisfiable = RpcTypes.Unsat
                                         , substitution = Nothing
                                         }
-                                Left SMT.ReasonUnknown{} ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unknown
-                                        , substitution = Nothing
-                                        }
-                                Left SMT.Unknown ->
+                                Left SMT.Unknown{} ->
                                     RpcTypes.GetModelResult
                                         { satisfiable = RpcTypes.Unknown
                                         , substitution = Nothing
@@ -491,7 +486,7 @@ respond stateVar request =
                             MatchSuccess subst -> do
                                 let filteredConsequentPreds =
                                         Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                solver <- traverse (SMT.initSolver def) mSMTOptions
+                                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
                                 if null filteredConsequentPreds
                                     then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
@@ -561,7 +556,10 @@ handleSmtError = JsonRpcHandler $ \case
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
             allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
-        pure $ RpcError.backendError $ RpcError.SmtSolverError $ RpcError.ErrorWithTerm reason allPreds
+        pure $
+            RpcError.backendError $
+                RpcError.SmtSolverError $
+                    RpcError.ErrorWithTerm (fromMaybe "UNKNOWN" reason) allPreds
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err

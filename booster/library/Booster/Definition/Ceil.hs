@@ -18,6 +18,7 @@ import Booster.Log
 import Booster.Pattern.Bool
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util (isConcrete, sortOfTerm)
+import Booster.SMT.Interface
 import Booster.Util (Flag (..))
 import Control.DeepSeq (NFData)
 import Control.Monad (foldM)
@@ -101,7 +102,8 @@ computeCeilRule ::
 computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attributes, computedAttributes}
     | null computedAttributes.notPreservesDefinednessReasons = pure Nothing
     | otherwise = do
-        (res, _) <- runEquationT def mllvm Nothing mempty mempty $ do
+        ns <- noSolver
+        (res, _) <- runEquationT def mllvm ns mempty mempty $ do
             lhsCeils <- Set.fromList <$> computeCeil lhs
             requiresCeils <- Set.fromList <$> concatMapM (computeCeil . coerce) (Set.toList requires)
             let subtractLHSAndRequiresCeils = (Set.\\ (lhsCeils `Set.union` requiresCeils)) . Set.fromList
