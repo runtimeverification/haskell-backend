@@ -118,5 +118,5 @@ transition rules that unconditionally introduce a fresh variable in the configur
     #And
    ?X ==K b #And ?X0 ==K ?X1 #And ?X2 ==K ?X3 // substitutions
     #And 
-   condition(?X3)
+   condition(?X4)
 ```
