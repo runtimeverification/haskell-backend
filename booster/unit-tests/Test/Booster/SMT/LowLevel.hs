@@ -92,7 +92,7 @@ responseParsing =
         "Response parsing"
         [ "sat" `parsesTo` Sat
         , "unsat" `parsesTo` Unsat
-        , "unknown" `parsesTo` Unknown
+        , "unknown" `parsesTo` Unknown Nothing
         , "success" `parsesTo` Success
         , "(error \"Something was wrong\")" `parsesTo` Error "Something was wrong"
         , "((x 0))" `parsesTo` Values [(Atom "x", SMT.Int 0)]
