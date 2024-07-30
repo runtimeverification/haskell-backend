@@ -80,6 +80,7 @@ data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
     , smtSolver :: SMT.SMTContext
+    , varsToAvoid :: Set.Set Variable
     , doTracing :: Flag "CollectRewriteTraces"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
@@ -103,15 +104,18 @@ runRewriteT ::
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
+    Set.Set Variable ->
     SimplifierCache ->
     RewriteT io a ->
     io (Either (RewriteFailed "Rewrite") (a, SimplifierCache))
-runRewriteT doTracing definition llvmApi smtSolver cache m = do
+runRewriteT doTracing definition llvmApi smtSolver varsToAvoid cache m = do
     logger <- getLogger
     prettyModifiers <- getPrettyModifiers
     runExceptT
         . flip runStateT cache
-        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing, logger, prettyModifiers}
+        . flip
+            runReaderT
+            RewriteConfig{definition, llvmApi, smtSolver, varsToAvoid, doTracing, logger, prettyModifiers}
         . unRewriteT
         $ m
 
@@ -408,9 +412,10 @@ applyRule pat@Pattern{ceilConditions} rule =
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
                     -- present in the input pattern and in the unification substitution
-                    let varsFromInput = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
+                    varsFromInput <- lift . RewriteT $ asks (.varsToAvoid)
+                    let varsFromPattern = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
                         varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
-                        forbiddenVars = varsFromInput <> varsFromSubst
+                        forbiddenVars = varsFromInput <> varsFromPattern <> varsFromSubst
                         existentialSubst =
                             Map.fromSet
                                 (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
@@ -703,6 +708,8 @@ performRewrite ::
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
+    -- | Variable names to avoid (for new existentials)
+    Set.Set Variable ->
     -- | maximum depth
     Maybe Natural ->
     -- | cut point rule labels
@@ -711,7 +718,7 @@ performRewrite ::
     [Text] ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite doTracing def mLlvmLibrary smtSolver mbMaxDepth cutLabels terminalLabels pat = do
+performRewrite doTracing def mLlvmLibrary smtSolver varsToAvoid mbMaxDepth cutLabels terminalLabels pat = do
     (rr, RewriteStepsState{counter, traces}) <-
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
@@ -804,6 +811,7 @@ performRewrite doTracing def mLlvmLibrary smtSolver mbMaxDepth cutLabels termina
                     def
                     mLlvmLibrary
                     smtSolver
+                    varsToAvoid
                     simplifierCache
                     (withPatternContext pat' $ rewriteStep cutLabels terminalLabels pat')
                     >>= \case
