@@ -15,7 +15,6 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
-import GHC.IO.Unsafe (unsafePerformIO)
 import Numeric.Natural
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -30,6 +29,7 @@ import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
+import Test.Booster.Util ((@?>>=))
 
 test_rewriteStep :: TestTree
 test_rewriteStep =
@@ -241,31 +241,30 @@ rulePriority =
                              )
                          ]
 
-runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteResult Pattern)
+runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteResult Pattern))
 runWith t =
-    second fst $
-        unsafePerformIO $ do
-            ns <- noSolver
-            runNoLoggingT $
-                runRewriteT NoCollectRewriteTraces def Nothing ns mempty (rewriteStep [] [] $ Pattern_ t)
+    second fst <$> do
+        ns <- noSolver
+        runNoLoggingT $
+            runRewriteT NoCollectRewriteTraces def Nothing ns mempty (rewriteStep [] [] $ Pattern_ t)
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
-    runWith t1 @?= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
+    runWith t1 @?>>= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    runWith t1 @?= Right (RewriteStuck $ Pattern_ t1)
+    runWith t1 @?>>= Right (RewriteStuck $ Pattern_ t1)
 
 branchesTo :: Term -> [(Text, Term)] -> IO ()
 t `branchesTo` ts =
     runWith t
-        @?= Right
+        @?>>= Right
             (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t')) ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
-    runWith t @?= Left err
+    runWith t @?>>= Left err
 
 ----------------------------------------
 -- tests for performRewrite (iterated rewrite in IO with logging)

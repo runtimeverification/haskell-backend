@@ -105,6 +105,9 @@ initSolver def smtOptions = Log.withContext Log.CtxSMT $ do
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
+{- | Returns an @SMTContext@ with no solver handle, essentially just a dummy that always returns `Unknown` for any command that is attempted.
+This can be useful for unit testing or in case the user wants to call the booster without Z3.
+-}
 noSolver :: MonadIO io => io SMT.SMTContext
 noSolver = do
     solverClose <- liftIO $ newIORef $ pure ()
@@ -218,8 +221,6 @@ getModelFor ctxt ps subst
         interactWithSolver transState smtAsserts >>= \case
             Left response ->
                 case response of
-                    -- note that 'Unknown' will never be returned by 'interactWithSolver', as it will always be
-                    -- converted to 'ReasonUnknown{}'.
                     Unknown{} -> do
                         case opts.retryLimit of
                             Just x | x > 0 -> do
