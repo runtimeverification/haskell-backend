@@ -81,9 +81,8 @@ data Response
     = Success -- for command_
     | Sat
     | Unsat
-    | Unknown
+    | Unknown (Maybe Text)
     | Values [(SExpr, Value)]
-    | ReasonUnknown Text
     | Error BS.ByteString
     deriving stock (Eq, Ord, Show)
 
