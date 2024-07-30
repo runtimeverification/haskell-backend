@@ -144,7 +144,7 @@ instance Pretty (PrettyWithModifiers mods EquationFailure) where
 data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
@@ -281,7 +281,7 @@ runEquationT ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     EquationT io a ->
@@ -394,7 +394,7 @@ evaluateTerm ::
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
@@ -417,7 +417,7 @@ evaluatePattern ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
@@ -462,7 +462,7 @@ evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
@@ -828,7 +828,7 @@ applyEquation term rule =
                         -- could now be syntactically present in the path constraints, filter again
                         stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
 
-                        mbSolver :: Maybe SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+                        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
 
                         -- check any conditions that are still unclear with the SMT solver
                         -- (or abort if no solver is being used), abort if still unclear after
@@ -842,7 +842,7 @@ applyEquation term rule =
                                             liftIO $ Exception.throw other
                                         Right result ->
                                             pure result
-                             in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
+                             in lift (checkWithSmt solver) >>= \case
                                     Nothing -> do
                                         -- no solver or still unclear: abort
                                         throwE
@@ -882,23 +882,22 @@ applyEquation term rule =
                                     )
                                     ensured
                         -- check all ensured conditions together with the path condition
-                        whenJust mbSolver $ \solver -> do
-                            lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                                Right (Just False) -> do
-                                    let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
-                                    throwE
-                                        ( \ctx ->
-                                            ctx . logMessage $
-                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
-                                                    renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
-                                        , EnsuresFalse falseEnsures
-                                        )
-                                Right _other ->
-                                    pure ()
-                                Left SMT.SMTSolverUnknown{} ->
-                                    pure ()
-                                Left other ->
-                                    liftIO $ Exception.throw other
+                        lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+                            Right (Just False) -> do
+                                let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
+                                throwE
+                                    ( \ctx ->
+                                        ctx . logMessage $
+                                            WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
+                                                renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
+                                    , EnsuresFalse falseEnsures
+                                    )
+                            Right _other ->
+                                pure ()
+                            Left SMT.SMTSolverUnknown{} ->
+                                pure ()
+                            Left other ->
+                                liftIO $ Exception.throw other
                         lift $ pushConstraints $ Set.fromList ensuredConditions
                         pure $ substituteInTerm subst rule.rhs
   where
@@ -1004,19 +1003,19 @@ simplifyConstraint ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi mbSMT cache knownPredicates (Predicate p) = do
-    runEquationT def mbApi mbSMT cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi smt cache knownPredicates (Predicate p) = do
+    runEquationT def mbApi smt cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)
