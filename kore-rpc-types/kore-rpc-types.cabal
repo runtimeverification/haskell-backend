@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore-rpc-types
-version:        0.1.52
+version:        0.1.53
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/runtimeverification/haskell-backend#readme
