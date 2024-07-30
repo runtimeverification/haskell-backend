@@ -32,6 +32,7 @@ test_match_rewrite =
         , sorts
         , injections
         , internalLists
+        , internalSets
         , internalMaps
         ]
 
@@ -375,6 +376,17 @@ internalLists =
     lastElem = [trm| \dv{SomeSort{}}("last") |]
 
     klist = KList testKListDef
+
+internalSets :: TestTree
+internalSets =
+    testGroup
+        "Internal sets"
+        [ test
+            "Can match an empty set with itself"
+            emptySet
+            emptySet
+            (success [])
+        ]
 
 internalMaps :: TestTree
 internalMaps =
