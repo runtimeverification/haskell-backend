@@ -60,6 +60,7 @@ import Booster.Pattern.Rewrite (
     performRewrite,
  )
 import Booster.Pattern.Util (
+    freeVariables,
     sortOfPattern,
     substituteInPredicate,
     substituteInTerm,
@@ -144,8 +145,11 @@ respond stateVar request =
                                     , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
                                     }
-                            -- remember the variables used in the substitution
-                            substVars = Map.keysSet substitution
+                            -- remember all variables used in the substitutions
+                            substVars =
+                                Set.unions
+                                    [ Set.singleton v <> freeVariables e
+                                    | (v, e) <- Map.assocs substitution]
 
                         solver <- traverse (SMT.initSolver def) mSMTOptions
                         result <-
