@@ -245,7 +245,7 @@ runWith t =
     second fst $
         unsafePerformIO
             ( runNoLoggingT $
-                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty (rewriteStep [] [] $ Pattern_ t)
+                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty mempty (rewriteStep [] [] $ Pattern_ t)
             )
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
@@ -272,7 +272,7 @@ failsWith t err =
 runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
     (counter, _, res) <-
-        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [] [] $ Pattern_ t
+        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing Nothing mempty Nothing [] [] $ Pattern_ t
     pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
@@ -415,7 +415,7 @@ supportsDepthControl =
     rewritesToDepth (MaxDepth depth) (Steps n) t t' f = do
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing Nothing (Just depth) [] [] $
+                performRewrite NoCollectRewriteTraces def Nothing Nothing mempty (Just depth) [] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -469,7 +469,7 @@ supportsCutPoints =
     rewritesToCutPoint lbl (Steps n) t t' f = do
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [lbl] [] $
+                performRewrite NoCollectRewriteTraces def Nothing Nothing mempty Nothing [lbl] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -501,5 +501,5 @@ supportsTerminalRules =
     rewritesToTerminal lbl (Steps n) t t' f = do
         (counter, _, res) <-
             runNoLoggingT $ do
-                performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [] [lbl] $ Pattern_ t
+                performRewrite NoCollectRewriteTraces def Nothing Nothing mempty Nothing [] [lbl] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')

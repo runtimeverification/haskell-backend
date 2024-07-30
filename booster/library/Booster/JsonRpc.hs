@@ -144,10 +144,12 @@ respond stateVar request =
                                     , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
                                     }
+                            -- remember the variables used in the substitution
+                            substVars = Map.keysSet substitution
 
                         solver <- traverse (SMT.initSolver def) mSMTOptions
                         result <-
-                            performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
+                            performRewrite doTracing def mLlvmLibrary solver substVars mbDepth cutPoints terminals substPat
                         whenJust solver SMT.finaliseSolver
                         stop <- liftIO $ getTime Monotonic
                         let duration =
