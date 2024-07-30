@@ -11,6 +11,7 @@ module Booster.SMT.Interface (
     defaultSMTOptions, -- re-export
     SMTError (..),
     initSolver,
+    noSolver,
     finaliseSolver,
     getModelFor,
     checkPredicates,
@@ -32,6 +33,7 @@ import Data.Either.Extra (fromLeft', fromRight')
 import Data.IORef
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
@@ -52,7 +54,7 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 data SMTError
     = GeneralSMTError Text
     | SMTTranslationError Text
-    | SMTSolverUnknown Text (Set Predicate) (Set Predicate)
+    | SMTSolverUnknown (Maybe Text) (Set Predicate) (Set Predicate)
     deriving (Eq, Show)
 
 instance Exception SMTError
@@ -103,6 +105,21 @@ initSolver def smtOptions = Log.withContext Log.CtxSMT $ do
     Log.logMessage ("Successfully initialised SMT solver with " <> (Text.pack . show $ smtOptions))
     pure ctxt
 
+{- | Returns an @SMTContext@ with no solver handle, essentially just a dummy that always returns `Unknown` for any command that is attempted.
+This can be useful for unit testing or in case the user wants to call the booster without Z3.
+-}
+noSolver :: MonadIO io => io SMT.SMTContext
+noSolver = do
+    solverClose <- liftIO $ newIORef $ pure ()
+    pure
+        SMTContext
+            { mbSolver = Nothing
+            , solverClose
+            , mbTranscriptHandle = Nothing
+            , prelude = []
+            , options = defaultSMTOptions{retryLimit = Just 0}
+            }
+
 -- | Hot-swap @SMTOptions@ in the active @SMTContext@, update the query timeout
 swapSmtOptions :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 swapSmtOptions smtOptions = do
@@ -116,11 +133,14 @@ hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 hardResetSolver smtOptions = do
     Log.logMessage ("Restarting SMT solver" :: Text)
     ctxt <- SMT get
-    liftIO $ join $ readIORef ctxt.solverClose
-    (solver, handle) <- connectToSolver
-    liftIO $ do
-        writeIORef ctxt.solver solver
-        writeIORef ctxt.solverClose $ Backend.close handle
+    case ctxt.mbSolver of
+        Nothing -> pure ()
+        Just solverRef -> do
+            liftIO $ join $ readIORef ctxt.solverClose
+            (solver, handle) <- connectToSolver
+            liftIO $ do
+                writeIORef solverRef solver
+                writeIORef ctxt.solverClose $ Backend.close handle
 
     checkPrelude
     swapSmtOptions smtOptions
@@ -201,9 +221,7 @@ getModelFor ctxt ps subst
         interactWithSolver transState smtAsserts >>= \case
             Left response ->
                 case response of
-                    -- note that 'Unknown' will never be returned by 'interactWithSolver', as it will always be
-                    -- converted to 'ReasonUnknown{}'.
-                    ReasonUnknown{} -> do
+                    Unknown{} -> do
                         case opts.retryLimit of
                             Just x | x > 0 -> do
                                 let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
@@ -240,12 +258,7 @@ getModelFor ctxt ps subst
         result <- case satResponse of
             Error msg -> throwSMT' $ BS.unpack msg
             Unsat -> pure $ Left Unsat
-            Unknown{} -> do
-                -- we always request the reason, even if we later retry,
-                -- to avoid delayed popping from the assertion stack in 'solve'
-                reasonUnknown <- smtRun SMT.GetReasonUnknown
-                pure $ Left reasonUnknown
-            r@ReasonUnknown{} -> pure $ Left r
+            r@Unknown{} -> pure $ Left r
             Values{} -> throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
             Success -> throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
             Sat -> Right <$> extractModel transState
@@ -379,21 +392,26 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 pure Nothing
             (Sat, Unsat) -> pure . Just $ True
             (Unsat, Sat) -> pure . Just $ False
-            (Unknown, _) -> retry smtGiven sexprsToCheck transState
-            (_, Unknown) -> retry smtGiven sexprsToCheck transState
+            (Unknown reason, _) -> retry smtGiven sexprsToCheck transState reason
+            (_, Unknown reason) -> retry smtGiven sexprsToCheck transState reason
             other ->
                 throwE . GeneralSMTError $
                     ("Unexpected result while checking a condition: " :: Text) <> Text.pack (show other)
 
-    retry :: [DeclareCommand] -> [SExpr] -> TranslationState -> ExceptT SMTError (SMT io) (Maybe Bool)
-    retry smtGiven sexprsToCheck transState = do
+    retry ::
+        [DeclareCommand] ->
+        [SExpr] ->
+        TranslationState ->
+        Maybe Text ->
+        ExceptT SMTError (SMT io) (Maybe Bool)
+    retry smtGiven sexprsToCheck transState reasonUnknown = do
         opts <- lift . SMT $ gets (.options)
         case opts.retryLimit of
             Just x | x > 0 -> do
                 let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
                 lift $ hardResetSolver newOpts
                 solve smtGiven sexprsToCheck transState
-            _ -> failBecauseUnknown
+            _ -> failBecauseUnknown reasonUnknown
 
     translated :: Either Text (([DeclareCommand], [SExpr]), TranslationState)
     translated = SMT.runTranslator $ do
@@ -407,18 +425,12 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
 
-    failBecauseUnknown :: ExceptT SMTError (SMT io) (Maybe Bool)
-    failBecauseUnknown =
-        smtRun GetReasonUnknown >>= \case
-            ReasonUnknown reason -> do
-                Log.withContext Log.CtxAbort $
-                    Log.logMessage $
-                        "Returned Unknown. Reason: " <> reason
-                throwE $ SMTSolverUnknown reason givenPs psToCheck
-            other -> do
-                let msg = "Unexpected result while calling ':reason-unknown': " <> show other
-                Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
-                throwSMT' msg
+    failBecauseUnknown :: Maybe Text -> ExceptT SMTError (SMT io) (Maybe Bool)
+    failBecauseUnknown reason = do
+        Log.withContext Log.CtxAbort $
+            Log.logMessage $
+                "Returned Unknown. Reason: " <> fromMaybe "UNKNOWN" reason
+        throwE $ SMTSolverUnknown reason givenPs psToCheck
 
     -- Given the known truth and the expressions to check,
     -- interact with the solver to establish the validity of the  expressions.
@@ -439,7 +451,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             Unsat -> do
                 Log.logMessage ("Inconsistent ground truth" :: Text)
                 pure (Unsat, Unsat)
-            Unknown -> do
+            Unknown reason -> do
                 Log.getPrettyModifiers >>= \case
                     ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
                         Log.withContext Log.CtxDetail
@@ -449,7 +461,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                             $ Pretty.renderOneLineText
                             $ "Unknown ground truth: "
                                 <+> (hsep . punctuate (slash <> backslash) . map (pretty' @mods) . Set.toList $ givenPs)
-                pure (Unknown, Unknown)
+                pure (Unknown reason, Unknown reason)
             _ -> do
                 -- save ground truth for 2nd check
                 smtRun_ Push

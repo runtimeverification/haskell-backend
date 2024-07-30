@@ -36,13 +36,13 @@ responseP =
     A.string "success" $> Success -- UNUSED?
         <|> A.string "sat" $> Sat
         <|> A.string "unsat" $> Unsat
-        <|> A.string "unknown" $> Unknown
+        <|> A.string "unknown" $> Unknown Nothing
         <|> A.char '(' *> errOrValuesOrReasonUnknownP <* A.char ')'
 
 errOrValuesOrReasonUnknownP :: A.Parser Response
 errOrValuesOrReasonUnknownP =
     A.string "error " *> (Error <$> stringP)
-        <|> A.string ":reason-unknown " *> (ReasonUnknown . decodeUtf8 <$> stringP)
+        <|> A.string ":reason-unknown " *> (Unknown . Just . decodeUtf8 <$> stringP)
         <|> Values <$> A.many1' pairP
 
 stringP :: A.Parser BS.ByteString

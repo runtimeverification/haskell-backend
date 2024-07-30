@@ -15,7 +15,6 @@ import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
-import GHC.IO.Unsafe (unsafePerformIO)
 import Numeric.Natural
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -25,10 +24,12 @@ import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Rewrite
+import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
+import Test.Booster.Util ((@?>>=))
 
 test_rewriteStep :: TestTree
 test_rewriteStep =
@@ -240,39 +241,39 @@ rulePriority =
                              )
                          ]
 
-runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteResult Pattern)
+runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteResult Pattern))
 runWith t =
-    second fst $
-        unsafePerformIO
-            ( runNoLoggingT $
-                runRewriteT NoCollectRewriteTraces def Nothing Nothing mempty (rewriteStep [] [] $ Pattern_ t)
-            )
+    second fst <$> do
+        ns <- noSolver
+        runNoLoggingT $
+            runRewriteT NoCollectRewriteTraces def Nothing ns mempty (rewriteStep [] [] $ Pattern_ t)
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
-    runWith t1 @?= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
+    runWith t1 @?>>= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    runWith t1 @?= Right (RewriteStuck $ Pattern_ t1)
+    runWith t1 @?>>= Right (RewriteStuck $ Pattern_ t1)
 
 branchesTo :: Term -> [(Text, Term)] -> IO ()
 t `branchesTo` ts =
     runWith t
-        @?= Right
+        @?>>= Right
             (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t')) ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
-    runWith t @?= Left err
+    runWith t @?>>= Left err
 
 ----------------------------------------
 -- tests for performRewrite (iterated rewrite in IO with logging)
 
 runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
+    ns <- noSolver
     (counter, _, res) <-
-        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [] [] $ Pattern_ t
+        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing ns Nothing [] [] $ Pattern_ t
     pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
@@ -413,9 +414,10 @@ supportsDepthControl =
   where
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToDepth (MaxDepth depth) (Steps n) t t' f = do
+        ns <- noSolver
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing Nothing (Just depth) [] [] $
+                performRewrite NoCollectRewriteTraces def Nothing ns (Just depth) [] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -467,9 +469,10 @@ supportsCutPoints =
   where
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToCutPoint lbl (Steps n) t t' f = do
+        ns <- noSolver
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [lbl] [] $
+                performRewrite NoCollectRewriteTraces def Nothing ns Nothing [lbl] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -501,5 +504,6 @@ supportsTerminalRules =
     rewritesToTerminal lbl (Steps n) t t' f = do
         (counter, _, res) <-
             runNoLoggingT $ do
-                performRewrite NoCollectRewriteTraces def Nothing Nothing Nothing [] [lbl] $ Pattern_ t
+                ns <- noSolver
+                performRewrite NoCollectRewriteTraces def Nothing ns Nothing [] [lbl] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
