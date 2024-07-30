@@ -1,0 +1,11 @@
+{
+    "jsonrpc": "2.0",
+    "id": "4420567456-001",
+    "error": {
+        "code": 4,
+        "data": {
+            "error": "match remainder: \"0\" == x:SortInt{}"
+        },
+        "message": "Implication check error"
+    }
+}

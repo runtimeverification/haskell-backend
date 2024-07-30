@@ -92,3 +92,31 @@ transition rules that unconditionally introduce a fresh variable in the configur
    <a-state> ?X2          </a-state>
    <b-state> ?X1          </b-state>
 ```
+
+5) _ques-and-substitution_
+
+   If a substitution `X ==K b` is supplied, it will be applied before rewriting.
+   However, the variable `X` can still not be used because the substitution will also be returned in the result (for information).
+   Therefore, the newly created variable cannot be `X0`.
+
+   _Input:_
+
+```
+   <k> #setAStateSymbolic </k>
+   <a-state> ?X0      </a-state>
+   <b-state> ?X       </b-state>
+    #And
+   ?X #Equals b #And ?X0 #Equals ?X1 #And ?X2 #Equals ?X3 // substitutions
+```
+
+   _Expected:_
+
+```
+   <k> .K                 </k>
+   <a-state> ?X0          </a-state>
+   <b-state> b            </b-state>
+    #And
+   ?X #Equals b #And ?X0 #Equals ?X1 #And ?X2 #Equals ?X3 // substitutions
+    #And
+   condition(?X4)
+```
