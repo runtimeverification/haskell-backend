@@ -59,6 +59,7 @@ import Booster.Pattern.Rewrite (
     performRewrite,
  )
 import Booster.Pattern.Util (
+    freeVariables,
     sortOfPattern,
     substituteInPredicate,
     substituteInTerm,
@@ -143,10 +144,16 @@ respond stateVar request =
                                     , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
                                     }
+                            -- remember all variables used in the substitutions
+                            substVars =
+                                Set.unions
+                                    [ Set.singleton v <> freeVariables e
+                                    | (v, e) <- Map.assocs substitution
+                                    ]
 
                         solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
                         result <-
-                            performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
+                            performRewrite doTracing def mLlvmLibrary solver substVars mbDepth cutPoints terminals substPat
                         SMT.finaliseSolver solver
                         stop <- liftIO $ getTime Monotonic
                         let duration =

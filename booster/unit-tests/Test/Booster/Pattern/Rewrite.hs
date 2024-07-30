@@ -246,7 +246,7 @@ runWith t =
     second fst <$> do
         ns <- noSolver
         runNoLoggingT $
-            runRewriteT NoCollectRewriteTraces def Nothing ns mempty (rewriteStep [] [] $ Pattern_ t)
+            runRewriteT NoCollectRewriteTraces def Nothing ns mempty mempty (rewriteStep [] [] $ Pattern_ t)
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
@@ -273,7 +273,9 @@ runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
     ns <- noSolver
     (counter, _, res) <-
-        runNoLoggingT $ performRewrite NoCollectRewriteTraces def Nothing ns Nothing [] [] $ Pattern_ t
+        runNoLoggingT $
+            performRewrite NoCollectRewriteTraces def Nothing ns mempty Nothing [] [] $
+                Pattern_ t
     pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
@@ -417,7 +419,7 @@ supportsDepthControl =
         ns <- noSolver
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing ns (Just depth) [] [] $
+                performRewrite NoCollectRewriteTraces def Nothing ns mempty (Just depth) [] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -472,7 +474,7 @@ supportsCutPoints =
         ns <- noSolver
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing ns Nothing [lbl] [] $
+                performRewrite NoCollectRewriteTraces def Nothing ns mempty Nothing [lbl] [] $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -505,5 +507,5 @@ supportsTerminalRules =
         (counter, _, res) <-
             runNoLoggingT $ do
                 ns <- noSolver
-                performRewrite NoCollectRewriteTraces def Nothing ns Nothing [] [lbl] $ Pattern_ t
+                performRewrite NoCollectRewriteTraces def Nothing ns mempty Nothing [] [lbl] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
