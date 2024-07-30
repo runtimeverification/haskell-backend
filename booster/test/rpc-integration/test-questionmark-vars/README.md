@@ -106,7 +106,7 @@ transition rules that unconditionally introduce a fresh variable in the configur
    <a-state> ?X0      </a-state>
    <b-state> ?X       </b-state>
     #And
-   ?X ==K b #And ?X0 ==K ?X1 #And ?X2 ==K ?X3 // substitutions
+   ?X #Equals b #And ?X0 #Equals ?X1 #And ?X2 #Equals ?X3 // substitutions
 ```
 
    _Expected:_
@@ -116,7 +116,7 @@ transition rules that unconditionally introduce a fresh variable in the configur
    <a-state> ?X0          </a-state>
    <b-state> b            </b-state>
     #And
-   ?X ==K b #And ?X0 ==K ?X1 #And ?X2 ==K ?X3 // substitutions
-    #And 
+   ?X #Equals b #And ?X0 #Equals ?X1 #And ?X2 #Equals ?X3 // substitutions
+    #And
    condition(?X4)
 ```

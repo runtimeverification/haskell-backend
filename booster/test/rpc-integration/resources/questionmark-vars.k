@@ -1,6 +1,4 @@
 module QUESTIONMARK-VARS
-  imports K-EQUAL
-
   syntax State ::= "a"
                  | "b"
                  | ".State"
