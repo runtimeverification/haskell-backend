@@ -1,7 +1,7 @@
 Source: k-haskell-backend
 Section: devel
 Priority: optional
-Maintainer: Bruce Collie <bruce.collie@runtimeverification.com>
+Maintainer: Georgy Lukyanov <georgy.lukyanov@runtimeverification.com>
 Build-Depends: debhelper (>=10)
 Standards-Version: 3.9.6
 Homepage: https://github.com/runtimeverification/haskell-backend

@@ -75,7 +75,7 @@ data SMTContext = SMTContext
     { options :: SMTOptions
     , -- use IORef here to ensure we only ever retain one pointer to the solver,
       -- otherwise the solverClose action does not actually terminate the solver instance
-      solver :: IORef Backend.Solver
+      mbSolver :: Maybe (IORef Backend.Solver)
     , solverClose :: IORef (IO ())
     , mbTranscriptHandle :: Maybe Handle
     , prelude :: [DeclareCommand]
@@ -111,7 +111,7 @@ mkContext opts prelude = do
         liftIO $ BS.hPutStrLn h "; solver initialised\n;;;;;;;;;;;;;;;;;;;;;;;"
     pure
         SMTContext
-            { solver
+            { mbSolver = Just solver
             , solverClose
             , mbTranscriptHandle
             , prelude
@@ -180,22 +180,27 @@ runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd cmd = do
     let cmdBS = encode cmd
     ctxt <- SMT get
-    whenJust ctxt.mbTranscriptHandle $ \h -> do
-        whenJust (comment cmd) $ \c ->
-            liftIO (BS.hPutBuilder h c)
-        liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
-    output <- (liftIO $ readIORef ctxt.solver) >>= \solver -> run_ cmd solver cmdBS
-    let result = readResponse output
-    whenJust ctxt.mbTranscriptHandle $
-        liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
-    when (isError result) $
-        logMessage $
-            "SMT solver reports: " <> pack (show result)
-    pure result
-  where
-    isError :: Response -> Bool
-    isError Error{} = True
-    isError _other = False
+    case ctxt.mbSolver of
+        Nothing -> pure $ Unknown (Just "server started without SMT solver")
+        Just solverRef -> do
+            whenJust ctxt.mbTranscriptHandle $ \h -> do
+                whenJust (comment cmd) $ \c ->
+                    liftIO (BS.hPutBuilder h c)
+                liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
+            output <- (liftIO $ readIORef solverRef) >>= \solver -> run_ cmd solver cmdBS
+            let result = readResponse output
+            whenJust ctxt.mbTranscriptHandle $
+                liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
+            case result of
+                Error{} -> do
+                    logMessage $
+                        "SMT solver reports: " <> pack (show result)
+                    pure result
+                Unknown Nothing ->
+                    runCmd GetReasonUnknown >>= \case
+                        unknownWithReason@(Unknown (Just _)) -> pure unknownWithReason
+                        _ -> pure result
+                _ -> pure result
 
 instance SMTEncode DeclareCommand where
     encode = encodeDeclaration
