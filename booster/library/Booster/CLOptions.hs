@@ -7,6 +7,7 @@ module Booster.CLOptions (
     CLOptions (..),
     EquationOptions (..),
     LogFormat (..),
+    LogOptions (..),
     RewriteOptions (..),
     TimestampFormat (..),
     clOptionsParser,
@@ -43,25 +44,23 @@ data CLOptions = CLOptions
     , mainModuleName :: Text
     , llvmLibraryFile :: Maybe FilePath
     , port :: Int
-    , logLevels :: [LogLevel]
+    , logOptions :: LogOptions
+    , smtOptions :: Maybe SMTOptions
+    , equationOptions :: EquationOptions
+    , rewriteOptions :: RewriteOptions
+    }
+    deriving stock (Show)
+
+data LogOptions = LogOptions
+    { logLevels :: [LogLevel]
     , logTimeStamps :: Bool
     , timeStampsFormat :: TimestampFormat
     , logFormat :: LogFormat
     , logContexts :: [ContextFilter]
     , logFile :: Maybe FilePath
-    , smtOptions :: Maybe SMTOptions
-    , equationOptions :: EquationOptions
-    , rewriteOptions :: RewriteOptions
     , prettyPrintOptions :: [ModifierT]
     }
-    deriving (Show)
-
-
-data RewriteOptions = RewriteOptions
-    { indexCells :: [Text]
-    , interimSimplification :: Maybe Natural
-    }
-    deriving stock (Show, Eq)
+    deriving stock (Show)
 
 data LogFormat
     = Standard
@@ -84,6 +83,12 @@ instance Show TimestampFormat where
     show = \case
         Pretty -> "pretty"
         Nanoseconds -> "nanoseconds"
+
+data RewriteOptions = RewriteOptions
+    { indexCells :: [Text]
+    , interimSimplification :: Maybe Natural
+    }
+    deriving stock (Show, Eq)
 
 clOptionsParser :: Parser CLOptions
 clOptionsParser =
@@ -112,7 +117,15 @@ clOptionsParser =
                 <> help "Port for the RPC server to bind to"
                 <> showDefault
             )
-        <*> many
+        <*> parseLogOptions
+        <*> parseSMTOptions
+        <*> parseEquationOptions
+        <*> parseRewriteOptions
+
+parseLogOptions :: Parser LogOptions
+parseLogOptions =
+    LogOptions
+        <$> many
             ( option
                 (eitherReader readLogLevel)
                 ( metavar "LEVEL"
@@ -163,9 +176,6 @@ clOptionsParser =
                         "Log file to output the logs into"
                 )
             )
-        <*> parseSMTOptions
-        <*> parseEquationOptions
-        <*> parseRewriteOptions
         <*> option
             (eitherReader $ mapM (readModifierT . trim) . splitOn ",")
             ( metavar "PRETTY_PRINT"
@@ -381,13 +391,6 @@ parseEquationOptions =
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
 
-nonnegativeInt :: Integral i => ReadM i
-nonnegativeInt =
-    auto @Integer >>= \case
-       i
-           | i < 0 -> readerError "must be a non-negative integer."
-           | otherwise -> pure (fromIntegral i)
-
 parseRewriteOptions :: Parser RewriteOptions
 parseRewriteOptions =
     RewriteOptions
@@ -400,9 +403,9 @@ parseRewriteOptions =
             )
         <*> optional
             ( option
-              nonnegativeInt
+              (intWith (> 0))
               ( metavar "DEPTH"
-                  <> long "booster-interim-simplification"
+                  <> long "simplify-each"
                   <> help "If given: Simplify the term each time the given rewrite depth is reached"
               )
             )
@@ -419,7 +422,15 @@ parseRewriteOptions =
 
     enquote = decodeASCII . encodeLabel . BS.pack
 
+intWith :: Integral i => (Integer -> Bool) -> ReadM i
+intWith p =
+    auto >>= \case
+       i
+           | not (p i) -> readerError $ show i <> ": Invalid integer value."
+           | otherwise -> pure (fromIntegral i)
 
+nonnegativeInt :: Integral i => ReadM i
+nonnegativeInt = intWith (>= 0)
 
 
 versionInfoParser :: Parser (a -> a)

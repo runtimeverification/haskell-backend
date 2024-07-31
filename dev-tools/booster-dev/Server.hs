@@ -50,18 +50,20 @@ main = do
     let CLOptions
             { definitionFile
             , mainModuleName
-            , port
-            , logLevels
-            , logContexts
-            , logTimeStamps
-            , timeStampsFormat
-            , logFormat
             , llvmLibraryFile
+            , port
+            , logOptions = LogOptions
+                { logLevels
+                , logContexts
+                , logTimeStamps
+                , timeStampsFormat
+                , logFormat
+                , logFile
+                , prettyPrintOptions
+                }
             , smtOptions
             , equationOptions
             , rewriteOptions
-            , prettyPrintOptions
-            , logFile
             } = options
 
     putStrLn $

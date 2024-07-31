@@ -126,16 +126,18 @@ main = do
                     , mainModuleName
                     , port
                     , llvmLibraryFile
-                    , logLevels
-                    , logFormat
-                    , logTimeStamps
-                    , timeStampsFormat
-                    , logContexts
-                    , logFile
+                    , logOptions = LogOptions
+                        { logLevels
+                        , logFormat
+                        , logTimeStamps
+                        , timeStampsFormat
+                        , logContexts
+                        , logFile
+                        , prettyPrintOptions
+                        }
                     , smtOptions
                     , equationOptions
                     , rewriteOptions
-                    , prettyPrintOptions
                     }
             , proxyOptions =
                 ProxyOptions
