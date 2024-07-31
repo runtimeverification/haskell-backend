@@ -109,7 +109,7 @@ mkdir -p $SCRIPT_DIR/logs
 # use special options if given, but restore KORE_RPC_OPTS afterwards
 if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     echo "Using special options '${FEATURE_SERVER_OPTS}' via KORE_RPC_OPTS"
-    if [ ! -z "${KORE_RPC_OPTS}" ]; then
+    if [ ! -z "${KORE_RPC_OPTS:-}" ]; then
         PRIOR_OPTS=${KORE_RPC_OPTS}
     fi
     export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
@@ -120,7 +120,7 @@ killall kore-rpc-booster || echo "No zombie processes found"
 
 
 if [ -z "$BUG_REPORT" ]; then
-    if [ ! -z "${PRIOR_OPTS}" ]; then
+    if [ ! -z "${PRIOR_OPTS:-}" ]; then
         export KORE_RPC_OPTS=${PRIOR_OPTS}
     else
         unset KORE_RPC_OPTS
