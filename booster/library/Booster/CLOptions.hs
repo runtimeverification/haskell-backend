@@ -403,11 +403,11 @@ parseRewriteOptions =
             )
         <*> optional
             ( option
-              (intWith (> 0))
-              ( metavar "DEPTH"
-                  <> long "simplify-each"
-                  <> help "If given: Simplify the term each time the given rewrite depth is reached"
-              )
+                (intWith (> 0))
+                ( metavar "DEPTH"
+                    <> long "simplify-each"
+                    <> help "If given: Simplify the term each time the given rewrite depth is reached"
+                )
             )
   where
     readCellName :: String -> Either String Text
@@ -425,13 +425,12 @@ parseRewriteOptions =
 intWith :: Integral i => (Integer -> Bool) -> ReadM i
 intWith p =
     auto >>= \case
-       i
-           | not (p i) -> readerError $ show i <> ": Invalid integer value."
-           | otherwise -> pure (fromIntegral i)
+        i
+            | not (p i) -> readerError $ show i <> ": Invalid integer value."
+            | otherwise -> pure (fromIntegral i)
 
 nonnegativeInt :: Integral i => ReadM i
 nonnegativeInt = intWith (>= 0)
-
 
 versionInfoParser :: Parser (a -> a)
 versionInfoParser =

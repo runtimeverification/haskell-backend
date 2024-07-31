@@ -154,7 +154,17 @@ respond stateVar request =
 
                         solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
                         result <-
-                            performRewrite doTracing def mLlvmLibrary solver substVars mbDepth cutPoints terminals rewriteOpts.interimSimplification substPat
+                            performRewrite
+                                doTracing
+                                def
+                                mLlvmLibrary
+                                solver
+                                substVars
+                                mbDepth
+                                cutPoints
+                                terminals
+                                rewriteOpts.interimSimplification
+                                substPat
                         SMT.finaliseSolver solver
                         stop <- liftIO $ getTime Monotonic
                         let duration =

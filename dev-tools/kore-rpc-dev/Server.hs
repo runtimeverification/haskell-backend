@@ -141,14 +141,15 @@ main = do
             { clOptions =
                 clOPts@CLOptions
                     { port
-                    , logOptions = LogOptions
-                        { logLevels
-                        , logContexts
-                        , logFormat
-                        , logFile
-                        , logTimeStamps
-                        , prettyPrintOptions
-                        }
+                    , logOptions =
+                        LogOptions
+                            { logLevels
+                            , logContexts
+                            , logFormat
+                            , logFile
+                            , logTimeStamps
+                            , prettyPrintOptions
+                            }
                     , smtOptions
                     }
             } = options

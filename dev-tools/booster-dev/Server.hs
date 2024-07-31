@@ -52,15 +52,16 @@ main = do
             , mainModuleName
             , llvmLibraryFile
             , port
-            , logOptions = LogOptions
-                { logLevels
-                , logContexts
-                , logTimeStamps
-                , timeStampsFormat
-                , logFormat
-                , logFile
-                , prettyPrintOptions
-                }
+            , logOptions =
+                LogOptions
+                    { logLevels
+                    , logContexts
+                    , logTimeStamps
+                    , timeStampsFormat
+                    , logFormat
+                    , logFile
+                    , prettyPrintOptions
+                    }
             , smtOptions
             , equationOptions
             , rewriteOptions
