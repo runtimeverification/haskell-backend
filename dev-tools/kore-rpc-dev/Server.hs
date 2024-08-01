@@ -141,13 +141,16 @@ main = do
             { clOptions =
                 clOPts@CLOptions
                     { port
-                    , logLevels
-                    , logContexts
-                    , logFormat
+                    , logOptions =
+                        LogOptions
+                            { logLevels
+                            , logContexts
+                            , logFormat
+                            , logFile
+                            , logTimeStamps
+                            , prettyPrintOptions
+                            }
                     , smtOptions
-                    , logFile
-                    , logTimeStamps
-                    , prettyPrintOptions
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
