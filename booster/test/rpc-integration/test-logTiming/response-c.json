@@ -91,14 +91,6 @@
       {
         "tag": "processing-time",
         "component": "kore-rpc"
-      },
-      {
-        "tag": "processing-time",
-        "component": "booster"
-      },
-      {
-        "tag": "processing-time",
-        "component": "kore-rpc"
       }
     ]
   }
