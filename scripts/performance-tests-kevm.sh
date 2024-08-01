@@ -107,6 +107,7 @@ feature_shell "cd kevm-pyk && poetry run pytest src/tests/integration/test_prove
 mkdir -p $SCRIPT_DIR/logs
 
 # use special options if given, but restore KORE_RPC_OPTS afterwards
+FEATURE_SERVER_OPTS=${FEATURE_SERVER_OPTS:-''}
 if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     echo "Using special options '${FEATURE_SERVER_OPTS}' via KORE_RPC_OPTS"
     if [ ! -z "${KORE_RPC_OPTS:-}" ]; then
