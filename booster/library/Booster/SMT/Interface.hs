@@ -12,6 +12,7 @@ module Booster.SMT.Interface (
     SMTError (..),
     initSolver,
     noSolver,
+    isNoSolver,
     finaliseSolver,
     getModelFor,
     checkPredicates,
@@ -34,7 +35,7 @@ import Data.Either.Extra (fromLeft', fromRight')
 import Data.IORef
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
@@ -121,6 +122,10 @@ noSolver = do
             , options = defaultSMTOptions{retryLimit = Just 0}
             }
 
+-- | Detect of the @SMTContext@ does not have a solver
+isNoSolver :: SMT.SMTContext -> Bool
+isNoSolver SMTContext{mbSolver} = isNothing mbSolver
+
 -- | Hot-swap @SMTOptions@ in the active @SMTContext@, update the query timeout
 swapSmtOptions :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 swapSmtOptions smtOptions = do
@@ -163,10 +168,14 @@ checkPrelude = do
     case check of
         Sat -> pure ()
         other -> do
-            Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
-            SMT get >>= closeContext
-            throwSMT' $
-                "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
+            ctxt <- SMT get
+            if isNoSolver ctxt
+                then -- when running with a dummy solver, ignore the Unknown prelude check
+                    pure ()
+                else do
+                    Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
+                    throwSMT' $
+                        "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
 -- | Send the commands from the definition's SMT prelude
 runPrelude :: Log.LoggerMIO io => SMT io ()
