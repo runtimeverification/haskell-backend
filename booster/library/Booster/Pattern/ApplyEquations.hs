@@ -472,19 +472,26 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
             throw . SideConditionFalse . collapseAndBools $ pat.constraints
         Left unknwon@SMT.SMTSolverUnknown{} -> do
             -- unlikely case of an Unknown response to a consistency check.
-            -- What to do here? fail hard for now.
-            liftIO $ Exception.throw unknwon
-        Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
+            -- What to do here? continue for now to preserver the old behaviour.
+            withPatternContext pat . logWarn . Text.pack $
+                "Constraints consistency check returns: " <> show unknwon
+            continue
+        Left other ->
+            -- fail hard on SMT error other than @SMT.SMTSolverUnknown@
+            liftIO $ Exception.throw other
         Right True -> do
             -- constrains are consistent, continue
-            newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
-            -- after evaluating the term, evaluate all (existing and
-            -- newly-acquired) constraints, once
-            traverse_ simplifyAssumedPredicate . predicates =<< getState
-            -- this may yield additional new constraints, left unevaluated
-            evaluatedConstraints <- predicates <$> getState
-            pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+            continue
   where
+    continue = do
+        newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
+        -- after evaluating the term, evaluate all (existing and
+        -- newly-acquired) constraints, once
+        traverse_ simplifyAssumedPredicate . predicates =<< getState
+        -- this may yield additional new constraints, left unevaluated
+        evaluatedConstraints <- predicates <$> getState
+        pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+
     -- when TooManyIterations exception occurred while evaluating the top-level term,
     -- i.e. not in a recursive evaluation of a side-condition,
     -- it is safe to keep the partial result and ignore the exception.
