@@ -17,6 +17,7 @@ import Booster.Pattern.Base
 import Booster.Pattern.Match
 import Booster.Syntax.Json.Internalise (trm)
 import Test.Booster.Fixture
+import Test.Booster.Pattern.InternalCollections
 
 test_match_eval :: TestTree
 test_match_eval =
@@ -28,6 +29,7 @@ test_match_eval =
         , andTerms
         , composite
         , kmapTerms
+        , internalSets
         ]
 
 symbols :: TestTree
@@ -292,6 +294,19 @@ cornerCases :: TestTree
 cornerCases =
     let v = var "X" someSort
      in errors "identical variables" v v
+
+internalSets :: TestTree
+internalSets =
+    testGroup
+        "Internal sets"
+        [ test
+            "Can match an empty set with itself"
+            emptySet
+            emptySet
+            (success [])
+        ]
+
+----------------------------------------
 
 test :: String -> Term -> Term -> MatchResult -> TestTree
 test name pat subj expected =
