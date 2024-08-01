@@ -14,6 +14,7 @@ import Data.Bifunctor (second)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Proxy (Proxy (..))
 import Data.Text (Text)
 import Numeric.Natural
 import Test.Tasty
@@ -21,8 +22,10 @@ import Test.Tasty.HUnit
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
+import Booster.Log (Logger (..))
 import Booster.Pattern.Base
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
+import Booster.Pattern.Pretty (ModifiersRep (..))
 import Booster.Pattern.Rewrite
 import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
@@ -171,6 +174,24 @@ mkTheory = Map.map mkPriorityGroups . Map.fromList
 d :: Term
 d = dv someSort "thing"
 
+testConf :: IO RewriteConfig
+testConf = do
+    smtSolver <- noSolver
+    pure
+        RewriteConfig
+            { definition = def
+            , llvmApi = Nothing
+            , smtSolver
+            , varsToAvoid = mempty
+            , doTracing = NoCollectRewriteTraces
+            , logger = Logger $ const $ pure ()
+            , prettyModifiers = ModifiersRep @'[] Proxy
+            , mbMaxDepth = Nothing
+            , mbSimplify = Nothing
+            , cutLabels = []
+            , terminalLabels = []
+            }
+
 ----------------------------------------
 errorCases
     , rewriteSuccess
@@ -244,9 +265,8 @@ rulePriority =
 runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteResult Pattern))
 runWith t =
     second fst <$> do
-        ns <- noSolver
-        runNoLoggingT $
-            runRewriteT NoCollectRewriteTraces def Nothing ns mempty mempty (rewriteStep [] [] $ Pattern_ t)
+        conf <- testConf
+        runNoLoggingT $ runRewriteT conf mempty (rewriteStep [] [] $ Pattern_ t)
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
@@ -271,10 +291,10 @@ failsWith t err =
 
 runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
-    ns <- noSolver
+    conf <- testConf
     (counter, _, res) <-
         runNoLoggingT $
-            performRewrite NoCollectRewriteTraces def Nothing ns mempty Nothing [] [] $
+            performRewrite conf $
                 Pattern_ t
     pure (counter, fmap (.term) res)
 
@@ -416,11 +436,9 @@ supportsDepthControl =
   where
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToDepth (MaxDepth depth) (Steps n) t t' f = do
-        ns <- noSolver
+        conf <- testConf
         (counter, _, res) <-
-            runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing ns mempty (Just depth) [] [] $
-                    Pattern_ t
+            runNoLoggingT $ performRewrite conf{mbMaxDepth = Just depth} $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
@@ -471,10 +489,10 @@ supportsCutPoints =
   where
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToCutPoint lbl (Steps n) t t' f = do
-        ns <- noSolver
+        conf <- testConf
         (counter, _, res) <-
             runNoLoggingT $
-                performRewrite NoCollectRewriteTraces def Nothing ns mempty Nothing [lbl] [] $
+                performRewrite conf{cutLabels = [lbl]} $
                     Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
@@ -504,8 +522,7 @@ supportsTerminalRules =
   where
     rewritesToTerminal :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToTerminal lbl (Steps n) t t' f = do
+        conf <- testConf
         (counter, _, res) <-
-            runNoLoggingT $ do
-                ns <- noSolver
-                performRewrite NoCollectRewriteTraces def Nothing ns mempty Nothing [] [lbl] $ Pattern_ t
+            runNoLoggingT $ performRewrite conf{terminalLabels = [lbl]} $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')

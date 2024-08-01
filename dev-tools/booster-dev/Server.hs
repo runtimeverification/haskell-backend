@@ -50,18 +50,21 @@ main = do
     let CLOptions
             { definitionFile
             , mainModuleName
-            , port
-            , logLevels
-            , logContexts
-            , logTimeStamps
-            , timeStampsFormat
-            , logFormat
             , llvmLibraryFile
+            , port
+            , logOptions =
+                LogOptions
+                    { logLevels
+                    , logContexts
+                    , logTimeStamps
+                    , timeStampsFormat
+                    , logFormat
+                    , logFile
+                    , prettyPrintOptions
+                    }
             , smtOptions
             , equationOptions
-            , indexCells
-            , prettyPrintOptions
-            , logFile
+            , rewriteOptions
             } = options
 
     putStrLn $
@@ -72,7 +75,7 @@ main = do
 
     withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
         definitionMap <-
-            loadDefinition indexCells definitionFile
+            loadDefinition rewriteOptions.indexCells definitionFile
                 >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                 >>= evaluate . force . either (error . show) id
         -- ensure the (default) main module is present in the definition
@@ -88,6 +91,7 @@ main = do
             definitionMap
             mainModuleName
             mLlvmLibrary
+            rewriteOptions
             logFile
             smtOptions
             (adjustLogLevels logLevels)
@@ -119,6 +123,7 @@ runServer ::
     Map Text KoreDefinition ->
     Text ->
     Maybe LLVM.API ->
+    RewriteOptions ->
     Maybe FilePath ->
     Maybe SMT.SMTOptions ->
     (LogLevel, [LogLevel]) ->
@@ -128,7 +133,7 @@ runServer ::
     LogFormat ->
     [ModifierT] ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
+runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
     do
         let timestampFlag = case timeStampsFormat of
                 Pretty -> PrettyTimestamps
@@ -153,6 +158,7 @@ runServer port definitions defaultMain mLlvmLibrary logFile mSMTOptions (_logLev
                         , defaultMain
                         , mLlvmLibrary
                         , mSMTOptions
+                        , rewriteOptions = rewriteOpts
                         , addedModules = mempty
                         }
             jsonRpcServer
