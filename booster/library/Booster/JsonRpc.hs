@@ -155,33 +155,57 @@ respond stateVar request =
 
                         solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
-                        logger <- getLogger
-                        prettyModifiers <- getPrettyModifiers
-                        let rewriteConfig =
-                                RewriteConfig
-                                    { definition = def
-                                    , llvmApi = mLlvmLibrary
-                                    , smtSolver = solver
-                                    , varsToAvoid = substVars
-                                    , doTracing
-                                    , logger
-                                    , prettyModifiers
-                                    , mbMaxDepth = mbDepth
-                                    , mbSimplify = rewriteOpts.interimSimplification
-                                    , cutLabels = cutPoints
-                                    , terminalLabels = terminals
-                                    }
-                        result <-
-                            performRewrite rewriteConfig substPat
-                        SMT.finaliseSolver solver
-                        stop <- liftIO $ getTime Monotonic
-                        let duration =
-                                if fromMaybe False req.logTiming
-                                    then
-                                        Just $
-                                            fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                                    else Nothing
-                        pure $ execResponse duration req result substitution unsupported
+                        -- check input pattern's consistency before starting rewriting
+                        evaluatedInitialPattern <-
+                            ApplyEquations.evaluatePattern
+                                def
+                                mLlvmLibrary
+                                solver
+                                mempty
+                                substPat
+
+                        case evaluatedInitialPattern of
+                            (Left ApplyEquations.SideConditionFalse{}, _) -> do
+                                stop <- liftIO $ getTime Monotonic
+                                let duration =
+                                        if fromMaybe False req.logTiming
+                                            then
+                                                Just $
+                                                    fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+                                            else Nothing
+                                pure $ execResponse duration req (0, mempty, RewriteTrivial substPat) substitution unsupported
+                            (Left other, _) ->
+                                pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                            (Right newPattern, _simplifierCache) -> do
+                                -- FIXME do not throw away @simplifierCache@, pass it to performRewrite somehow
+                                logger <- getLogger
+                                prettyModifiers <- getPrettyModifiers
+                                let rewriteConfig =
+                                        RewriteConfig
+                                            { definition = def
+                                            , llvmApi = mLlvmLibrary
+                                            , smtSolver = solver
+                                            , varsToAvoid = substVars
+                                            , doTracing
+                                            , logger
+                                            , prettyModifiers
+                                            , mbMaxDepth = mbDepth
+                                            , mbSimplify = rewriteOpts.interimSimplification
+                                            , cutLabels = cutPoints
+                                            , terminalLabels = terminals
+                                            }
+
+                                result <-
+                                    performRewrite rewriteConfig newPattern
+                                SMT.finaliseSolver solver
+                                stop <- liftIO $ getTime Monotonic
+                                let duration =
+                                        if fromMaybe False req.logTiming
+                                            then
+                                                Just $
+                                                    fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+                                            else Nothing
+                                pure $ execResponse duration req result substitution unsupported
             RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
                 -- block other request executions while modifying the server state
                 state <- liftIO $ takeMVar stateVar
