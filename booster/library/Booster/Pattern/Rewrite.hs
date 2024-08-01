@@ -873,8 +873,6 @@ performRewrite rewriteConfig pat = do
                             Left failure@(RuleApplicationUnclear rule _ remainder)
                                 | not wasSimplified -> do
                                     emitRewriteTrace $ RewriteStepFailed failure
-                                    -- simplify remainders, substitute and rerun.
-                                    -- If failed, do the pattern-wide simplfication and rerun again
                                     withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                                 | otherwise -> do
                                     -- was already simplified, emit an abort log entry
