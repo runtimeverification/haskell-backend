@@ -11,6 +11,7 @@ module Test.Booster.Pattern.InternalCollections (
     headList,
     tailList,
     mixedList,
+    emptySet,
 ) where
 
 import Data.ByteString.Char8 qualified as BS
