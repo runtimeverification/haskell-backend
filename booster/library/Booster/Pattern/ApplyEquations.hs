@@ -464,17 +464,24 @@ evaluatePattern' ::
 evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     solver <- (.smtSolver) <$> getConfig
     -- check initial constraints for consistency, reporting an error if they are Bottom
-    SMT.isSat solver pat.constraints >>= \case
+    withContext CtxConstraint
+        . withContext CtxDetail
+        . withTermContext (coerce $ collapseAndBools pat.constraints)
+        $ pure ()
+    consistent <- withContext CtxConstraint $ SMT.isSat solver pat.constraints
+    withContext CtxConstraint $ do
+        logMessage $
+            "Constraints consistency check returns: " <> show consistent
+
+    case consistent of
         Right False -> do
-            let collapseAndBools :: Set Predicate -> Predicate
-                collapseAndBools = undefined
             -- the constraints are unsatisfiable, which means that the patten is Bottom
             throw . SideConditionFalse . collapseAndBools $ pat.constraints
-        Left unknwon@SMT.SMTSolverUnknown{} -> do
+        Left SMT.SMTSolverUnknown{} -> do
             -- unlikely case of an Unknown response to a consistency check.
             -- What to do here? continue for now to preserver the old behaviour.
-            withPatternContext pat . logWarn . Text.pack $
-                "Constraints consistency check returns: " <> show unknwon
+            withContext CtxConstraint . logWarn . Text.pack $
+                "Constraints consistency UNKNOWN: " <> show consistent
             continue
         Left other ->
             -- fail hard on SMT error other than @SMT.SMTSolverUnknown@
@@ -502,6 +509,9 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
         TooManyIterations _ _ partialResult ->
             pure partialResult
         err -> throw err
+
+    collapseAndBools :: Set Predicate -> Predicate
+    collapseAndBools = coerce . foldAndBool . map coerce . Set.toList
 
 -- evaluate the given predicate assuming all others
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
