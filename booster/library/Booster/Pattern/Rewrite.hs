@@ -10,6 +10,7 @@ License     : BSD-3-Clause
 module Booster.Pattern.Rewrite (
     performRewrite,
     rewriteStep,
+    RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
     RewriteTrace (..),
@@ -84,6 +85,9 @@ data RewriteConfig = RewriteConfig
     , doTracing :: Flag "CollectRewriteTraces"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , -- below: parameters used only in performRewrite
+      mbMaxDepth, mbSimplify :: Maybe Natural
+    , cutLabels, terminalLabels :: [Text]
     }
 
 instance MonadIO io => LoggerMIO (RewriteT io) where
@@ -99,25 +103,12 @@ pattern NoCollectRewriteTraces :: Flag "CollectRewriteTraces"
 pattern NoCollectRewriteTraces = Flag False
 
 runRewriteT ::
-    LoggerMIO io =>
-    Flag "CollectRewriteTraces" ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    SMT.SMTContext ->
-    Set.Set Variable ->
+    RewriteConfig ->
     SimplifierCache ->
     RewriteT io a ->
     io (Either (RewriteFailed "Rewrite") (a, SimplifierCache))
-runRewriteT doTracing definition llvmApi smtSolver varsToAvoid cache m = do
-    logger <- getLogger
-    prettyModifiers <- getPrettyModifiers
-    runExceptT
-        . flip runStateT cache
-        . flip
-            runReaderT
-            RewriteConfig{definition, llvmApi, smtSolver, varsToAvoid, doTracing, logger, prettyModifiers}
-        . unRewriteT
-        $ m
+runRewriteT rewriteConfig cache =
+    runExceptT . flip runStateT cache . flip runReaderT rewriteConfig . unRewriteT
 
 throw :: LoggerMIO io => RewriteFailed "Rewrite" -> RewriteT io a
 throw = RewriteT . lift . lift . throwE
@@ -704,27 +695,25 @@ mkDiffTerms = \case
 performRewrite ::
     forall io.
     LoggerMIO io =>
-    Flag "CollectRewriteTraces" ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    SMT.SMTContext ->
-    -- | Variable names to avoid (for new existentials)
-    Set.Set Variable ->
-    -- | maximum depth
-    Maybe Natural ->
-    -- | cut point rule labels
-    [Text] ->
-    -- | terminal rule labels
-    [Text] ->
-    -- | interim-simplification frequency
-    (Maybe Natural) ->
+    RewriteConfig ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite doTracing def mLlvmLibrary smtSolver varsToAvoid mbMaxDepth cutLabels terminalLabels mbSimplify pat = do
+performRewrite rewriteConfig pat = do
     (rr, RewriteStepsState{counter, traces}) <-
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
+    RewriteConfig
+        { definition
+        , llvmApi
+        , smtSolver
+        , doTracing
+        , mbMaxDepth
+        , mbSimplify
+        , cutLabels
+        , terminalLabels
+        } = rewriteConfig
+
     logDepth = withContext CtxDepth . logMessage
 
     depthReached n = maybe False (n >=) mbMaxDepth
@@ -745,7 +734,7 @@ performRewrite doTracing def mLlvmLibrary smtSolver varsToAvoid mbMaxDepth cutLa
     simplifyP p = withContext CtxSimplify $ do
         st <- get
         let cache = st.simplifierCache
-        evaluatePattern def mLlvmLibrary smtSolver cache p >>= \(res, newCache) -> do
+        evaluatePattern definition llvmApi smtSolver cache p >>= \(res, newCache) -> do
             updateCache newCache
             case res of
                 Right newPattern -> do
@@ -818,11 +807,7 @@ performRewrite doTracing def mLlvmLibrary smtSolver varsToAvoid mbMaxDepth cutLa
                         Just newPat -> doSteps True newPat
                 | otherwise ->
                     runRewriteT
-                        doTracing
-                        def
-                        mLlvmLibrary
-                        smtSolver
-                        varsToAvoid
+                        rewriteConfig
                         simplifierCache
                         (withPatternContext pat' $ rewriteStep cutLabels terminalLabels pat')
                         >>= \case

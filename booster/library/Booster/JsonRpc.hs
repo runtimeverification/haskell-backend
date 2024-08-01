@@ -54,6 +54,7 @@ import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
+    RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
     RewriteTrace (..),
@@ -153,18 +154,25 @@ respond stateVar request =
                                     ]
 
                         solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
+
+                        logger <- getLogger
+                        prettyModifiers <- getPrettyModifiers
+                        let rewriteConfig =
+                                RewriteConfig
+                                    { definition = def
+                                    , llvmApi = mLlvmLibrary
+                                    , smtSolver = solver
+                                    , varsToAvoid = substVars
+                                    , doTracing
+                                    , logger
+                                    , prettyModifiers
+                                    , mbMaxDepth = mbDepth
+                                    , mbSimplify = rewriteOpts.interimSimplification
+                                    , cutLabels = cutPoints
+                                    , terminalLabels = terminals
+                                    }
                         result <-
-                            performRewrite
-                                doTracing
-                                def
-                                mLlvmLibrary
-                                solver
-                                substVars
-                                mbDepth
-                                cutPoints
-                                terminals
-                                rewriteOpts.interimSimplification
-                                substPat
+                            performRewrite rewriteConfig substPat
                         SMT.finaliseSolver solver
                         stop <- liftIO $ getTime Monotonic
                         let duration =
