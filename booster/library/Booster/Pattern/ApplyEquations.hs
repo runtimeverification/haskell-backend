@@ -243,16 +243,16 @@ toCache Equations orig result = eqState $ do
     -- Check before inserting a new result to avoid creating a
     -- lookup chain e -> result -> olderResult.
     newEqCache <- case Map.lookup result s.cache.equations of
-            Nothing ->
-                pure $ Map.insert orig result s.cache.equations
-            Just furtherResult -> do
-                when (result /= furtherResult) $ do
-                    withContextFor Equations . logMessage $
-                        "toCache shortening a chain "
-                            <> showHashHex (getAttributes orig).hash
-                            <> "->"
-                            <> showHashHex (getAttributes furtherResult).hash
-                pure $ Map.insert orig furtherResult s.cache.equations
+        Nothing ->
+            pure $ Map.insert orig result s.cache.equations
+        Just furtherResult -> do
+            when (result /= furtherResult) $ do
+                withContextFor Equations . logMessage $
+                    "toCache shortening a chain "
+                        <> showHashHex (getAttributes orig).hash
+                        <> "->"
+                        <> showHashHex (getAttributes furtherResult).hash
+            pure $ Map.insert orig furtherResult s.cache.equations
     put s{cache = s.cache{equations = newEqCache}}
 
 fromCache :: LoggerMIO io => CacheTag -> Term -> EquationT io (Maybe Term)
