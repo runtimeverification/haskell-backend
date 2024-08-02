@@ -168,12 +168,12 @@ checkPrelude = do
     case check of
         Sat -> pure ()
         other -> do
+            Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
             ctxt <- SMT get
             if isNoSolver ctxt
                 then -- when running with a dummy solver, ignore the Unknown prelude check
                     pure ()
-                else do
-                    Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
+                else
                     throwSMT' $
                         "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
 
