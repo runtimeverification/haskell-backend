@@ -1072,11 +1072,11 @@ simplifyConstraint' :: LoggerMIO io => Bool -> Term -> EquationT io Term
 -- evaluateTerm.
 simplifyConstraint' recurseIntoEvalBool = \case
     t@(Term TermAttributes{canBeEvaluated} _)
-        | isConcrete t && canBeEvaluated -> withTermContext t $ do
+        | isConcrete t && canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    withContext CtxLlvm $
+                    withContext CtxLlvm . withTermContext t $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
                                 withContext CtxAbort $
@@ -1093,11 +1093,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
                                         pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
         | otherwise ->
-            withTermContext t $
-                if recurseIntoEvalBool then evalBool t else pure t
+            if recurseIntoEvalBool then evalBool t else pure t
   where
     evalBool :: LoggerMIO io => Term -> EquationT io Term
-    evalBool t = do
+    evalBool t = withTermContext t $ do
         prior <- getState -- save prior state so we can revert
         eqState $ put prior{termStack = mempty, changed = False}
         result <- iterateEquations BottomUp PreferFunctions t

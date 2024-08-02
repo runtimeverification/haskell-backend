@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -19,6 +20,7 @@ import Data.List (foldl1', isInfixOf, nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Proxy
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -40,7 +42,9 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.LLVM qualified as LLVM
 import Booster.LLVM.Internal qualified as Internal
+import Booster.Log
 import Booster.Pattern.Base
+import Booster.Pattern.Pretty
 import Booster.SMT.Base (SExpr (..), SMTId (..))
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.Json.Internalise (pattern AllowAlias, pattern IgnoreSubsorts)
@@ -108,6 +112,12 @@ llvmSpec =
 
 --------------------------------------------------
 -- individual hedgehog property tests and helpers
+
+instance LoggerMIO (PropertyT IO) where
+    getLogger = pure $ Logger $ \_ -> pure ()
+    getPrettyModifiers = pure $ ModifiersRep @'[] Proxy
+    withLogger _ = id
+
 
 boolsRemainProp
     , compareNumbersProp
