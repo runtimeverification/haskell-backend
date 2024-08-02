@@ -1,6 +1,7 @@
 {"context":["proxy"],"message":"Loading definition from resources/log-simplify-json.kore, main module \"IMP-VERIFICATION\""}
 {"context":["proxy"],"message":"Starting RPC server"}
 {"context":["proxy"],"message":"Processing request 4"}
+{"context":[{"request":"4"},"booster","execute",{"term":"bd7c50d"},{"term":"4a36bb8"},{"hook":"INT.le"},"failure"],"message":"Hook returned no result"}
 {"context":[{"request":"4"},"booster","execute",{"term":"4b03f8b"},{"rewrite":"2821768ca76231d9d23da884f160f8a8a67b03f3575f41bd4fc76649c39a94fb"},"constraint",{"term":"a2a070a"},{"function":"f4c2469bcff9527515b6d36f16040307917bda61067d10b85fb531e142483bee"},"detail"],"message":"UNKNOWN"}
 {"context":[{"request":"4"},"booster","execute",{"term":"4b03f8b"},{"rewrite":"2821768ca76231d9d23da884f160f8a8a67b03f3575f41bd4fc76649c39a94fb"},"constraint",{"term":"a2a070a"},{"function":"f4c2469bcff9527515b6d36f16040307917bda61067d10b85fb531e142483bee"},"match","failure","continue"],"message":"Sorts differ: Eq#VarKResult:SortKResult{} =/= !__EXPRESSIONS-SYNTAX_Expr_Expr(_<=__EXPRESSIONS-SYNTAX_Expr_Expr_Expr(\"$n\", \"0\"))"}
 {"context":[{"request":"4"},"booster","execute",{"term":"4b03f8b"},{"rewrite":"2821768ca76231d9d23da884f160f8a8a67b03f3575f41bd4fc76649c39a94fb"},"constraint",{"term":"a2a070a"},{"function":"afefecb36598372bc1ba6e5d0b24a00b91796244dc3bd7435e40ca6e9ab33d4b"},"detail"],"message":"UNKNOWN"}
