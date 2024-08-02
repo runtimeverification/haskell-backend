@@ -516,7 +516,9 @@ isSat ctxt psToCheck
         Log.withContext Log.CtxAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
         pure . Left . SMTTranslationError $ errMsg
     | Right (smtToCheck, transState) <- translated = Log.withContext Log.CtxSMT $ do
-        evalSMT ctxt . runExceptT $ solve smtToCheck transState
+        evalSMT ctxt . runExceptT $ do
+            lift $ hardResetSolver ctxt.options
+            solve smtToCheck transState
   where
     translated :: Either Text ([DeclareCommand], TranslationState)
     translated =
