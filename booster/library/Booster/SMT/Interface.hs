@@ -527,7 +527,6 @@ isSat ctxt psToCheck
     solve smtToCheck transState = solve'
       where
         solve' = do
-            lift $ hardResetSolver ctxt.options
             Log.getPrettyModifiers >>= \case
                 ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
                     Log.logMessage . Pretty.renderOneLineText $
