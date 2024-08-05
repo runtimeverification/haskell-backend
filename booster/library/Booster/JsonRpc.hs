@@ -167,13 +167,13 @@ respond stateVar request =
                         case evaluatedInitialPattern of
                             (Left ApplyEquations.SideConditionFalse{}, _) -> do
                                 stop <- liftIO $ getTime Monotonic
-                                let duration =
-                                        if fromMaybe False req.logTiming
-                                            then
-                                                Just $
-                                                    fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                                            else Nothing
-                                pure $ execResponse duration req (0, mempty, RewriteTrivial substPat) substitution unsupported
+                                pure $
+                                    execResponse
+                                        (duration req.logTiming start stop)
+                                        req
+                                        (0, mempty, RewriteTrivial substPat)
+                                        substitution
+                                        unsupported
                             (Left other, _) ->
                                 pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
                             (Right newPattern, _simplifierCache) -> do
@@ -199,13 +199,7 @@ respond stateVar request =
                                     performRewrite rewriteConfig newPattern
                                 SMT.finaliseSolver solver
                                 stop <- liftIO $ getTime Monotonic
-                                let duration =
-                                        if fromMaybe False req.logTiming
-                                            then
-                                                Just $
-                                                    fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                                            else Nothing
-                                pure $ execResponse duration req result substitution unsupported
+                                pure $ execResponse (duration req.logTiming start stop) req result substitution unsupported
             RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
                 -- block other request executions while modifying the server state
                 state <- liftIO $ takeMVar stateVar
@@ -271,9 +265,9 @@ respond stateVar request =
                 start <- liftIO $ getTime Monotonic
                 let internalised =
                         runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
-                let mkTraces duration
+                let mkTraces durationLog
                         | Just True <- req.logTiming =
-                            Just [ProcessingTime (Just Booster) duration]
+                            Just [ProcessingTime (Just Booster) durationLog]
                         | otherwise =
                             Nothing
 
@@ -351,11 +345,11 @@ respond stateVar request =
                 SMT.finaliseSolver solver
                 stop <- liftIO $ getTime Monotonic
 
-                let duration =
+                let durationLog =
                         fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
                     mkSimplifyResponse state =
                         RpcTypes.Simplify
-                            RpcTypes.SimplifyResult{state, logs = mkTraces duration}
+                            RpcTypes.SimplifyResult{state, logs = mkTraces durationLog}
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
                 (_, _, Nothing, _) -> do
@@ -590,6 +584,13 @@ respond stateVar request =
                                         }
                             , logs = Nothing
                             }
+
+    duration mLogTiming start stop =
+        if fromMaybe False mLogTiming
+            then
+                Just $
+                    fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+            else Nothing
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
