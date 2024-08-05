@@ -22,7 +22,8 @@ module Booster.Pattern.ApplyEquations (
     handleSimplificationEquation,
     simplifyConstraint,
     simplifyConstraints,
-    SimplifierCache,
+    SimplifierCache (..),
+    CacheTag (..),
     evaluateConstraints,
 ) where
 
@@ -234,19 +235,46 @@ popRecursion = do
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
-toCache :: Monad io => CacheTag -> Term -> Term -> EquationT io ()
-toCache tag orig result = eqState . modify $ \s -> s{cache = updateCache tag s.cache}
-  where
-    insertInto = Map.insert orig result
-    updateCache LLVM cache = cache{llvm = insertInto cache.llvm}
-    updateCache Equations cache = cache{equations = insertInto cache.equations}
+toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
+toCache LLVM orig result = eqState . modify $
+    \s -> s{cache = s.cache{llvm = Map.insert orig result s.cache.llvm}}
+toCache Equations orig result = eqState $ do
+    s <- get
+    -- Check before inserting a new result to avoid creating a
+    -- lookup chain e -> result -> olderResult.
+    newEqCache <- case Map.lookup result s.cache.equations of
+        Nothing ->
+            pure $ Map.insert orig result s.cache.equations
+        Just furtherResult -> do
+            when (result /= furtherResult) $ do
+                withContextFor Equations . logMessage $
+                    "toCache shortening a chain "
+                        <> showHashHex (getAttributes orig).hash
+                        <> "->"
+                        <> showHashHex (getAttributes furtherResult).hash
+            pure $ Map.insert orig furtherResult s.cache.equations
+    put s{cache = s.cache{equations = newEqCache}}
 
-fromCache :: Monad io => CacheTag -> Term -> EquationT io (Maybe Term)
-fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
-  where
-    select :: CacheTag -> SimplifierCache -> Map Term Term
-    select LLVM = (.llvm)
-    select Equations = (.equations)
+fromCache :: LoggerMIO io => CacheTag -> Term -> EquationT io (Maybe Term)
+fromCache tag t = eqState $ do
+    s <- get
+    case tag of
+        LLVM -> pure $ Map.lookup t s.cache.llvm
+        Equations -> do
+            case Map.lookup t s.cache.equations of
+                Nothing -> pure Nothing
+                Just t' -> case Map.lookup t' s.cache.equations of
+                    Nothing -> pure $ Just t'
+                    Just t'' -> do
+                        when (t'' /= t') $ do
+                            withContextFor Equations . logMessage $
+                                "fromCache shortening a chain "
+                                    <> showHashHex (getAttributes t).hash
+                                    <> "->"
+                                    <> showHashHex (getAttributes t'').hash
+                            let newEqCache = Map.insert t t'' s.cache.equations
+                            put s{cache = s.cache{equations = newEqCache}}
+                        pure $ Just t''
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
@@ -899,6 +927,12 @@ applyEquation term rule =
                             Left other ->
                                 liftIO $ Exception.throw other
                         lift $ pushConstraints $ Set.fromList ensuredConditions
+                        -- when a new path condition is added, invalidate the equation cache
+                        unless (null ensuredConditions) $ do
+                            withContextFor Equations . logMessage $
+                                ("New ensured condition from evaluation, invalidating cache" :: Text)
+                            lift . eqState . modify $
+                                \s -> s{cache = s.cache{equations = mempty}}
                         pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
