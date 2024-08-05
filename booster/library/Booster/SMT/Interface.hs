@@ -352,9 +352,9 @@ getModelFor ctxt ps subst
 mkComment :: Pretty (PrettyWithModifiers '[Decoded] a) => a -> BS.ByteString
 mkComment = BS.pack . Pretty.renderDefault . pretty' @'[Decoded]
 
-{- | Check a predicates, given a set of predicates as known truth.
+{- | Check validity of a predicate, given a set of predicates as known truth.
 
-Simplest version:
+The set of input predicates @psToCheck@ is interpreted as a conjunction.
 
 Given K as known truth and predicates P to check, check whether K => P
 or K => !P, or neither of those implications holds. The check is done
@@ -514,6 +514,9 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                             <> pack (show (positive', negative'))
                 pure (positive', negative')
 
+{- | Check satisfiability of a predicate.
+     The set of input predicates @psToCheck@ is interpreted as a conjunction.
+-}
 isSat ::
     forall io.
     Log.LoggerMIO io =>
