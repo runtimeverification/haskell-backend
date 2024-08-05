@@ -463,7 +463,7 @@ evaluatePattern' ::
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     solver <- (.smtSolver) <$> getConfig
-    -- check initial constraints for consistency, reporting an error if they are Bottom
+    -- check the pattern's constraints for consistency, reporting an error if they are Bottom
     withContext CtxConstraint
         . withContext CtxDetail
         . withTermContext (coerce $ collapseAndBools pat.constraints)
@@ -479,7 +479,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
             throw . SideConditionFalse . collapseAndBools $ pat.constraints
         Left SMT.SMTSolverUnknown{} -> do
             -- unlikely case of an Unknown response to a consistency check.
-            -- What to do here? continue for now to preserver the old behaviour.
+            -- continue to preserver the old behaviour.
             withContext CtxConstraint . logWarn . Text.pack $
                 "Constraints consistency UNKNOWN: " <> show consistent
             continue
@@ -487,7 +487,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
             -- fail hard on SMT error other than @SMT.SMTSolverUnknown@
             liftIO $ Exception.throw other
         Right True -> do
-            -- constrains are consistent, continue
+            -- constraints are consistent, continue
             continue
   where
     continue = do
