@@ -9,6 +9,15 @@ module Main (
     main,
 ) where
 
+import Control.Monad.Trans.Except
+import Data.Aeson (eitherDecode)
+import Data.ByteString.Lazy qualified as BS
+import Data.Map qualified as Map
+import Data.Text.IO qualified as Text
+import Prettyprinter
+import System.Environment (getArgs)
+
+import Booster.Pattern.Base (Term, Variable (..))
 import Booster.Pattern.Pretty
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json (KoreJson (..))
@@ -21,12 +30,6 @@ import Booster.Syntax.Json.Internalise (
     pattern DisallowAlias,
  )
 import Booster.Syntax.ParsedKore (internalise, parseKoreDefinition)
-import Control.Monad.Trans.Except
-import Data.Aeson (eitherDecode)
-import Data.ByteString.Lazy qualified as BS
-import Data.Text.IO qualified as Text
-import Prettyprinter
-import System.Environment (getArgs)
 
 main :: IO ()
 main = do
@@ -40,9 +43,11 @@ main = do
         Left err -> putStrLn $ "Error: " ++ err
         Right KoreJson{term} -> do
             case runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing internalDef term of
-                Right (trm, _subst, _unsupported) -> do
+                Right (trm, subst, _unsupported) -> do
                     putStrLn "Pretty-printing pattern: "
                     putStrLn $ renderDefault $ pretty' @'[Decoded] trm
+                    putStrLn "Substitution: "
+                    mapM_ (putStrLn . prettyPrintSubstItem) (Map.toList subst)
                 Left (NoTermFound _) ->
                     case runExcept $ internalisePredicates DisallowAlias CheckSubsorts Nothing internalDef [term] of
                         Left es -> error (show es)
@@ -53,7 +58,10 @@ main = do
                             putStrLn "Ceil predicates: "
                             mapM_ (putStrLn . renderDefault . pretty' @'[Decoded]) ts.ceilPredicates
                             putStrLn "Substitution: "
-                            mapM_ (putStrLn . renderDefault . pretty' @'[Decoded]) ts.substitution
+                            mapM_ (putStrLn . prettyPrintSubstItem) (Map.toList ts.substitution)
                             putStrLn "Unsupported predicates: "
                             mapM_ print ts.unsupported
                 Left err -> error (show err)
+
+prettyPrintSubstItem :: (Variable, Term) -> String
+prettyPrintSubstItem (v, t) = show v.variableName <> " |-> " <> (renderDefault . pretty' @'[Decoded] $ t)
