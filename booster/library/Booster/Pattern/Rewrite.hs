@@ -50,8 +50,9 @@ import Booster.Definition.Base
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
+    CacheTag (Equations),
     EquationFailure (..),
-    SimplifierCache,
+    SimplifierCache (..),
     evaluatePattern,
     simplifyConstraint,
  )
@@ -400,6 +401,12 @@ applyRule pat@Pattern{ceilConditions} rule =
                             pure ()
                         Left other ->
                             liftIO $ Exception.throw other
+
+                    -- if a new constraint is going to be added, the equation cache is invalid
+                    unless (null newConstraints) $ do
+                        withContextFor Equations . logMessage $
+                            ("New path condition ensured, invalidating cache" :: Text)
+                        lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
 
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
