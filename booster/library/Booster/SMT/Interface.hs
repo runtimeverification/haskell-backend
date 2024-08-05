@@ -128,6 +128,10 @@ swapSmtOptions smtOptions = do
     SMT $ put ctxt{options = smtOptions}
     runCmd_ $ SetTimeout smtOptions.timeout
 
+-- | This function defines the strategy to increment the timeout when retrying a solver query
+updateOptionsOnRetry :: SMTOptions -> SMTOptions
+updateOptionsOnRetry opts = opts{timeout = 2 * opts.timeout, retryLimit = ((-) 1) <$> opts.retryLimit}
+
 -- | Stop the solver, initialise a new one and put in the @SMTContext@
 hardResetSolver :: forall io. Log.LoggerMIO io => SMTOptions -> SMT io ()
 hardResetSolver smtOptions = do
@@ -224,8 +228,7 @@ getModelFor ctxt ps subst
                     Unknown{} -> do
                         case opts.retryLimit of
                             Just x | x > 0 -> do
-                                let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                                lift $ hardResetSolver newOpts
+                                lift $ hardResetSolver (updateOptionsOnRetry opts)
                                 solve smtAsserts transState
                             _ -> pure . Left $ response
                     _ -> pure . Left $ response
@@ -408,8 +411,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         opts <- lift . SMT $ gets (.options)
         case opts.retryLimit of
             Just x | x > 0 -> do
-                let newOpts = opts{timeout = 2 * opts.timeout, retryLimit = Just $ x - 1}
-                lift $ hardResetSolver newOpts
+                lift $ hardResetSolver (updateOptionsOnRetry opts)
                 solve smtGiven sexprsToCheck transState
             _ -> failBecauseUnknown reasonUnknown
 
