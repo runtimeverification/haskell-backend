@@ -192,6 +192,23 @@ finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
     destroyContext ctxt
 
+failBecauseUnknown ::
+    forall io.
+    Log.LoggerMIO io =>
+    Set Predicate ->
+    ExceptT SMTError (SMT io) Bool
+failBecauseUnknown psToCheck =
+    smtRun GetReasonUnknown >>= \case
+        Unknown reason -> do
+            Log.withContext Log.CtxAbort $
+                Log.logMessage $
+                    "Returned Unknown. Reason: " <> fromMaybe "UNKNOWN" reason
+            throwE $ SMTSolverUnknown reason mempty psToCheck
+        other -> do
+            let msg = "Unexpected result while calling ':reason-unknown': " <> show other
+            Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
+            throwSMT' msg
+
 {- |
 Implementation of get-model request
 
@@ -405,8 +422,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                 pure Nothing
             (Sat, Unsat) -> pure . Just $ True
             (Unsat, Sat) -> pure . Just $ False
-            (Unknown reason, _) -> retry smtGiven sexprsToCheck transState reason
-            (_, Unknown reason) -> retry smtGiven sexprsToCheck transState reason
+            (Unknown _, _) -> retry smtGiven sexprsToCheck transState
+            (_, Unknown _) -> retry smtGiven sexprsToCheck transState
             other ->
                 throwE . GeneralSMTError $
                     ("Unexpected result while checking a condition: " :: Text) <> Text.pack (show other)
@@ -415,16 +432,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         [DeclareCommand] ->
         [SExpr] ->
         TranslationState ->
-        Maybe Text ->
         ExceptT SMTError (SMT io) (Maybe Bool)
-    retry smtGiven sexprsToCheck transState reasonUnknown = do
+    retry smtGiven sexprsToCheck transState = do
         opts <- lift . SMT $ gets (.options)
         case opts.retryLimit of
             Just x | x > 0 -> do
                 lift $ hardResetSolver (updateOptionsOnRetry opts)
                 solve smtGiven sexprsToCheck transState
-            _ -> failBecauseUnknown reasonUnknown
-
+            _ -> failBecauseUnknown psToCheck >> pure Nothing -- Nothing is unreachable and is here to make the type checker happy
     translated :: Either Text (([DeclareCommand], [SExpr]), TranslationState)
     translated = SMT.runTranslator $ do
         let mkSMTEquation v t =
@@ -436,13 +451,6 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         toCheck <-
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
-
-    failBecauseUnknown :: Maybe Text -> ExceptT SMTError (SMT io) (Maybe Bool)
-    failBecauseUnknown reason = do
-        Log.withContext Log.CtxAbort $
-            Log.logMessage $
-                "Returned Unknown. Reason: " <> fromMaybe "UNKNOWN" reason
-        throwE $ SMTSolverUnknown reason givenPs psToCheck
 
     -- Given the known truth and the expressions to check,
     -- interact with the solver to establish the validity of the  expressions.
@@ -553,17 +561,4 @@ isSat ctxt psToCheck
                     lift $ hardResetSolver (updateOptionsOnRetry opts)
                     Log.logMessage ("Retrying with higher timeout" :: Text)
                     solve'
-                _ -> failBecauseUnknown
-
-        failBecauseUnknown :: ExceptT SMTError (SMT io) Bool
-        failBecauseUnknown =
-            smtRun GetReasonUnknown >>= \case
-                Unknown reason -> do
-                    Log.withContext Log.CtxAbort $
-                        Log.logMessage $
-                            "Returned Unknown. Reason: " <> fromMaybe "UNKNOWN" reason
-                    throwE $ SMTSolverUnknown reason mempty psToCheck
-                other -> do
-                    let msg = "Unexpected result while calling ':reason-unknown': " <> show other
-                    Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
-                    throwSMT' msg
+                _ -> failBecauseUnknown psToCheck
