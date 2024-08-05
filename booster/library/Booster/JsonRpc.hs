@@ -177,8 +177,7 @@ respond stateVar request =
                                         unsupported
                             (Left other, _) ->
                                 pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
-                            (Right newPattern, _simplifierCache) -> do
-                                -- FIXME do not throw away @simplifierCache@, pass it to performRewrite somehow
+                            (Right newPattern, simplifierCache) -> do
                                 logger <- getLogger
                                 prettyModifiers <- getPrettyModifiers
                                 let rewriteConfig =
@@ -197,7 +196,7 @@ respond stateVar request =
                                             }
 
                                 result <-
-                                    performRewrite rewriteConfig newPattern
+                                    performRewrite rewriteConfig simplifierCache newPattern
                                 SMT.finaliseSolver solver
                                 stop <- liftIO $ getTime Monotonic
                                 pure $ execResponse (duration req.logTiming start stop) req result substitution unsupported

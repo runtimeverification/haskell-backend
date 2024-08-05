@@ -704,9 +704,10 @@ performRewrite ::
     forall io.
     LoggerMIO io =>
     RewriteConfig ->
+    SimplifierCache ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite rewriteConfig pat = do
+performRewrite rewriteConfig initialCache pat = do
     (rr, RewriteStepsState{counter, traces}) <-
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
@@ -721,6 +722,14 @@ performRewrite rewriteConfig pat = do
         , cutLabels
         , terminalLabels
         } = rewriteConfig
+
+    rewriteStart :: RewriteStepsState
+    rewriteStart =
+        RewriteStepsState
+            { counter = 0
+            , traces = mempty
+            , simplifierCache = initialCache
+            }
 
     logDepth = withContext CtxDepth . logMessage
 
@@ -919,11 +928,3 @@ data RewriteStepsState = RewriteStepsState
     , traces :: !(Seq (RewriteTrace ()))
     , simplifierCache :: SimplifierCache
     }
-
-rewriteStart :: RewriteStepsState
-rewriteStart =
-    RewriteStepsState
-        { counter = 0
-        , traces = mempty
-        , simplifierCache = mempty
-        }
