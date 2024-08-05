@@ -166,6 +166,7 @@ respond stateVar request =
 
                         case evaluatedInitialPattern of
                             (Left ApplyEquations.SideConditionFalse{}, _) -> do
+                                -- input pattern's constrains are Bottom, return Bottom
                                 stop <- liftIO $ getTime Monotonic
                                 pure $
                                     execResponse
