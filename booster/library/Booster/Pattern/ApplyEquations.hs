@@ -22,7 +22,8 @@ module Booster.Pattern.ApplyEquations (
     handleSimplificationEquation,
     simplifyConstraint,
     simplifyConstraints,
-    SimplifierCache,
+    SimplifierCache (..),
+    CacheTag (..),
     evaluateConstraints,
 ) where
 
@@ -144,7 +145,7 @@ instance Pretty (PrettyWithModifiers mods EquationFailure) where
 data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
@@ -234,19 +235,46 @@ popRecursion = do
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
-toCache :: Monad io => CacheTag -> Term -> Term -> EquationT io ()
-toCache tag orig result = eqState . modify $ \s -> s{cache = updateCache tag s.cache}
-  where
-    insertInto = Map.insert orig result
-    updateCache LLVM cache = cache{llvm = insertInto cache.llvm}
-    updateCache Equations cache = cache{equations = insertInto cache.equations}
+toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
+toCache LLVM orig result = eqState . modify $
+    \s -> s{cache = s.cache{llvm = Map.insert orig result s.cache.llvm}}
+toCache Equations orig result = eqState $ do
+    s <- get
+    -- Check before inserting a new result to avoid creating a
+    -- lookup chain e -> result -> olderResult.
+    newEqCache <- case Map.lookup result s.cache.equations of
+        Nothing ->
+            pure $ Map.insert orig result s.cache.equations
+        Just furtherResult -> do
+            when (result /= furtherResult) $ do
+                withContextFor Equations . logMessage $
+                    "toCache shortening a chain "
+                        <> showHashHex (getAttributes orig).hash
+                        <> "->"
+                        <> showHashHex (getAttributes furtherResult).hash
+            pure $ Map.insert orig furtherResult s.cache.equations
+    put s{cache = s.cache{equations = newEqCache}}
 
-fromCache :: Monad io => CacheTag -> Term -> EquationT io (Maybe Term)
-fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
-  where
-    select :: CacheTag -> SimplifierCache -> Map Term Term
-    select LLVM = (.llvm)
-    select Equations = (.equations)
+fromCache :: LoggerMIO io => CacheTag -> Term -> EquationT io (Maybe Term)
+fromCache tag t = eqState $ do
+    s <- get
+    case tag of
+        LLVM -> pure $ Map.lookup t s.cache.llvm
+        Equations -> do
+            case Map.lookup t s.cache.equations of
+                Nothing -> pure Nothing
+                Just t' -> case Map.lookup t' s.cache.equations of
+                    Nothing -> pure $ Just t'
+                    Just t'' -> do
+                        when (t'' /= t') $ do
+                            withContextFor Equations . logMessage $
+                                "fromCache shortening a chain "
+                                    <> showHashHex (getAttributes t).hash
+                                    <> "->"
+                                    <> showHashHex (getAttributes t'').hash
+                            let newEqCache = Map.insert t t'' s.cache.equations
+                            put s{cache = s.cache{equations = newEqCache}}
+                        pure $ Just t''
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
@@ -281,7 +309,7 @@ runEquationT ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     EquationT io a ->
@@ -394,7 +422,7 @@ evaluateTerm ::
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
@@ -417,7 +445,7 @@ evaluatePattern ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
@@ -462,7 +490,7 @@ evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
@@ -828,7 +856,7 @@ applyEquation term rule =
                         -- could now be syntactically present in the path constraints, filter again
                         stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
 
-                        mbSolver :: Maybe SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+                        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
 
                         -- check any conditions that are still unclear with the SMT solver
                         -- (or abort if no solver is being used), abort if still unclear after
@@ -842,7 +870,7 @@ applyEquation term rule =
                                             liftIO $ Exception.throw other
                                         Right result ->
                                             pure result
-                             in maybe (pure Nothing) (lift . checkWithSmt) mbSolver >>= \case
+                             in lift (checkWithSmt solver) >>= \case
                                     Nothing -> do
                                         -- no solver or still unclear: abort
                                         throwE
@@ -882,24 +910,29 @@ applyEquation term rule =
                                     )
                                     ensured
                         -- check all ensured conditions together with the path condition
-                        whenJust mbSolver $ \solver -> do
-                            lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                                Right (Just False) -> do
-                                    let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
-                                    throwE
-                                        ( \ctx ->
-                                            ctx . logMessage $
-                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
-                                                    renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
-                                        , EnsuresFalse falseEnsures
-                                        )
-                                Right _other ->
-                                    pure ()
-                                Left SMT.SMTSolverUnknown{} ->
-                                    pure ()
-                                Left other ->
-                                    liftIO $ Exception.throw other
+                        lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+                            Right (Just False) -> do
+                                let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
+                                throwE
+                                    ( \ctx ->
+                                        ctx . logMessage $
+                                            WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
+                                                renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
+                                    , EnsuresFalse falseEnsures
+                                    )
+                            Right _other ->
+                                pure ()
+                            Left SMT.SMTSolverUnknown{} ->
+                                pure ()
+                            Left other ->
+                                liftIO $ Exception.throw other
                         lift $ pushConstraints $ Set.fromList ensuredConditions
+                        -- when a new path condition is added, invalidate the equation cache
+                        unless (null ensuredConditions) $ do
+                            withContextFor Equations . logMessage $
+                                ("New ensured condition from evaluation, invalidating cache" :: Text)
+                            lift . eqState . modify $
+                                \s -> s{cache = s.cache{equations = mempty}}
                         pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
@@ -1004,19 +1037,19 @@ simplifyConstraint ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi mbSMT cache knownPredicates (Predicate p) = do
-    runEquationT def mbApi mbSMT cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi smt cache knownPredicates (Predicate p) = do
+    runEquationT def mbApi smt cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)

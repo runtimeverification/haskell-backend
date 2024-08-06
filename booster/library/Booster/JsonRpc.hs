@@ -20,7 +20,6 @@ import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
 import Control.Exception qualified as Exception
 import Control.Monad
-import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
@@ -40,8 +39,8 @@ import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
 import Prettyprinter (comma, hsep, punctuate, (<+>))
-import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
+import Booster.CLOptions (RewriteOptions (..))
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
@@ -54,12 +53,14 @@ import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
+    RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
     RewriteTrace (..),
     performRewrite,
  )
 import Booster.Pattern.Util (
+    freeVariables,
     sortOfPattern,
     substituteInPredicate,
     substituteInTerm,
@@ -108,8 +109,7 @@ respond stateVar request =
                 | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
                 | isJust req.movingAverageStepTimeout ->
                     pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-            RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxExecute $ do
-                start <- liftIO $ getTime Monotonic
+            RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, rewriteOpts) -> Booster.Log.withContext CtxExecute $ do
                 -- internalise given constrained term
                 let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
@@ -135,7 +135,6 @@ respond stateVar request =
                                         (fromMaybe False)
                                         [ req.logSuccessfulRewrites
                                         , req.logFailedRewrites
-                                        , req.logFallbacks
                                         ]
                         -- apply the given substitution before doing anything else
                         let substPat =
@@ -144,19 +143,35 @@ respond stateVar request =
                                     , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
                                     }
+                            -- remember all variables used in the substitutions
+                            substVars =
+                                Set.unions
+                                    [ Set.singleton v <> freeVariables e
+                                    | (v, e) <- Map.assocs substitution
+                                    ]
 
-                        solver <- traverse (SMT.initSolver def) mSMTOptions
+                        solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
+
+                        logger <- getLogger
+                        prettyModifiers <- getPrettyModifiers
+                        let rewriteConfig =
+                                RewriteConfig
+                                    { definition = def
+                                    , llvmApi = mLlvmLibrary
+                                    , smtSolver = solver
+                                    , varsToAvoid = substVars
+                                    , doTracing
+                                    , logger
+                                    , prettyModifiers
+                                    , mbMaxDepth = mbDepth
+                                    , mbSimplify = rewriteOpts.interimSimplification
+                                    , cutLabels = cutPoints
+                                    , terminalLabels = terminals
+                                    }
                         result <-
-                            performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
-                        whenJust solver SMT.finaliseSolver
-                        stop <- liftIO $ getTime Monotonic
-                        let duration =
-                                if fromMaybe False req.logTiming
-                                    then
-                                        Just $
-                                            fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                                    else Nothing
-                        pure $ execResponse duration req result substitution unsupported
+                            performRewrite rewriteConfig substPat
+                        SMT.finaliseSolver solver
+                        pure $ execResponse req result substitution unsupported
             RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
                 -- block other request executions while modifying the server state
                 state <- liftIO $ takeMVar stateVar
@@ -218,17 +233,11 @@ respond stateVar request =
                     Booster.Log.logMessage $
                         "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                     pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
-            RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxSimplify $ do
-                start <- liftIO $ getTime Monotonic
+            RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxSimplify $ do
                 let internalised =
                         runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
-                let mkTraces duration
-                        | Just True <- req.logTiming =
-                            Just [ProcessingTime (Just Booster) duration]
-                        | otherwise =
-                            Nothing
 
-                solver <- traverse (SMT.initSolver def) mSMTOptions
+                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
                 result <- case internalised of
                     Left patternErrors -> do
@@ -299,21 +308,18 @@ respond stateVar request =
                                             pure $ Right (addHeader $ Syntax.KJAnd predicateSort result)
                                         (Left something, _) ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty' @mods something
-                whenJust solver SMT.finaliseSolver
-                stop <- liftIO $ getTime Monotonic
+                SMT.finaliseSolver solver
 
-                let duration =
-                        fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                    mkSimplifyResponse state =
+                let mkSimplifyResponse state =
                         RpcTypes.Simplify
-                            RpcTypes.SimplifyResult{state, logs = mkTraces duration}
+                            RpcTypes.SimplifyResult{state, logs = Nothing}
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
-                (_, _, Nothing) -> do
+                (_, _, Nothing, _) -> do
                     withContext CtxGetModel $
                         logMessage' ("get-model request, not supported without SMT solver" :: Text)
                     pure $ Left RpcError.notImplemented
-                (def, _, Just smtOptions) -> do
+                (def, _, Just smtOptions, _) -> do
                     let internalised =
                             runExcept $
                                 internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -362,7 +368,7 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ Left SMT.Unknown
+                                        pure $ Left $ SMT.Unknown $ Just "No predicates or substitutions given"
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
@@ -380,12 +386,7 @@ respond stateVar request =
                                         { satisfiable = RpcTypes.Unsat
                                         , substitution = Nothing
                                         }
-                                Left SMT.ReasonUnknown{} ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unknown
-                                        , substitution = Nothing
-                                        }
-                                Left SMT.Unknown ->
+                                Left SMT.Unknown{} ->
                                     RpcTypes.GetModelResult
                                         { satisfiable = RpcTypes.Unknown
                                         , substitution = Nothing
@@ -418,7 +419,7 @@ respond stateVar request =
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
                                             }
-            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions) -> Booster.Log.withContext CtxImplies $ do
+            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
                 -- internalise given constrained term
                 let internalised =
                         runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
@@ -485,7 +486,7 @@ respond stateVar request =
                             MatchSuccess subst -> do
                                 let filteredConsequentPreds =
                                         Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                solver <- traverse (SMT.initSolver def) mSMTOptions
+                                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
                                 if null filteredConsequentPreds
                                     then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
@@ -494,7 +495,7 @@ respond stateVar request =
                                             (Right newPreds, _) ->
                                                 if all (== Pattern.Predicate TrueBool) newPreds
                                                     then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constrains"
+                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
                                             (Left other, _) ->
                                                 pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
@@ -503,7 +504,7 @@ respond stateVar request =
   where
     withModule ::
         Maybe Text ->
-        ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions) ->
+        ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions, RewriteOptions) ->
           m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
         ) ->
         m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
@@ -512,7 +513,7 @@ respond stateVar request =
         let mainName = fromMaybe state.defaultMain mbMainModule
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
-            Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
+            Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions)
 
     doesNotImply s l r =
         pure $
@@ -555,7 +556,10 @@ handleSmtError = JsonRpcHandler $ \case
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
             allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
-        pure $ RpcError.backendError $ RpcError.SmtSolverError $ RpcError.ErrorWithTerm reason allPreds
+        pure $
+            RpcError.backendError $
+                RpcError.SmtSolverError $
+                    RpcError.ErrorWithTerm (fromMaybe "UNKNOWN" reason) allPreds
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err
@@ -567,9 +571,11 @@ data ServerState = ServerState
     , defaultMain :: Text
     -- ^ default main module (initially from command line, could be changed later)
     , mLlvmLibrary :: Maybe LLVM.API
-    -- ^ optional LLVM simplification library
+    -- ^ Read-only: optional LLVM simplification library
     , mSMTOptions :: Maybe SMT.SMTOptions
-    -- ^ (optional) SMT solver options
+    -- ^ Read-only: (optional) SMT solver options
+    , rewriteOptions :: RewriteOptions
+    -- ^ Read-only: configuration related to booster rewriting
     , addedModules :: Map Text Text
     -- ^ map of raw modules added via add-module
     }
@@ -590,13 +596,12 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
             }
 
 execResponse ::
-    Maybe Double ->
     RpcTypes.ExecuteRequest ->
     (Natural, Seq (RewriteTrace ()), RewriteResult Pattern) ->
     Map Variable Term ->
     [Syntax.KorePattern] ->
     Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
-execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = case rr of
+execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
     RewriteBranch p nexts ->
         Right $
             RpcTypes.Execute
@@ -705,12 +710,9 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                             (logSuccessfulRewrites, logFailedRewrites)
                         )
                         traces
-            timingLog =
-                fmap (ProcessingTime $ Just Booster) mbDuration
-         in case (timingLog, traceLogs) of
-                (Nothing, []) -> Nothing
-                (Nothing, xs@(_ : _)) -> Just xs
-                (Just t, xs) -> Just (t : xs)
+         in case traceLogs of
+                [] -> Nothing
+                xs@(_ : _) -> Just xs
 
 toExecState ::
     Pattern ->

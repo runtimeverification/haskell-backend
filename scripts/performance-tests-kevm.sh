@@ -106,16 +106,31 @@ feature_shell "cd kevm-pyk && poetry run pytest src/tests/integration/test_prove
 
 mkdir -p $SCRIPT_DIR/logs
 
+# use special options if given, but restore KORE_RPC_OPTS afterwards
+FEATURE_SERVER_OPTS=${FEATURE_SERVER_OPTS:-''}
+if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
+    echo "Using special options '${FEATURE_SERVER_OPTS}' via KORE_RPC_OPTS"
+    if [ ! -z "${KORE_RPC_OPTS:-}" ]; then
+        PRIOR_OPTS=${KORE_RPC_OPTS}
+    fi
+    export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
+fi
+
 feature_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "No zombie processes found"
 
 
 if [ -z "$BUG_REPORT" ]; then
-if [ ! -e "$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-  master_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
-  killall kore-rpc-booster || echo "No zombie processes found"
-fi
+    if [ ! -z "${PRIOR_OPTS:-}" ]; then
+        export KORE_RPC_OPTS=${PRIOR_OPTS}
+    else
+        unset KORE_RPC_OPTS
+    fi
+    if [ ! -e "$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
+        master_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
+        killall kore-rpc-booster || echo "No zombie processes found"
+    fi
 
-cd $SCRIPT_DIR
-python3 compare.py logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log > logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare
+    cd $SCRIPT_DIR
+    python3 compare.py logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log > logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare
 fi

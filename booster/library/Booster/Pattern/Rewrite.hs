@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -12,6 +14,7 @@ License     : BSD-3-Clause
 module Booster.Pattern.Rewrite (
     performRewrite,
     rewriteStep,
+    RewriteConfig (..),
     RewriteFailed (..),
     RewriteStepResult (..),
     RewriteResult (..),
@@ -31,7 +34,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Aeson (object, (.=))
-import Data.Bifunctor (bimap)
+import Data.Bifunctor (bimap, first)
 import Data.Coerce (coerce)
 import Data.Data (Proxy)
 import Data.Hashable qualified as Hashable
@@ -52,8 +55,9 @@ import Booster.Definition.Base
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
+    CacheTag (Equations),
     EquationFailure (..),
-    SimplifierCache,
+    SimplifierCache (..),
     evaluatePattern,
     simplifyConstraint,
  )
@@ -87,10 +91,14 @@ newtype RewriteT io a = RewriteT
 data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
+    , varsToAvoid :: Set.Set Variable
     , doTracing :: Flag "CollectRewriteTraces"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , -- below: parameters used only in performRewrite
+      mbMaxDepth, mbSimplify :: Maybe Natural
+    , cutLabels, terminalLabels :: [Text]
     }
 
 instance MonadIO io => LoggerMIO (RewriteT io) where
@@ -106,21 +114,15 @@ pattern NoCollectRewriteTraces :: Flag "CollectRewriteTraces"
 pattern NoCollectRewriteTraces = Flag False
 
 runRewriteT ::
-    LoggerMIO io =>
-    Flag "CollectRewriteTraces" ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    RewriteConfig ->
     SimplifierCache ->
     Set.Set Predicate ->
     RewriteT io a ->
     io (Either (RewriteFailed "Rewrite") (a, (SimplifierCache, Set.Set Predicate)))
-runRewriteT doTracing definition llvmApi smtSolver cache remainders m = do
-    logger <- getLogger
-    prettyModifiers <- getPrettyModifiers
+runRewriteT rewriteConfig cache remainders m = do
     runExceptT
         . flip runStateT (cache, remainders)
-        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing, logger, prettyModifiers}
+        . flip runReaderT rewriteConfig
         . unRewriteT
         $ m
 
@@ -133,7 +135,7 @@ getConfig = RewriteT ask
 getDefinition :: Monad m => RewriteT m KoreDefinition
 getDefinition = RewriteT $ definition <$> ask
 
-getSolver :: Monad m => RewriteT m (Maybe SMT.SMTContext)
+getSolver :: Monad m => RewriteT m SMT.SMTContext
 getSolver = RewriteT $ (.smtSolver) <$> ask
 
 getRemainder :: Monad m => RewriteT m (Set.Set Predicate)
@@ -228,28 +230,26 @@ rewriteStep pat = do
                     then do
                         setRemainder mempty
                         pure resultsWithoutRemainders
-                    else
-                        getSolver >>= \case
-                            Just solver ->
-                                SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
-                                    Right False -> do
-                                        -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
-                                        setRemainder mempty
-                                        withContext CtxRemainder $ logMessage ("remainder is UNSAT" :: Text)
-                                        pure resultsWithoutRemainders
-                                    Right True -> do
-                                        withContext CtxRemainder $ logMessage ("remainder is SAT" :: Text)
-                                        -- the remainder condition is satisfiable.
-                                        --  Have to construct the remainder branch and consider it
-                                        -- To construct the "remainder pattern",
-                                        -- we add the remainder condition to the predicates of the @pattr@
-                                        (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
-                                    Left SMT.SMTSolverUnknown{} -> do
-                                        withContext CtxRemainder $ logMessage ("remainder is UNKNWON" :: Text)
-                                        -- solver cannot solve the remainder. Descend into the remainder branch anyway
-                                        (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
-                                    Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
-                            Nothing -> (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                    else do
+                        solver <- getSolver
+                        SMT.isSat solver (pat.constraints <> newRemainder) >>= \case
+                            Right False -> do
+                                -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
+                                setRemainder mempty
+                                withContext CtxRemainder $ logMessage ("remainder is UNSAT" :: Text)
+                                pure resultsWithoutRemainders
+                            Right True -> do
+                                withContext CtxRemainder $ logMessage ("remainder is SAT" :: Text)
+                                -- the remainder condition is satisfiable.
+                                --  Have to construct the remainder branch and consider it
+                                -- To construct the "remainder pattern",
+                                -- we add the remainder condition to the predicates of the @pattr@
+                                (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                            Left SMT.SMTSolverUnknown{} -> do
+                                withContext CtxRemainder $ logMessage ("remainder is UNKNWON" :: Text)
+                                -- solver cannot solve the remainder. Descend into the remainder branch anyway
+                                (resultsWithoutRemainders <>) <$> processGroups lowerPriorityRules
+                            Left other -> liftIO $ Exception.throw other -- fail hard on other SMT errors
 
 ruleGroupPriority :: [RewriteRule a] -> Maybe Priority
 ruleGroupPriority = \case
@@ -350,44 +350,30 @@ applyRule pat@Pattern{ceilConditions} rule =
                     stillUnclear <- lift $ filterOutKnownConstraints prior unclearRequires
 
                     -- check unclear requires-clauses in the context of known constraints (prior)
-                    mbSolver <- lift getSolver
+                    solver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
-                    unclearRequiresAfterSmt <- case mbSolver of
-                        Just solver -> do
-                            checkAllRequires <-
-                                SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
+                    checkAllRequires <-
+                        SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
 
-                            case checkAllRequires of
-                                Left SMT.SMTSolverUnknown{} -> do
-                                    withContext CtxConstraint . logMessage . renderOneLineText $
-                                        "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
-                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                                    pure unclearRequires
-                                Left other ->
-                                    liftIO $ Exception.throw other -- fail hard on other SMT errors
-                                Right (Just False) -> do
-                                    -- requires is actually false given the prior
-                                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
-                                    returnNotApplied
-                                Right (Just True) ->
-                                    pure [] -- can proceed
-                                Right Nothing -> do
-                                    withContext CtxConstraint . logMessage . renderOneLineText $
-                                        "Uncertain about condition(s) in a rule, adding as remainder:"
-                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                                    pure unclearRequires
-                        Nothing -> do
-                            if (not . null $ unclearRequires)
-                                then do
-                                    withContext CtxConstraint . withContext CtxAbort $
-                                        logMessage $
-                                            WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> unclearRequires)]) $
-                                                renderOneLineText $
-                                                    "Uncertain about a condition(s) in rule, no SMT solver:"
-                                                        <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                                    failRewrite $
-                                        RuleConditionUnclear rule (head unclearRequires)
-                                else pure []
+                    unclearRequiresAfterSmt <- case checkAllRequires of
+                        Left SMT.SMTSolverUnknown{} -> do
+                            withContext CtxConstraint . logMessage . renderOneLineText $
+                                "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
+                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                            pure unclearRequires
+                        Left other ->
+                            liftIO $ Exception.throw other -- fail hard on other SMT errors
+                        Right (Just False) -> do
+                            -- requires is actually false given the prior
+                            withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                            returnNotApplied
+                        Right (Just True) ->
+                            pure [] -- can proceed
+                        Right Nothing -> do
+                            withContext CtxConstraint . logMessage . renderOneLineText $
+                                "Uncertain about condition(s) in a rule, adding as remainder:"
+                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                            pure unclearRequires
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
@@ -398,25 +384,31 @@ applyRule pat@Pattern{ceilConditions} rule =
                         catMaybes <$> mapM (checkConstraint returnTrivial prior) ruleEnsures
 
                     -- check all new constraints together with the known side constraints
-                    whenJust mbSolver $ \solver ->
-                        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                            Right (Just False) -> do
-                                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                                -- it's probably still fine to return trivial here even if we assumed unclear required conditions
-                                returnTrivial
-                            Right _other ->
-                                pure ()
-                            Left SMT.SMTSolverUnknown{} ->
-                                pure ()
-                            Left other ->
-                                liftIO $ Exception.throw other
+                    (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
+                        Right (Just False) -> do
+                            withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                            -- it's probably still fine to return trivial here even if we assumed unclear required conditions
+                            returnTrivial
+                        Right _other ->
+                            pure ()
+                        Left SMT.SMTSolverUnknown{} ->
+                            pure ()
+                        Left other ->
+                            liftIO $ Exception.throw other
+
+                    -- if a new constraint is going to be added, the equation cache is invalid
+                    unless (null newConstraints) $ do
+                        withContextFor Equations . logMessage $
+                            ("New path condition ensured, invalidating cache" :: Text)
+                        lift . RewriteT . lift . modify $ first (\s -> s{equations = mempty})
 
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
                     -- present in the input pattern and in the unification substitution
-                    let varsFromInput = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
+                    varsFromInput <- lift . RewriteT $ asks (.varsToAvoid)
+                    let varsFromPattern = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
                         varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
-                        forbiddenVars = varsFromInput <> varsFromSubst
+                        forbiddenVars = varsFromInput <> varsFromPattern <> varsFromSubst
                         existentialSubst =
                             Map.fromSet
                                 (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
@@ -731,26 +723,30 @@ catSimplified = \case
 performRewrite ::
     forall io.
     LoggerMIO io =>
-    Flag "CollectRewriteTraces" ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
-    -- | maximum depth
-    Maybe Natural ->
-    -- | cut point rule labels
-    [Text] ->
-    -- | terminal rule labels
-    [Text] ->
+    RewriteConfig ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalLabels initialPattern = do
+performRewrite rewriteConfig initialPattern = do
     (rr, RewriteStepsState{counter, traces}) <-
         flip runStateT rewriteStart $ doSteps (Unsimplified initialPattern)
     pure (counter, traces, rr)
   where
+    RewriteConfig
+        { definition
+        , llvmApi
+        , smtSolver
+        , doTracing
+        , mbMaxDepth
+        , mbSimplify
+        , cutLabels
+        , terminalLabels
+        } = rewriteConfig
+
     logDepth = withContext CtxDepth . logMessage
 
     depthReached n = maybe False (n >=) mbMaxDepth
+
+    shouldSimplifyAt c = c > 0 && maybe False ((== 0) . (c `mod`)) mbSimplify
 
     showCounter = (<> " steps.") . pack . show
 
@@ -772,7 +768,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         Unsimplified p -> withPatternContext p $ withContext CtxSimplify $ do
             st <- get
             let cache = st.simplifierCache
-            evaluatePattern def mLlvmLibrary mSolver cache p >>= \(res, newCache) -> do
+            evaluatePattern definition llvmApi smtSolver cache p >>= \(res, newCache) -> do
                 updateCache newCache
                 case res of
                     Right newPattern -> do
@@ -797,18 +793,21 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     doSteps pat | unWrappedPat <- unMaybeSimplified pat = do
         RewriteStepsState{counter, simplifierCache} <- get
         logDepth $ showCounter counter
-        if depthReached counter
-            then do
+
+        if
+            | depthReached counter -> do
                 logDepth $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
                 simplify pat >>= \case
                     Bottom pat' -> pure $ RewriteTrivial pat'
                     Simplified pat' -> pure $ RewriteFinished Nothing Nothing pat'
-            else
+            | shouldSimplifyAt counter -> do
+                logDepth $ "Interim simplification after " <> maybe "??" showCounter mbSimplify
+                simplify pat >>= \case
+                    Bottom pat' -> pure $ RewriteTrivial pat'
+                    Simplified pat' -> pure $ RewriteFinished Nothing Nothing pat'
+            | otherwise ->
                 runRewriteT
-                    doTracing
-                    def
-                    mLlvmLibrary
-                    mSolver
+                    rewriteConfig
                     simplifierCache
                     mempty
                     (withPatternContext unWrappedPat $ rewriteStep unWrappedPat)

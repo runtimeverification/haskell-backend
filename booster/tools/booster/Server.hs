@@ -126,16 +126,19 @@ main = do
                     , mainModuleName
                     , port
                     , llvmLibraryFile
-                    , logLevels
-                    , logFormat
-                    , logTimeStamps
-                    , timeStampsFormat
-                    , logContexts
-                    , logFile
+                    , logOptions =
+                        LogOptions
+                            { logLevels
+                            , logFormat
+                            , logTimeStamps
+                            , timeStampsFormat
+                            , logContexts
+                            , logFile
+                            , prettyPrintOptions
+                            }
                     , smtOptions
                     , equationOptions
-                    , indexCells
-                    , prettyPrintOptions
+                    , rewriteOptions
                     }
             , proxyOptions =
                 ProxyOptions
@@ -233,7 +236,7 @@ main = do
                 mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                 definitionsWithCeilSummaries <-
                     liftIO $
-                        loadDefinition indexCells definitionFile
+                        loadDefinition rewriteOptions.indexCells definitionFile
                             >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
@@ -301,6 +304,7 @@ main = do
                                 , defaultMain = mainModuleName
                                 , mLlvmLibrary
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
+                                , rewriteOptions
                                 , addedModules = mempty
                                 }
                 statsVar <- Stats.newStats

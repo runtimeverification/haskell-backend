@@ -37,7 +37,7 @@ for dir in $(ls -d test-*); do
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
-        "get-model" | "collectiontest" | "use-path-condition-in-equations")
+        "get-model" | "collectiontest" | "implies" | "implies2" | "implies-issue-3941" | "use-path-condition-in-equations")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
