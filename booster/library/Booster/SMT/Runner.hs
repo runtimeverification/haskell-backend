@@ -187,7 +187,7 @@ runCmd c =
         Values vs -> pure $ Values vs
         Error e -> pure $ Error e
   where
-    runCmdMaybe :: forall cmd'. SMTEncode cmd' => cmd' -> SMT io ResponseMay
+    runCmdMaybe :: forall cmd'. SMTEncode cmd' => cmd' -> SMT io ResponseUnresolved
     runCmdMaybe cmd = do
         let cmdBS = encode cmd
         ctxt <- SMT get

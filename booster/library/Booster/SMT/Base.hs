@@ -87,7 +87,7 @@ data Response' reason
     deriving stock (Eq, Ord, Show)
 
 type Response = Response' Text
-type ResponseMay = Response' (Maybe Text)
+type ResponseUnresolved = Response' (Maybe Text)
 
 -- Common values returned by SMT solvers.
 data Value

@@ -22,7 +22,7 @@ import Text.Read
 import Booster.SMT.Base
 import Data.Text.Encoding (decodeUtf8)
 
-readResponse :: BS.ByteString -> ResponseMay
+readResponse :: BS.ByteString -> ResponseUnresolved
 readResponse =
     either (Error . BS.pack) id . A.parseOnly responseP
 
@@ -31,7 +31,7 @@ parseSExpr = A.parseOnly sexpP
 
 -- S-Expression and response parsing
 
-responseP :: A.Parser ResponseMay
+responseP :: A.Parser ResponseUnresolved
 responseP =
     A.string "success" $> Success -- UNUSED?
         <|> A.string "sat" $> Sat
@@ -39,7 +39,7 @@ responseP =
         <|> A.string "unknown" $> Unknown Nothing
         <|> A.char '(' *> errOrValuesOrReasonUnknownP <* A.char ')'
 
-errOrValuesOrReasonUnknownP :: A.Parser ResponseMay
+errOrValuesOrReasonUnknownP :: A.Parser ResponseUnresolved
 errOrValuesOrReasonUnknownP =
     A.string "error " *> (Error <$> stringP)
         <|> A.string ":reason-unknown " *> (Unknown . Just . decodeUtf8 <$> stringP)
