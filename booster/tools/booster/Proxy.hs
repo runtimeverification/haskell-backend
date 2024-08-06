@@ -90,8 +90,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     LogSettings
                         { logSuccessfulRewrites = execReq.logSuccessfulRewrites
                         , logFailedRewrites = execReq.logFailedRewrites
-                        , logFallbacks = Nothing
-                        , logTiming = Nothing
                         }
              in do
                     bState <- liftIO $ MVar.readMVar boosterState
@@ -545,7 +543,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                 SimplifyRequest
                     { state = execStateToKoreJson state
                     , _module = mbModule
-                    , logTiming = Nothing
                     }
 
     -- used for post-exec simplification returns either a state to
@@ -639,8 +636,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
 data LogSettings = LogSettings
     { logSuccessfulRewrites :: Maybe Bool
     , logFailedRewrites :: Maybe Bool
-    , logFallbacks :: Maybe Bool
-    , logTiming :: Maybe Bool
     }
 
 -- | Combine multiple, possibly empty/non-existent (Nothing) lists of logs into one
