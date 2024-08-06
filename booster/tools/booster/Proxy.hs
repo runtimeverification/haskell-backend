@@ -23,9 +23,8 @@ import Data.Aeson.Text (encodeToLazyText)
 import Data.Aeson.Types (Value (..))
 import Data.Bifunctor (second)
 import Data.Either (partitionEithers)
-import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy (toStrict)
@@ -91,7 +90,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     LogSettings
                         { logSuccessfulRewrites = execReq.logSuccessfulRewrites
                         , logFailedRewrites = execReq.logFailedRewrites
-                        , logFallbacks = execReq.logFallbacks
+                        , logFallbacks = Nothing
                         , logTiming = Nothing
                         }
              in do
@@ -369,17 +368,12 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                             case kResult of
                                 Right (Execute koreResult) -> do
                                     let
-                                        fallbackLog =
-                                            if fromMaybe False logSettings.logFallbacks
-                                                then Just [mkFallbackLogEntry boosterResult koreResult]
-                                                else Nothing
                                         accumulatedLogs =
                                             combineLogs
                                                 [ rpcLogs
                                                 , boosterResult.logs
                                                 , boosterStateSimplificationLogs
                                                 , koreResult.logs
-                                                , fallbackLog
                                                 ]
                                         loopState incDepth newLogs =
                                             ( currentDepth + boosterResult.depth + koreResult.depth + if incDepth then 1 else 0
@@ -454,7 +448,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                                                 [ rpcLogs
                                                                                 , boosterResult.logs
                                                                                 , map RPCLog.logEntryEraseTerms <$> result.logs
-                                                                                , fallbackLog
                                                                                 ]
                                                                     }
                                 -- can only be an error at this point
@@ -664,54 +657,3 @@ makeVacuous newLogs execState =
         , rule = Nothing
         , logs = combineLogs [execState.logs, newLogs]
         }
-
-mkFallbackLogEntry :: ExecuteResult -> ExecuteResult -> RPCLog.LogEntry
-mkFallbackLogEntry boosterResult koreResult =
-    let boosterRewriteFailureLog = filter isRewriteFailureLogEntry . fromMaybe [] $ boosterResult.logs
-        lastBoosterRewriteLogEntry = case boosterRewriteFailureLog of
-            [] -> Nothing
-            xs -> Just $ last xs
-        fallbackRuleId =
-            case lastBoosterRewriteLogEntry of
-                Nothing -> "UNKNOWN"
-                Just logEntry -> fromMaybe "UNKNOWN" $ getRewriteFailureRuleId logEntry
-        fallbackReason =
-            case lastBoosterRewriteLogEntry of
-                Nothing -> "UNKNOWN"
-                Just logEntry -> fromMaybe "UNKNOWN" $ getRewriteFailureReason logEntry
-        koreRewriteSuccessLog = filter isRewriteSuccessLogEntry . fromMaybe [] $ koreResult.logs
-        koreRuleIds = mapMaybe getRewriteSuccessRuleId koreRewriteSuccessLog
-     in RPCLog.Fallback
-            { originalTerm = Just $ execStateToKoreJson boosterResult.state
-            , rewrittenTerm = Just $ execStateToKoreJson koreResult.state
-            , reason = fallbackReason
-            , fallbackRuleId = fallbackRuleId
-            , recoveryRuleIds = NonEmpty.nonEmpty koreRuleIds
-            , recoveryDepth = koreResult.depth
-            , origin = RPCLog.Proxy
-            }
-  where
-    isRewriteFailureLogEntry :: RPCLog.LogEntry -> Bool
-    isRewriteFailureLogEntry = \case
-        RPCLog.Rewrite{result = RPCLog.Failure{}} -> True
-        _ -> False
-
-    isRewriteSuccessLogEntry :: RPCLog.LogEntry -> Bool
-    isRewriteSuccessLogEntry = \case
-        RPCLog.Rewrite{result = RPCLog.Success{}} -> True
-        _ -> False
-
-    getRewriteFailureReason :: RPCLog.LogEntry -> Maybe Text
-    getRewriteFailureReason = \case
-        RPCLog.Rewrite{result = RPCLog.Failure{reason}} -> Just reason
-        _ -> Nothing
-
-    getRewriteFailureRuleId :: RPCLog.LogEntry -> Maybe Text
-    getRewriteFailureRuleId = \case
-        RPCLog.Rewrite{result = RPCLog.Failure{_ruleId}} -> _ruleId
-        _ -> Nothing
-
-    getRewriteSuccessRuleId :: RPCLog.LogEntry -> Maybe Text
-    getRewriteSuccessRuleId = \case
-        RPCLog.Rewrite{result = RPCLog.Success{ruleId}} -> Just ruleId
-        _ -> Nothing

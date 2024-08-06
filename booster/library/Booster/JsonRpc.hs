@@ -135,7 +135,6 @@ respond stateVar request =
                                         (fromMaybe False)
                                         [ req.logSuccessfulRewrites
                                         , req.logFailedRewrites
-                                        , req.logFallbacks
                                         ]
                         -- apply the given substitution before doing anything else
                         let substPat =
