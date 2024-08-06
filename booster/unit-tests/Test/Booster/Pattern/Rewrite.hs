@@ -254,24 +254,25 @@ rulePriority =
                          , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
                          ]
 
-runWith :: Term -> IO Either (RewriteFailed "Rewrite") (RewriteStepResult [Pattern])
+runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteStepResult [Pattern]))
 runWith t =
-    second fst <$> do
+    second (fmap (fmap (\(_, p, _) -> p)) . fst) <$> do
         conf <- testConf
-        runNoLoggingT $ runRewriteT conf mempty (rewriteStep [] [] $ Pattern_ t)
+        runNoLoggingT $
+            runRewriteT conf mempty mempty (rewriteStep $ Pattern_ t)
 
 rewritesTo :: Term -> Term -> IO ()
 t1 `rewritesTo` t2 =
-    runWith t1 @?= Right (AppliedRules [Pattern_ t2])
+    runWith t1 @?>>= Right (AppliedRules [Pattern_ t2])
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    runWith t1 @?= Right (AppliedRules [])
+    runWith t1 @?>>= Right (AppliedRules [])
 
 branchesTo :: Term -> [Term] -> IO ()
 t `branchesTo` ts =
     runWith t
-        @?= Right
+        @?>>= Right
             (AppliedRules $ map Pattern_ ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
