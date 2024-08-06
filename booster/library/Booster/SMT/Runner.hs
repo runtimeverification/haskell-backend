@@ -177,30 +177,41 @@ runCmd_ :: (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io ()
 runCmd_ = void . runCmd
 
 runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
-runCmd cmd = do
-    let cmdBS = encode cmd
-    ctxt <- SMT get
-    case ctxt.mbSolver of
-        Nothing -> pure $ Unknown (Just "server started without SMT solver")
-        Just solverRef -> do
-            whenJust ctxt.mbTranscriptHandle $ \h -> do
-                whenJust (comment cmd) $ \c ->
-                    liftIO (BS.hPutBuilder h c)
-                liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
-            output <- (liftIO $ readIORef solverRef) >>= \solver -> run_ cmd solver cmdBS
-            let result = readResponse output
-            whenJust ctxt.mbTranscriptHandle $
-                liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
-            case result of
-                Error{} -> do
-                    logMessage $
-                        "SMT solver reports: " <> pack (show result)
-                    pure result
-                Unknown Nothing ->
-                    runCmd GetReasonUnknown >>= \case
-                        unknownWithReason@(Unknown (Just _)) -> pure unknownWithReason
-                        _ -> pure result
-                _ -> pure result
+runCmd c =
+    runCmdMaybe c >>= \case
+        Unknown Nothing -> pure $ Unknown "Could not determine reason when running GetReasonUnknown"
+        Unknown (Just reason) -> pure $ Unknown reason
+        Success -> pure Success
+        Sat -> pure Sat
+        Unsat -> pure Unsat
+        Values vs -> pure $ Values vs
+        Error e -> pure $ Error e
+  where
+    runCmdMaybe :: forall cmd'. SMTEncode cmd' => cmd' -> SMT io ResponseMay
+    runCmdMaybe cmd = do
+        let cmdBS = encode cmd
+        ctxt <- SMT get
+        case ctxt.mbSolver of
+            Nothing -> pure $ Unknown (Just "server started without SMT solver")
+            Just solverRef -> do
+                whenJust ctxt.mbTranscriptHandle $ \h -> do
+                    whenJust (comment cmd) $ \c' ->
+                        liftIO (BS.hPutBuilder h c')
+                    liftIO (BS.hPutBuilder h $ cmdBS <> "\n")
+                output <- (liftIO $ readIORef solverRef) >>= \solver -> run_ cmd solver cmdBS
+                let result = readResponse output
+                whenJust ctxt.mbTranscriptHandle $
+                    liftIO . flip BS.hPutStrLn (BS.pack $ "; " <> show output <> ", parsed as " <> show result <> "\n")
+                case result of
+                    Error{} -> do
+                        logMessage $
+                            "SMT solver reports: " <> pack (show result)
+                        pure result
+                    Unknown Nothing ->
+                        runCmdMaybe GetReasonUnknown >>= \case
+                            unknownWithReason@(Unknown (Just _)) -> pure unknownWithReason
+                            _ -> pure result
+                    _ -> pure result
 
 instance SMTEncode DeclareCommand where
     encode = encodeDeclaration

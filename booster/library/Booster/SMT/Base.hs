@@ -77,14 +77,17 @@ data QueryCommand
     | GetReasonUnknown
     deriving stock (Eq, Ord, Show)
 
-data Response
-    = Success -- for command_
+data Response' reason
+    = Success -- for command_ResponseMay
     | Sat
     | Unsat
-    | Unknown (Maybe Text)
+    | Unknown reason
     | Values [(SExpr, Value)]
     | Error BS.ByteString
     deriving stock (Eq, Ord, Show)
+
+type Response = Response' Text
+type ResponseMay = Response' (Maybe Text)
 
 -- Common values returned by SMT solvers.
 data Value

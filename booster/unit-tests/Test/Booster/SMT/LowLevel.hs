@@ -99,7 +99,7 @@ responseParsing =
         , "((x 0) (y true))" `parsesTo` Values [(Atom "x", SMT.Int 0), (Atom "y", SMT.Bool True)]
         ]
   where
-    parsesTo :: BS.ByteString -> SMT.Response -> TestTree
+    parsesTo :: BS.ByteString -> SMT.ResponseMay -> TestTree
     input `parsesTo` expected =
         testCase (show input <> " parses to " <> show expected) $
             expected @=? readResponse input

@@ -33,7 +33,6 @@ import Data.Either.Extra (fromLeft', fromRight')
 import Data.IORef
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
@@ -405,7 +404,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         [DeclareCommand] ->
         [SExpr] ->
         TranslationState ->
-        Maybe Text ->
+        Text ->
         ExceptT SMTError (SMT io) (Maybe Bool)
     retry smtGiven sexprsToCheck transState reasonUnknown = do
         opts <- lift . SMT $ gets (.options)
@@ -427,12 +426,12 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
 
-    failBecauseUnknown :: Maybe Text -> ExceptT SMTError (SMT io) (Maybe Bool)
+    failBecauseUnknown :: Text -> ExceptT SMTError (SMT io) (Maybe Bool)
     failBecauseUnknown reason = do
         Log.withContext Log.CtxAbort $
             Log.logMessage $
-                "Returned Unknown. Reason: " <> fromMaybe "UNKNOWN" reason
-        throwE $ SMTSolverUnknown reason givenPs psToCheck
+                "Returned Unknown. Reason: " <> reason
+        throwE $ SMTSolverUnknown (Just reason) givenPs psToCheck
 
     -- Given the known truth and the expressions to check,
     -- interact with the solver to establish the validity of the  expressions.
