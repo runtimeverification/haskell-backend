@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -78,13 +79,13 @@ data QueryCommand
     deriving stock (Eq, Ord, Show)
 
 data Response' reason
-    = Success -- for command_ResponseMay
+    = Success -- for command_
     | Sat
     | Unsat
     | Unknown reason
     | Values [(SExpr, Value)]
     | Error BS.ByteString
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Functor)
 
 type Response = Response' Text
 type ResponseUnresolved = Response' (Maybe Text)

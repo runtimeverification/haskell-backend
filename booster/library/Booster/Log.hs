@@ -76,6 +76,7 @@ import Booster.Util (Flag (..))
 import Kore.JsonRpc.Types (rpcJsonConfig)
 import Kore.JsonRpc.Types.ContextLog as CL
 import Kore.Util
+import Control.Monad.Catch (MonadCatch, MonadThrow)
 
 newtype Logger a = Logger (a -> IO ())
 
@@ -114,7 +115,7 @@ shortRuleLocation rule = renderOneLineText $
 data LogMessage where
     LogMessage :: ToLogFormat a => Flag "alwaysShown" -> [CLContext] -> a -> LogMessage
 
-class MonadIO m => LoggerMIO m where
+class (MonadIO m, MonadCatch m) => LoggerMIO m where
     getLogger :: m (Logger LogMessage)
     default getLogger :: (Trans.MonadTrans t, LoggerMIO n, m ~ t n) => m (Logger LogMessage)
     getLogger = Trans.lift getLogger
@@ -136,7 +137,7 @@ instance LoggerMIO m => LoggerMIO (StateT s m) where
 instance LoggerMIO m => LoggerMIO (Strict.StateT s m) where
     withLogger modL (Strict.StateT m) = Strict.StateT $ \s -> withLogger modL $ m s
 
-instance MonadIO m => LoggerMIO (Control.Monad.Logger.NoLoggingT m) where
+instance (MonadIO m, MonadCatch m) => LoggerMIO (Control.Monad.Logger.NoLoggingT m) where
     getLogger = pure $ Logger $ \_ -> pure ()
     getPrettyModifiers = pure $ ModifiersRep @'[Decoded, Truncated] Proxy
     withLogger _ = id
@@ -267,9 +268,11 @@ newtype LoggerT m a = LoggerT {unLoggerT :: ReaderT (Logger LogMessage, Modifier
         , Control.Monad.Logger.MonadLogger
         , Control.Monad.Logger.MonadLoggerIO
         , MonadUnliftIO
+        , MonadCatch
+        , MonadThrow
         )
 
-instance MonadIO m => LoggerMIO (LoggerT m) where
+instance (MonadIO m, MonadCatch m) => LoggerMIO (LoggerT m) where
     getLogger = LoggerT (fst <$> ask)
     getPrettyModifiers = LoggerT (snd <$> ask)
     withLogger modL (LoggerT m) = LoggerT $ withReaderT (first modL) m

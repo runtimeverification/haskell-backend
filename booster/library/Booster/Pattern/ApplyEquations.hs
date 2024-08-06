@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -74,13 +75,14 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Bound (..))
 import Kore.JsonRpc.Types.ContextLog (CLContext (CLWithId), IdContext (CtxCached))
 import Kore.Util (showHashHex)
+import Control.Monad.Catch (catch, MonadCatch, MonadThrow)
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
     -- ~ EquationConfig -> EquationState -> io (Either EquationFailure a, EquationState)
-    deriving newtype (Functor, Applicative, Monad, MonadIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch)
 
-instance MonadIO io => LoggerMIO (EquationT io) where
+instance (MonadCatch io, MonadIO io) => LoggerMIO (EquationT io) where
     getLogger = EquationT $ asks logger
     getPrettyModifiers = EquationT $ asks prettyModifiers
     withLogger modL (EquationT m) = EquationT $ withReaderT (\cfg@EquationConfig{logger} -> cfg{logger = modL logger}) m
@@ -863,13 +865,11 @@ applyEquation term rule =
                         unless (null stillUnclear) $
                             let checkWithSmt :: SMT.SMTContext -> EquationT io (Maybe Bool)
                                 checkWithSmt smt =
-                                    SMT.checkPredicates smt knownPredicates mempty (Set.fromList stillUnclear) >>= \case
-                                        Left SMT.SMTSolverUnknown{} -> do
-                                            pure Nothing
-                                        Left other ->
-                                            liftIO $ Exception.throw other
-                                        Right result ->
-                                            pure result
+                                    (SMT.checkPredicates smt knownPredicates mempty (Set.fromList stillUnclear)) `catch`
+                                        (\case
+                                            SMT.SMTSolverUnknown{} -> pure Nothing
+                                            other -> liftIO $ Exception.throw other
+                                        )
                              in lift (checkWithSmt solver) >>= \case
                                     Nothing -> do
                                         -- no solver or still unclear: abort
@@ -910,8 +910,8 @@ applyEquation term rule =
                                     )
                                     ensured
                         -- check all ensured conditions together with the path condition
-                        lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                            Right (Just False) -> do
+                        (lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+                            Just False -> do
                                 let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
                                 throwE
                                     ( \ctx ->
@@ -920,12 +920,13 @@ applyEquation term rule =
                                                 renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
                                     , EnsuresFalse falseEnsures
                                     )
-                            Right _other ->
-                                pure ()
-                            Left SMT.SMTSolverUnknown{} ->
-                                pure ()
-                            Left other ->
-                                liftIO $ Exception.throw other
+                            _other ->
+                                pure ()) `catch`
+                                (\case
+                                    SMT.SMTSolverUnknown{} -> pure ()
+                                    other -> liftIO $ Exception.throw other
+                                )
+
                         lift $ pushConstraints $ Set.fromList ensuredConditions
                         -- when a new path condition is added, invalidate the equation cache
                         unless (null ensuredConditions) $ do

@@ -96,6 +96,7 @@ import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
 import Kore.Syntax.Json.Types qualified as Syntax
+import Booster.SMT.Interface (IsSatResult(..))
 
 respond ::
     forall m.
@@ -368,32 +369,18 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ Left $ SMT.Unknown "No predicates or substitutions given"
+                                        pure $ IsUnknown "No predicates or substitutions given"
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
                                         SMT.finaliseSolver solver
-                                        case result of
-                                            Left err -> liftIO $ Exception.throw err -- fail hard on SMT errors
-                                            Right response -> pure response
-                            withContext CtxGetModel $
-                                withContext CtxSMT $
-                                    logMessage $
-                                        "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
-                            pure . Right . RpcTypes.GetModel $ case smtResult of
-                                Left SMT.Unsat ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unsat
-                                        , substitution = Nothing
-                                        }
-                                Left SMT.Unknown{} ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unknown
-                                        , substitution = Nothing
-                                        }
-                                Left other ->
-                                    error $ "Unexpected result " <> show other <> " from getModelFor"
-                                Right subst ->
+                                        pure result
+                            case smtResult of
+                                IsSat subst -> do
+                                    withContext CtxGetModel $
+                                        withContext CtxSMT $
+                                            logMessage $
+                                                "SMT result: " <> pack ((("Subst: " <>) . show . Map.size) subst)
                                     let sort = fromMaybe (error "Unknown sort in input") $ sortOfJson req.state.term
                                         substitution
                                             | Map.null subst = Nothing
@@ -415,10 +402,22 @@ respond stateVar request =
                                                             (externaliseTerm term)
                                                         | (var, term) <- Map.assocs subst
                                                         ]
-                                     in RpcTypes.GetModelResult
+                                    pure . Right . RpcTypes.GetModel $ RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
                                             }
+                                IsUnsat ->
+                                    pure . Right . RpcTypes.GetModel $ 
+                                            RpcTypes.GetModelResult
+                                                { satisfiable = RpcTypes.Unsat
+                                                , substitution = Nothing
+                                                }
+                                IsUnknown{} -> pure . Right . RpcTypes.GetModel $ 
+                                    RpcTypes.GetModelResult
+                                        { satisfiable = RpcTypes.Unknown
+                                        , substitution = Nothing
+                                        }
+                                    
             RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
                 -- internalise given constrained term
                 let internalised =

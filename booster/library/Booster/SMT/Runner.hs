@@ -30,6 +30,7 @@ import Control.Monad.Trans.State
 import Data.ByteString.Builder qualified as BS
 import Data.ByteString.Char8 qualified as BS
 import Data.IORef
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import SMTLIB.Backends qualified as Backend
 import SMTLIB.Backends.Process qualified as Backend
@@ -46,6 +47,7 @@ import System.IO (
 import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
+import Control.Monad.Catch (MonadCatch, MonadThrow)
 
 -- Includes all options from kore-rpc used by current clients. The
 -- parser in CLOptions uses compatible names and we use the same
@@ -148,7 +150,7 @@ connectToSolver = do
     pure (solver, handle)
 
 newtype SMT m a = SMT (StateT SMTContext m a)
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, LoggerMIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, MonadCatch, MonadThrow, LoggerMIO)
 
 runSMT :: SMTContext -> SMT io a -> io (a, SMTContext)
 runSMT ctxt (SMT action) = runStateT action ctxt
@@ -178,14 +180,7 @@ runCmd_ = void . runCmd
 
 runCmd :: forall cmd io. (SMTEncode cmd, LoggerMIO io) => cmd -> SMT io Response
 runCmd c =
-    runCmdMaybe c >>= \case
-        Unknown Nothing -> pure $ Unknown "Could not determine reason when running GetReasonUnknown"
-        Unknown (Just reason) -> pure $ Unknown reason
-        Success -> pure Success
-        Sat -> pure Sat
-        Unsat -> pure Unsat
-        Values vs -> pure $ Values vs
-        Error e -> pure $ Error e
+    fmap (fromMaybe "Could not determine reason when running GetReasonUnknown") <$> runCmdMaybe c
   where
     runCmdMaybe :: forall cmd'. SMTEncode cmd' => cmd' -> SMT io ResponseUnresolved
     runCmdMaybe cmd = do

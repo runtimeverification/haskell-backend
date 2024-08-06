@@ -72,12 +72,14 @@ import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Util (Flag (..))
+import Control.Monad.Catch (catch, MonadCatch, MonadThrow)
+import Control.Monad.Catch.Pure (MonadThrow(..))
 
 newtype RewriteT io a = RewriteT
     { unRewriteT ::
         ReaderT RewriteConfig (StateT SimplifierCache (ExceptT (RewriteFailed "Rewrite") io)) a
     }
-    deriving newtype (Functor, Applicative, Monad, MonadIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch)
 
 data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
@@ -92,7 +94,7 @@ data RewriteConfig = RewriteConfig
     , cutLabels, terminalLabels :: [Text]
     }
 
-instance MonadIO io => LoggerMIO (RewriteT io) where
+instance (MonadIO io, MonadCatch io) => LoggerMIO (RewriteT io) where
     getLogger = RewriteT $ asks logger
     getPrettyModifiers = RewriteT $ asks prettyModifiers
 
@@ -211,6 +213,12 @@ data RewriteRuleAppResult a
 newtype RewriteRuleAppT m a = RewriteRuleAppT {runRewriteRuleAppT :: m (RewriteRuleAppResult a)}
     deriving (Functor)
 
+instance MonadThrow m => MonadThrow (RewriteRuleAppT m) where
+    throwM = RewriteRuleAppT . throwM
+
+instance MonadCatch m => MonadCatch (RewriteRuleAppT m) where
+    (RewriteRuleAppT m) `catch` cb = RewriteRuleAppT $ m `catch` (runRewriteRuleAppT . cb)
+
 instance Monad m => Applicative (RewriteRuleAppT m) where
     pure = RewriteRuleAppT . return . Applied
     {-# INLINE pure #-}
@@ -253,7 +261,7 @@ instance MonadIO m => MonadIO (RewriteRuleAppT m) where
     liftIO = lift . liftIO
     {-# INLINE liftIO #-}
 
-instance LoggerMIO m => LoggerMIO (RewriteRuleAppT m) where
+instance (LoggerMIO m, MonadCatch m) => LoggerMIO (RewriteRuleAppT m) where
     withLogger l (RewriteRuleAppT m) = RewriteRuleAppT $ withLogger l m
 
 {- | Tries to apply one rewrite rule:
@@ -364,22 +372,20 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
                                     map coerce stillUnclear
 
-                    checkAllRequires <-
-                        SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
-
-                    case checkAllRequires of
-                        Left SMT.SMTSolverUnknown{} ->
-                            smtUnclear -- abort rewrite if a solver result was Unknown
-                        Left other ->
-                            liftIO $ Exception.throw other -- fail hard on other SMT errors
-                        Right (Just False) -> do
+                    (SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear) >>= \case
+                        Just False -> do
                             -- requires is actually false given the prior
                             withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                             RewriteRuleAppT $ pure NotApplied
-                        Right (Just True) ->
+                        Just True ->
                             pure () -- can proceed
-                        Right Nothing ->
+                        Nothing ->
                             smtUnclear -- no implication could be determined
+                     ) `catch` (
+                        \case
+                            SMT.SMTSolverUnknown{} -> smtUnclear
+                            other -> liftIO $ Exception.throw other
+                     )
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
@@ -391,16 +397,14 @@ applyRule pat@Pattern{ceilConditions} rule =
                         catMaybes <$> mapM (checkConstraint id trivialIfBottom prior) ruleEnsures
 
                     -- check all new constraints together with the known side constraints
-                    (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                        Right (Just False) -> do
+                    ((lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
+                        Just False -> do
                             withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                             RewriteRuleAppT $ pure Trivial
-                        Right _other ->
-                            pure ()
-                        Left SMT.SMTSolverUnknown{} ->
-                            pure ()
-                        Left other ->
-                            liftIO $ Exception.throw other
+                        _other ->
+                            pure ()) `catch` (\case
+                            SMT.SMTSolverUnknown{} -> pure ()
+                            other -> liftIO $ Exception.throw other )
 
                     -- if a new constraint is going to be added, the equation cache is invalid
                     unless (null newConstraints) $ do
