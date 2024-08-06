@@ -65,6 +65,7 @@ import Booster.Pattern.Util (
     substituteInTerm,
  )
 import Booster.Prettyprinter (renderDefault, renderText)
+import Booster.SMT.Interface (IsSatResult (..))
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
@@ -94,7 +95,6 @@ import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
 import Kore.Syntax.Json.Types qualified as Syntax
-import Booster.SMT.Interface (IsSatResult(..))
 
 respond ::
     forall m.
@@ -400,22 +400,23 @@ respond stateVar request =
                                                             (externaliseTerm term)
                                                         | (var, term) <- Map.assocs subst
                                                         ]
-                                    pure . Right . RpcTypes.GetModel $ RpcTypes.GetModelResult
+                                    pure . Right . RpcTypes.GetModel $
+                                        RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
                                             }
                                 IsUnsat ->
-                                    pure . Right . RpcTypes.GetModel $ 
-                                            RpcTypes.GetModelResult
-                                                { satisfiable = RpcTypes.Unsat
-                                                , substitution = Nothing
-                                                }
-                                IsUnknown{} -> pure . Right . RpcTypes.GetModel $ 
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unknown
-                                        , substitution = Nothing
-                                        }
-                                    
+                                    pure . Right . RpcTypes.GetModel $
+                                        RpcTypes.GetModelResult
+                                            { satisfiable = RpcTypes.Unsat
+                                            , substitution = Nothing
+                                            }
+                                IsUnknown{} ->
+                                    pure . Right . RpcTypes.GetModel $
+                                        RpcTypes.GetModelResult
+                                            { satisfiable = RpcTypes.Unknown
+                                            , substitution = Nothing
+                                            }
             RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
                 -- internalise given constrained term
                 let internalised =

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveLift #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023

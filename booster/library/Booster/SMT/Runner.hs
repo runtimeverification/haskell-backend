@@ -150,7 +150,17 @@ connectToSolver = do
     pure (solver, handle)
 
 newtype SMT m a = SMT (StateT SMTContext m a)
-    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO, MonadCatch, MonadThrow, LoggerMIO)
+    deriving newtype
+        ( Functor
+        , Applicative
+        , Monad
+        , MonadIO
+        , MonadLogger
+        , MonadLoggerIO
+        , MonadCatch
+        , MonadThrow
+        , LoggerMIO
+        )
 
 runSMT :: SMTContext -> SMT io a -> io (a, SMTContext)
 runSMT ctxt (SMT action) = runStateT action ctxt

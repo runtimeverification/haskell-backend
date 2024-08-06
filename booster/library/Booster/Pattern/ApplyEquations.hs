@@ -861,30 +861,30 @@ applyEquation term rule =
                         -- (or abort if no solver is being used), abort if still unclear after
                         unless (null stillUnclear) $
                             lift (SMT.checkPredicates solver knownPredicates mempty (Set.fromList stillUnclear)) >>= \case
-                                    SMT.IsUnknown{} -> do
-                                        -- no solver or still unclear: abort
-                                        throwE
-                                            ( \ctx ->
-                                                ctx . logMessage $
-                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                        renderOneLineText
-                                                            ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
-                                                            )
-                                            , IndeterminateCondition stillUnclear
-                                            )
-                                    SMT.IsUnsat -> do
-                                        -- actually false given path condition: fail
-                                        let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
-                                        throwE
-                                            ( \ctx ->
-                                                ctx . logMessage $
-                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                        renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
-                                            , ConditionFalse failedP
-                                            )
-                                    SMT.IsSat{} -> do
-                                        -- can proceed
-                                        pure ()
+                                SMT.IsUnknown{} -> do
+                                    -- no solver or still unclear: abort
+                                    throwE
+                                        ( \ctx ->
+                                            ctx . logMessage $
+                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                    renderOneLineText
+                                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                                        )
+                                        , IndeterminateCondition stillUnclear
+                                        )
+                                SMT.IsUnsat -> do
+                                    -- actually false given path condition: fail
+                                    let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
+                                    throwE
+                                        ( \ctx ->
+                                            ctx . logMessage $
+                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                    renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                                        , ConditionFalse failedP
+                                        )
+                                SMT.IsSat{} -> do
+                                    -- can proceed
+                                    pure ()
 
                         -- check ensured conditions, filter any
                         -- true ones, prune if any is false

@@ -364,7 +364,6 @@ applyRule pat@Pattern{ceilConditions} rule =
                                     map coerce stillUnclear
 
                     SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear) >>= \case
-
                         SMT.IsUnknown{} ->
                             smtUnclear -- abort rewrite if a solver result was Unknown
                         SMT.IsUnsat -> do

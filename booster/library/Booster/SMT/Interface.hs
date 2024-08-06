@@ -1,6 +1,6 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DeriveFunctor #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -17,7 +17,7 @@ module Booster.SMT.Interface (
     getModelFor,
     checkPredicates,
     hardResetSolver,
-    IsSatResult(..),
+    IsSatResult (..),
     isSat,
 ) where
 
@@ -66,7 +66,6 @@ throwSMT' = throwSMT . pack
 
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
-
 
 {- | declare-const all introduced variables (free in predicates
   as well as abstraction variables) before sending assertions
@@ -155,7 +154,7 @@ checkPrelude = do
     setTimeout defaultSMTOptions.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
     ctxt <- SMT get
-    -- | Send the commands from the definition's SMT prelude
+    -- \| Send the commands from the definition's SMT prelude
     check <- mapM_ runCmd ctxt.prelude >> runCmd CheckSat
     -- set user defined timeout value for the general queries
     setTimeout ctxt.options.timeout
@@ -166,19 +165,18 @@ checkPrelude = do
             closeContext ctxt
             throwSMT' $
                 "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
-    where
-        setTimeout timeout = do
-            Log.logMessage $ "Setting SMT timeout to: " <> show timeout
-            runCmd_ $ SetTimeout timeout
+  where
+    setTimeout timeout = do
+        Log.logMessage $ "Setting SMT timeout to: " <> show timeout
+        runCmd_ $ SetTimeout timeout
 
 finaliseSolver :: Log.LoggerMIO io => SMT.SMTContext -> io ()
 finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
     destroyContext ctxt
 
-
 data IsSatResult unknown a = IsSat a | IsUnsat | IsUnknown unknown
-    deriving Functor
+    deriving (Functor)
 
 {- | Check satisfiability of  predicates and substitutions.
      The set of input predicates @ps@ togehter with the substitutions @subst@ are interpreted as a conjunction.
@@ -233,6 +231,7 @@ isSat ::
     [Predicate] ->
     io (IsSatResult Text ())
 isSat ctxt ps = void <$> (isSatReturnTransState ctxt ps mempty)
+
 {- |
 Implementation of get-model request
 
@@ -388,8 +387,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Sat, Sat) -> do
                 Log.logMessage ("Implication not determined" :: Text)
                 pure $ IsUnknown Nothing
-            (Sat, Unsat) -> pure  $ IsSat ()
-            (Unsat, Sat) -> pure $ IsUnsat
+            (Sat, Unsat) -> pure $ IsSat ()
+            (Unsat, Sat) -> pure IsUnsat
             (Unknown reason, _) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
             (_, Unknown reason) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
             other ->
@@ -407,7 +406,6 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         toCheck <-
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
         pure (smtSubst <> smtPs, toCheck)
-
 
     -- Given the known truth and the expressions to check,
     -- interact with the solver to establish the validity of the  expressions.
