@@ -18,7 +18,6 @@ module Booster.JsonRpc (
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
-import Control.Exception qualified as Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
@@ -66,7 +65,6 @@ import Booster.Pattern.Util (
     substituteInTerm,
  )
 import Booster.Prettyprinter (renderDefault, renderText)
-import Booster.SMT.Base qualified as SMT
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
@@ -551,14 +549,6 @@ handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
-    SMT.SMTSolverUnknown reason premises preds -> do
-        let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
-            externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
-            allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
-        pure $
-            RpcError.backendError $
-                RpcError.SmtSolverError $
-                    RpcError.ErrorWithTerm (fromMaybe "UNKNOWN" reason) allPreds
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err

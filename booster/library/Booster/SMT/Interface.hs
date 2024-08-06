@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2023
@@ -23,8 +24,6 @@ module Booster.SMT.Interface (
 import Control.Exception (Exception, throw)
 import Control.Monad
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Aeson (object, (.=))
 import Data.ByteString.Char8 qualified as BS
@@ -55,7 +54,6 @@ import Booster.Syntax.Json.Externalise (externaliseTerm)
 data SMTError
     = GeneralSMTError Text
     | SMTTranslationError Text
-    | SMTSolverUnknown (Maybe Text) (Set Predicate) (Set Predicate)
     deriving (Eq, Show)
 
 instance Exception SMTError
@@ -142,13 +140,6 @@ retry cb onTimeout = do
             cb
         _ -> onTimeout
 
-failBecauseUnknown :: Log.LoggerMIO io => Text -> Set Predicate -> Set Predicate -> io a
-failBecauseUnknown reason givenPs psToCheck = do
-    Log.withContext Log.CtxAbort $
-        Log.logMessage $
-            "Returned Unknown. Reason: " <> reason
-    throw $ SMTSolverUnknown (Just reason) givenPs psToCheck
-
 translatePrelude :: Log.LoggerMIO io => KoreDefinition -> io [DeclareCommand]
 translatePrelude def =
     let prelude = smtDeclarations def
@@ -186,7 +177,8 @@ finaliseSolver ctxt = do
     destroyContext ctxt
 
 
-data IsSatResult a = IsSat a | IsUnsat | IsUnknown Text
+data IsSatResult unknown a = IsSat a | IsUnsat | IsUnknown unknown
+    deriving Functor
 
 {- | Check satisfiability of  predicates and substitutions.
      The set of input predicates @ps@ togehter with the substitutions @subst@ are interpreted as a conjunction.
@@ -197,7 +189,7 @@ isSatReturnTransState ::
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
-    io (IsSatResult TranslationState)
+    io (IsSatResult Text TranslationState)
 isSatReturnTransState ctxt ps subst
     | null ps && Map.null subst = pure $ IsSat $ TranslationState{mappings = mempty, counter = 1}
     | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
@@ -239,12 +231,8 @@ isSat ::
     Log.LoggerMIO io =>
     SMT.SMTContext ->
     [Predicate] ->
-    io Bool
-isSat ctxt ps = isSatReturnTransState ctxt ps mempty >>= \case
-    IsSat{} -> pure True
-    IsUnsat ->  pure False
-    IsUnknown reason -> failBecauseUnknown reason mempty $ Set.fromList ps
-
+    io (IsSatResult Text ())
+isSat ctxt ps = void <$> (isSatReturnTransState ctxt ps mempty)
 {- |
 Implementation of get-model request
 
@@ -264,7 +252,7 @@ getModelFor ::
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
-    io (IsSatResult (Map Variable Term))
+    io (IsSatResult Text (Map Variable Term))
 getModelFor ctxt ps subst
     | null ps && Map.null subst = Log.withContext Log.CtxSMT $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
@@ -274,7 +262,7 @@ getModelFor ctxt ps subst
             hardResetSolver >> isSatReturnTransState ctxt ps subst >>= \case
                 IsSat transState -> IsSat <$> extractModel transState
                 IsUnsat -> pure IsUnsat
-                IsUnknown reason -> pure $ IsUnknown reason                
+                IsUnknown reason -> pure $ IsUnknown reason
   where
     extractModel ::
         TranslationState ->
@@ -364,9 +352,9 @@ checkPredicates ::
     Set Predicate ->
     Map Variable Term ->
     Set Predicate ->
-    io (Maybe Bool)
+    io (IsSatResult (Maybe Text) ())
 checkPredicates ctxt givenPs givenSubst psToCheck
-    | null psToCheck = pure $ Just True
+    | null psToCheck = pure $ IsSat ()
     | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
         Log.withContext Log.CtxAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
@@ -378,7 +366,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         [DeclareCommand] ->
         [SExpr] ->
         TranslationState ->
-        SMT io (Maybe Bool)
+        SMT io (IsSatResult (Maybe Text) ())
     solve smtGiven sexprsToCheck transState = do
         declareVariables transState
         Log.logMessage $
@@ -396,14 +384,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                     hsep ("Predicates to check:" : map (pretty' @mods) (Set.toList psToCheck))
         result <- interactWithSolver smtGiven sexprsToCheck
         case result of
-            (Unsat, Unsat) -> pure Nothing -- defensive choice for inconsistent ground truth
+            (Unsat, Unsat) -> pure $ IsUnknown Nothing -- defensive choice for inconsistent ground truth
             (Sat, Sat) -> do
                 Log.logMessage ("Implication not determined" :: Text)
-                pure Nothing
-            (Sat, Unsat) -> pure . Just $ True
-            (Unsat, Sat) -> pure . Just $ False
-            (Unknown reason, _) -> retry (solve smtGiven sexprsToCheck transState) (failBecauseUnknown reason givenPs psToCheck)
-            (_, Unknown reason) -> retry (solve smtGiven sexprsToCheck transState) (failBecauseUnknown reason givenPs psToCheck)
+                pure $ IsUnknown Nothing
+            (Sat, Unsat) -> pure  $ IsSat ()
+            (Unsat, Sat) -> pure $ IsUnsat
+            (Unknown reason, _) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
+            (_, Unknown reason) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
             other ->
                 throwSMT $
                     "Unexpected result while checking a condition: " <> Text.pack (show other)
