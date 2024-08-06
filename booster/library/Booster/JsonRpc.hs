@@ -39,7 +39,6 @@ import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
 import Prettyprinter (comma, hsep, punctuate, (<+>))
-import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 import Booster.CLOptions (RewriteOptions (..))
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
@@ -111,7 +110,6 @@ respond stateVar request =
                 | isJust req.movingAverageStepTimeout ->
                     pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
             RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, rewriteOpts) -> Booster.Log.withContext CtxExecute $ do
-                start <- liftIO $ getTime Monotonic
                 -- internalise given constrained term
                 let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
@@ -174,14 +172,7 @@ respond stateVar request =
                         result <-
                             performRewrite rewriteConfig substPat
                         SMT.finaliseSolver solver
-                        stop <- liftIO $ getTime Monotonic
-                        let duration =
-                                if fromMaybe False req.logTiming
-                                    then
-                                        Just $
-                                            fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                                    else Nothing
-                        pure $ execResponse duration req result substitution unsupported
+                        pure $ execResponse req result substitution unsupported
             RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
                 -- block other request executions while modifying the server state
                 state <- liftIO $ takeMVar stateVar
@@ -244,14 +235,8 @@ respond stateVar request =
                         "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                     pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
             RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxSimplify $ do
-                start <- liftIO $ getTime Monotonic
                 let internalised =
                         runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
-                let mkTraces duration
-                        | Just True <- req.logTiming =
-                            Just [ProcessingTime (Just Booster) duration]
-                        | otherwise =
-                            Nothing
 
                 solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
@@ -325,13 +310,10 @@ respond stateVar request =
                                         (Left something, _) ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty' @mods something
                 SMT.finaliseSolver solver
-                stop <- liftIO $ getTime Monotonic
 
-                let duration =
-                        fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                    mkSimplifyResponse state =
+                let mkSimplifyResponse state =
                         RpcTypes.Simplify
-                            RpcTypes.SimplifyResult{state, logs = mkTraces duration}
+                            RpcTypes.SimplifyResult{state, logs = Nothing}
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
                 (_, _, Nothing, _) -> do
@@ -615,13 +597,12 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
             }
 
 execResponse ::
-    Maybe Double ->
     RpcTypes.ExecuteRequest ->
     (Natural, Seq (RewriteTrace ()), RewriteResult Pattern) ->
     Map Variable Term ->
     [Syntax.KorePattern] ->
     Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
-execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = case rr of
+execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
     RewriteBranch p nexts ->
         Right $
             RpcTypes.Execute
@@ -727,12 +708,9 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                             (logSuccessfulRewrites, logFailedRewrites)
                         )
                         traces
-            timingLog =
-                fmap (ProcessingTime $ Just Booster) mbDuration
-         in case (timingLog, traceLogs) of
-                (Nothing, []) -> Nothing
-                (Nothing, xs@(_ : _)) -> Just xs
-                (Just t, xs) -> Just (t : xs)
+         in case traceLogs of
+                [] -> Nothing
+                xs@(_ : _) -> Just xs
 
 toExecState ::
     Pattern -> Map Variable Term -> [Syntax.KorePattern] -> Maybe UniqueId -> RpcTypes.ExecuteState
