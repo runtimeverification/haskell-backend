@@ -461,14 +461,14 @@ evaluatePattern' ::
     LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
+evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
     solver <- (.smtSolver) <$> getConfig
     -- check the pattern's constraints for consistency, reporting an error if they are Bottom
     withContext CtxConstraint
         . withContext CtxDetail
-        . withTermContext (coerce $ collapseAndBools pat.constraints)
+        . withTermContext (coerce $ collapseAndBools constraints)
         $ pure ()
-    consistent <- withContext CtxConstraint $ SMT.isSat solver pat.constraints
+    consistent <- withContext CtxConstraint $ SMT.isSat solver constraints
     withContext CtxConstraint $ do
         logMessage $
             "Constraints consistency check returns: " <> show consistent
@@ -476,7 +476,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     case consistent of
         Right False -> do
             -- the constraints are unsatisfiable, which means that the patten is Bottom
-            throw . SideConditionFalse . collapseAndBools $ pat.constraints
+            throw . SideConditionFalse . collapseAndBools $ constraints
         Left SMT.SMTSolverUnknown{} -> do
             -- unlikely case of an Unknown response to a consistency check.
             -- continue to preserver the old behaviour.
