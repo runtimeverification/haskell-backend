@@ -46,8 +46,6 @@ data ExecuteRequest = ExecuteRequest
     , assumeStateDefined :: !(Maybe Bool)
     , logSuccessfulRewrites :: !(Maybe Bool)
     , logFailedRewrites :: !(Maybe Bool)
-    , logFallbacks :: !(Maybe Bool)
-    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -59,7 +57,6 @@ data ImpliesRequest = ImpliesRequest
     , consequent :: !KoreJson
     , _module :: !(Maybe Text)
     , assumeDefined :: !(Maybe Bool)
-    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -69,7 +66,6 @@ data ImpliesRequest = ImpliesRequest
 data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
-    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving

@@ -117,7 +117,6 @@ import Log qualified
 import Network.JSONRPC (fromId)
 import Prelude.Kore
 import SMT qualified
-import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 respond ::
     forall m.
@@ -145,9 +144,7 @@ respond reqId serverState moduleName runSMT =
                 , assumeStateDefined
                 , stepTimeout
                 , logSuccessfulRewrites
-                , logTiming
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
-                start <- liftIO $ getTime Monotonic
                 case verifyIn serializedModule state of
                     Left Error{errorError, errorContext} ->
                         pure $
@@ -180,14 +177,7 @@ respond reqId serverState moduleName runSMT =
                                             verifiedPattern
                                 )
 
-                        stop <- liftIO $ getTime Monotonic
-                        let duration =
-                                if (fromMaybe False logTiming)
-                                    then
-                                        Just $
-                                            fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                                    else Nothing
-                        pure $ buildResult duration (TermLike.termLikeSort verifiedPattern) traversalResult
+                        pure $ buildResult (TermLike.termLikeSort verifiedPattern) traversalResult
               where
                 toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
                 toStopLabels cpRs tRs =
@@ -204,32 +194,29 @@ respond reqId serverState moduleName runSMT =
                                 Set.fromList $
                                     concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
                          in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
-                mkLogs mbDuration rules
-                    | isJust mbDuration
-                        || fromMaybe False logSuccessfulRewrites =
+                mkLogs rules
+                    | fromMaybe False logSuccessfulRewrites =
                         Just . concat $
-                            maybe [] (\t -> [ProcessingTime (Just KoreRpc) t]) mbDuration
-                                : [ [ Rewrite
-                                        { result =
-                                            Success
-                                                { rewrittenTerm = Nothing
-                                                , substitution = Nothing
-                                                , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
-                                                }
-                                        , origin = KoreRpc
+                            [ [ Rewrite
+                                { result =
+                                    Success
+                                        { rewrittenTerm = Nothing
+                                        , substitution = Nothing
+                                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
                                         }
-                                    | fromMaybe False logSuccessfulRewrites
-                                    ]
-                                  | Exec.RuleTrace{ruleId} <- toList rules
-                                  ]
+                                , origin = KoreRpc
+                                }
+                              | fromMaybe False logSuccessfulRewrites
+                              ]
+                            | Exec.RuleTrace{ruleId} <- toList rules
+                            ]
                     | otherwise = Nothing
 
                 buildResult ::
-                    Maybe Double ->
                     TermLike.Sort ->
                     GraphTraversal.TraversalResult (Exec.RpcExecState RewritingVariableName) ->
                     Either ErrorObj (API 'Res)
-                buildResult mbDuration sort = \case
+                buildResult sort = \case
                     GraphTraversal.Ended
                         [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                             -- Actually not "ended" but out of instructions.
@@ -242,7 +229,7 @@ respond reqId serverState moduleName runSMT =
                                         , reason = if Just (Depth depth) == maxDepth then DepthBound else Stuck
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs mbDuration rules
+                                        , logs = mkLogs rules
                                         , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
@@ -258,7 +245,7 @@ respond reqId serverState moduleName runSMT =
                                         , reason = Stuck
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs mbDuration rules
+                                        , logs = mkLogs rules
                                         , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
@@ -274,7 +261,7 @@ respond reqId serverState moduleName runSMT =
                                         , reason = Vacuous
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs mbDuration rules
+                                        , logs = mkLogs rules
                                         , unknownPredicate = Nothing
                                         }
                     GraphTraversal.Stopped
@@ -290,7 +277,7 @@ respond reqId serverState moduleName runSMT =
                                             , rule
                                             , nextStates =
                                                 Just $ map (patternToExecState False sort . Exec.rpcProgState) nexts
-                                            , logs = mkLogs mbDuration rules
+                                            , logs = mkLogs rules
                                             , unknownPredicate = Nothing
                                             }
                             | Just rule <- containsLabelOrRuleId rules terminalRules ->
@@ -302,7 +289,7 @@ respond reqId serverState moduleName runSMT =
                                             , reason = TerminalRule
                                             , rule
                                             , nextStates = Nothing
-                                            , logs = mkLogs mbDuration rules
+                                            , logs = mkLogs rules
                                             , unknownPredicate = Nothing
                                             }
                             | otherwise ->
@@ -315,7 +302,7 @@ respond reqId serverState moduleName runSMT =
                                             , rule = Nothing
                                             , nextStates =
                                                 Just $ map (patternToExecState True sort . Exec.rpcProgState) nexts
-                                            , logs = mkLogs mbDuration rules
+                                            , logs = mkLogs rules
                                             , unknownPredicate = Nothing
                                             }
                     GraphTraversal.TimedOut
@@ -329,7 +316,7 @@ respond reqId serverState moduleName runSMT =
                                         , reason = Timeout
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs mbDuration rules
+                                        , logs = mkLogs rules
                                         , unknownPredicate = Nothing
                                         }
                     -- these are programmer errors
@@ -408,8 +395,7 @@ respond reqId serverState moduleName runSMT =
                     a ||| b = \v -> a v || b v
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent, _module, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
-            start <- liftIO $ getTime Monotonic
+        Implies ImpliesRequest{antecedent, consequent, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left Error{errorError, errorContext} ->
                     pure $
@@ -438,15 +424,7 @@ respond reqId serverState moduleName runSMT =
                                 leftPatt
                                 rightPatt
                                 existentialVars
-                    stop <- liftIO $ getTime Monotonic
-                    let timeLog =
-                            ProcessingTime
-                                (Just KoreRpc)
-                                (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
-                        allLogs =
-                            if (fromMaybe False logTiming)
-                                then Just [timeLog]
-                                else Nothing
+                    let allLogs = Nothing
                     pure $ buildResult allLogs sort result
           where
             verify = do
@@ -495,8 +473,7 @@ respond reqId serverState moduleName runSMT =
                                  in ImpliesResult jsonTerm False (Just jsonCond) logs
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
-        Simplify SimplifyRequest{state, _module, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
-            start <- liftIO $ getTime Monotonic
+        Simplify SimplifyRequest{state, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             case verifyIn serializedModule state of
                 Left Error{errorError, errorContext} ->
                     pure $
@@ -518,15 +495,7 @@ respond reqId serverState moduleName runSMT =
                             . evalInSimplifierContext serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
-                    stop <- liftIO $ getTime Monotonic
-                    let timeLog =
-                            ProcessingTime
-                                (Just KoreRpc)
-                                (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
-                        allLogs =
-                            if (fromMaybe False logTiming)
-                                then Just [timeLog]
-                                else Nothing
+                    let allLogs = Nothing
                     pure $
                         Right $
                             Simplify

@@ -37,7 +37,6 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
     },
     "log-successful-rewrites": true,
     "log-failed-rewrites": true,
-    "log-timing": true
   }
 }
 ```
@@ -301,30 +300,6 @@ If any logging is enabled, the optional `logs` field will be returned containing
 
 where `origin` is one of `kore-rpc`, `booster` or `llvm`. The order of the trace messages in the `logs` array is the order the backend attempted and applied the rules and should allow for visualisation/reconstruction of the steps the backend took. The `original-term-index` is referencing the JSON KORE format and is 0 indexed. The above traces will be emitted when `log-successful-rewrites` and `log-failed-rewrites` are set to true respectively. Not all backends may support both message types.
 
-When `log-timing` is set to `true`, the response to `execute`, `simplify` and `implies` requests will contain information about the wall-clock time spent in different components (`kore-rpc`, `booster`, `proxy`) or overall (without qualifying `component`) while processing the request.
-
-```json
-{
-  "tag": "processing-time",
-  "time": 69.12
-},
-{
-  "tag": "processing-time",
-  "component": "kore-rpc",
-  "time": 12.34
-},
-{
-  "tag": "processing-time",
-  "component": "booster",
-  "time": 56.78
-}
-```
-The number in the `time` field  of an entry represents time in seconds.
-
-When no component is given, the time (`69.12` in the example) is the overall wall-clock time spent processing the request, including the given component timings (which are optional). There should be at most one log object without `component` in the list of `logs`. In contrast, log entries with `component` may be repeated (in case there were several entries into the component).
-
-Not all backends support logging processing time, and some won't have the different components featured as `origin` here.
-
 ## Implies
 
 ### Request:
@@ -338,13 +313,12 @@ Not all backends support logging processing time, and some won't have the differ
     "antecedent": {"format": "KORE", "version": 1, "term": {}},
     "consequent": {"format": "KORE", "version": 1, "term": {}},
     "module": "MODULE-NAME",
-    "log-timing": true,
     "assume-defined": false
   }
 }
 ```
 
-Optional parameters: `module` (main module name), `log-timing`, `assume-defined`.
+Optional parameters: `module` (main module name), `assume-defined`.
 
 The `assume-defined` flag defaults to `false`. When set to `true`, the server uses the new simplified implication check in booster, which makes the assumption that the antecedent and consequent are bot defined, i.e. don't simplify to `#Bottom`.
 
@@ -436,12 +410,11 @@ indicating that the program configuration can be rewritten further => `satisfiab
   "params": {
     "state": {"format": "KORE", "version": 1, "term": {}},
     "module": "MODULE-NAME",
-    "log-timing": true
   }
 }
 ```
 
-Optional parameters: `module` (main module name), `log-timing`
+Optional parameters: `module` (main module name)
 
 ### Error Response:
 
