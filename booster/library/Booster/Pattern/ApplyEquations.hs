@@ -463,16 +463,15 @@ evaluatePattern' ::
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternContext pat $ do
     solver <- (.smtSolver) <$> getConfig
-    -- check the pattern's constraints for consistency, reporting an error if they are Bottom
-    withContext CtxConstraint
-        . withContext CtxDetail
-        . withTermContext (coerce $ collapseAndBools constraints)
-        $ pure ()
-    consistent <- withContext CtxConstraint $ SMT.isSat solver constraints
-    withContext CtxConstraint $ do
-        logMessage $
-            "Constraints consistency check returns: " <> show consistent
-
+    -- check the pattern's constraints for satisfiability to ensure they are consistent
+    consistent <-
+        withContext CtxConstraint $ do
+            withContext CtxDetail . withTermContext (coerce $ collapseAndBools constraints) $ pure ()
+            consistent <- SMT.isSat solver constraints
+            withContext CtxConstraint $
+                logMessage $
+                    "Constraints consistency check returns: " <> show consistent
+            pure consistent
     case consistent of
         Right False -> do
             -- the constraints are unsatisfiable, which means that the patten is Bottom
@@ -482,23 +481,21 @@ evaluatePattern' pat@Pattern{term, constraints, ceilConditions} = withPatternCon
             -- continue to preserver the old behaviour.
             withContext CtxConstraint . logWarn . Text.pack $
                 "Constraints consistency UNKNOWN: " <> show consistent
-            continue
+            pure ()
         Left other ->
             -- fail hard on SMT error other than @SMT.SMTSolverUnknown@
             liftIO $ Exception.throw other
-        Right True -> do
+        Right True ->
             -- constraints are consistent, continue
-            continue
-  where
-    continue = do
-        newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
-        -- after evaluating the term, evaluate all (existing and
-        -- newly-acquired) constraints, once
-        traverse_ simplifyAssumedPredicate . predicates =<< getState
-        -- this may yield additional new constraints, left unevaluated
-        evaluatedConstraints <- predicates <$> getState
-        pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+            pure ()
 
+    newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
+    -- after evaluating the term, evaluate all (existing and newly-acquired) constraints, once
+    traverse_ simplifyAssumedPredicate . predicates =<< getState
+    -- this may yield additional new constraints, left unevaluated
+    evaluatedConstraints <- predicates <$> getState
+    pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+  where
     -- when TooManyIterations exception occurred while evaluating the top-level term,
     -- i.e. not in a recursive evaluation of a side-condition,
     -- it is safe to keep the partial result and ignore the exception.
