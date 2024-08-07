@@ -872,7 +872,7 @@ applyEquation term rule =
                                                         )
                                         , IndeterminateCondition stillUnclear
                                         )
-                                SMT.IsUnsat -> do
+                                SMT.IsInvalid -> do
                                     -- actually false given path condition: fail
                                     let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
                                     throwE
@@ -882,7 +882,7 @@ applyEquation term rule =
                                                     renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
                                         , ConditionFalse failedP
                                         )
-                                SMT.IsSat{} -> do
+                                SMT.IsValid{} -> do
                                     -- can proceed
                                     pure ()
 
@@ -901,7 +901,7 @@ applyEquation term rule =
                                     ensured
                         -- check all ensured conditions together with the path condition
                         lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                            SMT.IsUnsat -> do
+                            SMT.IsInvalid -> do
                                 let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
                                 throwE
                                     ( \ctx ->

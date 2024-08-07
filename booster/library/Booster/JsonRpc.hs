@@ -65,7 +65,6 @@ import Booster.Pattern.Util (
     substituteInTerm,
  )
 import Booster.Prettyprinter (renderDefault, renderText)
-import Booster.SMT.Interface (IsSatResult (..))
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
@@ -367,14 +366,14 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ IsUnknown "No predicates or substitutions given"
+                                        pure $ SMT.IsUnknown "No predicates or substitutions given"
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
                                         SMT.finaliseSolver solver
                                         pure result
                             case smtResult of
-                                IsSat subst -> do
+                                SMT.IsSat subst -> do
                                     withContext CtxGetModel $
                                         withContext CtxSMT $
                                             logMessage $
@@ -405,13 +404,13 @@ respond stateVar request =
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
                                             }
-                                IsUnsat ->
+                                SMT.IsUnsat ->
                                     pure . Right . RpcTypes.GetModel $
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unsat
                                             , substitution = Nothing
                                             }
-                                IsUnknown{} ->
+                                SMT.IsUnknown{} ->
                                     pure . Right . RpcTypes.GetModel $
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unknown

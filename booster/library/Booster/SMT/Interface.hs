@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 
 {- |
@@ -17,7 +18,13 @@ module Booster.SMT.Interface (
     getModelFor,
     checkPredicates,
     hardResetSolver,
-    IsSatResult (..),
+    pattern IsUnknown,
+    IsSatResult,
+    pattern IsSat,
+    pattern IsUnsat,
+    IsValidResult,
+    pattern IsValid,
+    pattern IsInvalid,
     isSat,
 ) where
 
@@ -128,7 +135,7 @@ hardResetSolver = do
 -- | Retry the action `cb`, first decreasing the retry counter and increasing the timeout limit, unless the retry limit has already been reached, in which case call `onTimeout`
 retry :: Log.LoggerMIO io => SMT io a -> SMT io a -> SMT io a
 retry cb onTimeout = do
-    ctxt <- SMT $ get
+    ctxt <- SMT get
     case ctxt.options.retryLimit of
         Just x | x > 0 -> do
             let timeout = 2 * ctxt.options.timeout
@@ -175,8 +182,20 @@ finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
     destroyContext ctxt
 
-data IsSatResult unknown a = IsSat a | IsUnsat | IsUnknown unknown
-    deriving (Functor)
+pattern IsUnknown :: unknown -> Either unknown b
+pattern IsUnknown u = Left u
+
+newtype IsSat' a = IsSat' (Maybe a) deriving (Functor)
+
+type IsSatResult unknown a = Either unknown (IsSat' a)
+
+pattern IsSat :: a -> IsSatResult unknown a
+pattern IsSat a = Right (IsSat' (Just a))
+
+pattern IsUnsat :: IsSatResult unknown a
+pattern IsUnsat = Right (IsSat' Nothing)
+
+{-# COMPLETE IsSat, IsUnsat, IsUnknown #-}
 
 {- | Check satisfiability of  predicates and substitutions.
      The set of input predicates @ps@ togehter with the substitutions @subst@ are interpreted as a conjunction.
@@ -192,7 +211,7 @@ isSatReturnTransState ctxt ps subst
     | null ps && Map.null subst = pure $ IsSat $ TranslationState{mappings = mempty, counter = 1}
     | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
         Log.withContext Log.CtxAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
-        smtTranslateError $ errMsg
+        smtTranslateError errMsg
     | Right (smtToCheck, transState) <- translated = Log.withContext Log.CtxSMT $ do
         evalSMT ctxt $
             hardResetSolver >> solve smtToCheck transState
@@ -230,7 +249,7 @@ isSat ::
     SMT.SMTContext ->
     [Predicate] ->
     io (IsSatResult Text ())
-isSat ctxt ps = void <$> (isSatReturnTransState ctxt ps mempty)
+isSat ctxt ps = fmap void <$> (isSatReturnTransState ctxt ps mempty)
 
 {- |
 Implementation of get-model request
@@ -320,6 +339,16 @@ getModelFor ctxt ps subst
 mkComment :: Pretty (PrettyWithModifiers '[Decoded] a) => a -> BS.ByteString
 mkComment = BS.pack . Pretty.renderDefault . pretty' @'[Decoded]
 
+newtype IsValid' = IsValid' Bool
+
+type IsValidResult = Either (Maybe Text) IsValid'
+
+pattern IsValid, IsInvalid :: IsValidResult
+pattern IsValid = Right (IsValid' True)
+pattern IsInvalid = Right (IsValid' False)
+
+{-# COMPLETE IsValid, IsInvalid, IsUnknown #-}
+
 {- | Check a predicates, given a set of predicates as known truth.
 
 Simplest version:
@@ -351,9 +380,9 @@ checkPredicates ::
     Set Predicate ->
     Map Variable Term ->
     Set Predicate ->
-    io (IsSatResult (Maybe Text) ())
+    io IsValidResult
 checkPredicates ctxt givenPs givenSubst psToCheck
-    | null psToCheck = pure $ IsSat ()
+    | null psToCheck = pure IsValid
     | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
         Log.withContext Log.CtxAbort $ Log.logMessage $ "SMT translation error: " <> errMsg
         smtTranslateError errMsg
@@ -365,7 +394,7 @@ checkPredicates ctxt givenPs givenSubst psToCheck
         [DeclareCommand] ->
         [SExpr] ->
         TranslationState ->
-        SMT io (IsSatResult (Maybe Text) ())
+        SMT io IsValidResult
     solve smtGiven sexprsToCheck transState = do
         declareVariables transState
         Log.logMessage $
@@ -387,8 +416,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Sat, Sat) -> do
                 Log.logMessage ("Implication not determined" :: Text)
                 pure $ IsUnknown Nothing
-            (Sat, Unsat) -> pure $ IsSat ()
-            (Unsat, Sat) -> pure IsUnsat
+            (Sat, Unsat) -> pure IsValid
+            (Unsat, Sat) -> pure IsInvalid
             (Unknown reason, _) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
             (_, Unknown reason) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
             other ->
