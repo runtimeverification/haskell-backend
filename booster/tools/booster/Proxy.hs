@@ -361,9 +361,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     -- continue with the pruned Booster's result
                     case prunedBoosterResult of
                         Left (nextState, newLogs) -> do
-                            let prunedBoosterBranchStep
-                                    | boosterResult.reason == Branching = 1
-                                    | otherwise = 0
+                            let prunedBoosterBranchStep = 1
                             executionLoop
                                 logSettings
                                 def
@@ -525,9 +523,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                         simplifyExecResult logSettings r._module def boosterResult
                     case postExecResult of
                         Left (nextState, newLogs) -> do
-                            let prunedBoosterBranchStep
-                                    | boosterResult.reason == Branching = 1
-                                    | otherwise = 0
+                            let prunedBoosterBranchStep = 0
                             executionLoop
                                 logSettings
                                 def
