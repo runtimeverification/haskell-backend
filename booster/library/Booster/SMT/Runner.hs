@@ -47,7 +47,6 @@ import System.IO (
 import Booster.Log (LoggerMIO (..), logMessage)
 import Booster.SMT.Base
 import Booster.SMT.LowLevelCodec
-import Control.Monad.Catch (MonadCatch, MonadThrow)
 
 -- Includes all options from kore-rpc used by current clients. The
 -- parser in CLOptions uses compatible names and we use the same
@@ -157,8 +156,6 @@ newtype SMT m a = SMT (StateT SMTContext m a)
         , MonadIO
         , MonadLogger
         , MonadLoggerIO
-        , MonadCatch
-        , MonadThrow
         , LoggerMIO
         )
 
