@@ -47,7 +47,7 @@ import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
+import Booster.Pattern.Base (Pattern (..), Predicate (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
@@ -609,11 +609,14 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.Branching
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates =
-                        Just $
-                            map (\(_, muid, p') -> toExecState p' originalSubstitution unsupported (Just muid)) $
-                                toList nexts
+                        -- FIXME return _ruleSubst in the response, removing '#'s from the variable names to make pyk happy
+                        Just
+                            $ map
+                                ( \(_, muid, p', mrulePred, _ruleSubst) -> toExecState p' originalSubstitution unsupported (Just muid) mrulePred Nothing
+                                )
+                            $ toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
                     }
@@ -624,7 +627,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.Stuck
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -636,7 +639,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.Vacuous
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -648,8 +651,8 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
-                    , nextStates = Just [toExecState next originalSubstitution unsupported Nothing]
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
+                    , nextStates = Just [toExecState next originalSubstitution unsupported Nothing Nothing Nothing]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }
@@ -660,7 +663,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
@@ -672,7 +675,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.DepthBound
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -689,7 +692,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                                     (logSuccessfulRewrites, logFailedRewrites)
                                     (RewriteStepFailed failure)
                          in logs <|> abortRewriteLog
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p originalSubstitution unsupported Nothing Nothing Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -712,19 +715,32 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                 xs@(_ : _) -> Just xs
 
 toExecState ::
-    Pattern -> Map Variable Term -> [Syntax.KorePattern] -> Maybe UniqueId -> RpcTypes.ExecuteState
-toExecState pat sub unsupported muid =
+    Pattern ->
+    Map Variable Term ->
+    [Syntax.KorePattern] ->
+    Maybe UniqueId ->
+    Maybe Predicate ->
+    Maybe (Map Variable Term) ->
+    RpcTypes.ExecuteState
+toExecState pat sub unsupported muid mrulePredicate mruleSubst =
     RpcTypes.ExecuteState
         { term = addHeader t
         , predicate = addHeader <$> addUnsupported p
         , substitution = addHeader <$> s
-        , ruleSubstitution = Nothing
-        , rulePredicate = Nothing
+        , ruleSubstitution = addHeader <$> mruleSubstExt
+        , rulePredicate = addHeader <$> mrulePredExt
         , ruleId = getUniqueId <$> muid
         }
   where
+    mrulePredExt = externalisePredicate termSort <$> mrulePredicate
+    mruleSubstExt =
+        Syntax.KJAnd predicateSort
+            . map (uncurry $ externaliseSubstitution predicateSort)
+            . Map.toList
+            <$> mruleSubst
     (t, p, s) = externalisePattern pat sub
     termSort = externaliseSort $ sortOfPattern pat
+    predicateSort = externaliseSort Pattern.SortBool
     allUnsupported = Syntax.KJAnd termSort unsupported
     addUnsupported
         | null unsupported = id

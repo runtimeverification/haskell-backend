@@ -454,7 +454,7 @@ clProxyOptionsParser =
                 (eitherReader $ mapM reasonReader . splitOn ",")
                 ( long "fallback-on"
                     <> metavar "REASON1,REASON2..."
-                    <> value [Branching, Stuck, Aborted]
+                    <> value defaultFallbackReasons
                     <> help "Halt reasons for which requests should be re-executed with kore-rpc"
                     <> showDefaultWith (intercalate "," . map show)
                 )
@@ -470,6 +470,8 @@ clProxyOptionsParser =
                 ( long "no-fallback-simplify"
                     <> help "disable simplification before fallback requests"
                 )
+    defaultFallbackReasons :: [HaltReason]
+    defaultFallbackReasons = [Stuck, Aborted]
 
     reasonReader :: String -> Either String HaltReason
     reasonReader = \case

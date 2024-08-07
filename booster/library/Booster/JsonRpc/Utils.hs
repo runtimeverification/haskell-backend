@@ -70,14 +70,18 @@ diffJson file1 file2 =
     -- \| Branching execution results are considered equivalent if
     -- \* they both have two branches
     -- \* branches are syntactically the same, but may be in different order
+    -- \* the "rule-substitution" field is ignored
     sameModuloBranchOrder :: ExecuteResult -> ExecuteResult -> Bool
     sameModuloBranchOrder res1 res2
         | res1.reason == Branching && res1.reason == res2.reason =
-            case (res1.nextStates, res2.nextStates) of
+            case (map ignoreRuleSubstituiton <$> res1.nextStates, map ignoreRuleSubstituiton <$> res2.nextStates) of
                 (Just xs, Just ys) ->
                     length xs == 2 && length ys == 2 && (xs == ys || xs == reverse ys)
                 _ -> False
         | otherwise = False
+
+    ignoreRuleSubstituiton :: ExecuteState -> ExecuteState
+    ignoreRuleSubstituiton state = state{ruleSubstitution = Nothing}
 
 data DiffResult
     = Identical KoreRpcType

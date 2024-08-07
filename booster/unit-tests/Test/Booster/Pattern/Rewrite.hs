@@ -223,9 +223,7 @@ errorCases =
 rewriteSuccess =
     testCase "con1 app rewrites to f1 app" $
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-            `rewritesTo` ( "con1-f1"
-                         , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-                         )
+            `rewritesTo` [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
 unifyNotMatch =
     testCase "Stuck case when subject has variables" $
         getsStuck
@@ -252,35 +250,30 @@ rewriteStuck =
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
-            `branchesTo` [
-                             ( "con1-f2"
-                             , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
-                             )
-                         ,
-                             ( "con1-f1'"
-                             , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
-                             )
+            `branchesTo` [ [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
+                         , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
                          ]
 
-runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteResult Pattern))
+runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteStepResult [Pattern]))
 runWith t =
-    second fst <$> do
+    second (fmap (fmap (\(_, p, _) -> p)) . fst) <$> do
         conf <- testConf
-        runNoLoggingT $ runRewriteT conf mempty (rewriteStep [] [] $ Pattern_ t)
+        runNoLoggingT $
+            runRewriteT conf mempty mempty (rewriteStep $ Pattern_ t)
 
-rewritesTo :: Term -> (Text, Term) -> IO ()
-t1 `rewritesTo` (lbl, t2) =
-    runWith t1 @?>>= Right (RewriteFinished (Just lbl) (Just mockUniqueId) $ Pattern_ t2)
+rewritesTo :: Term -> Term -> IO ()
+t1 `rewritesTo` t2 =
+    runWith t1 @?>>= Right (AppliedRules [Pattern_ t2])
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    runWith t1 @?>>= Right (RewriteStuck $ Pattern_ t1)
+    runWith t1 @?>>= Right (AppliedRules [])
 
-branchesTo :: Term -> [(Text, Term)] -> IO ()
+branchesTo :: Term -> [Term] -> IO ()
 t `branchesTo` ts =
     runWith t
         @?>>= Right
-            (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t')) ts)
+            (AppliedRules $ map Pattern_ ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
@@ -304,8 +297,22 @@ aborts failure t = runRewrite t >>= (@?= (0, RewriteAborted failure t))
 newtype Steps = Steps Natural
 
 rewrites :: Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
-rewrites (Steps n) t t' f =
-    runRewrite t >>= (@?= (n, f t'))
+rewrites (Steps n) t t' f = do
+    let expected = (n, f t')
+    actual <- runRewrite t
+    second withoutRuleSubst actual @?= expected
+
+mkRewriteBranch :: a -> NE.NonEmpty (Text, UniqueId, a) -> RewriteResult a
+mkRewriteBranch pre branches = RewriteBranch pre (fmap withEmptyPredandSubst branches)
+  where
+    withEmptyPredandSubst (l, uid, post) = (l, uid, post, Nothing, Map.empty)
+
+withoutRuleSubst :: RewriteResult a -> RewriteResult a
+withoutRuleSubst = \case
+    RewriteBranch pre branches -> RewriteBranch pre (fmap ignoreRuleSubst branches)
+    other -> other
+  where
+    ignoreRuleSubst (l, uid, post, rulePred, _) = (l, uid, post, rulePred, Map.empty)
 
 canRewrite :: TestTree
 canRewrite =
@@ -337,7 +344,7 @@ canRewrite =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse")                        ) ), C:SortK{}) ) |]
-                (`RewriteBranch` NE.fromList [branch1, branch2])
+                (`mkRewriteBranch` NE.fromList [branch1, branch2])
         , testCase "Returns stuck when no rules could be applied" $ do
             rewrites
                 (Steps 0)
@@ -431,7 +438,7 @@ supportsDepthControl =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse")                        ) ), C:SortK{}) ) |]
-                (`RewriteBranch` NE.fromList [branch1, branch2])
+                (`mkRewriteBranch` NE.fromList [branch1, branch2])
         ]
   where
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
@@ -439,7 +446,7 @@ supportsDepthControl =
         conf <- testConf
         (counter, _, res) <-
             runNoLoggingT $ performRewrite conf{mbMaxDepth = Just depth} $ Pattern_ t
-        (counter, fmap (.term) res) @?= (n, f t')
+        (counter, withoutRuleSubst $ fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
 supportsCutPoints =
@@ -484,7 +491,7 @@ supportsCutPoints =
                 (Steps 1)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse")                        ) ), C:SortK{}) ) |]
-                (`RewriteBranch` NE.fromList [branch1, branch2])
+                (`mkRewriteBranch` NE.fromList [branch1, branch2])
         ]
   where
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
@@ -494,7 +501,7 @@ supportsCutPoints =
             runNoLoggingT $
                 performRewrite conf{cutLabels = [lbl]} $
                     Pattern_ t
-        (counter, fmap (.term) res) @?= (n, f t')
+        (counter, withoutRuleSubst $ fmap (.term) res) @?= (n, f t')
 
 supportsTerminalRules :: TestTree
 supportsTerminalRules =

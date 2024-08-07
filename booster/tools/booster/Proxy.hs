@@ -317,13 +317,75 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                     <$> accumulatedLogs
                                 )
                                 r{ExecuteRequest.state = execStateToKoreJson simplifiedBoosterState}
-                -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck, Branching],
+                -- TODO this is an experimental code path. It needs to be guarded with an CLI option before merging
+                -- if we stop because of branching, simplify the next states to prune them and optionally
+                -- execute a fallback rewrite step from the pre-state in Kore con confirm the branch
+                | boosterResult.reason == Branching -> do
+                    Booster.Log.withContext CtxProxy $
+                        Booster.Log.logMessage $
+                            "Booster " <> displayExecuteResultVerbose boosterResult
+                    prunedBoosterResult <- simplifyExecResult logSettings r._module def boosterResult
+                    case prunedBoosterResult of
+                        Left (_prunedToOneNext, _logs) -> do
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage $
+                                    "After simplification: Booster "
+                                        <> displayExecuteResultVerbose boosterResult{nextStates = take 1 <$> boosterResult.nextStates}
+                        Right stillBranching ->
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage $
+                                    "After simplification: Booster " <> displayExecuteResultVerbose stillBranching
+
+                    -- -- attempt to do one step in the old backend
+                    -- Booster.Log.withContext CtxProxy $
+                    --     Booster.Log.logMessage ("Executing fall-back request" :: Text)
+                    -- (koreResult, _kTime) <-
+                    --     Stats.timed $
+                    --         kore
+                    --             ( Execute
+                    --                 r
+                    --                     { state = execStateToKoreJson boosterResult.state
+                    --                     , maxDepth = Just $ Depth 1
+                    --                     , assumeStateDefined = Just True
+                    --                     }
+                    --             )
+                    -- case koreResult of
+                    --     Right (Execute result) ->
+                    --         Booster.Log.withContext CtxProxy $
+                    --             Booster.Log.logMessage $
+                    --                 "Kore " <> displayExecuteResultVerbose result
+                    --     _err ->
+                    --         Booster.Log.withContext CtxProxy $
+                    --             Booster.Log.withContext CtxWarn $
+                    --                 Booster.Log.logMessage ("Kore returned error" :: Text)
+                    -- continue with the pruned Booster's result
+                    case prunedBoosterResult of
+                        Left (nextState, newLogs) -> do
+                            let prunedBoosterBranchStep = 1
+                            executionLoop
+                                logSettings
+                                def
+                                ( currentDepth + boosterResult.depth + prunedBoosterBranchStep
+                                , time + bTime
+                                , koreTime
+                                , postProcessLogs <$> combineLogs (rpcLogs : boosterResult.logs : newLogs)
+                                )
+                                r{ExecuteRequest.state = nextState}
+                        Right result -> do
+                            logStats ExecuteM (time + bTime, koreTime)
+                            pure . Right $
+                                Execute
+                                    result
+                                        { depth = currentDepth + boosterResult.depth
+                                        , logs = postProcessLogs <$> combineLogs [rpcLogs, result.logs]
+                                        }
+
+                -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck]),
                 -- revert to the old backend to re-confirm and possibly proceed
                 | boosterResult.reason `elem` cfg.fallbackReasons -> do
                     Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage $
-                            Text.pack $
-                                "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                            "Booster " <> displayExecuteResultVerbose boosterResult
                     -- simplify Booster's state with Kore's simplifier
                     Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage ("Simplifying booster state and falling back to Kore" :: Text)
@@ -454,17 +516,18 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     -- we were successful with the booster, thus we
                     -- return the booster result with the updated
                     -- depth, in case we previously looped
-                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage . Text.pack $
-                        "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                    Booster.Log.withContext CtxProxy . Booster.Log.logMessage $
+                        "Booster " <> displayExecuteResultVerbose boosterResult
                     -- perform post-exec simplification
                     postExecResult <-
                         simplifyExecResult logSettings r._module def boosterResult
                     case postExecResult of
-                        Left (nextState, newLogs) ->
+                        Left (nextState, newLogs) -> do
+                            let prunedBoosterBranchStep = 0
                             executionLoop
                                 logSettings
                                 def
-                                ( currentDepth + boosterResult.depth
+                                ( currentDepth + boosterResult.depth + prunedBoosterBranchStep
                                 , time + bTime
                                 , koreTime
                                 , postProcessLogs <$> combineLogs (rpcLogs : boosterResult.logs : newLogs)
@@ -520,7 +583,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                 -- this ensures the information from next states in a branch reponse doesn't get lost
                                 pure $
                                     Right
-                                        ( (Booster.toExecState p sub unsup Nothing)
+                                        ( (Booster.toExecState p sub unsup Nothing Nothing Nothing)
                                             { ruleId = s.ruleId
                                             , ruleSubstitution = s.ruleSubstitution
                                             , rulePredicate = s.rulePredicate
@@ -652,3 +715,6 @@ makeVacuous newLogs execState =
         , rule = Nothing
         , logs = combineLogs [execState.logs, newLogs]
         }
+
+displayExecuteResultVerbose :: ExecuteResult -> Text
+displayExecuteResultVerbose _ = ""

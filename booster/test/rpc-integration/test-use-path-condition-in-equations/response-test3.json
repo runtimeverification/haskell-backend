@@ -3,7 +3,7 @@
     "id": 1,
     "result": {
         "reason": "stuck",
-        "depth": 2,
+        "depth": 1,
         "state": {
             "term": {
                 "format": "KORE",
@@ -41,7 +41,7 @@
                                             "args": [
                                                 {
                                                     "tag": "App",
-                                                    "name": "Lbltest2State2'LParRParUnds'USE-PATH-CONDITION-IN-EQUATIONS'Unds'State",
+                                                    "name": "Lbltest3State1'LParRParUnds'USE-PATH-CONDITION-IN-EQUATIONS'Unds'State",
                                                     "sorts": [],
                                                     "args": []
                                                 }
