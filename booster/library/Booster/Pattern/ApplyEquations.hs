@@ -27,6 +27,7 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
+import Booster.Pattern.Existential (instantiateExistentialsMany)
 import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
@@ -40,7 +41,7 @@ import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data, Proxy)
-import Data.Foldable (toList, traverse_)
+import Data.Foldable (foldl', toList, traverse_)
 import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
@@ -764,6 +765,7 @@ applyEquation term rule =
         getPrettyModifiers >>= \case
             ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
                 -- ensured by internalisation: no existentials in equations
+                -- TODO allow existentials, but only in the requires clause
                 unless (null rule.existentials) $ do
                     withContext CtxAbort $
                         logMessage ("Equation with existentials" :: Text)
@@ -842,7 +844,55 @@ applyEquation term rule =
                         -- If the required condition is _syntactically_ present in
                         -- the prior (known constraints), we don't check it.
                         knownPredicates <- (.predicates) <$> lift getState
-                        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+
+                        let partitionExistentialRequires :: [Predicate] -> ([Predicate], [Predicate])
+                            partitionExistentialRequires = foldl' decide ([], [])
+                              where
+                                decide (hasEx, noHasEx) p
+                                    | hasExistentials p = (p : hasEx, noHasEx)
+                                    | otherwise = (hasEx, p : noHasEx)
+
+                            hasExistentials :: Predicate -> Bool
+                            hasExistentials (Predicate t) = any (isExVar . (.variableName)) (freeVariables t)
+
+                            listExistentials :: Predicate -> Set VarName
+                            listExistentials (Predicate t) = Set.filter isExVar . Set.map (.variableName) . freeVariables $ t
+
+                        -- If we get an equation with existentials in the requires clause, we must have them all instantiated
+                        let (predicateWithEx, predicatesWithNoEx) = partitionExistentialRequires required
+                            instantiatedExistentialPredicates = instantiateExistentialsMany knownPredicates predicateWithEx
+
+                        -- detect if any existentials still remain
+                        when (any hasExistentials instantiatedExistentialPredicates) $ do
+                            -- what to do here? Abort equation or simply throw away the clauses with existentials?
+                            -- Let's abort for now.
+                            let remainingExistentials =
+                                    Set.toList . Set.map Text.decodeLatin1 . Set.unions . map listExistentials $
+                                        instantiatedExistentialPredicates
+
+                            withContext CtxAbort $
+                                logMessage $
+                                    "Could not instantiate existentials: " <> (Text.intercalate "," remainingExistentials)
+
+                        -- all existentials are instantiated: assemble the requires clause again
+                        let requiredWithInstantiatedExistentials = predicatesWithNoEx <> instantiatedExistentialPredicates
+
+                        -- TODO these logs need to either go or be assigned a more specific context
+                        withContext CtxConstraint . withContext CtxDetail $ do
+                            logMessage $
+                                renderOneLineText $
+                                    "Requires clause after substitution:"
+                                        <+> hsep (intersperse "," $ map (pretty' @mods) required)
+                            logMessage $
+                                renderOneLineText $
+                                    "Known predicates:"
+                                        <+> hsep (intersperse "," $ map (pretty' @mods) (Set.toList knownPredicates))
+                            logMessage $
+                                renderOneLineText $
+                                    "Requires clause predicate after instantiating existential:"
+                                        <+> hsep (intersperse "," $ map (pretty' @mods) requiredWithInstantiatedExistentials)
+
+                        toCheck <- lift $ filterOutKnownConstraints knownPredicates requiredWithInstantiatedExistentials
 
                         -- check the filtered requires clause conditions
                         unclearConditions <-

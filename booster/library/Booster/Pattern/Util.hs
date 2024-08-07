@@ -13,6 +13,7 @@ module Booster.Pattern.Util (
     modifyVarName,
     modifyVarNameConcreteness,
     freeVariables,
+    retractVariable,
     isConstructorSymbol,
     isFunctionSymbol,
     isDefinedSymbol,
@@ -30,6 +31,7 @@ module Booster.Pattern.Util (
     cellVariableStats,
     stripMarker,
     markAsExVar,
+    isExVar,
     markAsRuleVar,
     incrementNameCounter,
 ) where
@@ -125,6 +127,9 @@ markAsRuleVar = ("Rule#" <>)
 markAsExVar :: VarName -> VarName
 markAsExVar = ("Ex#" <>)
 
+isExVar :: VarName -> Bool
+isExVar = BS.isPrefixOf "Ex#"
+
 {- | Strip variable provenance prefixes introduced using "markAsRuleVar" and "markAsExVar"
 in "Syntax.ParsedKore.Internalize"
 -}
@@ -199,6 +204,11 @@ modifyVarNameConcreteness f = \case
 
 freeVariables :: Term -> Set Variable
 freeVariables (Term attributes _) = attributes.variables
+
+retractVariable :: Term -> Maybe Variable
+retractVariable = \case
+    (Var v) -> Just v
+    _ -> Nothing
 
 isConcrete :: Term -> Bool
 isConcrete = Set.null . freeVariables

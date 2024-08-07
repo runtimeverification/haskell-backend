@@ -67,6 +67,7 @@ testDefinition =
         , rewriteTheory = Map.empty
         , functionEquations = Map.empty
         , simplifications = Map.empty
+        , existentialSimplifications = Map.empty
         , ceils = Map.empty
         }
   where

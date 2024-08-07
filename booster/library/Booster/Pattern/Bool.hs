@@ -16,6 +16,7 @@ module Booster.Pattern.Bool (
     pattern NotBool,
     pattern AndBool,
     pattern EqualsInt,
+    pattern LtInt,
     pattern EqualsBool,
     pattern NEqualsInt,
     pattern EqualsK,
@@ -102,7 +103,7 @@ pattern NotBool t =
         []
         [t]
 
-pattern EqualsInt, EqualsBool, NEqualsInt, EqualsK, NEqualsK, SetIn :: Term -> Term -> Term
+pattern EqualsInt, EqualsBool, NEqualsInt, LtInt, EqualsK, NEqualsK, SetIn :: Term -> Term -> Term
 pattern EqualsInt a b =
     SymbolApplication
         ( Symbol
@@ -133,6 +134,17 @@ pattern NEqualsInt a b =
                 [SortInt, SortInt]
                 SortBool
                 (HookedTotalFunctionWithSMT "INT.ne" "distinct")
+            )
+        []
+        [a, b]
+pattern LtInt a b =
+    SymbolApplication
+        ( Symbol
+                "Lbl'Unds-LT-'Int'Unds'"
+                []
+                [SortInt, SortInt]
+                SortBool
+                (HookedTotalFunctionWithSMT "INT.lt" "<")
             )
         []
         [a, b]

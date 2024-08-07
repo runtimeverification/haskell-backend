@@ -182,6 +182,7 @@ mergeDefs k1 k2
                 <*> pure (mergeTheories rewriteTheory k1 k2)
                 <*> pure (mergeTheories functionEquations k1 k2)
                 <*> pure (mergeTheories simplifications k1 k2)
+                <*> pure (mergeTheories existentialSimplifications k1 k2)
                 <*> pure (mergeTheories ceils k1 k2)
   where
     mergeTheories ::
@@ -236,6 +237,7 @@ addModule
                     , rewriteTheory = currentRewriteTheory
                     , functionEquations = currentFctEqs
                     , simplifications = currentSimpls
+                    , existentialSimplifications = currentExistentialSimplifications
                     , ceils = currentCeils
                     }
                 )
@@ -297,6 +299,7 @@ addModule
                             , rewriteTheory = currentRewriteTheory -- no rules yet
                             , functionEquations = Map.empty
                             , simplifications = Map.empty
+                            , existentialSimplifications = Map.empty
                             , ceils = Map.empty
                             }
 
@@ -353,6 +356,7 @@ addModule
                 subsortPairs = mapMaybe retractSubsortRule newAxioms
                 newFunctionEquations = mapMaybe retractFunctionRule newAxioms
                 newSimplifications = mapMaybe retractSimplificationRule newAxioms
+                newExistentialSimplifications = mapMaybe retractExistentialSimplificationRule newAxioms
                 newCeils = mapMaybe retractCeilRule newAxioms
             let rewriteIndex =
                     if null defAttributes.indexCells
@@ -364,6 +368,11 @@ addModule
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newFunctionEquations currentFctEqs
                 simplifications =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newSimplifications currentSimpls
+                existentialSimplifications =
+                    addToTheoryWith
+                        (Idx.termTopIndex . (.lhs))
+                        newExistentialSimplifications
+                        currentExistentialSimplifications
                 ceils =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newCeils currentCeils
                 sorts =
@@ -375,6 +384,7 @@ addModule
                     , rewriteTheory
                     , functionEquations
                     , simplifications
+                    , existentialSimplifications
                     , ceils
                     }
       where
@@ -535,6 +545,8 @@ data AxiomResult
       FunctionAxiom (RewriteRule "Function")
     | -- | Simplification
       SimplificationAxiom (RewriteRule "Simplification")
+    | -- | Existential simplification
+      ExistentialSimplificationAxiom (RewriteRule "ExistentialSimplification")
     | -- | Ceil rule
       CeilAxiom (RewriteRule "Ceil")
 
@@ -554,6 +566,11 @@ retractFunctionRule _ = Nothing
 retractSimplificationRule :: AxiomResult -> Maybe (RewriteRule "Simplification")
 retractSimplificationRule (SimplificationAxiom r) = Just r
 retractSimplificationRule _ = Nothing
+
+retractExistentialSimplificationRule ::
+    AxiomResult -> Maybe (RewriteRule "ExistentialSimplification")
+retractExistentialSimplificationRule (ExistentialSimplificationAxiom r) = Just r
+retractExistentialSimplificationRule _ = Nothing
 
 retractCeilRule :: AxiomResult -> Maybe (RewriteRule "Ceil")
 retractCeilRule (CeilAxiom r) = Just r
@@ -750,11 +767,17 @@ extractExistentials = \case
             <$> extractExistentials arg
     other -> (other, [])
 
+-- | Useful for getting the requires clause of a simplification axiom, i.e. throwing away the \in conjuncts
+getFirstConjunct :: Syntax.KorePattern -> Syntax.KorePattern
+getFirstConjunct = \case
+    Syntax.KJAnd{patterns = (headConjunct : _)} -> headConjunct
+    other -> other
+
 internaliseAxiom ::
     PartialDefinition ->
     ParsedAxiom ->
     Except DefinitionError (Maybe AxiomResult)
-internaliseAxiom (Partial partialDefinition) parsedAxiom =
+internaliseAxiom (Partial partialDefinition) parsedAxiom = do
     classifyAxiom parsedAxiom >>= maybe (pure Nothing) processAxiom
   where
     processAxiom :: AxiomData -> Except DefinitionError (Maybe AxiomResult)
@@ -837,7 +860,10 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
     -- to avoid name clashes with patterns from the user;
     -- filter out literal `Top` constraints
     lhs <- internalisePattern' ref (Util.modifyVarName Util.markAsRuleVar) left
-    existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
+    existentials' <-
+        fmap Set.fromList $
+            withExcept (DefinitionPatternError ref) $
+                mapM (mkVar partialDefinition right) exs
     let renameVariable v
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
@@ -878,10 +904,11 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
                 DefinitionPatternError ref (NotSupported (head unsupported))
         pure $ removeTrueBools $ Util.modifyVariables f pat
 
-    mkVar (name, sort) = do
-        variableSort <- lookupInternalSort Nothing partialDefinition.sorts right sort
-        let variableName = textToBS name.getId
-        pure $ Variable{variableSort, variableName}
+mkVar :: KoreDefinition -> Syntax.KorePattern -> (Id, Sort) -> Except PatternError Variable
+mkVar partialDefinition right (name, sort) = do
+    variableSort <- lookupInternalSort Nothing partialDefinition.sorts right sort
+    let variableName = textToBS name.getId
+    pure $ Variable{variableSort, variableName}
 
 internaliseRewriteRule ::
     KoreDefinition ->
@@ -912,7 +939,10 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
         fmap (removeTrueBools . Util.modifyVariables (Util.modifyVarName Util.markAsRuleVar)) $
             retractPattern result
                 `orFailWith` DefinitionTermOrPredicateError ref (PatternExpected result)
-    existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
+    existentials' <-
+        fmap Set.fromList $
+            withExcept (DefinitionPatternError ref) $
+                mapM (mkVar partialDefinition right) exs
     let renameVariable v
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
@@ -946,11 +976,6 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
             , existentials
             }
   where
-    mkVar (name, sort) = do
-        variableSort <- lookupInternalSort Nothing partialDefinition.sorts right sort
-        let variableName = textToBS name.getId
-        pure $ Variable{variableSort, variableName}
-
     internalisePattern' ref f t = do
         (pat, substitution, unsupported) <-
             withExcept (DefinitionPatternError ref) $
@@ -1011,8 +1036,18 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
     | not (coerce attrs.simplification) =
         error $ "internaliseSimpleEquation should only be called for simplifications" <> show attrs
     | Syntax.KJApp{} <- left = do
+        -- extract the top-level existentials from precond and strip them
+        let (precondNoExists, existentials) = Debug.trace (show precond) $ extractExistentials (getFirstConjunct precond)
+
+        let ref = Debug.trace (show precondNoExists) $ sourceRef attrs
+
+        existentials' <-
+            fmap Set.fromList $
+                withExcept (DefinitionPatternError ref) $
+                    mapM (mkVar partialDef left) existentials
+
         -- this ensures that `left` is a _term_ (invariant guarded by classifyAxiom)
-        lhs <- internalisePattern' $ Syntax.KJAnd left.sort [left, precond]
+        lhs <- internalisePattern' $ Syntax.KJAnd left.sort [left, precondNoExists]
         rhs <- internalisePattern' right
         let
             -- checking the lhs term, too, as a safe approximation
@@ -1040,7 +1075,7 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
                     , ensures = rhs.constraints
                     , attributes
                     , computedAttributes
-                    , existentials = Set.empty
+                    , existentials = existentials'
                     }
     | otherwise =
         -- we hit a simplification with top level ML connective or an
