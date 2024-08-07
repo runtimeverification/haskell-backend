@@ -372,12 +372,10 @@ respond stateVar request =
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
                                         SMT.finaliseSolver solver
                                         pure result
-                            case smtResult of
+                            withContext CtxGetModel $ withContext CtxSMT $ case smtResult of
                                 SMT.IsSat subst -> do
-                                    withContext CtxGetModel $
-                                        withContext CtxSMT $
-                                            logMessage $
-                                                "SMT result: " <> pack ((("Subst: " <>) . show . Map.size) subst)
+                                    logMessage $
+                                        "SMT result: " <> pack ((("Subst: " <>) . show . Map.size) subst)
                                     let sort = fromMaybe (error "Unknown sort in input") $ sortOfJson req.state.term
                                         substitution
                                             | Map.null subst = Nothing
@@ -404,13 +402,15 @@ respond stateVar request =
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
                                             }
-                                SMT.IsUnsat ->
+                                SMT.IsUnsat -> do
+                                    logMessage ("SMT result: Unsat" :: Text)
                                     pure . Right . RpcTypes.GetModel $
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unsat
                                             , substitution = Nothing
                                             }
-                                SMT.IsUnknown{} ->
+                                SMT.IsUnknown reason -> do
+                                    logMessage $ "SMT result: Unknown - " <> reason
                                     pure . Right . RpcTypes.GetModel $
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unknown
