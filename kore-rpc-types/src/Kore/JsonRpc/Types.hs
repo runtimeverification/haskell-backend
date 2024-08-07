@@ -130,6 +130,17 @@ data HaltReason
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, ConstructorTagModifier '[CamelToKebab]] HaltReason
 
+instance Pretty.Pretty HaltReason where
+    pretty = \case
+        Branching -> "branching"
+        Stuck -> "stuck"
+        Vacuous -> "vacuous"
+        DepthBound -> "depth-bound"
+        CutPointRule -> "cut-point-rule"
+        TerminalRule -> "terminal-rule"
+        Aborted -> "aborted"
+        Timeout -> "timeout"
+
 data ExecuteResult = ExecuteResult
     { reason :: HaltReason
     , depth :: Depth
@@ -258,6 +269,14 @@ instance Pretty.Pretty (API 'Req) where
         AddModule _ -> "add-module"
         GetModel _ -> "get-model"
         Cancel -> "cancel"
+
+instance Pretty.Pretty (API 'Res) where
+    pretty = \case
+        Execute (ExecuteResult{reason, depth}) -> "execute" Pretty.<+> Pretty.pretty reason Pretty.<+> Pretty.pretty depth
+        Implies _ -> "implies"
+        Simplify _ -> "simplify"
+        AddModule _ -> "add-module"
+        GetModel _ -> "get-model"
 
 rpcJsonConfig :: PrettyJson.Config
 rpcJsonConfig =
