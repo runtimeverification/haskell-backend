@@ -161,7 +161,7 @@ checkPrelude = do
     setTimeout defaultSMTOptions.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
     ctxt <- SMT get
-    -- \| Send the commands from the definition's SMT prelude
+    -- send the commands from the definition's SMT prelude
     check <- mapM_ runCmd ctxt.prelude >> runCmd CheckSat
     -- set user defined timeout value for the general queries
     setTimeout ctxt.options.timeout
