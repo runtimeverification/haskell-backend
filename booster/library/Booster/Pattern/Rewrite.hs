@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
@@ -27,7 +26,6 @@ module Booster.Pattern.Rewrite (
 import Control.Applicative ((<|>))
 import Control.Exception qualified as Exception (throw)
 import Control.Monad
-import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
