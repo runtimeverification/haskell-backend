@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveLift #-}
 
 {- |
@@ -77,14 +78,17 @@ data QueryCommand
     | GetReasonUnknown
     deriving stock (Eq, Ord, Show)
 
-data Response
+data Response' reason
     = Success -- for command_
     | Sat
     | Unsat
-    | Unknown (Maybe Text)
+    | Unknown reason
     | Values [(SExpr, Value)]
     | Error BS.ByteString
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Functor)
+
+type Response = Response' Text
+type ResponseUnresolved = Response' (Maybe Text)
 
 -- Common values returned by SMT solvers.
 data Value
