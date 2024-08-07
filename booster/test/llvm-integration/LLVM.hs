@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+
 {-# OPTIONS -fno-warn-orphans #-}
 
 {- |
@@ -117,7 +118,6 @@ instance LoggerMIO (PropertyT IO) where
     getLogger = pure $ Logger $ \_ -> pure ()
     getPrettyModifiers = pure $ ModifiersRep @'[] Proxy
     withLogger _ = id
-
 
 boolsRemainProp
     , compareNumbersProp

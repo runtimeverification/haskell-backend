@@ -29,7 +29,12 @@ simplifyBool api trm = ioWithTiming $ Internal.runLLVM api $ do
     liftIO $ kore.simplifyBool trmPtr
 
 simplifyTerm ::
-    LoggerMIO io => Internal.API -> KoreDefinition -> Term -> Sort -> io (Either Internal.LlvmError Term)
+    LoggerMIO io =>
+    Internal.API ->
+    KoreDefinition ->
+    Term ->
+    Sort ->
+    io (Either Internal.LlvmError Term)
 simplifyTerm api def trm sort = ioWithTiming $ Internal.runLLVM api $ do
     kore <- Internal.ask
     trmPtr <- Internal.marshallTerm trm

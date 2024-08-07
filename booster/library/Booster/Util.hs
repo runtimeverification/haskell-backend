@@ -214,7 +214,6 @@ timed action = do
     let time = fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 10 ** 9
     pure (result, time)
 
-
 secWithUnit :: (Floating a, Ord a, PrintfArg a) => a -> String
 secWithUnit x
     | x > 0.1 = printf "%.2fs" x

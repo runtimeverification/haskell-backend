@@ -419,7 +419,6 @@ llvmSimplify term = do
     isFunctionApp (SymbolApplication sym _ _) = isFunctionSymbol sym
     isFunctionApp _ = False
 
-
 ----------------------------------------
 -- Interface functions
 
