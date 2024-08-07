@@ -18,7 +18,6 @@ module Booster.JsonRpc (
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
-import Control.Exception qualified as Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
@@ -66,7 +65,6 @@ import Booster.Pattern.Util (
     substituteInTerm,
  )
 import Booster.Prettyprinter (renderDefault, renderText)
-import Booster.SMT.Base qualified as SMT
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
@@ -368,32 +366,16 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ Left $ SMT.Unknown $ Just "No predicates or substitutions given"
+                                        pure $ SMT.IsUnknown "No predicates or substitutions given"
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
                                         SMT.finaliseSolver solver
-                                        case result of
-                                            Left err -> liftIO $ Exception.throw err -- fail hard on SMT errors
-                                            Right response -> pure response
-                            withContext CtxGetModel $
-                                withContext CtxSMT $
+                                        pure result
+                            withContext CtxGetModel $ withContext CtxSMT $ case smtResult of
+                                SMT.IsSat subst -> do
                                     logMessage $
-                                        "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
-                            pure . Right . RpcTypes.GetModel $ case smtResult of
-                                Left SMT.Unsat ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unsat
-                                        , substitution = Nothing
-                                        }
-                                Left SMT.Unknown{} ->
-                                    RpcTypes.GetModelResult
-                                        { satisfiable = RpcTypes.Unknown
-                                        , substitution = Nothing
-                                        }
-                                Left other ->
-                                    error $ "Unexpected result " <> show other <> " from getModelFor"
-                                Right subst ->
+                                        "SMT result: " <> pack ((("Subst: " <>) . show . Map.size) subst)
                                     let sort = fromMaybe (error "Unknown sort in input") $ sortOfJson req.state.term
                                         substitution
                                             | Map.null subst = Nothing
@@ -415,9 +397,24 @@ respond stateVar request =
                                                             (externaliseTerm term)
                                                         | (var, term) <- Map.assocs subst
                                                         ]
-                                     in RpcTypes.GetModelResult
+                                    pure . Right . RpcTypes.GetModel $
+                                        RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
+                                            }
+                                SMT.IsUnsat -> do
+                                    logMessage ("SMT result: Unsat" :: Text)
+                                    pure . Right . RpcTypes.GetModel $
+                                        RpcTypes.GetModelResult
+                                            { satisfiable = RpcTypes.Unsat
+                                            , substitution = Nothing
+                                            }
+                                SMT.IsUnknown reason -> do
+                                    logMessage $ "SMT result: Unknown - " <> reason
+                                    pure . Right . RpcTypes.GetModel $
+                                        RpcTypes.GetModelResult
+                                            { satisfiable = RpcTypes.Unknown
+                                            , substitution = Nothing
                                             }
             RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
                 -- internalise given constrained term
@@ -552,14 +549,6 @@ handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
-    SMT.SMTSolverUnknown reason premises preds -> do
-        let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
-            externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
-            allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
-        pure $
-            RpcError.backendError $
-                RpcError.SmtSolverError $
-                    RpcError.ErrorWithTerm (fromMaybe "UNKNOWN" reason) allPreds
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err

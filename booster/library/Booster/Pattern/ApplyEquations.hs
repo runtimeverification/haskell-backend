@@ -27,7 +27,6 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
-import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -867,40 +866,31 @@ applyEquation term rule =
                         -- check any conditions that are still unclear with the SMT solver
                         -- (or abort if no solver is being used), abort if still unclear after
                         unless (null stillUnclear) $
-                            let checkWithSmt :: SMT.SMTContext -> EquationT io (Maybe Bool)
-                                checkWithSmt smt =
-                                    SMT.checkPredicates smt knownPredicates mempty (Set.fromList stillUnclear) >>= \case
-                                        Left SMT.SMTSolverUnknown{} -> do
-                                            pure Nothing
-                                        Left other ->
-                                            liftIO $ Exception.throw other
-                                        Right result ->
-                                            pure result
-                             in lift (checkWithSmt solver) >>= \case
-                                    Nothing -> do
-                                        -- no solver or still unclear: abort
-                                        throwE
-                                            ( \ctx ->
-                                                ctx . logMessage $
-                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                        renderOneLineText
-                                                            ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
-                                                            )
-                                            , IndeterminateCondition stillUnclear
-                                            )
-                                    Just False -> do
-                                        -- actually false given path condition: fail
-                                        let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
-                                        throwE
-                                            ( \ctx ->
-                                                ctx . logMessage $
-                                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                        renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
-                                            , ConditionFalse failedP
-                                            )
-                                    Just True -> do
-                                        -- can proceed
-                                        pure ()
+                            lift (SMT.checkPredicates solver knownPredicates mempty (Set.fromList stillUnclear)) >>= \case
+                                SMT.IsUnknown{} -> do
+                                    -- no solver or still unclear: abort
+                                    throwE
+                                        ( \ctx ->
+                                            ctx . logMessage $
+                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                    renderOneLineText
+                                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                                        )
+                                        , IndeterminateCondition stillUnclear
+                                        )
+                                SMT.IsInvalid -> do
+                                    -- actually false given path condition: fail
+                                    let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
+                                    throwE
+                                        ( \ctx ->
+                                            ctx . logMessage $
+                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                                    renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                                        , ConditionFalse failedP
+                                        )
+                                SMT.IsValid{} -> do
+                                    -- can proceed
+                                    pure ()
 
                         -- check ensured conditions, filter any
                         -- true ones, prune if any is false
@@ -917,7 +907,7 @@ applyEquation term rule =
                                     ensured
                         -- check all ensured conditions together with the path condition
                         lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                            Right (Just False) -> do
+                            SMT.IsInvalid -> do
                                 let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
                                 throwE
                                     ( \ctx ->
@@ -926,12 +916,8 @@ applyEquation term rule =
                                                 renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
                                     , EnsuresFalse falseEnsures
                                     )
-                            Right _other ->
+                            _ ->
                                 pure ()
-                            Left SMT.SMTSolverUnknown{} ->
-                                pure ()
-                            Left other ->
-                                liftIO $ Exception.throw other
                         lift $ pushConstraints $ Set.fromList ensuredConditions
                         -- when a new path condition is added, invalidate the equation cache
                         unless (null ensuredConditions) $ do
