@@ -395,7 +395,9 @@ llvmSimplify term = do
   where
     evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
-        | isConcrete t && attributes.canBeEvaluated = withContext CtxLlvm . withTermContext t $ do
+        | isConcrete t
+        , attributes.canBeEvaluated
+        , isFunctionApp t = withContext CtxLlvm . withTermContext t $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
@@ -412,6 +414,11 @@ llvmSimplify term = do
                         pure result
         | otherwise =
             cb t
+
+    isFunctionApp :: Term -> Bool
+    isFunctionApp (SymbolApplication sym _ _) = isFunctionSymbol sym
+    isFunctionApp _ = False
+
 
 ----------------------------------------
 -- Interface functions
