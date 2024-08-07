@@ -2,11 +2,12 @@ module Stats (
     newStats,
     addStats,
     finaliseStats,
-    timed,
-    secWithUnit,
     RequestStats (..),
     StatsVar,
     MethodTiming (..),
+    -- re-export
+    timed,
+    secWithUnit,
 ) where
 
 import Control.Concurrent.MVar (MVar, modifyMVar_, newMVar, readMVar)
@@ -18,11 +19,11 @@ import Data.Text (pack)
 import Deriving.Aeson
 import GHC.Generics ()
 import Prettyprinter
-import System.Clock
 import Text.Printf
 
 import Booster.Log
 import Booster.Prettyprinter
+import Booster.Util (secWithUnit, timed)
 import Kore.JsonRpc.Types (APIMethod)
 
 -- | Statistics for duration measurement time series (in seconds)
@@ -61,12 +62,6 @@ instance (Floating a, PrintfArg a, Ord a) => Pretty (RequestStats a) where
             ]
       where
         withUnit = pretty . secWithUnit
-
-secWithUnit :: (Floating a, Ord a, PrintfArg a) => a -> String
-secWithUnit x
-    | x > 0.1 = printf "%.2fs" x
-    | x > 0.0001 = printf "%.3fms" $ x * 10 ** 3
-    | otherwise = printf "%.1fμs" $ x * 10 ** 6
 
 -- internal helper type
 -- all values are in seconds
@@ -137,15 +132,6 @@ addStats statVar MethodTiming{method, time, koreTime} =
 
 newStats :: MonadIO m => m (MVar (Map APIMethod Stats'))
 newStats = liftIO $ newMVar Map.empty
-
--- returns time taken by the given action (in seconds)
-timed :: MonadIO m => m a -> m (a, Double)
-timed action = do
-    start <- liftIO $ getTime Monotonic
-    result <- action
-    stop <- liftIO $ getTime Monotonic
-    let time = fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 10 ** 9
-    pure (result, time)
 
 newtype FinalStats = FinalStats (Map APIMethod (RequestStats Double))
     deriving stock (Eq, Show)

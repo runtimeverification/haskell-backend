@@ -21,7 +21,6 @@ module Booster.Pattern.Rewrite (
 ) where
 
 import Control.Applicative ((<|>))
-import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -364,22 +363,15 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 RuleConditionUnclear rule . coerce . foldl1 AndTerm $
                                     map coerce stillUnclear
 
-                    checkAllRequires <-
-                        SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
-
-                    case checkAllRequires of
-                        Left SMT.SMTSolverUnknown{} ->
+                    SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear) >>= \case
+                        SMT.IsUnknown{} ->
                             smtUnclear -- abort rewrite if a solver result was Unknown
-                        Left other ->
-                            liftIO $ Exception.throw other -- fail hard on other SMT errors
-                        Right (Just False) -> do
+                        SMT.IsInvalid -> do
                             -- requires is actually false given the prior
                             withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                             RewriteRuleAppT $ pure NotApplied
-                        Right (Just True) ->
+                        SMT.IsValid ->
                             pure () -- can proceed
-                        Right Nothing ->
-                            smtUnclear -- no implication could be determined
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
@@ -392,15 +384,11 @@ applyRule pat@Pattern{ceilConditions} rule =
 
                     -- check all new constraints together with the known side constraints
                     (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                        Right (Just False) -> do
+                        SMT.IsInvalid -> do
                             withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                             RewriteRuleAppT $ pure Trivial
-                        Right _other ->
+                        _other ->
                             pure ()
-                        Left SMT.SMTSolverUnknown{} ->
-                            pure ()
-                        Left other ->
-                            liftIO $ Exception.throw other
 
                     -- if a new constraint is going to be added, the equation cache is invalid
                     unless (null newConstraints) $ do
