@@ -366,11 +366,11 @@ applyRule pat@Pattern{ceilConditions} rule =
                     SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear) >>= \case
                         SMT.IsUnknown{} ->
                             smtUnclear -- abort rewrite if a solver result was Unknown
-                        SMT.IsUnsat -> do
+                        SMT.IsInvalid -> do
                             -- requires is actually false given the prior
                             withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
                             RewriteRuleAppT $ pure NotApplied
-                        SMT.IsSat{} ->
+                        SMT.IsValid ->
                             pure () -- can proceed
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
@@ -384,7 +384,7 @@ applyRule pat@Pattern{ceilConditions} rule =
 
                     -- check all new constraints together with the known side constraints
                     (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                        SMT.IsUnsat -> do
+                        SMT.IsInvalid -> do
                             withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                             RewriteRuleAppT $ pure Trivial
                         _other ->

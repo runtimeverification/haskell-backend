@@ -187,12 +187,12 @@ pattern IsUnknown u = Left u
 
 newtype IsSat' a = IsSat' (Maybe a) deriving (Functor)
 
-type IsSatResult unknown a = Either unknown (IsSat' a)
+type IsSatResult a = Either Text (IsSat' a)
 
-pattern IsSat :: a -> IsSatResult unknown a
+pattern IsSat :: a -> IsSatResult a
 pattern IsSat a = Right (IsSat' (Just a))
 
-pattern IsUnsat :: IsSatResult unknown a
+pattern IsUnsat :: IsSatResult a
 pattern IsUnsat = Right (IsSat' Nothing)
 
 {-# COMPLETE IsSat, IsUnsat, IsUnknown #-}
@@ -206,7 +206,7 @@ isSatReturnTransState ::
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
-    io (IsSatResult Text TranslationState)
+    io (IsSatResult TranslationState)
 isSatReturnTransState ctxt ps subst
     | null ps && Map.null subst = pure $ IsSat $ TranslationState{mappings = mempty, counter = 1}
     | Left errMsg <- translated = Log.withContext Log.CtxSMT $ do
@@ -248,7 +248,7 @@ isSat ::
     Log.LoggerMIO io =>
     SMT.SMTContext ->
     [Predicate] ->
-    io (IsSatResult Text ())
+    io (IsSatResult ())
 isSat ctxt ps = fmap void <$> (isSatReturnTransState ctxt ps mempty)
 
 {- |
@@ -270,7 +270,7 @@ getModelFor ::
     SMT.SMTContext ->
     [Predicate] ->
     Map Variable Term -> -- supplied substitution
-    io (IsSatResult Text (Map Variable Term))
+    io (IsSatResult (Map Variable Term))
 getModelFor ctxt ps subst
     | null ps && Map.null subst = Log.withContext Log.CtxSMT $ do
         Log.logMessage ("No constraints or substitutions to check, returning Sat" :: Text)
