@@ -14,11 +14,14 @@ module Booster.Util (
     newTimeCache,
     pattern PrettyTimestamps,
     pattern NoPrettyTimestamps,
+    timed,
+    secWithUnit,
 ) where
 
 import Control.AutoUpdate (defaultUpdateSettings, mkAutoUpdate, updateAction, updateFreq)
 import Control.DeepSeq (NFData (..))
 import Control.Exception (bracket, catch, throwIO)
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
@@ -31,6 +34,7 @@ import Data.Time.Clock.System (SystemTime (..), getSystemTime, systemToUTCTime)
 import Data.Time.Format
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
+import System.Clock
 import System.Directory (removeFile)
 import System.IO.Error (isDoesNotExistError)
 import System.Log.FastLogger (
@@ -42,6 +46,7 @@ import System.Log.FastLogger (
     newTimedFastLogger,
  )
 import System.Log.FastLogger.Types (FormattedTime)
+import Text.Printf
 
 newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -185,10 +190,10 @@ pattern NoPrettyTimestamps = Flag False
 -- | Format time either as a human-readable date and time or as nanoseconds
 formatSystemTime :: Flag "PrettyTimestamp" -> SystemTime -> ByteString
 formatSystemTime prettyTimestamp =
-    let formatString = "%Y-%m-%dT%H:%M:%S%6Q"
+    let formatStr = "%Y-%m-%dT%H:%M:%S%6Q"
         formatter =
             if coerce prettyTimestamp
-                then formatTime defaultTimeLocale formatString . systemToUTCTime
+                then formatTime defaultTimeLocale formatStr . systemToUTCTime
                 else show . toNanoSeconds
      in BS.pack . formatter
   where
@@ -196,3 +201,21 @@ formatSystemTime prettyTimestamp =
     toNanoSeconds MkSystemTime{systemSeconds, systemNanoseconds} =
         fromIntegral @_ @Integer systemSeconds * (10 :: Integer) ^ (9 :: Integer)
             + fromIntegral @_ @Integer systemNanoseconds
+
+------------------------------------------------------------
+-- helper for measuring durations
+
+-- returns time taken by the given action (in seconds)
+timed :: MonadIO m => m a -> m (a, Double)
+timed action = do
+    start <- liftIO $ getTime Monotonic
+    result <- action
+    stop <- liftIO $ getTime Monotonic
+    let time = fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 10 ** 9
+    pure (result, time)
+
+secWithUnit :: (Floating a, Ord a, PrintfArg a) => a -> String
+secWithUnit x
+    | x > 0.1 = printf "%.2fs" x
+    | x > 0.0001 = printf "%.3fms" $ x * 10 ** 3
+    | otherwise = printf "%.1fμs" $ x * 10 ** 6
