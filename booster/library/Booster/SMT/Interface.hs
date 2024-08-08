@@ -126,7 +126,7 @@ hardResetSolver = do
         Just solverRef -> do
             closeContext ctxt
             Log.logMessage ("Restarting SMT solver" :: Text)
-            (solver, handle) <- connectToSolver
+            (solver, handle) <- connectToSolver ctxt.options.args
             liftIO $ do
                 writeIORef solverRef solver
                 writeIORef ctxt.solverClose $ Backend.close handle
