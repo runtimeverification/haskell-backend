@@ -366,7 +366,7 @@ parseSMTOptions =
                         ( metavar "SMT_ARG"
                             <> long "smt-arg"
                             <> help
-                                ( "Argumetns to be passed to the SMT solver process"
+                                ( "Arguments to be passed to the SMT solver process"
                                 )
                         )
                     )
