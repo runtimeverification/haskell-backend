@@ -361,6 +361,15 @@ parseSMTOptions =
                                 \Example: '(check-sat-using smt)' (i.e., plain 'check-sat')"
                         )
                     )
+                <*> many
+                    ( strOption
+                        ( metavar "SMT_ARG"
+                            <> long "smt-arg"
+                            <> help
+                                ( "Arguments to be passed to the SMT solver process"
+                                )
+                        )
+                    )
             )
   where
     smtDefaults = defaultSMTOptions

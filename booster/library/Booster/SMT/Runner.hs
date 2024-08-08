@@ -60,6 +60,7 @@ data SMTOptions = SMTOptions
     -- ^ optional retry. Nothing for no retry, 0 for unlimited
     , tactic :: Maybe SExpr
     -- ^ optional tactic (used verbatim) to replace (check-sat)
+    , args :: [String]
     }
     deriving (Eq, Show)
 
@@ -70,6 +71,7 @@ defaultSMTOptions =
         , timeout = 125
         , retryLimit = Just 3
         , tactic = Nothing
+        , args = []
         }
 
 data SMTContext = SMTContext
@@ -97,7 +99,7 @@ mkContext ::
     io SMTContext
 mkContext opts prelude = do
     logMessage ("Starting SMT solver" :: Text)
-    (solver', handle) <- connectToSolver
+    (solver', handle) <- connectToSolver opts.args
     solver <- liftIO $ newIORef solver'
     solverClose <- liftIO $ newIORef $ Backend.close handle
     mbTranscriptHandle <- forM opts.transcript $ \path -> do
@@ -141,9 +143,9 @@ destroyContext ctxt = do
         hClose h
     liftIO $ join $ readIORef ctxt.solverClose
 
-connectToSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
-connectToSolver = do
-    let config = Backend.defaultConfig
+connectToSolver :: LoggerMIO io => [String] -> io (Backend.Solver, Backend.Handle)
+connectToSolver args = do
+    let config = Backend.defaultConfig{Backend.args = args <> Backend.defaultConfig.args}
     handle <- liftIO $ Backend.new config
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
     pure (solver, handle)
