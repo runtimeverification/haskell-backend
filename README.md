@@ -87,7 +87,7 @@ The `nix-env-selector` extension may prompt for the workspace to be re-loaded. O
 
 To build and run nix based packages at RV, please follow these instructions to set up nix:
 
-_We are using [nix flakes](https://nixos.wiki/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different._
+_We are using [nix flakes](https://wiki.nixos.org/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different._
 
 To set up nix flakes you will need to install `nix` 2.4 or higher.If you are on a standard Linux distribution, such as Ubuntu, first [install nix](https://nixos.org/download.html#download-nix)
 and then enable flakes by editing either `~/.config/nix/nix.conf` or `/etc/nix/nix.conf` and adding:
@@ -98,7 +98,7 @@ experimental-features = nix-command flakes
 
 Note that if this is your first time using [Nix] you will have to manually create one of the `.conf` files.
 
-This is needed to expose the Nix 2.0 CLI and flakes support that are hidden behind feature-flags. (If you are on a different system like nixOS, see instructions for enabling flakes here: https://nixos.wiki/wiki/Flakes)
+This is needed to expose the Nix 2.0 CLI and flakes support that are hidden behind feature-flags. (If you are on a different system like nixOS, see instructions for enabling flakes here: https://wiki.nixos.org/wiki/Flakes)
 
 By default, Nix will build any project and its transitive dependencies from source, which can take a very long time. We therefore need to set up some binary caches to speed up the build
 process. First, install cachix
@@ -180,7 +180,7 @@ To support the scenario of building the project with `cabal-install` outside of 
 
 ### Integration tests
 
-Haskell-backend provides an integration shell for running integration tests, which compile the K framework (of a specified version) against your current version of haskell backend and brings K into scope of your current shell. 
+Haskell-backend provides an integration shell for running integration tests, which compile the K framework (of a specified version) against your current version of haskell backend and brings K into scope of your current shell.
 
 The integration shell is part of the `k` repository, but invoked from the local tree, adding additional tools (see [`nix/integration-shell.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/nix/integration-shell.nix) and [`../k/flake.nix`](https://github.com/runtimeverification/k/blob/master/flake.nix#L180)). Its `haskell-backend` dependency must be overridden to use the `haskell-backend` dependency from the current checked-out tree, and the `k` version will usually be the one from `deps/k_release`.
 
@@ -195,7 +195,7 @@ me@somewhere:haskell-backend$ nix develop \
 integration-shell:me@somewhere:haskell-backend$
 ```
 
-(This will take some time the first time you run it for a specific K framework version...)  
+(This will take some time the first time you run it for a specific K framework version...)
 A specific commit or version tag of the K framework github repository can be used instead of `$(cat deps/k_release)`.
 
 Running this command will add all of the K binaries like `kompile` or `kast` into the `PATH` of your current shell. This is not permanent and will only persist in your current shell window until you exit the active nix shell).
@@ -205,7 +205,7 @@ integration-shell:me@somewhere:haskell-backend$ make -C test/issue-3344 test
 ...
 ...(make output)
 integration-shell:me@somewhere:haskell-backend$ exit
-me@somewhere:haskell-backend$ 
+me@somewhere:haskell-backend$
 ```
 
 ### Integration/Performance tests of downstream projects
@@ -238,7 +238,7 @@ cabal run pretty -- ../definition.kore <(jq '.result.state' XXX_response.json)
 ```
 
 
-            
+
 
 [docs]: https://github.com/runtimeverification/haskell-backend/tree/master/docs
 [git]: https://git-scm.com/
@@ -256,7 +256,7 @@ cabal run pretty -- ../definition.kore <(jq '.result.state' XXX_response.json)
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
 [fd]: https://github.com/sharkdp/fd
-[kup]: https://github.com/runtimeverification/k/releases/latest 
+[kup]: https://github.com/runtimeverification/k/releases/latest
 [ghcup]: https://www.haskell.org/ghcup/
 [Haskell extension]: https://marketplace.visualstudio.com/items?itemName=haskell.haskell
 [KORE RPC protocol]: ./docs/2022-07-18-JSON-RPC-Server-API.md
