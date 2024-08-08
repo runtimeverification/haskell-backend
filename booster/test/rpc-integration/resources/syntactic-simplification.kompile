@@ -1,0 +1,4 @@
+echo "kompiling syntactic-simplification.k"
+kompile --backend haskell syntactic-simplification.k
+cp syntactic-simplification-kompiled/definition.kore syntactic-simplification.kore
+rm -r syntactic-simplification-kompiled

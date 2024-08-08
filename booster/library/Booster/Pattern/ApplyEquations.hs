@@ -52,6 +52,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
+import Data.Word (Word8)
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -844,6 +845,20 @@ applyEquation term rule =
                                 concatMap
                                     (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
                                     rule.requires
+                        let syntacticRequiresIndices :: [Word8] = coerce rule.attributes.syntacticClauses
+                        unless (null syntacticRequiresIndices) $
+                            -- unconditionally abort applying syntactic equations
+                            throwE
+                                ( \ctx ->
+                                    ctx . logMessage $
+                                        WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) required]) $
+                                            renderOneLineText
+                                                ( "Aborting syntactic simplification after instantiating the condition to "
+                                                    <+> hsep (intersperse "," $ map (pretty' @mods) required)
+                                                )
+                                , IndeterminateCondition required
+                                )
+
                         -- If the required condition is _syntactically_ present in
                         -- the prior (known constraints), we don't check it.
                         knownPredicates <- (.predicates) <$> lift getState
@@ -957,61 +972,195 @@ applyEquation term rule =
             TrueBool -> pure Nothing
             other -> pure . Just $ coerce other
 
-    allMustBeConcrete (AllConstrained Concrete) = True
-    allMustBeConcrete _ = False
+allMustBeConcrete (AllConstrained Concrete) = True
+allMustBeConcrete _ = False
 
-    checkConcreteness ::
-        Concreteness ->
-        Map Variable Term ->
-        ExceptT
-            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
-            (EquationT io)
-            ()
-    checkConcreteness Unconstrained _ = pure ()
-    checkConcreteness (AllConstrained constrained) subst =
-        mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
-    checkConcreteness (SomeConstrained mapping) subst =
-        void $ Map.traverseWithKey (verifyVar subst) (Map.mapWithKey mkCheck mapping)
-
-    toPair Variable{variableSort, variableName} =
-        case variableSort of
-            SortApp sortName _ -> (variableName, sortName)
-            SortVar varName -> (variableName, varName)
-
-    mkCheck ::
-        (VarName, SortName) ->
-        Constrained ->
-        Term ->
-        ExceptT
-            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
-            (EquationT io)
-            ()
-    mkCheck (varName, _) constrained (Term attributes _)
-        | not test =
-            throwE
-                ( \ctxt ->
-                    ctxt $
-                        logMessage $
-                            renderOneLineText $
-                                hsep
-                                    [ "Concreteness constraint violated: "
-                                    , pretty $ show constrained <> " variable " <> show varName
-                                    ]
-                , MatchConstraintViolated constrained varName
-                )
-        | otherwise = pure ()
-      where
-        test = case constrained of
-            Concrete -> attributes.isConstructorLike
-            Symbolic -> not attributes.isConstructorLike
-
-    verifyVar subst (variableName, sortName) check =
-        maybe
-            ( lift . throw . InternalError . Text.pack $
-                "Variable not found: " <> show (variableName, sortName)
+mkCheck ::
+    LoggerMIO io =>
+    (VarName, SortName) ->
+    Constrained ->
+    Term ->
+    ExceptT
+        ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+        (EquationT io)
+        ()
+mkCheck (varName, _) constrained (Term attributes _)
+    | not test =
+        throwE
+            ( \ctxt ->
+                ctxt $
+                    logMessage $
+                        renderOneLineText $
+                            hsep
+                                [ "Concreteness constraint violated: "
+                                , pretty $ show constrained <> " variable " <> show varName
+                                ]
+            , MatchConstraintViolated constrained varName
             )
-            check
-            $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
+    | otherwise = pure ()
+  where
+    test = case constrained of
+        Concrete -> attributes.isConstructorLike
+        Symbolic -> not attributes.isConstructorLike
+
+verifyVar subst (variableName, sortName) check =
+    maybe
+        ( lift . throw . InternalError . Text.pack $
+            "Variable not found: " <> show (variableName, sortName)
+        )
+        check
+        $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
+
+toPair Variable{variableSort, variableName} =
+    case variableSort of
+        SortApp sortName _ -> (variableName, sortName)
+        SortVar varName -> (variableName, varName)
+
+checkConcreteness ::
+    LoggerMIO io =>
+    Concreteness ->
+    Map Variable Term ->
+    ExceptT
+        ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+        (EquationT io)
+        ()
+checkConcreteness Unconstrained _ = pure ()
+checkConcreteness (AllConstrained constrained) subst =
+    mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
+checkConcreteness (SomeConstrained mapping) subst =
+    void $ Map.traverseWithKey (verifyVar subst) (Map.mapWithKey mkCheck mapping)
+
+--------------------------------------------------------------------
+
+applySyntacticEquation ::
+    forall io tag.
+    LoggerMIO io =>
+    Term ->
+    RewriteRule tag ->
+    EquationT
+        io
+        (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
+applySyntacticEquation term rule =
+    runExceptT $
+        getPrettyModifiers >>= \case
+            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
+                -- ensured by internalisation: no existentials in equations
+                unless (null rule.existentials) $ do
+                    withContext CtxAbort $
+                        logMessage ("Equation with existentials" :: Text)
+                    lift . throw . InternalError $
+                        "Equation with existentials: " <> Text.pack (show rule)
+                -- immediately cancel if not preserving definedness
+                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+                    throwE
+                        ( \ctxt ->
+                            ctxt $
+                                logMessage $
+                                    renderOneLineText $
+                                        "Uncertain about definedness of rule due to:"
+                                            <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+                        , RuleNotPreservingDefinedness
+                        )
+                -- immediately cancel if rule has concrete() flag and term has variables
+                when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
+                    throwE
+                        ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
+                        , MatchConstraintViolated Concrete "* (term has variables)"
+                        )
+                -- match lhs
+                koreDef <- (.definition) <$> lift getConfig
+                case matchTerms Eval koreDef rule.lhs term of
+                    MatchFailed failReason ->
+                        throwE
+                            ( \ctxt ->
+                                withContext CtxMatch $
+                                    ctxt $
+                                        logPretty' @mods failReason
+                            , FailedMatch failReason
+                            )
+                    MatchIndeterminate remainder ->
+                        throwE
+                            ( \ctxt ->
+                                withContext CtxMatch $
+                                    ctxt $
+                                        logMessage $
+                                            WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                                renderOneLineText $
+                                                    "Uncertain about match with rule. Remainder:"
+                                                        <+> ( hsep $
+                                                                punctuate comma $
+                                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                        NonEmpty.toList remainder
+                                                            )
+                            , IndeterminateMatch
+                            )
+                    MatchSuccess subst -> do
+                        -- cancel if condition
+                        -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
+                        --                        symbolic(v) -> not $ t isConstructorLike(t)
+                        -- is violated
+                        withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
+
+                        withContext CtxMatch $ withContext CtxSuccess $ do
+                            logMessage rule
+                            withContext CtxSubstitution
+                                $ logMessage
+                                $ WithJsonMessage
+                                    (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
+                                $ renderOneLineText
+                                $ "Substitution:"
+                                    <+> ( hsep $
+                                            intersperse "," $
+                                                map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
+                                                    Map.toList subst
+                                        )
+
+                        -- instantiate the requires clause with the obtained substitution
+                        -- TODO: @rule.requires@ conjuncts of syntactic simplifications must be tagged with
+                        --       information from the @syntactic@ attribute at internalisation
+                        let required =
+                                concatMap
+                                    (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
+                                    rule.requires
+                        -- unconditionally abort applying syntactic equations
+                        throwE
+                            ( \ctx ->
+                                ctx . logMessage $
+                                    WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) required]) $
+                                        renderOneLineText
+                                            ( "Aborting syntactic simplification after instantiating the condition to "
+                                                <+> hsep (intersperse "," $ map (pretty' @mods) required)
+                                            )
+                            , IndeterminateCondition required
+                            )
+
+-- first divergence form applyEquation: match the requires clause against the path condition
+-- case matchTerms Eval koreDef rule.lhs term of
+--     MatchFailed failReason ->
+--         throwE
+--             ( \ctxt ->
+--                 withContext CtxMatch $
+--                     ctxt $
+--                         logPretty' @mods failReason
+--             , FailedMatch failReason
+--             )
+--     MatchIndeterminate remainder ->
+--         throwE
+--             ( \ctxt ->
+--                 withContext CtxMatch $
+--                     ctxt $
+--                         logMessage $
+--                             WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+--                                 renderOneLineText $
+--                                     "Uncertain about match with rule. Remainder:"
+--                                         <+> ( hsep $
+--                                                 punctuate comma $
+--                                                     map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+--                                                         NonEmpty.toList remainder
+--                                             )
+--             , IndeterminateMatch
+--             )
+--     MatchSuccess subst -> do
 
 --------------------------------------------------------------------
 
