@@ -860,7 +860,7 @@ module SYNTACTIC-SIMPLIFICATION
      \and{SortBool{}} (
        \dv{SortBool{}}("true"),
         \top{SortBool{}}())))
-  [syntactic{}("1"), UNIQUE'Unds'ID{}("3420e5835f2f331051ae26a746c1afb3221f90b490d65b47e8763b68d119a835"), concrete{}(VarY:SortInt{},VarZ:SortInt{}), label{}("SYNTACTIC-SIMPLIFICATION.test1-simplify"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(28,5,30,22)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/geo2a/Workspace/RV/haskell-backend/other-pr/booster/test/rpc-integration/resources/syntactic-simplification.k)"), simplification{}("")]
+  [syntactic{}("1"), UNIQUE'Unds'ID{}("3420e5835f2f331051ae26a746c1afb3221f90b490d65b47e8763b68d119a835"), label{}("SYNTACTIC-SIMPLIFICATION.test1-simplify"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(28,5,30,22)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/geo2a/Workspace/RV/haskell-backend/other-pr/booster/test/rpc-integration/resources/syntactic-simplification.k)"), simplification{}("")]
 
 // rule `_=/=Bool_`(B1,B2)=>`notBool_`(`_==Bool_`(B1,B2)) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(31fe72efcfddcd8588a11d9d10c1b1a9f96ae3da46b647d4cb9d1e8b1bd1654f), org.kframework.attributes.Location(Location(1159,8,1159,57)), org.kframework.attributes.Source(Source(/nix/store/j8rpqwcid6j2f946ajlvvhriqiyb6cla-k-7.1.99-7dfd927dc1a7a590576303f8527ed2a68f4b3691/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
   axiom{R} \implies{R} (
