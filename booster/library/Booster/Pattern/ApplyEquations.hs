@@ -848,54 +848,11 @@ applyEquation term rule =
                                     rule.requires
                         knownPredicates <- (.predicates) <$> lift getState
 
+                        -- apply a simplification syntactically if it has a syntactic clause
                         let syntacticRequiresIndices :: [Word8] = coerce rule.attributes.syntacticClauses
                         requireAfterSyntacticSolving <- case syntacticRequiresIndices of
                             [] -> pure required
-                            _ -> do
-                                let leaders = take 1 required
-                                    followers = drop 1 required
-                                    substsFromSyntacticSolving =
-                                        produceSubst
-                                            koreDef
-                                            leaders
-                                            (Set.toList knownPredicates)
-                                            followers
-                                -- requiresAfterSyntacticSolving = map (coerce . substituteInTerm subst . coerce) preds
-                                -- -- unconditionally abort applying syntactic equations
-                                logMessage $
-                                    renderOneLineText
-                                        ( "Condition after matching "
-                                            <+> hsep (intersperse "," $ map (pretty' @mods) required)
-                                        )
-
-                                logMessage $
-                                    "Instantiating "
-                                        <> show (length leaders)
-                                        <> " targets against "
-                                        <> show (Set.size knownPredicates)
-                                        <> " known predicates"
-
-                                let instantiated = map ((\s -> map (substituteInPredicate s) required) . snd) substsFromSyntacticSolving
-                                logMessage $
-                                    renderOneLineText
-                                        ( "Instantiated"
-                                            <+> pretty (length instantiated)
-                                            <+> "predicates"
-                                            <+> hsep (intersperse "," $ map (pretty' @mods . foldAndBool . coerce) instantiated)
-                                        )
-                                instantiatedAndLLVMed <- forM instantiated $ \preds -> do
-                                    lift $ mapM (simplifyConstraint' False . coerce) preds
-                                let filtered = filter (notElem FalseBool) instantiatedAndLLVMed
-
-                                logMessage $
-                                    renderOneLineText
-                                        ( "LLVMed"
-                                            <+> pretty (length filtered)
-                                            <+> "predicates"
-                                        )
-                                case filtered of
-                                    [] -> pure required -- no solutions, return the required conditions as-is
-                                    (x : _) -> pure . coerce $ x -- return first solution and hope it works
+                            _ -> lift $ eliminateConditionsSyntactically syntacticRequiresIndices required knownPredicates
 
                         -- If the required condition is _syntactically_ present in
                         -- the prior (known constraints), we don't check it.
@@ -913,6 +870,8 @@ applyEquation term rule =
                                                 )
                                 , IndeterminateCondition toCheck
                                 )
+                        -- otherwise this is either a normal simplification/function or we have discharged all conditions syntactically
+                        -- and will fast-forward to the end, skipping recursive equations and the SMT solver
 
                         -- check the filtered requires clause conditions
                         unclearConditions <-
@@ -1021,6 +980,55 @@ applyEquation term rule =
                 throwE . whenBottom $ coerce p
             TrueBool -> pure Nothing
             other -> pure . Just $ coerce other
+
+eliminateConditionsSyntactically ::
+    LoggerMIO io =>
+    [Word8] ->
+    [Predicate] ->
+    Set Predicate ->
+    EquationT io [Predicate]
+eliminateConditionsSyntactically driverClauseIndices required knownClauses = do
+    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+    koreDef <- (.definition) <$> getConfig
+    let leaders = take 1 required
+        followers = drop 1 required
+        substsFromSyntacticSolving =
+            produceSubst
+                koreDef
+                leaders
+                (Set.toList knownClauses)
+                followers
+    logMessage $
+        renderOneLineText
+            ( "Condition after matching "
+                <+> hsep (intersperse "," $ map (pretty' @mods) required)
+            )
+    logMessage $
+        "Instantiating "
+            <> show (length leaders)
+            <> " targets against "
+            <> show (Set.size knownClauses)
+            <> " known predicates"
+    let instantiated = map ((\s -> map (substituteInPredicate s) required) . snd) substsFromSyntacticSolving
+    logMessage $
+        renderOneLineText
+            ( "Instantiated"
+                <+> pretty (length instantiated)
+                <+> "predicates"
+                <+> hsep (intersperse "," $ map (pretty' @mods . foldAndBool . coerce) instantiated)
+            )
+    instantiatedAndLLVMed <- forM instantiated $ \preds -> do
+        mapM (simplifyConstraint' False . coerce) preds
+    let filtered = filter (notElem FalseBool) instantiatedAndLLVMed
+    logMessage $
+        renderOneLineText
+            ( "LLVMed"
+                <+> pretty (length filtered)
+                <+> "predicates"
+            )
+    case filtered of
+        [] -> pure required -- no solutions, return the required conditions as-is
+        (x : _) -> pure . coerce $ x -- return first solution and hope it works
 
 allMustBeConcrete :: Concreteness -> Bool
 allMustBeConcrete (AllConstrained Concrete) = True
