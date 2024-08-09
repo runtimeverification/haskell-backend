@@ -187,7 +187,7 @@ import Pretty qualified as KorePretty
 import SMT (
     SMT,
  )
-import SMT qualified hiding (Config)
+import SMT qualified
 import SMT qualified as SMT.Config (Config (..))
 import System.Clock (
     Clock (Monotonic),
