@@ -1,8 +1,8 @@
 {
     "jsonrpc": "2.0",
-    "id": "4420567456-001",
+    "id": "4420703856-001",
     "result": {
-        "valid": false,
+        "valid": true,
         "implication": {
             "format": "KORE",
             "version": 1,
@@ -14,8 +14,7 @@
                     "args": []
                 },
                 "first": {
-                    "tag": "EVar",
-                    "name": "x",
+                    "tag": "Bottom",
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortInt",
@@ -30,6 +29,32 @@
                         "args": []
                     },
                     "value": "0"
+                }
+            }
+        },
+        "condition": {
+            "substitution": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "Top",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                }
+            },
+            "predicate": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "Bottom",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
                 }
             }
         }

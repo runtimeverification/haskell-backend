@@ -1,13 +1,13 @@
 {
     "jsonrpc": "2.0",
-    "id": "4420575472-001",
+    "id": "4420703856-001",
     "error": {
         "code": 4,
         "data": {
             "context": [
-                "y:SortInt{}"
+                "\\top{SortInt{}}()"
             ],
-            "error": "The RHS must not have free variables not present in the LHS"
+            "error": "The check implication step expects the antecedent term to be function-like."
         },
         "message": "Implication check error"
     }
