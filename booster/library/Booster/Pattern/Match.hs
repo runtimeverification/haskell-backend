@@ -55,7 +55,7 @@ data MatchResult
       MatchIndeterminate (NonEmpty (Term, Term))
     deriving stock (Eq, Show)
 
-data MatchType = Rewrite | Eval | Implies deriving (Eq)
+data MatchType = Rewrite | Eval | Implies | Search deriving (Eq)
 
 -- | Additional information to explain why matching has failed
 data FailReason
@@ -142,7 +142,7 @@ matchTerms matchType KoreDefinition{sorts} term1 term2 =
         freeVars1 = freeVariables term1
         freeVars2 = freeVariables term2
         sharedVars = freeVars1 `Set.intersection` freeVars2
-     in if matchType /= Implies && (not $ Set.null sharedVars)
+     in if not (matchType `elem` [Implies, Search]) && (not $ Set.null sharedVars)
             then case matchType of
                 Rewrite ->
                     MatchIndeterminate $
@@ -150,6 +150,7 @@ matchTerms matchType KoreDefinition{sorts} term1 term2 =
                             [(Var v, Var v) | v <- Set.toList sharedVars]
                 Eval -> MatchFailed $ SharedVariables sharedVars
                 Implies -> error "unreachable"
+                Search -> error "unreachable"
             else
                 runMatch
                     State
@@ -295,6 +296,7 @@ match1 _       t1@FunctionApplication{}                   t2@KSet{}             
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 _       t1@FunctionApplication{}                   t2@ConsApplication{}                       = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
+match1 Search  (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Search symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 _       t1@FunctionApplication{}                   t2@FunctionApplication{}                   = addIndeterminate t1 t2
 match1 Rewrite t1@FunctionApplication{}                   (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 _       t1@FunctionApplication{}                   t2@Var{}                                   = addIndeterminate t1 t2
@@ -423,6 +425,14 @@ matchVar
     var1
     (Var var2)
         | var1 == var2 = pure ()
+matchVar
+    Search
+    -- twice the exact same variable: verify sorts are equal and bind to itself
+    -- FIXME bad idea to create a substitution loop. Need to have a set of forbidden vars and just don't bind them.
+    var1
+    (Var var2)
+        | var1 == var2 =
+            modify $ \s -> s{mSubstitution = Map.insert var1 (Var var2) s.mSubstitution}
 matchVar
     _
     -- twice the exact same variable: verify sorts are equal

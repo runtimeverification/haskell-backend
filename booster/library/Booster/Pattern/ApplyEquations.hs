@@ -52,6 +52,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
+import Data.Word (Word8)
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -65,6 +66,7 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
+import Booster.Pattern.MatchConstraints (produceSubst)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderOneLineText)
@@ -844,10 +846,32 @@ applyEquation term rule =
                                 concatMap
                                     (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
                                     rule.requires
+                        knownPredicates <- (.predicates) <$> lift getState
+
+                        -- apply a simplification syntactically if it has a syntactic clause
+                        let syntacticRequiresIndices :: [Word8] = coerce rule.attributes.syntacticClauses
+                        requireAfterSyntacticSolving <- case syntacticRequiresIndices of
+                            [] -> pure required
+                            _ -> lift $ eliminateConditionsSyntactically syntacticRequiresIndices required knownPredicates
+
                         -- If the required condition is _syntactically_ present in
                         -- the prior (known constraints), we don't check it.
-                        knownPredicates <- (.predicates) <$> lift getState
-                        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+                        toCheck <- lift $ filterOutKnownConstraints knownPredicates requireAfterSyntacticSolving
+
+                        unless (null toCheck && not (null syntacticRequiresIndices)) $
+                            -- we are applying a syntactic simplifications and we could not fully eliminate the requires clause: abort
+                            throwE
+                                ( \ctx ->
+                                    ctx . logMessage $
+                                        WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) toCheck]) $
+                                            renderOneLineText
+                                                ( "Uncertain about conditions in syntactic simplification rule: "
+                                                    <+> hsep (intersperse "," $ map (pretty' @mods) toCheck)
+                                                )
+                                , IndeterminateCondition toCheck
+                                )
+                        -- otherwise this is either a normal simplification/function or we have discharged all conditions syntactically
+                        -- and will fast-forward to the end, skipping recursive equations and the SMT solver
 
                         -- check the filtered requires clause conditions
                         unclearConditions <-
@@ -957,55 +981,107 @@ applyEquation term rule =
             TrueBool -> pure Nothing
             other -> pure . Just $ coerce other
 
-    allMustBeConcrete (AllConstrained Concrete) = True
-    allMustBeConcrete _ = False
+eliminateConditionsSyntactically ::
+    LoggerMIO io =>
+    [Word8] ->
+    [Predicate] ->
+    Set Predicate ->
+    EquationT io [Predicate]
+eliminateConditionsSyntactically driverClauseIndices required knownClauses = do
+    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+    koreDef <- (.definition) <$> getConfig
+    let leaders = take 1 required
+        followers = drop 1 required
+        substsFromSyntacticSolving =
+            produceSubst
+                koreDef
+                leaders
+                (Set.toList knownClauses)
+                followers
+    logMessage $
+        renderOneLineText
+            ( "Condition after matching "
+                <+> hsep (intersperse "," $ map (pretty' @mods) required)
+            )
+    logMessage $
+        "Instantiating "
+            <> show (length leaders)
+            <> " targets against "
+            <> show (Set.size knownClauses)
+            <> " known predicates"
+    let instantiated = map ((\s -> map (substituteInPredicate s) required) . snd) substsFromSyntacticSolving
+    logMessage $
+        renderOneLineText
+            ( "Instantiated"
+                <+> pretty (length instantiated)
+                <+> "predicates"
+                <+> hsep (intersperse "," $ map (pretty' @mods . foldAndBool . coerce) instantiated)
+            )
+    instantiatedAndLLVMed <- forM instantiated $ \preds -> do
+        mapM (simplifyConstraint' False . coerce) preds
+    let filtered = filter (notElem FalseBool) instantiatedAndLLVMed
+    logMessage $
+        renderOneLineText
+            ( "LLVMed"
+                <+> pretty (length filtered)
+                <+> "predicates"
+            )
+    case filtered of
+        [] -> pure required -- no solutions, return the required conditions as-is
+        (x : _) -> pure . coerce $ x -- return first solution and hope it works
 
-    checkConcreteness ::
-        Concreteness ->
-        Map Variable Term ->
-        ExceptT
-            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
-            (EquationT io)
-            ()
-    checkConcreteness Unconstrained _ = pure ()
-    checkConcreteness (AllConstrained constrained) subst =
-        mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
-    checkConcreteness (SomeConstrained mapping) subst =
-        void $ Map.traverseWithKey (verifyVar subst) (Map.mapWithKey mkCheck mapping)
+allMustBeConcrete :: Concreteness -> Bool
+allMustBeConcrete (AllConstrained Concrete) = True
+allMustBeConcrete _ = False
 
+mkCheck ::
+    LoggerMIO io =>
+    (VarName, SortName) ->
+    Constrained ->
+    Term ->
+    ExceptT
+        ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+        (EquationT io)
+        ()
+mkCheck (varName, _) constrained (Term attributes _)
+    | not test =
+        throwE
+            ( \ctxt ->
+                ctxt $
+                    logMessage $
+                        renderOneLineText $
+                            hsep
+                                [ "Concreteness constraint violated: "
+                                , pretty $ show constrained <> " variable " <> show varName
+                                ]
+            , MatchConstraintViolated constrained varName
+            )
+    | otherwise = pure ()
+  where
+    test = case constrained of
+        Concrete -> attributes.isConstructorLike
+        Symbolic -> not attributes.isConstructorLike
+
+checkConcreteness ::
+    LoggerMIO io =>
+    Concreteness ->
+    Map Variable Term ->
+    ExceptT
+        ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+        (EquationT io)
+        ()
+checkConcreteness Unconstrained _ = pure ()
+checkConcreteness (AllConstrained constrained) subst =
+    mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
+  where
     toPair Variable{variableSort, variableName} =
         case variableSort of
             SortApp sortName _ -> (variableName, sortName)
             SortVar varName -> (variableName, varName)
-
-    mkCheck ::
-        (VarName, SortName) ->
-        Constrained ->
-        Term ->
-        ExceptT
-            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
-            (EquationT io)
-            ()
-    mkCheck (varName, _) constrained (Term attributes _)
-        | not test =
-            throwE
-                ( \ctxt ->
-                    ctxt $
-                        logMessage $
-                            renderOneLineText $
-                                hsep
-                                    [ "Concreteness constraint violated: "
-                                    , pretty $ show constrained <> " variable " <> show varName
-                                    ]
-                , MatchConstraintViolated constrained varName
-                )
-        | otherwise = pure ()
-      where
-        test = case constrained of
-            Concrete -> attributes.isConstructorLike
-            Symbolic -> not attributes.isConstructorLike
-
-    verifyVar subst (variableName, sortName) check =
+checkConcreteness (SomeConstrained mapping) subst =
+    void $ Map.traverseWithKey verifyVar (Map.mapWithKey mkCheck mapping)
+  where
+    verifyVar (variableName, sortName) check =
         maybe
             ( lift . throw . InternalError . Text.pack $
                 "Variable not found: " <> show (variableName, sortName)
