@@ -553,7 +553,7 @@ respond stateVar request =
                     ( Right (IsPattern (existsL, (patL, substitutionL, unsupportedL)))
                         , Right (IsPattern (existsR, (patR, substitutionR, unsupportedR)))
                         ) ->
-                        checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR
+                            checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR
                     (Right IsPattern{}, Right (IsTop sort)) ->
                         implies' (Syntax.KJTop sort) sort req.antecedent.term req.consequent.term mempty
                     (Right IsPattern{}, Right (IsBottom sort)) ->
