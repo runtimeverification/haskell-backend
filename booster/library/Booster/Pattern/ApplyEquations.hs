@@ -66,7 +66,7 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
-import Booster.Pattern.MatchConstraints (produceSubst, solve)
+import Booster.Pattern.MatchConstraints (produceSubst)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderOneLineText)
@@ -846,24 +846,73 @@ applyEquation term rule =
                                 concatMap
                                     (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
                                     rule.requires
+                        knownPredicates <- (.predicates) <$> lift getState
+
                         let syntacticRequiresIndices :: [Word8] = coerce rule.attributes.syntacticClauses
-                        unless (null syntacticRequiresIndices) $
-                            -- unconditionally abort applying syntactic equations
-                            throwE
-                                ( \ctx ->
-                                    ctx . logMessage $
-                                        WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) required]) $
-                                            renderOneLineText
-                                                ( "Aborting syntactic simplification after instantiating the condition to "
-                                                    <+> hsep (intersperse "," $ map (pretty' @mods) required)
-                                                )
-                                , IndeterminateCondition required
-                                )
+                        requireAfterSyntacticSolving <- case syntacticRequiresIndices of
+                            [] -> pure required
+                            _ -> do
+                                let leaders = take 1 required
+                                    followers = drop 1 required
+                                    substsFromSyntacticSolving =
+                                        produceSubst
+                                            koreDef
+                                            leaders
+                                            (Set.toList knownPredicates)
+                                            followers
+                                -- requiresAfterSyntacticSolving = map (coerce . substituteInTerm subst . coerce) preds
+                                -- -- unconditionally abort applying syntactic equations
+                                logMessage $
+                                    renderOneLineText
+                                        ( "Condition after matching "
+                                            <+> hsep (intersperse "," $ map (pretty' @mods) required)
+                                        )
+
+                                logMessage $
+                                    "Instantiating "
+                                        <> show (length leaders)
+                                        <> " targets against "
+                                        <> show (Set.size knownPredicates)
+                                        <> " known predicates"
+
+                                let instantiated = map ((\s -> map (substituteInPredicate s) required) . snd) substsFromSyntacticSolving
+                                logMessage $
+                                    renderOneLineText
+                                        ( "Instantiated"
+                                            <+> pretty (length instantiated)
+                                            <+> "predicates"
+                                            <+> hsep (intersperse "," $ map (pretty' @mods . foldAndBool . coerce) instantiated)
+                                        )
+                                instantiatedAndLLVMed <- forM instantiated $ \preds -> do
+                                    lift $ mapM (simplifyConstraint' False . coerce) preds
+                                let filtered = filter (notElem FalseBool) instantiatedAndLLVMed
+
+                                logMessage $
+                                    renderOneLineText
+                                        ( "LLVMed"
+                                            <+> pretty (length filtered)
+                                            <+> "predicates"
+                                        )
+                                case filtered of
+                                    [] -> pure required -- no solutions, return the required conditions as-is
+                                    (x : _) -> pure . coerce $ x -- return first solution and hope it works
 
                         -- If the required condition is _syntactically_ present in
                         -- the prior (known constraints), we don't check it.
-                        knownPredicates <- (.predicates) <$> lift getState
-                        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+                        toCheck <- lift $ filterOutKnownConstraints knownPredicates requireAfterSyntacticSolving
+
+                        unless (null toCheck && not (null syntacticRequiresIndices)) $
+                            -- we are applying a syntactic simplifications and we could not fully eliminate the requires clause: abort
+                            throwE
+                                ( \ctx ->
+                                    ctx . logMessage $
+                                        WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) toCheck]) $
+                                            renderOneLineText
+                                                ( "Uncertain about conditions in syntactic simplification rule: "
+                                                    <+> hsep (intersperse "," $ map (pretty' @mods) toCheck)
+                                                )
+                                , IndeterminateCondition toCheck
+                                )
 
                         -- check the filtered requires clause conditions
                         unclearConditions <-
@@ -973,6 +1022,7 @@ applyEquation term rule =
             TrueBool -> pure Nothing
             other -> pure . Just $ coerce other
 
+allMustBeConcrete :: Concreteness -> Bool
 allMustBeConcrete (AllConstrained Concrete) = True
 allMustBeConcrete _ = False
 
@@ -1004,19 +1054,6 @@ mkCheck (varName, _) constrained (Term attributes _)
         Concrete -> attributes.isConstructorLike
         Symbolic -> not attributes.isConstructorLike
 
-verifyVar subst (variableName, sortName) check =
-    maybe
-        ( lift . throw . InternalError . Text.pack $
-            "Variable not found: " <> show (variableName, sortName)
-        )
-        check
-        $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
-
-toPair Variable{variableSort, variableName} =
-    case variableSort of
-        SortApp sortName _ -> (variableName, sortName)
-        SortVar varName -> (variableName, varName)
-
 checkConcreteness ::
     LoggerMIO io =>
     Concreteness ->
@@ -1028,214 +1065,21 @@ checkConcreteness ::
 checkConcreteness Unconstrained _ = pure ()
 checkConcreteness (AllConstrained constrained) subst =
     mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
-checkConcreteness (SomeConstrained mapping) subst =
-    void $ Map.traverseWithKey (verifyVar subst) (Map.mapWithKey mkCheck mapping)
-
---------------------------------------------------------------------
-
-applySyntacticEquation ::
-    forall io tag.
-    LoggerMIO io =>
-    Term ->
-    RewriteRule tag ->
-    EquationT
-        io
-        (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
-applySyntacticEquation term rule =
-    runExceptT $
-        getPrettyModifiers >>= \case
-            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
-                -- ensured by internalisation: no existentials in equations
-                unless (null rule.existentials) $ do
-                    withContext CtxAbort $
-                        logMessage ("Equation with existentials" :: Text)
-                    lift . throw . InternalError $
-                        "Equation with existentials: " <> Text.pack (show rule)
-                -- immediately cancel if not preserving definedness
-                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-                    throwE
-                        ( \ctxt ->
-                            ctxt $
-                                logMessage $
-                                    renderOneLineText $
-                                        "Uncertain about definedness of rule due to:"
-                                            <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-                        , RuleNotPreservingDefinedness
-                        )
-                -- immediately cancel if rule has concrete() flag and term has variables
-                when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
-                    throwE
-                        ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
-                        , MatchConstraintViolated Concrete "* (term has variables)"
-                        )
-                -- match lhs
-                koreDef <- (.definition) <$> lift getConfig
-                case matchTerms Eval koreDef rule.lhs term of
-                    MatchFailed failReason ->
-                        throwE
-                            ( \ctxt ->
-                                withContext CtxMatch $
-                                    ctxt $
-                                        logPretty' @mods failReason
-                            , FailedMatch failReason
-                            )
-                    MatchIndeterminate remainder ->
-                        throwE
-                            ( \ctxt ->
-                                withContext CtxMatch $
-                                    ctxt $
-                                        logMessage $
-                                            WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
-                                                renderOneLineText $
-                                                    "Uncertain about match with rule. Remainder:"
-                                                        <+> ( hsep $
-                                                                punctuate comma $
-                                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
-                                                                        NonEmpty.toList remainder
-                                                            )
-                            , IndeterminateMatch
-                            )
-                    MatchSuccess subst -> do
-                        -- cancel if condition
-                        -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
-                        --                        symbolic(v) -> not $ t isConstructorLike(t)
-                        -- is violated
-                        withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
-
-                        withContext CtxMatch $ withContext CtxSuccess $ do
-                            logMessage rule
-                            withContext CtxSubstitution
-                                $ logMessage
-                                $ WithJsonMessage
-                                    (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
-                                $ renderOneLineText
-                                $ "Substitution:"
-                                    <+> ( hsep $
-                                            intersperse "," $
-                                                map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
-                                                    Map.toList subst
-                                        )
-
-                        -- instantiate the requires clause with the obtained substitution
-                        let required =
-                                concatMap
-                                    (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
-                                    rule.requires
-
-                        -- If the required condition is _syntactically_ present in
-                        -- the prior (known constraints), we don't check it.
-                        knownPredicates <- (.predicates) <$> lift getState
-
-                        logMessage $
-                            renderOneLineText
-                                ( "Known truth "
-                                    <+> hsep (intersperse "," $ map (pretty' @mods) (Set.toList knownPredicates))
-                                )
-
-                        let syntacticRequiresIndices :: [Word8] = coerce rule.attributes.syntacticClauses
-                        requireAfterSyntacticSolving <- case syntacticRequiresIndices of
-                            [] -> pure required
-                            _ -> do
-                                let leaders = take 1 required
-                                    followers = drop 1 required
-                                    substsFromSyntacticSolving =
-                                        produceSubst
-                                            koreDef
-                                            leaders
-                                            (Set.toList knownPredicates)
-                                            followers
-                                -- requiresAfterSyntacticSolving = map (coerce . substituteInTerm subst . coerce) preds
-                                -- -- unconditionally abort applying syntactic equations
-                                logMessage $
-                                    renderOneLineText
-                                        ( "Condition after matching "
-                                            <+> hsep (intersperse "," $ map (pretty' @mods) required)
-                                        )
-
-                                logMessage $
-                                    "Instantiating "
-                                        <> show (length leaders)
-                                        <> " targets against "
-                                        <> show (Set.size knownPredicates)
-                                        <> " known predicates"
-
-                                let instantiated = map (\subst -> map (substituteInPredicate subst) required) . map snd $ substsFromSyntacticSolving
-                                logMessage $
-                                    renderOneLineText
-                                        ( "Instantiated"
-                                            <+> pretty (length instantiated)
-                                            <+> "predicates"
-                                            <+> hsep (intersperse "," $ map (pretty' @mods) (map foldAndBool . map coerce $ instantiated))
-                                        )
-                                instantiatedAndLLVMed <- forM instantiated $ \preds -> do
-                                    lift $ mapM (simplifyConstraint' False . coerce) preds
-                                -- let filtered = map (splitAndBools . coerce) . filter (/= FalseBool) . map foldAndBool $ instantiatedAndLLVMed
-                                let filtered = filter (all (/= FalseBool)) $ instantiatedAndLLVMed
-
-                                logMessage $
-                                    renderOneLineText
-                                        ( "LLVMed"
-                                            <+> pretty (length filtered)
-                                            <+> "predicates"
-                                            <+> hsep (intersperse "," $ map (pretty' @mods) (map foldAndBool . map coerce $ filtered))
-                                        )
-                                case filtered of
-                                    [] -> pure required -- no solutions, return the required conditions as-is
-                                    (x : _) -> pure . coerce $ x -- return first solution and hope it works
-                        toCheck <- lift $ filterOutKnownConstraints knownPredicates requireAfterSyntacticSolving
-                        unless (null toCheck) $ -- could not eliminate all conditions syntactically
-                            throwE
-                                ( \ctx ->
-                                    ctx . logMessage $
-                                        WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) toCheck]) $
-                                            renderOneLineText
-                                                ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) toCheck)
-                                                )
-                                , IndeterminateCondition toCheck
-                                )
-                        -- all conditions are syntactically solved, apply rule
-                        -- FIXME do something with the ensured conditions?
-                        pure $ substituteInTerm subst rule.rhs
   where
-    filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
-    filterOutKnownConstraints priorKnowledge constraitns = do
-        let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
-        unless (null knownTrue) $
-            getPrettyModifiers >>= \case
-                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                    logMessage $
-                        renderOneLineText $
-                            "Known true side conditions (won't check):"
-                                <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
-        pure toCheck
-
--- first divergence form applyEquation: match the requires clause against the path condition
--- case matchTerms Eval koreDef rule.lhs term of
---     MatchFailed failReason ->
---         throwE
---             ( \ctxt ->
---                 withContext CtxMatch $
---                     ctxt $
---                         logPretty' @mods failReason
---             , FailedMatch failReason
---             )
---     MatchIndeterminate remainder ->
---         throwE
---             ( \ctxt ->
---                 withContext CtxMatch $
---                     ctxt $
---                         logMessage $
---                             WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
---                                 renderOneLineText $
---                                     "Uncertain about match with rule. Remainder:"
---                                         <+> ( hsep $
---                                                 punctuate comma $
---                                                     map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
---                                                         NonEmpty.toList remainder
---                                             )
---             , IndeterminateMatch
---             )
---     MatchSuccess subst -> do
+    toPair Variable{variableSort, variableName} =
+        case variableSort of
+            SortApp sortName _ -> (variableName, sortName)
+            SortVar varName -> (variableName, varName)
+checkConcreteness (SomeConstrained mapping) subst =
+    void $ Map.traverseWithKey verifyVar (Map.mapWithKey mkCheck mapping)
+  where
+    verifyVar (variableName, sortName) check =
+        maybe
+            ( lift . throw . InternalError . Text.pack $
+                "Variable not found: " <> show (variableName, sortName)
+            )
+            check
+            $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
 
 --------------------------------------------------------------------
 
