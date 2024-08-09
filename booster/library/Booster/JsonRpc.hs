@@ -23,6 +23,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (second)
+import Data.Coerce (coerce)
 import Data.Foldable
 import Data.List (singleton)
 import Data.List.NonEmpty qualified as NonEmpty
@@ -70,8 +71,10 @@ import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (
     InternalisedPredicates (..),
+    PatternOrTopOrBottom (..),
     TermOrPredicates (..),
     internalisePattern,
+    internalisePatternOrTopOrBottom,
     internaliseTermOrPredicate,
     logPatternError,
     patternErrorToRpcError,
@@ -417,9 +420,113 @@ respond stateVar request =
                                             , substitution = Nothing
                                             }
             RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
+                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
                 -- internalise given constrained term
-                let internalised =
-                        runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
+                let internalised korePat' =
+                        let (korePat, existentials) = extractExistentials korePat'
+                         in runExcept $
+                                internalisePatternOrTopOrBottom DisallowAlias CheckSubsorts Nothing def existentials korePat
+
+                    checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR = do
+                        let freeVarsL =
+                                ( freeVariables patL.term
+                                    <> (Set.unions $ Set.map (freeVariables . coerce) patL.constraints)
+                                    <> (Set.fromList $ Map.keys substitutionL)
+                                )
+                                    Set.\\ Set.fromList existsL
+                            freeVarsR =
+                                ( freeVariables patR.term
+                                    <> (Set.unions $ Set.map (freeVariables . coerce) patR.constraints)
+                                    <> (Set.fromList $ Map.keys substitutionR)
+                                )
+                                    Set.\\ Set.fromList existsR
+                            freeVarsRminusL = freeVarsR Set.\\ freeVarsL
+                        if (not $ null freeVarsRminusL)
+                            then
+                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError $
+                                    RpcError.ErrorWithContext "The RHS must not have free variables not present in the LHS" $
+                                        map (pack . renderDefault . pretty' @mods) $
+                                            Set.toList freeVarsRminusL
+                            else do
+                                unless (null unsupportedL && null unsupportedR) $ do
+                                    logMessage'
+                                        ("aborting due to unsupported predicate parts" :: Text)
+                                    unless (null unsupportedL) $
+                                        withContext CtxDetail $
+                                            logMessage
+                                                (Text.unwords $ map prettyPattern unsupportedL)
+                                    unless (null unsupportedR) $
+                                        withContext CtxDetail $
+                                            logMessage
+                                                (Text.unwords $ map prettyPattern unsupportedR)
+                                let
+                                    -- apply the given substitution before doing anything else
+                                    substPatL =
+                                        Pattern
+                                            { term = substituteInTerm substitutionL patL.term
+                                            , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
+                                            , ceilConditions = patL.ceilConditions
+                                            }
+                                    substPatR =
+                                        Pattern
+                                            { term = substituteInTerm substitutionR patR.term
+                                            , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
+                                            , ceilConditions = patR.ceilConditions
+                                            }
+
+                                SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
+                                    SMT.IsUnsat ->
+                                        let sort = externaliseSort $ sortOfPattern substPatL
+                                         in implies' (Syntax.KJBottom sort) sort req.antecedent.term req.consequent.term mempty
+                                    _ -> checkImpliesMatchTerms existsL substPatL existsR substPatR
+
+                    checkImpliesMatchTerms existsL substPatL existsR substPatR =
+                        case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
+                            MatchFailed (SubsortingError sortError) ->
+                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
+                                    show sortError
+                            MatchFailed{} ->
+                                doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
+                            MatchIndeterminate remainder ->
+                                ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPatL >>= \case
+                                    (Right simplifedSubstPatL, _) ->
+                                        if substPatL == simplifedSubstPatL
+                                            then
+                                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
+                                                    "match remainder: "
+                                                        <> renderDefault
+                                                            ( hsep $
+                                                                punctuate comma $
+                                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                        NonEmpty.toList remainder
+                                                            )
+                                            else checkImpliesMatchTerms existsL simplifedSubstPatL existsR substPatR
+                                    (Left err, _) ->
+                                        pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
+                            MatchSuccess subst -> do
+                                let filteredConsequentPreds =
+                                        Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
+
+                                if null filteredConsequentPreds
+                                    then
+                                        implies
+                                            (sortOfPattern substPatL)
+                                            (externaliseExistTerm existsL substPatL.term)
+                                            (externaliseExistTerm existsR substPatR.term)
+                                            subst
+                                    else
+                                        ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+                                            (Right newPreds, _) ->
+                                                if all (== Pattern.Predicate TrueBool) newPreds
+                                                    then
+                                                        implies
+                                                            (sortOfPattern substPatL)
+                                                            (externaliseExistTerm existsL substPatL.term)
+                                                            (externaliseExistTerm existsR substPatR.term)
+                                                            subst
+                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
+                                            (Left other, _) ->
+                                                pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
                 case (internalised req.antecedent.term, internalised req.consequent.term) of
                     (Left patternError, _) -> do
@@ -438,63 +545,28 @@ respond stateVar request =
                                     RpcError.CouldNotVerifyPattern
                                         [ patternErrorToRpcError patternError
                                         ]
-                    (Right (patL, substitutionL, unsupportedL), Right (patR, substitutionR, unsupportedR)) -> do
-                        unless (null unsupportedL && null unsupportedR) $ do
-                            logMessage'
-                                ("aborting due to unsupported predicate parts" :: Text)
-                            unless (null unsupportedL) $
-                                withContext CtxDetail $
-                                    logMessage
-                                        (Text.unwords $ map prettyPattern unsupportedL)
-                            unless (null unsupportedR) $
-                                withContext CtxDetail $
-                                    logMessage
-                                        (Text.unwords $ map prettyPattern unsupportedR)
-                        let
-                            -- apply the given substitution before doing anything else
-                            substPatL =
-                                Pattern
-                                    { term = substituteInTerm substitutionL patL.term
-                                    , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
-                                    , ceilConditions = patL.ceilConditions
+                    (Right (IsBottom sort), Right _) ->
+                        implies' (Syntax.KJBottom sort) sort req.antecedent.term req.consequent.term mempty
+                    (Right IsTop{}, _) ->
+                        pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $
+                            "The check implication step expects the antecedent term to be function-like."
+                    ( Right (IsPattern (existsL, (patL, substitutionL, unsupportedL)))
+                        , Right (IsPattern (existsR, (patR, substitutionR, unsupportedR)))
+                        ) ->
+                        checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR
+                    (Right IsPattern{}, Right (IsTop sort)) ->
+                        implies' (Syntax.KJTop sort) sort req.antecedent.term req.consequent.term mempty
+                    (Right IsPattern{}, Right (IsBottom sort)) ->
+                        doesNotImply'
+                            sort
+                            ( Just $
+                                RpcTypes.Condition
+                                    { predicate = addHeader $ Syntax.KJBottom sort
+                                    , substitution = addHeader $ Syntax.KJTop sort
                                     }
-                            substPatR =
-                                Pattern
-                                    { term = substituteInTerm substitutionR patR.term
-                                    , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
-                                    , ceilConditions = patR.ceilConditions
-                                    }
-
-                        case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
-                            MatchFailed (SubsortingError sortError) ->
-                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                    show sortError
-                            MatchFailed{} ->
-                                doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
-                            MatchIndeterminate remainder ->
-                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                    "match remainder: "
-                                        <> renderDefault
-                                            ( hsep $
-                                                punctuate comma $
-                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
-                                                        NonEmpty.toList remainder
-                                            )
-                            MatchSuccess subst -> do
-                                let filteredConsequentPreds =
-                                        Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
-
-                                if null filteredConsequentPreds
-                                    then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                    else
-                                        ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
-                                            (Right newPreds, _) ->
-                                                if all (== Pattern.Predicate TrueBool) newPreds
-                                                    then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
-                                            (Left other, _) ->
-                                                pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                            )
+                            req.antecedent.term
+                            req.consequent.term
 
             -- this case is only reachable if the cancel appeared as part of a batch request
             RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
@@ -512,38 +584,43 @@ respond stateVar request =
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions)
 
-    doesNotImply s l r =
+    doesNotImply' s condition l r =
         pure $
             Right $
                 RpcTypes.Implies
                     RpcTypes.ImpliesResult
-                        { implication = addHeader $ Syntax.KJImplies (externaliseSort s) l r
+                        { implication = addHeader $ Syntax.KJImplies s l r
                         , valid = False
-                        , condition = Nothing
+                        , condition
                         , logs = Nothing
                         }
 
-    implies s' l r subst =
-        let s = externaliseSort s'
-         in pure $
-                Right $
-                    RpcTypes.Implies
-                        RpcTypes.ImpliesResult
-                            { implication = addHeader $ Syntax.KJImplies s l r
-                            , valid = True
-                            , condition =
-                                Just
-                                    RpcTypes.Condition
-                                        { predicate = addHeader $ Syntax.KJTop s
-                                        , substitution =
-                                            addHeader
-                                                $ (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs)
-                                                    . map (uncurry $ externaliseSubstitution s)
-                                                    . Map.toList
-                                                $ subst
-                                        }
-                            , logs = Nothing
-                            }
+    doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
+    implies' predicate s l r subst =
+        pure $
+            Right $
+                RpcTypes.Implies
+                    RpcTypes.ImpliesResult
+                        { implication = addHeader $ Syntax.KJImplies s l r
+                        , valid = True
+                        , condition =
+                            Just
+                                RpcTypes.Condition
+                                    { predicate = addHeader predicate
+                                    , substitution =
+                                        addHeader
+                                            $ ( \case
+                                                    [] -> Syntax.KJTop s
+                                                    [x] -> x
+                                                    xs -> Syntax.KJAnd s xs
+                                              )
+                                                . map (uncurry $ externaliseSubstitution s)
+                                                . Map.toList
+                                            $ subst
+                                    }
+                        , logs = Nothing
+                        }
+    implies s' = let s = externaliseSort s' in implies' (Syntax.KJTop s) s
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case

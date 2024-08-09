@@ -143,7 +143,7 @@ destroyContext ctxt = do
 
 connectToSolver :: LoggerMIO io => io (Backend.Solver, Backend.Handle)
 connectToSolver = do
-    let config = Backend.defaultConfig
+    let config = Backend.defaultConfig{Backend.args = ["smt.ematching=false"] <> Backend.defaultConfig.args}
     handle <- liftIO $ Backend.new config
     solver <- liftIO $ Backend.initSolver Backend.Queuing $ Backend.toBackend handle
     pure (solver, handle)

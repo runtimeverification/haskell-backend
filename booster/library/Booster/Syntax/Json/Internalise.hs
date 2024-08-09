@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -7,6 +8,7 @@ License     : BSD-3-Clause
 -}
 module Booster.Syntax.Json.Internalise (
     internalisePattern,
+    internalisePatternOrTopOrBottom,
     internaliseTermOrPredicate,
     internaliseTerm,
     internalisePredicates,
@@ -24,6 +26,7 @@ module Booster.Syntax.Json.Internalise (
     handleBS,
     TermOrPredicates (..),
     InternalisedPredicates (..),
+    PatternOrTopOrBottom (..),
     retractPattern,
     pattern IsQQ,
     pattern IsNotQQ,
@@ -50,6 +53,7 @@ import Data.Foldable ()
 import Data.Generics (extQ)
 import Data.Graph (SCC (..), stronglyConnComp)
 import Data.List (foldl1', nub)
+import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -144,7 +148,7 @@ internalisePattern ::
     Syntax.KorePattern ->
     Except PatternError (Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern])
 internalisePattern allowAlias checkSubsorts sortVars definition p = do
-    (terms, predicates) <- partitionM isTermM $ explodeAnd p
+    (terms, predicates) <- partitionM isTermM $ NE.toList $ explodeAnd p
 
     when (null terms) $ throwE $ NoTermFound p
 
@@ -175,6 +179,49 @@ internalisePattern allowAlias checkSubsorts sortVars definition p = do
             throwE $
                 PatternSortError pat (IncompatibleSorts $ map externaliseSort sortList)
         pure resultTerm
+
+data PatternOrTopOrBottom a
+    = IsTop Syntax.Sort
+    | IsBottom Syntax.Sort
+    | IsPattern a
+    deriving (Functor)
+
+-- main interface functions
+internalisePatternOrTopOrBottom ::
+    Flag "alias" ->
+    Flag "subsorts" ->
+    Maybe [Syntax.Id] ->
+    KoreDefinition ->
+    [(Syntax.Id, Syntax.Sort)] ->
+    Syntax.KorePattern ->
+    Except
+        PatternError
+        ( PatternOrTopOrBottom
+            ([Internal.Variable], (Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern]))
+        )
+internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition existentials p = do
+    let exploded = explodeAnd p
+
+    case isTop exploded of
+        Just t -> pure t
+        Nothing -> case isBottom exploded of
+            Just b -> pure b
+            Nothing -> do
+                existentialVars <- forM existentials $ \(var, sort) -> do
+                    variableSort <- lookupInternalSort sortVars definition.sorts p sort
+                    let variableName = textToBS var.getId
+                    pure $ Internal.Variable{variableSort, variableName}
+                IsPattern . (existentialVars,) <$> internalisePattern allowAlias checkSubsorts sortVars definition p
+  where
+    isTop = \case
+        Syntax.KJTop{sort} NE.:| [] -> Just $ IsTop sort
+        Syntax.KJTop{} NE.:| (x : xs) -> isTop $ x NE.:| xs
+        _ NE.:| _ -> Nothing
+
+    isBottom = \case
+        Syntax.KJBottom{sort} NE.:| _ -> Just $ IsBottom sort
+        _ NE.:| [] -> Nothing
+        _ NE.:| (x : xs) -> isBottom $ x NE.:| xs
 
 internaliseTermOrPredicate ::
     Flag "alias" ->
@@ -359,7 +406,7 @@ internalisePredicates ::
 internalisePredicates allowAlias checkSubsorts sortVars definition ps = do
     internalised <-
         concatMapM (internalisePred allowAlias checkSubsorts sortVars definition) $
-            concatMap explodeAnd ps
+            concatMap (NE.toList . explodeAnd) ps
 
     let (substitution, moreEquations) =
             mkSubstitution [s | s@SubstitutionPred{} <- internalised]
@@ -619,10 +666,11 @@ isTermM pat = case pat of
    the arguments as a list. The top-level sorts of the 'And' nodes are
    ignored, no checks are performed.
 -}
-explodeAnd :: Syntax.KorePattern -> [Syntax.KorePattern]
-explodeAnd Syntax.KJAnd{patterns} =
-    concatMap explodeAnd patterns
-explodeAnd other = [other]
+explodeAnd :: Syntax.KorePattern -> NE.NonEmpty Syntax.KorePattern
+explodeAnd Syntax.KJAnd{patterns} = case patterns of
+    [] -> error "malformed KJAnd"
+    (x : xs) -> foldr ((<>) . explodeAnd) (explodeAnd x) xs
+explodeAnd other = NE.singleton other
 
 ----------------------------------------
 
