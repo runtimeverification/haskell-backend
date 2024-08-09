@@ -31,6 +31,7 @@ module Booster.Pattern.Util (
     stripMarker,
     markAsExVar,
     markAsRuleVar,
+    isEqVar,
     incrementNameCounter,
 ) where
 
@@ -124,6 +125,9 @@ markAsRuleVar = ("Rule#" <>)
 
 markAsExVar :: VarName -> VarName
 markAsExVar = ("Ex#" <>)
+
+isEqVar :: Variable -> Bool
+isEqVar v = BS.isPrefixOf "Eq#" v.variableName
 
 {- | Strip variable provenance prefixes introduced using "markAsRuleVar" and "markAsExVar"
 in "Syntax.ParsedKore.Internalize"
