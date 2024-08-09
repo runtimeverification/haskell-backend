@@ -1,0 +1,14 @@
+{
+    "jsonrpc": "2.0",
+    "id": "4420703856-001",
+    "error": {
+        "code": 4,
+        "data": {
+            "context": [
+                "\\top{SortInt{}}()"
+            ],
+            "error": "The check implication step expects the antecedent term to be function-like."
+        },
+        "message": "Implication check error"
+    }
+}

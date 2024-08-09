@@ -9,6 +9,7 @@ module Booster.Syntax.Json.Externalise (
     externaliseSubstitution,
     externaliseSort,
     externaliseTerm,
+    externaliseExistTerm,
 ) where
 
 import Data.Foldable ()
@@ -81,6 +82,20 @@ externaliseTerm = \case
         externaliseTerm $ Internal.externaliseKList def heads rest
     Internal.KSet def heads rest ->
         externaliseTerm $ Internal.externaliseKSet def heads rest
+
+externaliseExistTerm :: [Internal.Variable] -> Internal.Term -> Syntax.KorePattern
+externaliseExistTerm vars t = exist vars
+  where
+    sort = externaliseSort $ sortOfTerm t
+
+    exist [] = externaliseTerm t
+    exist (Internal.Variable{variableSort = iSort, variableName = iName} : vs) =
+        Syntax.KJExists
+            { sort
+            , var = varNameToId iName
+            , varSort = externaliseSort iSort
+            , arg = exist vs
+            }
 
 externalisePredicate :: Syntax.Sort -> Internal.Predicate -> Syntax.KorePattern
 externalisePredicate sort (Internal.Predicate t) =
