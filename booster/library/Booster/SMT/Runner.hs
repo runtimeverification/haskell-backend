@@ -68,7 +68,7 @@ defaultSMTOptions :: SMTOptions
 defaultSMTOptions =
     SMTOptions
         { transcript = Nothing
-        , timeout = 125
+        , timeout = 300000
         , retryLimit = Just 3
         , tactic = Nothing
         , args = []
