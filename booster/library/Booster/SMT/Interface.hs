@@ -157,10 +157,10 @@ translatePrelude def =
 
 checkPrelude :: Log.LoggerMIO io => SMT io ()
 checkPrelude = do
-    -- set solver timeout
-    setTimeout ctxt.options.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
     ctxt <- SMT get
+    -- set solver timeout
+    setTimeout ctxt.options.timeout
     -- send the commands from the definition's SMT prelude
     check <- mapM_ runCmd ctxt.prelude >> runCmd CheckSat
     case check of
