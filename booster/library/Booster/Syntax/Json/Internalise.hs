@@ -53,7 +53,6 @@ import Data.Foldable ()
 import Data.Generics (extQ)
 import Data.Graph (SCC (..), stronglyConnComp)
 import Data.List (foldl1', nub)
-import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -148,7 +147,7 @@ internalisePattern ::
     Syntax.KorePattern ->
     Except PatternError (Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern])
 internalisePattern allowAlias checkSubsorts sortVars definition p = do
-    (terms, predicates) <- partitionM isTermM $ NE.toList $ explodeAnd p
+    (terms, predicates) <- partitionM isTermM $ explodeAnd p
 
     when (null terms) $ throwE $ NoTermFound p
 
@@ -214,14 +213,14 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                 IsPattern . (existentialVars,) <$> internalisePattern allowAlias checkSubsorts sortVars definition p
   where
     isTop = \case
-        Syntax.KJTop{sort} NE.:| [] -> Just $ IsTop sort
-        Syntax.KJTop{} NE.:| (x : xs) -> isTop $ x NE.:| xs
-        _ NE.:| _ -> Nothing
+        [Syntax.KJTop{sort}] -> Just $ IsTop sort
+        Syntax.KJTop{} : xs -> isTop xs
+        _ -> Nothing
 
     isBottom = \case
-        Syntax.KJBottom{sort} NE.:| _ -> Just $ IsBottom sort
-        _ NE.:| [] -> Nothing
-        _ NE.:| (x : xs) -> isBottom $ x NE.:| xs
+        [] -> Nothing
+        Syntax.KJBottom{sort} : _ -> Just $ IsBottom sort
+        _ : xs -> isBottom xs
 
 internaliseTermOrPredicate ::
     Flag "alias" ->
@@ -406,7 +405,7 @@ internalisePredicates ::
 internalisePredicates allowAlias checkSubsorts sortVars definition ps = do
     internalised <-
         concatMapM (internalisePred allowAlias checkSubsorts sortVars definition) $
-            concatMap (NE.toList . explodeAnd) ps
+            concatMap explodeAnd ps
 
     let (substitution, moreEquations) =
             mkSubstitution [s | s@SubstitutionPred{} <- internalised]
@@ -666,11 +665,10 @@ isTermM pat = case pat of
    the arguments as a list. The top-level sorts of the 'And' nodes are
    ignored, no checks are performed.
 -}
-explodeAnd :: Syntax.KorePattern -> NE.NonEmpty Syntax.KorePattern
-explodeAnd Syntax.KJAnd{patterns} = case patterns of
-    [] -> error "malformed KJAnd"
-    (x : xs) -> foldr ((<>) . explodeAnd) (explodeAnd x) xs
-explodeAnd other = NE.singleton other
+explodeAnd :: Syntax.KorePattern -> [Syntax.KorePattern]
+explodeAnd Syntax.KJAnd{patterns} =
+    concatMap explodeAnd patterns
+explodeAnd other = [other]
 
 ----------------------------------------
 
