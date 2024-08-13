@@ -46,6 +46,7 @@ import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
+import Booster.Pattern.Implies (runImplies)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
     RewriteConfig (..),
@@ -89,7 +90,6 @@ import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
 import Kore.Syntax.Json.Types qualified as Syntax
-import Booster.Pattern.Implies (runImplies)
 
 respond ::
     forall m.
@@ -413,7 +413,6 @@ respond stateVar request =
                                             , substitution = Nothing
                                             }
             RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> runImplies def mLlvmLibrary mSMTOptions req.antecedent req.consequent
-
             -- this case is only reachable if the cancel appeared as part of a batch request
             RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
   where
