@@ -39,7 +39,7 @@ esac
 llvm-kompile ${NAME}.llvm.kore ./dt c -- \
              -fPIC -std=c++17 -o interpreter \
              $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
-             -lcrypto -lssl $LPROCPS -lsecp256k1
+             -lcrypto -lssl -lsecp256k1 $LPROCPS
 mv interpreter.* ${NAME}.dylib
 
 # remove temporary artefacts
