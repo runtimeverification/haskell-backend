@@ -20,6 +20,7 @@ import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Data
 import Data.Either
+import Data.List
 import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
 import Data.Tuple
 import Debug.Trace
@@ -161,8 +162,8 @@ ExecuteM request processing
 
 RequestRecord ::=
     NodeRequest
-    (AbortMarker RequestTime[SimplifyM])*
-    (RequestTime[SimplifyM])*
+    (AbortMarker RequestTime[SimplifyM])* -- without RequestTime if --no-fallback-simplify
+    (RequestTime[SimplifyM])* -- missing if --no-post-exec-simplify
     RequestTime[ExecuteM]
 
 Other requests:
@@ -187,13 +188,13 @@ data RequestRecord = RequestRecord
 parseReqRec :: ReadP RequestRecord
 parseReqRec = do
     requestId <- getId <$> satisfy isReq
-    fallbacks <- many (parseFallback requestId)
-    simpls <- many (parseSimpl requestId)
+    (fallbacks, simpls) <-
+        partition isAbort <$> many (parseAbort requestId <++ parseSimpl requestId)
     finalTime <- satisfy $ isTimeFor requestId
     let reqKoreTime = micros $ koreTimeFrom finalTime
         reqTime = micros $ timeFrom finalTime - reqKoreTime
-        simpKoreTime = micros $ sum $ map koreTimeFrom (fallbacks <> simpls)
-        simpTime = micros $ sum (map timeFrom (fallbacks <> simpls)) - simpKoreTime
+        simpKoreTime = micros $ sum $ map koreTimeFrom simpls
+        simpTime = micros $ sum (map timeFrom simpls) - simpKoreTime
     pure RequestRecord
         { requestId
         , kind = rKind finalTime
@@ -205,14 +206,14 @@ parseReqRec = do
         , abortCount = length fallbacks
         }
   where
-    parseFallback :: RequestId -> ReadP Line
-    parseFallback r = do
-        void $ satisfy isAbort
-        satisfy $ \l -> rKind l == SimplifyM && isTimeFor r l
+    parseAbort :: RequestId -> ReadP Line
+    parseAbort r = satisfy $ \l -> isAbort l && getId l == r
 
     parseSimpl :: RequestId -> ReadP Line
-    parseSimpl r = do
-        satisfy $ \l -> rKind l == SimplifyM && isTimeFor r l
+    parseSimpl r = satisfy (isSimplifyRequestFor r)
+
+    isSimplifyRequestFor r l =
+        rKind l == SimplifyM && isTimeFor r l
 
     isTimeFor :: RequestId -> Line -> Bool
     isTimeFor r l = isTime l && getId l == r
