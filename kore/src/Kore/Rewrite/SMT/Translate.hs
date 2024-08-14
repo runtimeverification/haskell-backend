@@ -533,6 +533,12 @@ backTranslateWith
         backTranslate (List xs)
             | null xs =
                 throwError "backtranslate: empty list"
+            -- special case for the unary minus, back-translating 'List ["-", "X"]' as '-X'
+            | [Atom "-", arg] <- xs = do
+                arg' <- backTranslate arg
+                case arg' of
+                    InternalInt_ (InternalInt intSort n) -> pure . TermLike.mkInternalInt $ InternalInt intSort (negate n)
+                    other -> throwError $ "unable to translate negation of " <> show other
             -- everything is translated back using symbol declarations,
             -- not ML connectives (translating terms not predicates)
             | (fct@Atom{} : rest) <- xs
@@ -561,11 +567,15 @@ backTranslateWith
             Map.map symbolFrom
                 . invert
                 . Map.map AST.symbolData
-                $ Map.filter (not . isBuiltin . AST.symbolDeclaration) symbols
+                $ Map.filter ((\sym -> (not (isBuiltin sym) || isMinus sym)) . AST.symbolDeclaration) symbols
 
-        isBuiltin :: AST.KoreSymbolDeclaration a b -> Bool
+        isBuiltin :: AST.KoreSymbolDeclaration SExpr SExpr -> Bool
         isBuiltin AST.SymbolBuiltin{} = True
         isBuiltin _other = False
+
+        isMinus :: AST.KoreSymbolDeclaration SExpr SExpr -> Bool
+        isMinus (AST.SymbolBuiltin (AST.IndirectSymbolDeclaration{name})) = name == Atom "-"
+        isMinus _other = False
 
         symbolFrom :: Id -> Symbol
         symbolFrom name =
