@@ -157,14 +157,12 @@ translatePrelude def =
 
 checkPrelude :: Log.LoggerMIO io => SMT io ()
 checkPrelude = do
-    -- set large default timeout value for checking the prelude
-    setTimeout defaultSMTOptions.timeout
-    Log.logMessage ("Checking definition prelude" :: Text)
     ctxt <- SMT get
+    -- set the user defined timeout for queries
+    setTimeout ctxt.options.timeout
+    Log.logMessage ("Checking definition prelude" :: Text)
     -- send the commands from the definition's SMT prelude
     check <- mapM_ runCmd ctxt.prelude >> runCmd CheckSat
-    -- set user defined timeout value for the general queries
-    setTimeout ctxt.options.timeout
     case check of
         Sat -> pure ()
         other -> do
