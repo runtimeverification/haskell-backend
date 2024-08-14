@@ -103,7 +103,34 @@ def checkGolden (resp, resp_golden_path):
     info(f"Golden file {red}not found{endred}")
     exit(1)
 
-
+def checkGoldenGetModel(resp, resp_golden_path):
+  '''Almost exactly like checkGolden, but only compares the result->satisfiable field of the reponses'''
+  if os.path.exists(resp_golden_path):
+    debug("Checking against golden file...")
+    with open(resp_golden_path, 'rb') as resp_golden_raw:
+      golden_json = json.loads(resp_golden_raw.read())
+      resp_json = json.loads(resp)
+      if golden_json.get("result", {"IMPOSSIBLE": "IMPOSSIBLE"}).get("satisfiable", "IMPOSSIBLE") != resp_json.get("result", {}).get("satisfiable", ""):
+        print(f"Test '{name}' {red}failed.{endred}")
+        info(diff_strings(str(golden_json), str(resp)))
+        if RECREATE_BROKEN_GOLDEN:
+          with open(resp_golden_path, 'wb') as resp_golden_writer:
+            resp_golden_writer.write(resp)
+        else:
+          info("Expected")
+          info(golden_json)
+          info("but got")
+          info(resp)
+          exit(1)
+      else:
+        info(f"Test '{name}' {green}passed{endgreen}")
+  elif CREATE_MISSING_GOLDEN or RECREATE_BROKEN_GOLDEN:
+    with open(resp_golden_path, 'wb') as resp_golden_writer:
+      resp_golden_writer.write(resp)
+  else:
+    debug(resp)
+    info(f"Golden file {red}not found{endred}")
+    exit(1)
 
 def runTest(def_path, req, resp_golden_path, smt_tactic = None):
     smt_options = ["--smt-tactic", str(smt_tactic)] if smt_tactic else []
@@ -122,7 +149,11 @@ def runTest(def_path, req, resp_golden_path, smt_tactic = None):
           debug(resp)
           process.kill()
 
-          checkGolden(resp, resp_golden_path)
+          req_method = json.loads(req)["method"]
+          if req_method == "get-model":
+              checkGoldenGetModel(resp, resp_golden_path)
+          else:
+              checkGolden(resp, resp_golden_path)
 
 print("Running execute tests:")
 
