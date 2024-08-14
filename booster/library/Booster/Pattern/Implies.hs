@@ -87,8 +87,8 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 RpcError.ErrorWithContext "The RHS must not have free variables not present in the LHS" $
                                     map (pack . renderDefault . pretty' @mods) $
                                         Set.toList freeVarsRminusL
-                        else do
-                            unless (null unsupportedL && null unsupportedR) $ do
+                        else if (null unsupportedL || null unsupportedR)
+                            then do
                                 Booster.Log.logMessage'
                                     ("aborting due to unsupported predicate parts" :: Text)
                                 unless (null unsupportedL) $
@@ -99,26 +99,31 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     Booster.Log.withContext Booster.Log.CtxDetail $
                                         Booster.Log.logMessage
                                             (Text.unwords $ map prettyPattern unsupportedR)
-                            let
-                                -- apply the given substitution before doing anything else
-                                substPatL =
-                                    Pattern
-                                        { term = substituteInTerm substitutionL patL.term
-                                        , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
-                                        , ceilConditions = patL.ceilConditions
-                                        }
-                                substPatR =
-                                    Pattern
-                                        { term = substituteInTerm substitutionR patR.term
-                                        , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
-                                        , ceilConditions = patR.ceilConditions
-                                        }
+                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError $
+                                    RpcError.ErrorWithContext "Could not internalise part of the configuration" $
+                                        map (pack . show) $
+                                            unsupportedL <> unsupportedR
+                            else do
+                                let
+                                    -- apply the given substitution before doing anything else
+                                    substPatL =
+                                        Pattern
+                                            { term = substituteInTerm substitutionL patL.term
+                                            , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
+                                            , ceilConditions = patL.ceilConditions
+                                            }
+                                    substPatR =
+                                        Pattern
+                                            { term = substituteInTerm substitutionR patR.term
+                                            , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
+                                            , ceilConditions = patR.ceilConditions
+                                            }
 
-                            SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
-                                SMT.IsUnsat ->
-                                    let sort = externaliseSort $ sortOfPattern substPatL
-                                     in implies' (Kore.Syntax.KJBottom sort) sort antecedent.term consequent.term mempty
-                                _ -> checkImpliesMatchTerms existsL substPatL existsR substPatR
+                                SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
+                                    SMT.IsUnsat ->
+                                        let sort = externaliseSort $ sortOfPattern substPatL
+                                        in implies' (Kore.Syntax.KJBottom sort) sort antecedent.term consequent.term mempty
+                                    _ -> checkImpliesMatchTerms existsL substPatL existsR substPatR
 
                 checkImpliesMatchTerms existsL substPatL existsR substPatR =
                     case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
@@ -126,12 +131,15 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
                                 show sortError
                         MatchFailed{} ->
-                            doesNotImply (sortOfPattern substPatL) antecedent.term consequent.term
+                            doesNotImply (sortOfPattern substPatL) (externaliseExistTerm existsL substPatL.term) (externaliseExistTerm existsR substPatR.term)
                         MatchIndeterminate remainder ->
                             ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPatL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if substPatL == simplifedSubstPatL
                                         then
+                                            -- we are being conservative here for now and returning an error.
+                                            -- since we have already simplified the LHS, we may want to eventually return implise, but the condition
+                                            -- will contain the remainder as an equality contraint, predicating the implication on that equality being true.
                                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
                                                 "match remainder: "
                                                     <> renderDefault
@@ -164,7 +172,11 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                                         (externaliseExistTerm existsL substPatL.term)
                                                         (externaliseExistTerm existsR substPatR.term)
                                                         subst
-                                                else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
+                                                else 
+                                                    -- here we conservatively abort
+                                                    -- an anlternative would be to return valid, putting the unknown constraints into the
+                                                    -- condition. i.e. the implication holds conditionally, if we can prove that the unknwon constraints are true
+                                                    pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
                                         (Left other, _) ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
