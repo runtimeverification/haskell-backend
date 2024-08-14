@@ -110,7 +110,7 @@ def checkGoldenGetModel(resp, resp_golden_path):
     with open(resp_golden_path, 'rb') as resp_golden_raw:
       golden_json = json.loads(resp_golden_raw.read())
       resp_json = json.loads(resp)
-      if golden_json["result"]["satisfiable"] != resp_json["result"]["satisfiable"]:
+      if golden_json.get("result", {"IMPOSSIBLE": "IMPOSSIBLE"}).get("satisfiable", "IMPOSSIBLE") != resp_json.get("result", {}).get("satisfiable", ""):
         print(f"Test '{name}' {red}failed.{endred}")
         info(diff_strings(str(golden_json), str(resp)))
         if RECREATE_BROKEN_GOLDEN:
