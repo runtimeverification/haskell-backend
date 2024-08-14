@@ -533,11 +533,12 @@ backTranslateWith
         backTranslate (List xs)
             | null xs =
                 throwError "backtranslate: empty list"
-            -- special case for the unary minus, back-translating 'List ["-", "X"]' as '0 - X'
-            | [fct@(Atom "-"), arg] <- xs
-            , Just koreSym <- Map.lookup fct reverseMetadata = do
+            -- special case for the unary minus, back-translating 'List ["-", "X"]' as '-X'
+            | [Atom "-", arg] <- xs = do
                 arg' <- backTranslate arg
-                pure $ TermLike.mkApplySymbol koreSym [mkInternalInt (InternalInt (simpleSort "SortInt") 0), arg']
+                case arg' of
+                    InternalInt_ (InternalInt intSort n) -> pure . TermLike.mkInternalInt $ InternalInt intSort (negate n)
+                    other -> throwError $ "unable to translate negation of " <> show other
             -- everything is translated back using symbol declarations,
             -- not ML connectives (translating terms not predicates)
             | (fct@Atom{} : rest) <- xs
