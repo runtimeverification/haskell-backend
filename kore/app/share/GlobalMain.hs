@@ -188,6 +188,7 @@ import SMT (
     SMT,
  )
 import SMT qualified
+import SMT qualified as SMT.Config (Config (..))
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
@@ -581,7 +582,7 @@ execute options metadataTools lemmas worker =
             (declareSMTLemmas metadataTools lemmas)
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver, args} =
         options
     config =
         SMT.defaultConfig
@@ -589,6 +590,7 @@ execute options metadataTools lemmas worker =
             , SMT.rLimit = rLimit
             , SMT.resetInterval = resetInterval
             , SMT.prelude = prelude
+            , SMT.arguments = args <> SMT.Config.arguments SMT.defaultConfig
             }
 
 data SerializedDefinition = SerializedDefinition
