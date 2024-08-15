@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -81,50 +82,48 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                             )
                                 Set.\\ Set.fromList existsR
                         freeVarsRminusL = freeVarsR Set.\\ freeVarsL
-                    if (not $ null freeVarsRminusL)
-                        then
+                    if
+                        | not $ null freeVarsRminusL ->
                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError $
                                 RpcError.ErrorWithContext "The RHS must not have free variables not present in the LHS" $
                                     map (pack . renderDefault . pretty' @mods) $
                                         Set.toList freeVarsRminusL
-                        else
-                            if (null unsupportedL || null unsupportedR)
-                                then do
-                                    Booster.Log.logMessage'
-                                        ("aborting due to unsupported predicate parts" :: Text)
-                                    unless (null unsupportedL) $
-                                        Booster.Log.withContext Booster.Log.CtxDetail $
-                                            Booster.Log.logMessage
-                                                (Text.unwords $ map prettyPattern unsupportedL)
-                                    unless (null unsupportedR) $
-                                        Booster.Log.withContext Booster.Log.CtxDetail $
-                                            Booster.Log.logMessage
-                                                (Text.unwords $ map prettyPattern unsupportedR)
-                                    pure . Left . RpcError.backendError . RpcError.ImplicationCheckError $
-                                        RpcError.ErrorWithContext "Could not internalise part of the configuration" $
-                                            map (pack . show) $
-                                                unsupportedL <> unsupportedR
-                                else do
-                                    let
-                                        -- apply the given substitution before doing anything else
-                                        substPatL =
-                                            Pattern
-                                                { term = substituteInTerm substitutionL patL.term
-                                                , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
-                                                , ceilConditions = patL.ceilConditions
-                                                }
-                                        substPatR =
-                                            Pattern
-                                                { term = substituteInTerm substitutionR patR.term
-                                                , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
-                                                , ceilConditions = patR.ceilConditions
-                                                }
+                        | not (null unsupportedL) || not (null unsupportedR) -> do
+                            Booster.Log.logMessage'
+                                ("aborting due to unsupported predicate parts" :: Text)
+                            unless (null unsupportedL) $
+                                Booster.Log.withContext Booster.Log.CtxDetail $
+                                    Booster.Log.logMessage
+                                        (Text.unwords $ map prettyPattern unsupportedL)
+                            unless (null unsupportedR) $
+                                Booster.Log.withContext Booster.Log.CtxDetail $
+                                    Booster.Log.logMessage
+                                        (Text.unwords $ map prettyPattern unsupportedR)
+                            pure . Left . RpcError.backendError . RpcError.ImplicationCheckError $
+                                RpcError.ErrorWithContext "Could not internalise part of the configuration" $
+                                    map (pack . show) $
+                                        unsupportedL <> unsupportedR
+                        | otherwise -> do
+                            let
+                                -- apply the given substitution before doing anything else
+                                substPatL =
+                                    Pattern
+                                        { term = substituteInTerm substitutionL patL.term
+                                        , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
+                                        , ceilConditions = patL.ceilConditions
+                                        }
+                                substPatR =
+                                    Pattern
+                                        { term = substituteInTerm substitutionR patR.term
+                                        , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
+                                        , ceilConditions = patR.ceilConditions
+                                        }
 
-                                    SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
-                                        SMT.IsUnsat ->
-                                            let sort = externaliseSort $ sortOfPattern substPatL
-                                             in implies' (Kore.Syntax.KJBottom sort) sort antecedent.term consequent.term mempty
-                                        _ -> checkImpliesMatchTerms existsL substPatL existsR substPatR
+                            SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
+                                SMT.IsUnsat ->
+                                    let sort = externaliseSort $ sortOfPattern substPatL
+                                     in implies' (Kore.Syntax.KJBottom sort) sort antecedent.term consequent.term mempty
+                                _ -> checkImpliesMatchTerms existsL substPatL existsR substPatR
 
                 checkImpliesMatchTerms existsL substPatL existsR substPatR =
                     case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
