@@ -840,7 +840,7 @@ applyEquation term rule =
                                         )
 
                         -- check required constraints from lhs.
-                        -- Reaction on false/indeterminate is varies depending on the equation's type (function/simplification),
+                        -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
                         -- see @handleSimplificationEquation@ and @handleFunctionEquation@
                         checkRequires subst
 
