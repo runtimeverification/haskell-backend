@@ -486,6 +486,7 @@ translateSMTOpts = \case
             , retryLimit =
                 KoreSMT.RetryLimit . maybe Unlimited (Limit . fromIntegral) $ smtOpts.retryLimit
             , tactic = fmap translateSExpr smtOpts.tactic
+            , args = smtOpts.args
             }
     Nothing ->
         defaultKoreSolverOptions{solver = KoreSMT.None}
@@ -499,6 +500,7 @@ translateSMTOpts = \case
             , prelude = KoreSMT.Prelude Nothing
             , solver = KoreSMT.Z3
             , tactic = Nothing
+            , args = []
             }
     translateSExpr :: SMT.SExpr -> KoreSMT.SExpr
     translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
@@ -533,7 +535,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , loggerEnv
                 }
   where
-    KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic} = koreSolverOptions
+    KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic, args} = koreSolverOptions
     smtConfig :: KoreSMT.Config
     smtConfig =
         KoreSMT.defaultConfig
@@ -542,6 +544,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
               KoreSMT.timeOut = timeOut
             , KoreSMT.retryLimit = retryLimit
             , KoreSMT.tactic = tactic
+            , KoreSMT.arguments = args <> KoreSMT.defaultConfig.arguments
             }
 
     -- SMT solver with user declared lemmas
