@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -7,6 +8,7 @@ License     : BSD-3-Clause
 -}
 module Booster.Syntax.Json.Internalise (
     internalisePattern,
+    internalisePatternOrTopOrBottom,
     internaliseTermOrPredicate,
     internaliseTerm,
     internalisePredicates,
@@ -24,6 +26,7 @@ module Booster.Syntax.Json.Internalise (
     handleBS,
     TermOrPredicates (..),
     InternalisedPredicates (..),
+    PatternOrTopOrBottom (..),
     retractPattern,
     pattern IsQQ,
     pattern IsNotQQ,
@@ -175,6 +178,49 @@ internalisePattern allowAlias checkSubsorts sortVars definition p = do
             throwE $
                 PatternSortError pat (IncompatibleSorts $ map externaliseSort sortList)
         pure resultTerm
+
+data PatternOrTopOrBottom a
+    = IsTop Syntax.Sort
+    | IsBottom Syntax.Sort
+    | IsPattern a
+    deriving (Functor)
+
+-- main interface functions
+internalisePatternOrTopOrBottom ::
+    Flag "alias" ->
+    Flag "subsorts" ->
+    Maybe [Syntax.Id] ->
+    KoreDefinition ->
+    [(Syntax.Id, Syntax.Sort)] ->
+    Syntax.KorePattern ->
+    Except
+        PatternError
+        ( PatternOrTopOrBottom
+            ([Internal.Variable], (Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern]))
+        )
+internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition existentials p = do
+    let exploded = explodeAnd p
+
+    case isTop exploded of
+        Just t -> pure t
+        Nothing -> case isBottom exploded of
+            Just b -> pure b
+            Nothing -> do
+                existentialVars <- forM existentials $ \(var, sort) -> do
+                    variableSort <- lookupInternalSort sortVars definition.sorts p sort
+                    let variableName = textToBS var.getId
+                    pure $ Internal.Variable{variableSort, variableName}
+                IsPattern . (existentialVars,) <$> internalisePattern allowAlias checkSubsorts sortVars definition p
+  where
+    isTop = \case
+        [Syntax.KJTop{sort}] -> Just $ IsTop sort
+        Syntax.KJTop{} : xs -> isTop xs
+        _ -> Nothing
+
+    isBottom = \case
+        [] -> Nothing
+        Syntax.KJBottom{sort} : _ -> Just $ IsBottom sort
+        _ : xs -> isBottom xs
 
 internaliseTermOrPredicate ::
     Flag "alias" ->
