@@ -897,7 +897,7 @@ applyEquation term rule =
                         let ensured =
                                 concatMap
                                     (splitBoolPredicates . substituteInPredicate subst)
-                                    (Set.toList rule.ensures)
+                                    rule.ensures
                         ensuredConditions <-
                             -- throws if an ensured condition found to be false
                             catMaybes

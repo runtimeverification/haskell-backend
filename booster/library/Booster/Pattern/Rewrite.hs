@@ -376,8 +376,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
                     let ruleEnsures =
-                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
-                                Set.toList rule.ensures
+                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.ensures
                         trivialIfBottom = RewriteRuleAppT $ pure Trivial
                     newConstraints <-
                         catMaybes <$> mapM (checkConstraint id trivialIfBottom prior) ruleEnsures

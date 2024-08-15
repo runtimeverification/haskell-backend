@@ -10,6 +10,7 @@ module Booster.Pattern.Util (
     substituteInPredicate,
     modifyVariables,
     modifyVariablesInT,
+    modifyVariablesInP,
     modifyVarName,
     modifyVarNameConcreteness,
     freeVariables,
@@ -107,7 +108,7 @@ modifyVariables :: (Variable -> Variable) -> Pattern -> Pattern
 modifyVariables f p =
     Pattern
         { term = modifyVariablesInT f p.term
-        , constraints = Set.map (coerce $ modifyVariablesInT f) p.constraints
+        , constraints = Set.map (modifyVariablesInP f) p.constraints
         , ceilConditions = map (coerce $ modifyVariablesInT f) p.ceilConditions
         }
 
@@ -115,6 +116,9 @@ modifyVariablesInT :: (Variable -> Variable) -> Term -> Term
 modifyVariablesInT f = cata $ \case
     VarF v -> Var (f v)
     other -> embed other
+
+modifyVariablesInP :: (Variable -> Variable) -> Predicate -> Predicate
+modifyVariablesInP = coerce modifyVariablesInT
 
 modifyVarName :: (VarName -> VarName) -> Variable -> Variable
 modifyVarName f v = v{variableName = f v.variableName}

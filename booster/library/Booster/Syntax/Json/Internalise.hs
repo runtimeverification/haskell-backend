@@ -104,8 +104,8 @@ data InternalisedPredicate
     deriving stock (Eq, Show)
 
 data InternalisedPredicates = InternalisedPredicates
-    { boolPredicates :: Set Internal.Predicate
-    , ceilPredicates :: Set Internal.Ceil
+    { boolPredicates :: [Internal.Predicate]
+    , ceilPredicates :: [Internal.Ceil]
     , substitution :: Map Internal.Variable Internal.Term
     , unsupported :: [Syntax.KorePattern]
     }
@@ -114,8 +114,8 @@ data InternalisedPredicates = InternalisedPredicates
 instance FromModifiersT mods => Pretty (PrettyWithModifiers mods InternalisedPredicates) where
     pretty (PrettyWithModifiers ps) =
         Pretty.vsep $
-            ("Bool predicates: " : map (pretty' @mods) (Set.toList ps.boolPredicates))
-                <> ("Ceil predicates: " : map (pretty' @mods) (Set.toList ps.ceilPredicates))
+            ("Bool predicates: " : map (pretty' @mods) ps.boolPredicates)
+                <> ("Ceil predicates: " : map (pretty' @mods) ps.ceilPredicates)
                 <> ( "Substitution: "
                         : map
                             (\(v, t) -> pretty' @mods v Pretty.<+> "->" Pretty.<+> pretty' @mods t)
@@ -142,7 +142,14 @@ internalisePattern ::
     Maybe [Syntax.Id] ->
     KoreDefinition ->
     Syntax.KorePattern ->
-    Except PatternError (Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern])
+    Except
+        PatternError
+        ( Internal.Term
+        , [Internal.Predicate]
+        , [Internal.Ceil]
+        , Map Internal.Variable Internal.Term
+        , [Syntax.KorePattern]
+        )
 internalisePattern allowAlias checkSubsorts sortVars definition p = do
     (terms, predicates) <- partitionM isTermM $ explodeAnd p
 
@@ -154,11 +161,9 @@ internalisePattern allowAlias checkSubsorts sortVars definition p = do
     internalPs <-
         internalisePredicates allowAlias checkSubsorts sortVars definition predicates
     pure
-        ( Internal.Pattern
-            { term
-            , constraints = internalPs.boolPredicates
-            , ceilConditions = Set.toList internalPs.ceilPredicates
-            }
+        ( term
+        , internalPs.boolPredicates
+        , internalPs.ceilPredicates
         , internalPs.substitution
         , internalPs.unsupported
         )
@@ -188,9 +193,13 @@ internaliseTermOrPredicate allowAlias checkSubsorts sortVars definition syntaxPa
         internalisePredicates allowAlias checkSubsorts sortVars definition [syntaxPatt]
     )
         <|> ( withExcept (: []) $ do
-                (pat, substitution, unsupported) <-
+                (term, constrs, ceilConditions, substitution, unsupported) <-
                     internalisePattern allowAlias checkSubsorts sortVars definition syntaxPatt
-                pure $ TermAndPredicates pat substitution unsupported
+                pure $
+                    TermAndPredicates
+                        Internal.Pattern{term, constraints = Set.fromList constrs, ceilConditions}
+                        substitution
+                        unsupported
             )
 
 lookupInternalSort ::
@@ -366,8 +375,8 @@ internalisePredicates allowAlias checkSubsorts sortVars definition ps = do
 
     pure
         InternalisedPredicates
-            { boolPredicates = Set.fromList $ [p | BoolPred p <- internalised] <> moreEquations
-            , ceilPredicates = Set.fromList $ [p | CeilPred p <- internalised]
+            { boolPredicates = [p | BoolPred p <- internalised] <> moreEquations
+            , ceilPredicates = [p | CeilPred p <- internalised]
             , substitution
             , unsupported = [p | UnsupportedPred p <- internalised]
             }
@@ -636,6 +645,8 @@ data PatternError
     | UnknownSymbol Syntax.Id Syntax.KorePattern
     | MacroOrAliasSymbolNotAllowed Syntax.Id Syntax.KorePattern
     | SubstitutionNotAllowed
+    | PredicateNotAllowed
+    | CeilNotAllowed
     | IncorrectSymbolArity Syntax.KorePattern Syntax.Id Int Int
     deriving stock (Eq, Show)
 
@@ -669,6 +680,8 @@ patternErrorToRpcError = \case
     MacroOrAliasSymbolNotAllowed sym p ->
         wrap ("Symbol '" <> Syntax.getId sym <> "' is a macro/alias") p
     SubstitutionNotAllowed -> RpcError.ErrorOnly "Substitution predicates are not allowed here"
+    PredicateNotAllowed -> RpcError.ErrorOnly "Predicates are not allowed here"
+    CeilNotAllowed -> RpcError.ErrorOnly "Ceil predicates are not allowed here"
     IncorrectSymbolArity p s expected got ->
         wrap
             ( "Inconsistent pattern. Symbol '"
@@ -694,6 +707,8 @@ logPatternError = \case
     UnknownSymbol sym p -> withKorePatternContext p $ logMessage $ "Unknown symbol '" <> Syntax.getId sym <> "'"
     MacroOrAliasSymbolNotAllowed sym p -> withKorePatternContext p $ logMessage $ "Symbol '" <> Syntax.getId sym <> "' is a macro/alias"
     SubstitutionNotAllowed -> logMessage ("Substitution predicates are not allowed here" :: Text)
+    PredicateNotAllowed -> logMessage ("Predicates are not allowed here" :: Text)
+    CeilNotAllowed -> logMessage ("Ceil predicates are not allowed here" :: Text)
     IncorrectSymbolArity p s expected got ->
         withKorePatternContext p $
             logMessage $

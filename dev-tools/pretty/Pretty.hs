@@ -40,9 +40,13 @@ main = do
         Left err -> putStrLn $ "Error: " ++ err
         Right KoreJson{term} -> do
             case runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing internalDef term of
-                Right (trm, _subst, _unsupported) -> do
+                Right (trm, preds, ceils, _subst, _unsupported) -> do
                     putStrLn "Pretty-printing pattern: "
                     putStrLn $ renderDefault $ pretty' @'[Decoded] trm
+                    putStrLn "Bool predicates: "
+                    mapM_ (putStrLn . renderDefault . pretty' @'[Decoded]) preds
+                    putStrLn "Ceil predicates: "
+                    mapM_ (putStrLn . renderDefault . pretty' @'[Decoded]) ceils
                 Left (NoTermFound _) ->
                     case runExcept $ internalisePredicates DisallowAlias CheckSubsorts Nothing internalDef [term] of
                         Left es -> error (show es)
