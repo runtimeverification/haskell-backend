@@ -1,96 +1,14 @@
 {
     "jsonrpc": "2.0",
     "id": "4420575472-001",
-    "result": {
-        "valid": true,
-        "implication": {
-            "format": "KORE",
-            "version": 1,
-            "term": {
-                "tag": "Implies",
-                "sort": {
-                    "tag": "SortApp",
-                    "name": "SortInt",
-                    "args": []
-                },
-                "first": {
-                    "tag": "EVar",
-                    "name": "x",
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortInt",
-                        "args": []
-                    }
-                },
-                "second": {
-                    "tag": "EVar",
-                    "name": "y",
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortInt",
-                        "args": []
-                    }
-                }
-            }
+    "error": {
+        "code": 4,
+        "data": {
+            "context": [
+                "y:SortInt{}"
+            ],
+            "error": "The RHS must not have free variables not present in the LHS"
         },
-        "condition": {
-            "substitution": {
-                "format": "KORE",
-                "version": 1,
-                "term": {
-                    "tag": "And",
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortInt",
-                        "args": []
-                    },
-                    "patterns": [
-                        {
-                            "tag": "Equals",
-                            "argSort": {
-                                "tag": "SortApp",
-                                "name": "SortInt",
-                                "args": []
-                            },
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortInt",
-                                "args": []
-                            },
-                            "first": {
-                                "tag": "EVar",
-                                "name": "y",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                }
-                            },
-                            "second": {
-                                "tag": "EVar",
-                                "name": "x",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                }
-                            }
-                        }
-                    ]
-                }
-            },
-            "predicate": {
-                "format": "KORE",
-                "version": 1,
-                "term": {
-                    "tag": "Top",
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortInt",
-                        "args": []
-                    }
-                }
-            }
-        }
+        "message": "Implication check error"
     }
 }
