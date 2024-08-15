@@ -839,86 +839,15 @@ applyEquation term rule =
                                                     Map.toList subst
                                         )
 
-                        -- instantiate the requires clause with the obtained substitution
-                        let required =
-                                concatMap
-                                    (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
-                                    rule.requires
-                        -- If the required condition is _syntactically_ present in
-                        -- the prior (known constraints), we don't check it.
-                        knownPredicates <- (.predicates) <$> lift getState
-                        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+                        -- check required constraints from lhs.
+                        -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
+                        -- see @handleSimplificationEquation@ and @handleFunctionEquation@
+                        checkRequires subst
 
-                        -- check the filtered requires clause conditions
-                        unclearConditions <-
-                            catMaybes
-                                <$> mapM
-                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
-                                    )
-                                    toCheck
-
-                        -- unclear conditions may have been simplified and
-                        -- could now be syntactically present in the path constraints, filter again
-                        stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
-
-                        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
-
-                        -- check any conditions that are still unclear with the SMT solver
-                        -- (or abort if no solver is being used), abort if still unclear after
-                        unless (null stillUnclear) $
-                            lift (SMT.checkPredicates solver knownPredicates mempty (Set.fromList stillUnclear)) >>= \case
-                                SMT.IsUnknown{} -> do
-                                    -- no solver or still unclear: abort
-                                    throwE
-                                        ( \ctx ->
-                                            ctx . logMessage $
-                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                    renderOneLineText
-                                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
-                                                        )
-                                        , IndeterminateCondition stillUnclear
-                                        )
-                                SMT.IsInvalid -> do
-                                    -- actually false given path condition: fail
-                                    let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
-                                    throwE
-                                        ( \ctx ->
-                                            ctx . logMessage $
-                                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
-                                                    renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
-                                        , ConditionFalse failedP
-                                        )
-                                SMT.IsValid{} -> do
-                                    -- can proceed
-                                    pure ()
-
-                        -- check ensured conditions, filter any
-                        -- true ones, prune if any is false
-                        let ensured =
-                                concatMap
-                                    (splitBoolPredicates . substituteInPredicate subst)
-                                    (Set.toList rule.ensures)
-                        ensuredConditions <-
-                            -- throws if an ensured condition found to be false
-                            catMaybes
-                                <$> mapM
-                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
-                                    )
-                                    ensured
-                        -- check all ensured conditions together with the path condition
-                        lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
-                            SMT.IsInvalid -> do
-                                let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
-                                throwE
-                                    ( \ctx ->
-                                        ctx . logMessage $
-                                            WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
-                                                renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
-                                    , EnsuresFalse falseEnsures
-                                    )
-                            _ ->
-                                pure ()
+                        -- check ensured conditions, filter any true ones, prune if any is false
+                        ensuredConditions <- checkEnsures subst
                         lift $ pushConstraints $ Set.fromList ensuredConditions
+
                         -- when a new path condition is added, invalidate the equation cache
                         unless (null ensuredConditions) $ do
                             withContextFor Equations . logMessage $
@@ -1012,6 +941,104 @@ applyEquation term rule =
             )
             check
             $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
+
+    checkRequires ::
+        Substitution ->
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
+    checkRequires matchingSubst = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        -- instantiate the requires clause with the obtained substitution
+        let required =
+                concatMap
+                    (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce)
+                    rule.requires
+        -- If the required condition is _syntactically_ present in
+        -- the prior (known constraints), we don't check it.
+        knownPredicates <- (.predicates) <$> lift getState
+        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+
+        -- check the filtered requires clause conditions
+        unclearConditions <-
+            catMaybes
+                <$> mapM
+                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                    )
+                    toCheck
+
+        -- unclear conditions may have been simplified and
+        -- could now be syntactically present in the path constraints, filter again
+        stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
+
+        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+
+        -- check any conditions that are still unclear with the SMT solver
+        -- (or abort if no solver is being used), abort if still unclear after
+        unless (null stillUnclear) $
+            lift (SMT.checkPredicates solver knownPredicates mempty (Set.fromList stillUnclear)) >>= \case
+                SMT.IsUnknown{} -> do
+                    -- no solver or still unclear: abort
+                    throwE
+                        ( \ctx ->
+                            ctx . logMessage $
+                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                    renderOneLineText
+                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                        )
+                        , IndeterminateCondition stillUnclear
+                        )
+                SMT.IsInvalid -> do
+                    -- actually false given path condition: fail
+                    let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
+                    throwE
+                        ( \ctx ->
+                            ctx . logMessage $
+                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                    renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                        , ConditionFalse failedP
+                        )
+                SMT.IsValid{} -> do
+                    -- can proceed
+                    pure ()
+
+    checkEnsures ::
+        Substitution ->
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            [Predicate]
+    checkEnsures matchingSubst = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        let ensured =
+                concatMap
+                    (splitBoolPredicates . substituteInPredicate matchingSubst)
+                    (Set.toList rule.ensures)
+        ensuredConditions <-
+            -- throws if an ensured condition found to be false
+            catMaybes
+                <$> mapM
+                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                    )
+                    ensured
+
+        -- check all ensured conditions together with the path condition
+        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+        knownPredicates <- (.predicates) <$> lift getState
+        lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+            SMT.IsInvalid -> do
+                let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
+                throwE
+                    ( \ctx ->
+                        ctx . logMessage $
+                            WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
+                                renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
+                    , EnsuresFalse falseEnsures
+                    )
+            _ ->
+                pure ()
+        pure ensuredConditions
 
 --------------------------------------------------------------------
 
