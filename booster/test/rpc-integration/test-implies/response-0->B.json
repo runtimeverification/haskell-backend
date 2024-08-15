@@ -1,0 +1,62 @@
+{
+    "jsonrpc": "2.0",
+    "id": "4420703856-001",
+    "result": {
+        "valid": false,
+        "implication": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "Implies",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortInt",
+                    "args": []
+                },
+                "first": {
+                    "tag": "DV",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    },
+                    "value": "0"
+                },
+                "second": {
+                    "tag": "Bottom",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                }
+            }
+        },
+        "condition": {
+            "substitution": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "Top",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                }
+            },
+            "predicate": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "Bottom",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                }
+            }
+        }
+    }
+}

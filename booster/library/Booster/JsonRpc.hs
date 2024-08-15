@@ -25,7 +25,6 @@ import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (second)
 import Data.Foldable
 import Data.List (singleton)
-import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe)
@@ -37,7 +36,6 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
-import Prettyprinter (comma, hsep, punctuate, (<+>))
 
 import Booster.CLOptions (RewriteOptions (..))
 import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
@@ -48,8 +46,7 @@ import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
 import Booster.Pattern.Base qualified as Pattern
-import Booster.Pattern.Bool (pattern TrueBool)
-import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (..), matchTerms)
+import Booster.Pattern.Implies (runImplies)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
     RewriteConfig (..),
@@ -65,7 +62,7 @@ import Booster.Pattern.Util (
     substituteInPredicate,
     substituteInTerm,
  )
-import Booster.Prettyprinter (renderDefault, renderText)
+import Booster.Prettyprinter (renderText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
@@ -85,7 +82,6 @@ import Booster.Syntax.ParsedKore.Base qualified as ParsedModule (ParsedModule (.
 import Booster.Syntax.ParsedKore.Internalise (
     addToDefinitions,
     definitionErrorToRpcError,
-    extractExistentials,
  )
 import Booster.Util (Flag (..), constructorName)
 import Kore.JsonRpc.Error qualified as RpcError
@@ -417,88 +413,7 @@ respond stateVar request =
                                             { satisfiable = RpcTypes.Unknown
                                             , substitution = Nothing
                                             }
-            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxImplies $ do
-                -- internalise given constrained term
-                let internalised =
-                        runExcept . internalisePattern DisallowAlias CheckSubsorts Nothing def . fst . extractExistentials
-
-                case (internalised req.antecedent.term, internalised req.consequent.term) of
-                    (Left patternError, _) -> do
-                        void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
-                        pure $
-                            Left $
-                                RpcError.backendError $
-                                    RpcError.CouldNotVerifyPattern
-                                        [ patternErrorToRpcError patternError
-                                        ]
-                    (_, Left patternError) -> do
-                        void $ Booster.Log.withContext CtxInternalise $ logPatternError patternError
-                        pure $
-                            Left $
-                                RpcError.backendError $
-                                    RpcError.CouldNotVerifyPattern
-                                        [ patternErrorToRpcError patternError
-                                        ]
-                    ( Right (termL, predsL, ceilL, substitutionL, unsupportedL)
-                        , Right (termR, predsR, ceilR, substitutionR, unsupportedR)
-                        ) -> do
-                        unless (null unsupportedL && null unsupportedR) $ do
-                            logMessage'
-                                ("aborting due to unsupported predicate parts" :: Text)
-                            unless (null unsupportedL) $
-                                withContext CtxDetail $
-                                    logMessage
-                                        (Text.unwords $ map prettyPattern unsupportedL)
-                            unless (null unsupportedR) $
-                                withContext CtxDetail $
-                                    logMessage
-                                        (Text.unwords $ map prettyPattern unsupportedR)
-                        let
-                            -- apply the given substitution before doing anything else
-                            substPatL =
-                                Pattern
-                                    { term = substituteInTerm substitutionL termL
-                                    , constraints = Set.fromList $ map (substituteInPredicate substitutionL) predsL
-                                    , ceilConditions = ceilL
-                                    }
-                            substPatR =
-                                Pattern
-                                    { term = substituteInTerm substitutionR termR
-                                    , constraints = Set.fromList $ map (substituteInPredicate substitutionL) predsR
-                                    , ceilConditions = ceilR
-                                    }
-
-                        case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
-                            MatchFailed (SubsortingError sortError) ->
-                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                    show sortError
-                            MatchFailed{} ->
-                                doesNotImply (sortOfPattern substPatL) req.antecedent.term req.consequent.term
-                            MatchIndeterminate remainder ->
-                                pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                    "match remainder: "
-                                        <> renderDefault
-                                            ( hsep $
-                                                punctuate comma $
-                                                    map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
-                                                        NonEmpty.toList remainder
-                                            )
-                            MatchSuccess subst -> do
-                                let filteredConsequentPreds =
-                                        Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
-                                solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
-
-                                if null filteredConsequentPreds
-                                    then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                    else
-                                        ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
-                                            (Right newPreds, _) ->
-                                                if all (== Pattern.Predicate TrueBool) newPreds
-                                                    then implies (sortOfPattern substPatL) req.antecedent.term req.consequent.term subst
-                                                    else pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
-                                            (Left other, _) ->
-                                                pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
-
+            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> runImplies def mLlvmLibrary mSMTOptions req.antecedent req.consequent
             -- this case is only reachable if the cancel appeared as part of a batch request
             RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
   where
@@ -514,39 +429,6 @@ respond stateVar request =
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions)
-
-    doesNotImply s l r =
-        pure $
-            Right $
-                RpcTypes.Implies
-                    RpcTypes.ImpliesResult
-                        { implication = addHeader $ Syntax.KJImplies (externaliseSort s) l r
-                        , valid = False
-                        , condition = Nothing
-                        , logs = Nothing
-                        }
-
-    implies s' l r subst =
-        let s = externaliseSort s'
-         in pure $
-                Right $
-                    RpcTypes.Implies
-                        RpcTypes.ImpliesResult
-                            { implication = addHeader $ Syntax.KJImplies s l r
-                            , valid = True
-                            , condition =
-                                Just
-                                    RpcTypes.Condition
-                                        { predicate = addHeader $ Syntax.KJTop s
-                                        , substitution =
-                                            addHeader
-                                                $ (\xs -> if null xs then Syntax.KJTop s else Syntax.KJAnd s xs)
-                                                    . map (uncurry $ externaliseSubstitution s)
-                                                    . Map.toList
-                                                $ subst
-                                        }
-                            , logs = Nothing
-                            }
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case

@@ -25,7 +25,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Bifunctor (first, second)
 import Data.ByteString.Char8 as BS (ByteString, pack)
-import Data.Coerce (Coercible, coerce)
+import Data.Coerce (coerce)
 import Data.Function (on)
 import Data.Generics (extQ)
 import Data.List (foldl', groupBy, nub, partition, sortOn)
@@ -54,7 +54,6 @@ import Booster.Pattern.Base (Predicate (Predicate), Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
 import Booster.Pattern.Bool (foldAndBool)
-import Booster.Pattern.Bool qualified as Def
 import Booster.Pattern.Index as Idx
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util qualified as Util
@@ -834,13 +833,14 @@ mbX `orFailWith` err = maybe (throwE err) pure mbX
 internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported ::
     KoreDefinition ->
     SourceRef ->
+    Maybe [Id] ->
     (Variable -> Variable) ->
     Syntax.KorePattern ->
     Except DefinitionError (Def.Term, [Predicate])
-internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref f t = do
+internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref maybeVars f t = do
     (term, preds, ceilConditions, substitution, unsupported) <-
         withExcept (DefinitionPatternError ref) $
-            internalisePattern AllowAlias IgnoreSubsorts Nothing partialDefinition t
+            internalisePattern AllowAlias IgnoreSubsorts maybeVars partialDefinition t
     unless (null substitution) $
         throwE $
             DefinitionPatternError ref SubstitutionNotAllowed
@@ -869,6 +869,7 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
         internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
             partialDefinition
             ref
+            Nothing
             (Util.modifyVarName Util.markAsRuleVar)
             left
     existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
@@ -876,7 +877,7 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
     (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref renameVariable right
+        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref Nothing renameVariable right
     let notPreservesDefinednessReasons =
             -- users can override the definedness computation by an explicit attribute
             if coerce axAttributes.preserving
@@ -935,7 +936,7 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
     (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref renameVariable right
+        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref Nothing renameVariable right
 
     let notPreservesDefinednessReasons =
             -- users can override the definedness computation by an explicit attribute
@@ -1004,12 +1005,14 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
             internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
                 partialDef
                 (sourceRef attrs)
+                (Just sortVars)
                 (Util.modifyVarName ("Eq#" <>)) $
                 Syntax.KJAnd left.sort [left, precond]
         (rhs, ensures) <-
             internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
                 partialDef
                 (sourceRef attrs)
+                (Just sortVars)
                 (Util.modifyVarName ("Eq#" <>))
                 right
         let
@@ -1058,6 +1061,7 @@ internaliseCeil partialDef left right sortVars attrs = do
         internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
             partialDef
             (sourceRef attrs)
+            (Just sortVars)
             (Util.modifyVarName ("Eq#" <>))
             left
     rhs_preds <- internalisePredicate' right
@@ -1151,6 +1155,7 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
         internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
             partialDef
             (sourceRef attrs)
+            (Just sortVars)
             (Util.modifyVarName ("Eq#" <>))
             right
     let argsUndefined =
