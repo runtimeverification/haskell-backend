@@ -17,6 +17,7 @@ else
     PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
 fi
 
+
 NAME=$(basename ${0%.kompile})
 NAMETGZ=$(basename ${0%.kompile})
 
@@ -38,7 +39,7 @@ esac
 llvm-kompile ${NAME}.llvm.kore ./dt c -- \
              -fPIC -std=c++17 -o interpreter \
              $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
-             -lcrypto -lssl $LPROCPS
+             -lcrypto -lssl $LPROCPS -lsecp256k1
 mv interpreter.* ${NAME}.dylib
 
 # remove temporary artefacts

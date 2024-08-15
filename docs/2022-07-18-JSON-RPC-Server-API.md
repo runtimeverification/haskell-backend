@@ -347,6 +347,8 @@ Other errors are specific to the implication checker and what it supports. These
 }
 ```
 
+
+
 * The `antecedent` term must not have free variables that are used as existentials in the `consequent`.
 * The `consequent` term must not have free variables that are not also free in the `antecedent`.
 * The `antecedent` term must be function-like.
@@ -356,7 +358,7 @@ Other errors are specific to the implication checker and what it supports. These
 
 The endpoint simplifies `antecedent` and `consequent` terms and checks whether the implication holds. The simplified implication is returned (as a KORE term) in field `implication`.
 
-If the implication holds, `satisfiable` is `true` and `condition` contains a witness, in the form of a predicate and a substitution which unifies the simplified antecedent and the consequent with existential quantifiers removed. The `condition.substitution` will contain a witnessing value for each existentially quantified variable of the RHS.
+If the implication holds, `valid` is `true` and `condition` contains a witness, in the form of a predicate and a substitution which unifies the simplified antecedent and the consequent with existential quantifiers removed. The `condition.substitution` will contain a witnessing value for each existentially quantified variable of the RHS.
 
 ```json
 {
@@ -364,7 +366,7 @@ If the implication holds, `satisfiable` is `true` and `condition` contains a wit
   "id": 1,
   "result": {
     "implication":  {"format": "KORE", "version": 1, "term": {}},
-    "satisfiable": true,
+    "valid": true,
     "condition": {
       "substitution": {"format": "KORE", "version": 1, "term": {}},
       "predicate": {"format": "KORE", "version": 1, "term": {}}
@@ -374,7 +376,7 @@ If the implication holds, `satisfiable` is `true` and `condition` contains a wit
 }
 ```
 
-If the implication cannot be shown to hold, `satisfiable` is false.
+If the implication cannot be shown to hold, `valid` is false.
 
 ```json
 {
@@ -382,7 +384,7 @@ If the implication cannot be shown to hold, `satisfiable` is false.
   "id": 1,
   "result": {
     "implication":  {"format": "KORE", "version": 1, "term": {}},
-    "satisfiable": false,
+    "valid": false,
     "logs": []
   }
 }
@@ -391,12 +393,18 @@ If the implication cannot be shown to hold, `satisfiable` is false.
 In some cases, a unifier `condition` for the implication can still be provided, although the implication cannot be shown to be true.
 
 The endpoint implements the following specification:
-- `antecedent` is `\\bottom` (implication holds trivially) => `satisfiable = True` and `condition = \\bottom`
-- `consequent` is `\\bottom` and `antecedent` is not `\\bottom` => `satisfiable = False` and `condition = \\bottom`
-- implication holds (not trivial) => `satisfiable = True` and `condition /= \\bottom`
+
+|                                     | Consequent is ⊥             | Consequent is ⊤             | Consequent is a regular pattern                                                   |
+|-------------------------------------|-----------------------------|-----------------------------|------------------------------------------------------------------------------------|
+| **Antecedent is ⊥**                 | valid = true condition = ⊥  | valid = true condition = ⊥ | valid = true condition = ⊥                                                         |
+| **Antecedent is ⊤**                 | error: The check implication step expects the antecedent term to be function-like. | error: The check implication step expects the antecedent term to be function-like. | error: The check implication step expects the antecedent term to be function-like. |
+| **Antecedent is a regular pattern** | valid = false condition = ⊥ | valid = true condition = ⊤ | see below                                                                          |
+
+In case both antecedent and consequent are regular configurations without undefined partial function applications or contradictory path conditions, the implies endpoint should implement the following behaviour:
+
 - implication doesn't hold and the two terms do not unify,
-indicating that the program configuration can be rewritten further => `satisfiable = False` and `condition` is omitted
-- implication doesn't hold and the two terms unify, indicating that the configuration is stuck => `satisfiable = False` and `condition /= \\bottom`
+indicating that the program configuration can be rewritten further => `valid = False` and `condition` is omitted
+- implication doesn't hold and the two terms unify, indicating that the configuration is stuck => `valid = False` and `condition /= \\bottom`
 
 ## Simplify
 
@@ -512,7 +520,7 @@ The module ID `m<sha256_of_given_module>` can now be used in subsequent requests
 
 ## Get-model
 
-A `get-model` request aims to find a variable substitution that satisfies all predicates in the provided `state`, or else responds that it is not satisfiable. The request may also fail to obtain an answer.
+A `get-model` request aims to find a variable substitution that satisfies all predicates in the provided `state`, or else responds that it is not valid. The request may also fail to obtain an answer.
 
 **Note that only the _predicates_ in the provided `state` are checked.**
 A predicate in matching logic is a construct that can only evaluate to `\top` or `\bottom`. Most ML connectives (with the exception of `\and` and `\or`) constitute predicates.  
@@ -545,19 +553,19 @@ same as for `execute`
   "jsonrpc":"2.0",
   "id":1,
   "result":{
-    "satisfiable": "Sat",
+    "valid": "Sat",
     "substitution": {"format": "KORE", "version": 1, "term": {}}
 }
 ```
 
-Optional fields: `substitution` (filled when `satisfiable = is-satisfiable`)
+Optional fields: `substitution` (filled when `valid = is-valid`)
 
-The `satisfiable` field can have the following values:
-* `"satisfiable": "Sat"`:  
+The `valid` field can have the following values:
+* `"valid": "Sat"`:  
   The predicates can be satisfied. The  field `substitution` must be present, and provides a substitution that fulfils all predicates in the supplied `state`. Exception: if the predicates are trivially satisfied without any variable assignments, the trivial (empty) `substitution` is omitted.
-* `"satisfiable": "Unsat"`:  
-  The predicates are known to not be satisfiable. The `substitution` field is omitted.
-* `"satisfiable": "Unknown"`:  
+* `"valid": "Unsat"`:  
+  The predicates are known to not be valid. The `substitution` field is omitted.
+* `"valid": "Unknown"`:  
   The backend was unable to decide whether or not there is a satisfying substitution, or the provided tern did not contain any predicates. The `substitution` field is omitted.
 
 ## Cancel
