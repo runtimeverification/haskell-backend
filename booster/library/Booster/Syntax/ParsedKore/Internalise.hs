@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 
 {- |
@@ -53,7 +54,7 @@ import Booster.Definition.Base as Def
 import Booster.Pattern.Base (Predicate (Predicate), Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
-import Booster.Pattern.Bool (foldAndBool)
+import Booster.Pattern.Bool (foldAndBool, pattern TrueBool)
 import Booster.Pattern.Index as Idx
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util qualified as Util
@@ -1048,6 +1049,10 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
         -- unexpected top-level term, which we want to ignore
         error $ "internaliseSimpleEquation should only be called with app nodes as LHS" <> show left
 
+removeTrueBools :: [Def.Term] -> [Def.Term]
+removeTrueBools = filter (/= TrueBool)
+
+
 internaliseCeil ::
     KoreDefinition -> -- context
     Syntax.KorePattern -> -- LHS of ceil
@@ -1078,7 +1083,7 @@ internaliseCeil partialDef left right sortVars attrs = do
         CeilAxiom
             RewriteRule
                 { lhs = uninternaliseCollections lhs
-                , rhs = foldAndBool rhs_preds
+                , rhs = foldAndBool $ removeTrueBools rhs_preds
                 , requires = mempty
                 , ensures = mempty
                 , attributes
@@ -1106,8 +1111,7 @@ internaliseCeil partialDef left right sortVars attrs = do
                 DefinitionPatternError (sourceRef attrs) $
                     NotSupported (head unsupported)
         pure $
-            map (Util.modifyVariablesInT (Util.modifyVarName ("Eq#" <>)) . coerce) $
-                constraints
+            map (Util.modifyVariablesInT (Util.modifyVarName ("Eq#" <>)) . coerce) constraints
 
 {- | Internalises a function rule from its components that were matched
   before.

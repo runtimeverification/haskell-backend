@@ -461,8 +461,7 @@ applyRule pat@Pattern{ceilConditions} rule =
     checkEnsures matchingSubst = do
         -- apply substitution to rule requires
         let ruleEnsures =
-                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) $
-                    rule.ensures
+                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
         newConstraints <-
             catMaybes <$> mapM (checkConstraint id trivialIfBottom pat.constraints) ruleEnsures
 
