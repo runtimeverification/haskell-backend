@@ -33,7 +33,7 @@ Sorts: 28
   - SortTCell
   - SortTCellFragment
   - SortTCellOpt
-Symbols: 183
+Symbols: 184
   - Lbl<T>
   - Lbl<T>-fragment
   - Lbl<generatedCounter>
@@ -52,7 +52,6 @@ Symbols: 183
   - Lbl#freezer_/__IMP-SYNTAX_AExp_AExp_AExp0_
   - Lbl#freezer_/__IMP-SYNTAX_AExp_AExp_AExp1_
   - Lbl#freezerif(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block0_
-  - Lbl#if_#then_#else_#fi_K-EQUAL-SYNTAX_Sort_Bool_Sort_Sort
   - Lbl{}_IMP-SYNTAX_Block
   - Lbl{_}_IMP-SYNTAX_Block_Stmt
   - Lbl?Int_IMP-SYNTAX_AExp
@@ -72,7 +71,7 @@ Symbols: 183
   - Lbl_dividesInt__INT-COMMON_Bool_Int_Int
   - Lbl_impliesBool_
   - Lbl_in_keys(_)_MAP_Bool_KItem_Map
-  - Lbl_in__LIST_Bool_KItem_List
+  - Lbl_inList_
   - Lbl_modInt_
   - Lbl_orBool_
   - Lbl_orElseBool_
@@ -97,9 +96,7 @@ Symbols: 183
   - Lbl_=/=Int_
   - Lbl_=/=K_
   - Lbl_=_;_IMP-SYNTAX_Stmt_Id_AExp
-  - Lbl_[_<-_]_LIST_List_List_Int_KItem
   - Lbl_[_<-undef]
-  - Lbl_[_]orDefault__MAP_KItem_Map_KItem_KItem
   - Lbl_%Int_
   - Lbl_|->_
   - Lbl_|Int_
@@ -115,16 +112,18 @@ Symbols: 183
   - Lbl-__IMP-SYNTAX_AExp_Int
   - LblList:get
   - LblList:range
+  - LblList:set
   - LblListItem
+  - LblMap:choice
   - LblMap:lookup
+  - LblMap:lookupOrDefault
   - LblMap:update
+  - LblSet:choice
   - LblSet:difference
   - LblSet:in
   - LblSetItem
   - LblabsInt(_)_INT-COMMON_Int_Int
   - LblbitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int
-  - Lblchoice(_)_MAP_KItem_Map
-  - Lblchoice(_)_SET_KItem_Set
   - LblfillList(_,_,_,_)_LIST_List_List_Int_Int_KItem
   - LblfreshInt(_)_INT_Int_Int
   - LblgetGeneratedCounterCell
@@ -164,6 +163,7 @@ Symbols: 183
   - LblisTCell
   - LblisTCellFragment
   - LblisTCellOpt
+  - Lblite
   - Lblkeys(_)_MAP_Set_Map
   - Lblkeys_list(_)_MAP_List_Map
   - Lbllog2Int(_)_INT-COMMON_Int_Int
@@ -202,12 +202,13 @@ Symbols: 183
   - Lblproject:TCell
   - Lblproject:TCellFragment
   - Lblproject:TCellOpt
+  - LblpushList
   - LblrandInt(_)_INT-COMMON_Int_Int
   - LblremoveAll(_,_)_MAP_Map_Map_Set
   - LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int
-  - Lblsize(_)_LIST_Int_List
-  - Lblsize(_)_MAP_Int_Map
   - Lblsize(_)_SET_Int_Set
+  - LblsizeList
+  - LblsizeMap
   - LblsrandInt(_)_INT-COMMON_K_Int
   - LblupdateList(_,_,_)_LIST_List_List_Int_List
   - LblupdateMap(_,_)_MAP_Map_Map_Map
@@ -217,7 +218,7 @@ Symbols: 183
   - dotk
   - inj
   - kseq
-Partial function symbols: 60
+Partial function symbols: 58
 Axioms: 38
 Axioms preserving definedness: 35
 Axioms containing AC symbols: 0
@@ -246,7 +247,7 @@ Subsorts:
   - SortKCell
   - SortKCellOpt
 - SortKConfigVar: SortKConfigVar
-- SortKItem: 26
+- SortKItem: 27
   - SortAExp
   - SortBExp
   - SortBlock
@@ -260,6 +261,7 @@ Subsorts:
   - SortInt
   - SortKCell
   - SortKCellOpt
+  - SortKConfigVar
   - SortKItem
   - SortKResult
   - SortList
@@ -296,93 +298,79 @@ Subsorts:
   - SortTCellOpt
 Rewrite rules by term index:
 - Anything: 11
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (35, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (37, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (32, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (32, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (30, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (30, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (34, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (34, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (41, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (42, 20)
+  - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp1-cool
+  - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp2-cool
+  - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp1-cool
+  - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp2-cool
+  - IMP-SYNTAX._<=__IMP-SYNTAX_BExp_AExp_AExp1-cool
+  - IMP-SYNTAX._<=__IMP-SYNTAX_BExp_AExp_AExp2-cool
+  - IMP-SYNTAX._=_;_IMP-SYNTAX_Stmt_Id_AExp2-cool
+  - IMP-SYNTAX.!__IMP-SYNTAX_BExp_BExp1-cool
+  - IMP-SYNTAX._&&__IMP-SYNTAX_BExp_BExp_BExp1-cool
+  - IMP-SYNTAX.if(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block1-cool
   - variable_lookup
 - Lbl!__IMP-SYNTAX_BExp_BExp: 2
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (35, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (134, 8)
-- Lbl-__IMP-SYNTAX_AExp_Int: /home/jost/work/RV/code/playground/imp/imp.k :  (125, 8)
-- Lbl?Int_IMP-SYNTAX_AExp: /home/jost/work/RV/code/playground/imp/imp.k :  (121, 8)
+  - IMP-SYNTAX.!__IMP-SYNTAX_BExp_BExp1-heat
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (134, 8)
+- Lbl-__IMP-SYNTAX_AExp_Int: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (125, 8)
+- Lbl?Int_IMP-SYNTAX_AExp: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (121, 8)
 - Lbl_&&__IMP-SYNTAX_BExp_BExp_BExp: 3
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (37, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (136, 8)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (135, 8)
+  - IMP-SYNTAX._&&__IMP-SYNTAX_BExp_BExp_BExp1-heat
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (136, 8)
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (135, 8)
 - Lbl_+__IMP-SYNTAX_AExp_AExp_AExp: 3
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (32, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (32, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (124, 8)
+  - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp1-heat
+  - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp2-heat
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (124, 8)
 - Lbl_/__IMP-SYNTAX_AExp_AExp_AExp: 3
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (30, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (30, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (123, 8)
+  - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp1-heat
+  - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp2-heat
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (123, 8)
 - Lbl_<=__IMP-SYNTAX_BExp_AExp_AExp: 3
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (34, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (34, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (133, 8)
+  - IMP-SYNTAX._<=__IMP-SYNTAX_BExp_AExp_AExp1-heat
+  - IMP-SYNTAX._<=__IMP-SYNTAX_BExp_AExp_AExp2-heat
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (133, 8)
 - Lbl_=_;_IMP-SYNTAX_Stmt_Id_AExp: 2
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (41, 20)
+  - IMP-SYNTAX._=_;_IMP-SYNTAX_Stmt_Id_AExp2-heat
   - variable_setting
-- Lbl___IMP-SYNTAX_Stmt_Stmt_Stmt: /home/jost/work/RV/code/playground/imp/imp.k :  (175, 8)
+- Lbl___IMP-SYNTAX_Stmt_Stmt_Stmt: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (175, 8)
 - Lblif(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block: 3
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (42, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (185, 8)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (184, 8)
+  - IMP-SYNTAX.if(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block1-heat
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (185, 8)
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (184, 8)
 - Lblint_;__IMP-SYNTAX_Pgm_Ids_Stmt: 2
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (208, 8)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (206, 8)
-- Lblwhile(_)__IMP-SYNTAX_Stmt_BExp_Block: /home/jost/work/RV/code/playground/imp/imp.k :  (191, 8)
-- Lbl{_}_IMP-SYNTAX_Block_Stmt: /home/jost/work/RV/code/playground/imp/imp.k :  (155, 8)
-- Lbl{}_IMP-SYNTAX_Block: /home/jost/work/RV/code/playground/imp/imp.k :  (154, 8)
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (208, 8)
+  - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (206, 8)
+- Lblwhile(_)__IMP-SYNTAX_Stmt_BExp_Block: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (191, 8)
+- Lbl{_}_IMP-SYNTAX_Block_Stmt: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (155, 8)
+- Lbl{}_IMP-SYNTAX_Block: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (154, 8)
 Function equations by term index:
-- Lbl#if_#then_#else_#fi_K-EQUAL-SYNTAX_Sort_Bool_Sort_Sort: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (2222, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (2223, 8)
-- Lbl_=/=Bool_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (960, 8)
-- Lbl_=/=Int_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1250, 8)
-- Lbl_=/=K_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (2220, 8)
-- Lbl_andBool_: 4
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (933, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (932, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (934, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (931, 8)
-- Lbl_andThenBool_: 4
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (938, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (937, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (939, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (936, 8)
-- Lbl_divInt_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1239, 8)
-- Lbl_dividesInt__INT-COMMON_Bool_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1251, 8)
-- Lbl_impliesBool_: 4
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (958, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (957, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (956, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (955, 8)
-- Lbl_orBool_: 4
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (948, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (946, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (947, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (945, 8)
-- Lbl_orElseBool_: 4
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (953, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (951, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (952, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (950, 8)
-- Lbl_xorBool_: 3
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (943, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (942, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (941, 8)
-- Lbl_|Set__SET_Set_Set_Set: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (559, 8)
-- LblbitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1235, 8)
-- LblfreshInt(_)_INT_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1254, 8)
+- Lbl_=/=Bool_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1159, 8)
+- Lbl_=/=Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1438, 8)
+- Lbl_=/=K_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2318, 8)
+- Lbl_andBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1132, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1130, 8)
+- Lbl_andThenBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1137, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1135, 8)
+- Lbl_divInt_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1427, 8)
+- Lbl_dividesInt__INT-COMMON_Bool_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1439, 8)
+- Lbl_impliesBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1155, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1154, 8)
+- Lbl_orBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1146, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1144, 8)
+- Lbl_orElseBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1151, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1149, 8)
+- Lbl_xorBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1142, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1140, 8)
+- Lbl_|Set__SET_Set_Set_Set: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (749, 8)
+- LblbitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1423, 8)
+- LblfreshInt(_)_INT_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1442, 8)
 - LblgetGeneratedCounterCell: UNKNOWN
 - LblinitGeneratedCounterCell: UNKNOWN
 - LblinitGeneratedTopCell: UNKNOWN
@@ -471,12 +459,15 @@ Function equations by term index:
 - LblisTCellOpt: 2
   - UNKNOWN
   - UNKNOWN
+- Lblite: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2320, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2321, 8)
 - LblminInt(_,_)_INT-COMMON_Int_Int_Int: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1247, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1248, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1435, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1436, 8)
 - LblnotBool_: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (929, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (928, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1128, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1127, 8)
 - Lblproject:AExp: UNKNOWN
 - Lblproject:BExp: UNKNOWN
 - Lblproject:Block: UNKNOWN
@@ -504,40 +495,57 @@ Function equations by term index:
 - Lblproject:TCell: UNKNOWN
 - Lblproject:TCellFragment: UNKNOWN
 - Lblproject:TCellOpt: UNKNOWN
-- LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1237, 8)
+- LblpushList: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (954, 8)
+- LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1425, 8)
 - append: 2
   - UNKNOWN
   - UNKNOWN
 Simplifications by term index:
-- Lbl_%Int_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1163, 8)
-- Lbl_&Int_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1198, 8)
+- Lbl_%Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1362, 8)
+- Lbl_&Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1413, 8)
 - Lbl_+Int_: 7
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1159, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1189, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1191, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1192, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1188, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1193, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1185, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1358, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1404, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1406, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1407, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1403, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1408, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1400, 8)
 - Lbl_-Int_: 6
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1160, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1190, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1194, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1195, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1196, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1186, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1359, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1405, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1409, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1410, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1411, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1401, 8)
 - Lbl_<<Int_: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1166, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1167, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1365, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1366, 8)
 - Lbl_==K_: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1215, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (2194, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2301, 8)
+  - INT-KORE.eq-k-to-eq-int
 - Lbl_>>Int_: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1168, 8)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1169, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1367, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1368, 8)
+- Lbl_andBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1131, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1133, 8)
+- Lbl_andThenBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1136, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1138, 8)
+- Lbl_impliesBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1157, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1156, 8)
 - Lbl_modInt_: 2
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1242, 5)
-  - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1162, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1430, 5)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1361, 8)
+- Lbl_orBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1147, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1145, 8)
+- Lbl_orElseBool_: 2
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1152, 8)
+  - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1150, 8)
+- Lbl_xorBool_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1141, 8)
 Ceils:
 - Lbl_%Int_: #Ceil( _%Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
 - Lbl_/Int_: #Ceil( _/Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
