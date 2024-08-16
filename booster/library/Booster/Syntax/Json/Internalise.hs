@@ -218,7 +218,7 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                 (term, preds, ceilConditions, subst, unknown) <-
                     internalisePattern allowAlias checkSubsorts sortVars definition p
                 pure $
-                    IsPattern $
+                    IsPattern
                         ( existentialVars
                         , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions}
                         , subst
