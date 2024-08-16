@@ -215,8 +215,15 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                     variableSort <- lookupInternalSort sortVars definition.sorts p sort
                     let variableName = textToBS var.getId
                     pure $ Internal.Variable{variableSort, variableName}
-                (term, preds, ceilConditions, subst, unknown) <- internalisePattern allowAlias checkSubsorts sortVars definition p
-                pure $ IsPattern (existentialVars, Internal.Pattern{term,constraints = Set.fromList preds, ceilConditions}, subst, unknown)
+                (term, preds, ceilConditions, subst, unknown) <-
+                    internalisePattern allowAlias checkSubsorts sortVars definition p
+                pure $
+                    IsPattern $
+                        ( existentialVars
+                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions}
+                        , subst
+                        , unknown
+                        )
   where
     isTop = \case
         [Syntax.KJTop{sort}] -> Just $ IsTop sort

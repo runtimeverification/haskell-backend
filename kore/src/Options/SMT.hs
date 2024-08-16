@@ -60,6 +60,7 @@ data KoreSolverOptions = KoreSolverOptions
     , prelude :: !Prelude
     , solver :: !Solver
     , tactic :: !(Maybe SExpr)
+    , args :: [String]
     }
 
 parseKoreSolverOptions :: Parser KoreSolverOptions
@@ -72,6 +73,7 @@ parseKoreSolverOptions =
         <*> parsePrelude
         <*> parseSolver
         <*> parseTactic
+        <*> parseArgs
   where
     parseTimeOut =
         option
@@ -127,6 +129,14 @@ parseKoreSolverOptions =
                 <> help "Z3 tactic to use when checking satisfiability. Example: (check-sat-using smt)"
                 <> value defaultTactic
             )
+
+    parseArgs =
+        many $
+            strOption
+                ( metavar "SMT_ARG"
+                    <> long "smt-arg"
+                    <> help "Argument passed to Z3"
+                )
 
     SMT.Config
         { timeOut = defaultTimeOut

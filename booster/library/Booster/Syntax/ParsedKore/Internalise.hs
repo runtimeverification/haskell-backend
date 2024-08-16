@@ -878,7 +878,12 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
     (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref Nothing renameVariable right
+        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+            partialDefinition
+            ref
+            Nothing
+            renameVariable
+            right
     let notPreservesDefinednessReasons =
             -- users can override the definedness computation by an explicit attribute
             if coerce axAttributes.preserving
@@ -937,7 +942,12 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
     (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref Nothing renameVariable right
+        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+            partialDefinition
+            ref
+            Nothing
+            renameVariable
+            right
 
     let notPreservesDefinednessReasons =
             -- users can override the definedness computation by an explicit attribute
@@ -1007,8 +1017,8 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
                 partialDef
                 (sourceRef attrs)
                 (Just sortVars)
-                (Util.modifyVarName ("Eq#" <>)) $
-                Syntax.KJAnd left.sort [left, precond]
+                (Util.modifyVarName ("Eq#" <>))
+                $ Syntax.KJAnd left.sort [left, precond]
         (rhs, ensures) <-
             internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
                 partialDef
@@ -1051,7 +1061,6 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
 
 removeTrueBools :: [Def.Term] -> [Def.Term]
 removeTrueBools = filter (/= TrueBool)
-
 
 internaliseCeil ::
     KoreDefinition -> -- context
