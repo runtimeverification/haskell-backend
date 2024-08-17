@@ -162,14 +162,7 @@ checkPrelude = do
     setTimeout ctxt.options.timeout
     Log.logMessage ("Checking definition prelude" :: Text)
     -- send the commands from the definition's SMT prelude
-    check <- mapM_ runCmd ctxt.prelude >> runCmd CheckSat
-    case check of
-        Sat -> pure ()
-        other -> do
-            Log.logMessage $ "Initial SMT definition check returned " <> pack (show other)
-            closeContext ctxt
-            throwSMT' $
-                "Aborting due to potentially-inconsistent SMT setup: Initial check returned " <> show other
+    mapM_ runCmd ctxt.prelude
   where
     setTimeout timeout = do
         Log.logMessage $ "Setting SMT timeout to: " <> show timeout
