@@ -1,0 +1,14 @@
+{
+    "jsonrpc": "2.0",
+    "id": "4420575472-001",
+    "error": {
+        "code": 4,
+        "data": {
+            "context": [
+                "y:SortInt{}"
+            ],
+            "error": "The RHS must not have free variables not present in the LHS"
+        },
+        "message": "Implication check error"
+    }
+}

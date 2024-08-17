@@ -22,7 +22,8 @@ module Booster.Pattern.ApplyEquations (
     handleSimplificationEquation,
     simplifyConstraint,
     simplifyConstraints,
-    SimplifierCache,
+    SimplifierCache (..),
+    CacheTag (..),
     evaluateConstraints,
 ) where
 
@@ -39,7 +40,7 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data, Proxy)
 import Data.Foldable (toList, traverse_)
-import Data.List (intersperse, partition)
+import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -143,7 +144,7 @@ instance Pretty (PrettyWithModifiers mods EquationFailure) where
 data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
@@ -233,19 +234,46 @@ popRecursion = do
             throw $ InternalError "Trying to pop an empty recursion stack"
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
-toCache :: Monad io => CacheTag -> Term -> Term -> EquationT io ()
-toCache tag orig result = eqState . modify $ \s -> s{cache = updateCache tag s.cache}
-  where
-    insertInto = Map.insert orig result
-    updateCache LLVM cache = cache{llvm = insertInto cache.llvm}
-    updateCache Equations cache = cache{equations = insertInto cache.equations}
+toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
+toCache LLVM orig result = eqState . modify $
+    \s -> s{cache = s.cache{llvm = Map.insert orig result s.cache.llvm}}
+toCache Equations orig result = eqState $ do
+    s <- get
+    -- Check before inserting a new result to avoid creating a
+    -- lookup chain e -> result -> olderResult.
+    newEqCache <- case Map.lookup result s.cache.equations of
+        Nothing ->
+            pure $ Map.insert orig result s.cache.equations
+        Just furtherResult -> do
+            when (result /= furtherResult) $ do
+                withContextFor Equations . logMessage $
+                    "toCache shortening a chain "
+                        <> showHashHex (getAttributes orig).hash
+                        <> "->"
+                        <> showHashHex (getAttributes furtherResult).hash
+            pure $ Map.insert orig furtherResult s.cache.equations
+    put s{cache = s.cache{equations = newEqCache}}
 
-fromCache :: Monad io => CacheTag -> Term -> EquationT io (Maybe Term)
-fromCache tag t = eqState $ Map.lookup t <$> gets (select tag . (.cache))
-  where
-    select :: CacheTag -> SimplifierCache -> Map Term Term
-    select LLVM = (.llvm)
-    select Equations = (.equations)
+fromCache :: LoggerMIO io => CacheTag -> Term -> EquationT io (Maybe Term)
+fromCache tag t = eqState $ do
+    s <- get
+    case tag of
+        LLVM -> pure $ Map.lookup t s.cache.llvm
+        Equations -> do
+            case Map.lookup t s.cache.equations of
+                Nothing -> pure Nothing
+                Just t' -> case Map.lookup t' s.cache.equations of
+                    Nothing -> pure $ Just t'
+                    Just t'' -> do
+                        when (t'' /= t') $ do
+                            withContextFor Equations . logMessage $
+                                "fromCache shortening a chain "
+                                    <> showHashHex (getAttributes t).hash
+                                    <> "->"
+                                    <> showHashHex (getAttributes t'').hash
+                            let newEqCache = Map.insert t t'' s.cache.equations
+                            put s{cache = s.cache{equations = newEqCache}}
+                        pure $ Just t''
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
@@ -280,7 +308,7 @@ runEquationT ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     EquationT io a ->
@@ -330,15 +358,14 @@ iterateEquations direction preference startTerm = do
             config <- getConfig
             currentCount <- countSteps
             when (coerce currentCount > config.maxIterations) $ do
-                withContext CtxAbort $ do
-                    logWarn $
-                        renderOneLineText $
-                            "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
-                    withContext CtxDetail $
-                        getPrettyModifiers >>= \case
-                            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
-                                logMessage . renderOneLineText $
-                                    "Final term:" <+> pretty' @mods currentTerm
+                logWarn $
+                    renderOneLineText $
+                        "Unable to finish evaluation in" <+> pretty currentCount <+> "iterations."
+                withContext CtxDetail $
+                    getPrettyModifiers >>= \case
+                        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                            logMessage . renderOneLineText $
+                                "Final term:" <+> pretty' @mods currentTerm
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -367,7 +394,9 @@ llvmSimplify term = do
   where
     evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
-        | isConcrete t && attributes.canBeEvaluated = withContext CtxLlvm . withTermContext t $ do
+        | isConcrete t
+        , attributes.canBeEvaluated
+        , isFunctionApp t = withContext CtxLlvm . withTermContext t $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
                     Left (LlvmError e) -> do
@@ -385,6 +414,10 @@ llvmSimplify term = do
         | otherwise =
             cb t
 
+    isFunctionApp :: Term -> Bool
+    isFunctionApp (SymbolApplication sym _ _) = isFunctionSymbol sym
+    isFunctionApp _ = False
+
 ----------------------------------------
 -- Interface functions
 
@@ -394,7 +427,7 @@ evaluateTerm ::
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
@@ -417,7 +450,7 @@ evaluatePattern ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
@@ -430,13 +463,24 @@ evaluatePattern' ::
     Pattern ->
     EquationT io Pattern
 evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
-    newTerm <- withTermContext term $ evaluateTerm' BottomUp term
+    newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
     pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+  where
+    -- when TooManyIterations exception occurred while evaluating the top-level term,
+    -- i.e. not in a recursive evaluation of a side-condition,
+    -- it is safe to keep the partial result and ignore the exception.
+    -- Otherwise we would be throwing away useful work.
+    -- The exceptions thrown in recursion is caught in applyEquation.checkConstraint
+    keepTopLevelResults :: LoggerMIO io => EquationFailure -> EquationT io Term
+    keepTopLevelResults = \case
+        TooManyIterations _ _ partialResult ->
+            pure partialResult
+        err -> throw err
 
 -- evaluate the given predicate assuming all others
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
@@ -451,7 +495,7 @@ evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
@@ -795,54 +839,21 @@ applyEquation term rule =
                                                     Map.toList subst
                                         )
 
-                        -- instantiate the requires clause with the obtained substitution
-                        let required =
-                                concatMap
-                                    (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
-                                    rule.requires
-                        -- If the required condition is _syntactically_ present in
-                        -- the prior (known constraints), we don't check it.
-                        knownPredicates <- (.predicates) <$> lift getState
-                        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+                        -- check required constraints from lhs.
+                        -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
+                        -- see @handleSimplificationEquation@ and @handleFunctionEquation@
+                        checkRequires subst
 
-                        -- check the filtered requires clause conditions
-                        unclearConditions <-
-                            catMaybes
-                                <$> mapM
-                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
-                                    )
-                                    toCheck
-
-                        -- unclear conditions may have been simplified and
-                        -- could now be syntactically present in the path constraints, filter again
-                        stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
-
-                        -- abort if any of the conditions is still unclear at that point
-                        unless (null stillUnclear) $
-                            throwE
-                                ( \ctxt ->
-                                    ctxt $
-                                        logMessage $
-                                            renderOneLineText $
-                                                "Uncertain about a condition(s) in rule:"
-                                                    <+> hsep (intersperse "," $ map (pretty' @mods) unclearConditions)
-                                , IndeterminateCondition unclearConditions
-                                )
-
-                        -- check ensured conditions, filter any
-                        -- true ones, prune if any is false
-                        let ensured =
-                                concatMap
-                                    (splitBoolPredicates . substituteInPredicate subst)
-                                    (Set.toList rule.ensures)
-                        ensuredConditions <-
-                            -- throws if an ensured condition found to be false
-                            catMaybes
-                                <$> mapM
-                                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
-                                    )
-                                    ensured
+                        -- check ensured conditions, filter any true ones, prune if any is false
+                        ensuredConditions <- checkEnsures subst
                         lift $ pushConstraints $ Set.fromList ensuredConditions
+
+                        -- when a new path condition is added, invalidate the equation cache
+                        unless (null ensuredConditions) $ do
+                            withContextFor Equations . logMessage $
+                                ("New ensured condition from evaluation, invalidating cache" :: Text)
+                            lift . eqState . modify $
+                                \s -> s{cache = s.cache{equations = mempty}}
                         pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
@@ -931,6 +942,104 @@ applyEquation term rule =
             check
             $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
 
+    checkRequires ::
+        Substitution ->
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
+    checkRequires matchingSubst = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        -- instantiate the requires clause with the obtained substitution
+        let required =
+                concatMap
+                    (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce)
+                    rule.requires
+        -- If the required condition is _syntactically_ present in
+        -- the prior (known constraints), we don't check it.
+        knownPredicates <- (.predicates) <$> lift getState
+        toCheck <- lift $ filterOutKnownConstraints knownPredicates required
+
+        -- check the filtered requires clause conditions
+        unclearConditions <-
+            catMaybes
+                <$> mapM
+                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Condition simplified to #Bottom." :: Text), ConditionFalse p)
+                    )
+                    toCheck
+
+        -- unclear conditions may have been simplified and
+        -- could now be syntactically present in the path constraints, filter again
+        stillUnclear <- lift $ filterOutKnownConstraints knownPredicates unclearConditions
+
+        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+
+        -- check any conditions that are still unclear with the SMT solver
+        -- (or abort if no solver is being used), abort if still unclear after
+        unless (null stillUnclear) $
+            lift (SMT.checkPredicates solver knownPredicates mempty (Set.fromList stillUnclear)) >>= \case
+                SMT.IsUnknown{} -> do
+                    -- no solver or still unclear: abort
+                    throwE
+                        ( \ctx ->
+                            ctx . logMessage $
+                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                    renderOneLineText
+                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                        )
+                        , IndeterminateCondition stillUnclear
+                        )
+                SMT.IsInvalid -> do
+                    -- actually false given path condition: fail
+                    let failedP = Predicate $ foldl1' AndTerm $ map coerce stillUnclear
+                    throwE
+                        ( \ctx ->
+                            ctx . logMessage $
+                                WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
+                                    renderOneLineText ("Required condition found to be false: " <> pretty' @mods failedP)
+                        , ConditionFalse failedP
+                        )
+                SMT.IsValid{} -> do
+                    -- can proceed
+                    pure ()
+
+    checkEnsures ::
+        Substitution ->
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            [Predicate]
+    checkEnsures matchingSubst = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        let ensured =
+                concatMap
+                    (splitBoolPredicates . substituteInPredicate matchingSubst)
+                    (Set.toList rule.ensures)
+        ensuredConditions <-
+            -- throws if an ensured condition found to be false
+            catMaybes
+                <$> mapM
+                    ( checkConstraint $ \p -> (\ctxt -> ctxt $ logMessage ("Ensures clause simplified to #Bottom." :: Text), EnsuresFalse p)
+                    )
+                    ensured
+
+        -- check all ensured conditions together with the path condition
+        solver :: SMT.SMTContext <- (.smtSolver) <$> lift getConfig
+        knownPredicates <- (.predicates) <$> lift getState
+        lift (SMT.checkPredicates solver knownPredicates mempty $ Set.fromList ensuredConditions) >>= \case
+            SMT.IsInvalid -> do
+                let falseEnsures = Predicate $ foldl1' AndTerm $ map coerce ensuredConditions
+                throwE
+                    ( \ctx ->
+                        ctx . logMessage $
+                            WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) ensuredConditions]) $
+                                renderOneLineText ("Ensured conditions found to be false: " <> pretty' @mods falseEnsures)
+                    , EnsuresFalse falseEnsures
+                    )
+            _ ->
+                pure ()
+        pure ensuredConditions
+
 --------------------------------------------------------------------
 
 {- Simplification for boolean predicates
@@ -947,19 +1056,19 @@ simplifyConstraint ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi mbSMT cache knownPredicates (Predicate p) = do
-    runEquationT def mbApi mbSMT cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi smt cache knownPredicates (Predicate p) = do
+    runEquationT def mbApi smt cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)
@@ -975,11 +1084,11 @@ simplifyConstraint' :: LoggerMIO io => Bool -> Term -> EquationT io Term
 -- evaluateTerm.
 simplifyConstraint' recurseIntoEvalBool = \case
     t@(Term TermAttributes{canBeEvaluated} _)
-        | isConcrete t && canBeEvaluated -> withTermContext t $ do
+        | isConcrete t && canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    withContext CtxLlvm $
+                    withContext CtxLlvm . withTermContext t $
                         LLVM.simplifyBool api t >>= \case
                             Left (LlvmError e) -> do
                                 withContext CtxAbort $
@@ -996,11 +1105,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
                                         pure result
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
         | otherwise ->
-            withTermContext t $
-                if recurseIntoEvalBool then evalBool t else pure t
+            if recurseIntoEvalBool then evalBool t else pure t
   where
     evalBool :: LoggerMIO io => Term -> EquationT io Term
-    evalBool t = do
+    evalBool t = withTermContext t $ do
         prior <- getState -- save prior state so we can revert
         eqState $ put prior{termStack = mempty, changed = False}
         result <- iterateEquations BottomUp PreferFunctions t

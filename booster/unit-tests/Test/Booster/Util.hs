@@ -6,11 +6,14 @@ module Test.Booster.Util (
     gitDiff,
     testGoldenVsString,
     testGoldenVsFile,
+    (@?>>=),
 ) where
 
 import Data.ByteString.Lazy (ByteString)
+import GHC.Stack (HasCallStack)
 import Test.Tasty
 import Test.Tasty.Golden
+import Test.Tasty.HUnit (Assertion, (@?=))
 
 gitDiff :: FilePath -> FilePath -> [String]
 gitDiff ref new =
@@ -21,3 +24,8 @@ testGoldenVsString name = goldenVsStringDiff name gitDiff
 
 testGoldenVsFile :: TestName -> FilePath -> FilePath -> IO () -> TestTree
 testGoldenVsFile name = goldenVsFileDiff name gitDiff
+
+infix 9 @?>>=
+
+(@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> a -> Assertion
+ma @?>>= a' = ma >>= \a -> a @?= a'

@@ -1,5 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{-# OPTIONS -fforce-recomp #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2022
 License     : BSD-3-Clause
@@ -70,6 +72,7 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
+import Data.Version (Version (..), showVersion)
 import GHC.Compact (getCompact)
 import GHC.Generics qualified as GHC
 import GHC.Stack (
@@ -178,12 +181,14 @@ import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
  )
+import Paths_kore (version)
 import Prelude.Kore
 import Pretty qualified as KorePretty
 import SMT (
     SMT,
  )
 import SMT qualified
+import SMT qualified as SMT.Config (Config (..))
 import System.Clock (
     Clock (Monotonic),
     diffTimeSpec,
@@ -358,14 +363,17 @@ mainGlobal exeName maybeEnv localOptionsParser modifiers = do
 
 -- | main function to print version information
 mainVersion :: IO ()
-mainVersion =
-    mapM_
-        putStrLn
-        [ "Git:"
-        , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
-        , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
-        , "  last commit:\t" ++ gitCommitDate
-        ]
+mainVersion
+    | version == Version [0, 1, 0] [] =
+        mapM_
+            putStrLn
+            [ "kore custom build:"
+            , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
+            , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
+            , "  last commit:\t" ++ gitCommitDate
+            ]
+    | otherwise =
+        putStrLn $ showVersion version
   where
     VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
 
@@ -574,7 +582,7 @@ execute options metadataTools lemmas worker =
             (declareSMTLemmas metadataTools lemmas)
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver, args} =
         options
     config =
         SMT.defaultConfig
@@ -582,6 +590,7 @@ execute options metadataTools lemmas worker =
             , SMT.rLimit = rLimit
             , SMT.resetInterval = resetInterval
             , SMT.prelude = prelude
+            , SMT.arguments = args <> SMT.Config.arguments SMT.defaultConfig
             }
 
 data SerializedDefinition = SerializedDefinition

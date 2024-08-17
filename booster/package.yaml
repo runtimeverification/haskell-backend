@@ -76,7 +76,6 @@ library:
   - extra
   - fast-logger
   - filepath
-  - ghc-trace-events
   - gitrev
   - hashable
   - hpp
@@ -119,6 +118,7 @@ executables:
       - bz2
       - casing
       - clock
+      - containers
       - directory
       - extra
       - filepath

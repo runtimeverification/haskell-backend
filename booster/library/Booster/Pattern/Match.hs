@@ -25,6 +25,7 @@ import Data.List (partition)
 import Data.List.NonEmpty as NE (NonEmpty, fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (isNothing)
 import Data.Sequence (Seq, (><), pattern (:<|), pattern (:|>))
 import Data.Sequence qualified as Seq
 
@@ -32,7 +33,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Prettyprinter
 
-import Booster.Definition.Attributes.Base (KListDefinition, KMapDefinition)
+import Booster.Definition.Attributes.Base (KListDefinition, KMapDefinition, KSetDefinition)
 import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Pretty
@@ -219,7 +220,8 @@ match1 _       t1@DomainValue{}                           t2@ConsApplication{}  
 match1 _       t1@DomainValue{}                           t2@FunctionApplication{}                   = addIndeterminate t1 t2
 -- match with var on the RHS must be indeterminate when evaluating functions. see: https://github.com/runtimeverification/hs-backend-booster/issues/231
 match1 Rewrite t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
-match1 _       t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
+match1 Implies t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
+match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@Injection{}                             t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 _       t1@Injection{}                             t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -262,7 +264,7 @@ match1 Eval    t1@KSet{}                                  t2@Injection{}        
 match1 _       t1@KSet{}                                  t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KSet{}                                  t2@KSet{}                                  = addIndeterminate t1 t2
+match1 _       t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
 match1 _       t1@KSet{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
 match1 Rewrite t1@KSet{}                                  (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
@@ -625,6 +627,25 @@ containsOtherKeys = \case
     ConstructorKey _ _ rest -> containsOtherKeys rest
     Rest OtherKey{} -> True
     Rest _ -> False
+
+------ Internalised Sets
+matchSets ::
+    KSetDefinition ->
+    [Term] ->
+    Maybe Term ->
+    [Term] ->
+    Maybe Term ->
+    StateT MatchState (Except MatchResult) ()
+matchSets
+    def
+    patElements
+    patRest
+    subjElements
+    subjRest = do
+        -- match only empty sets, indeterminate otherwise
+        if null patElements && null subjElements && isNothing patRest && isNothing subjRest
+            then pure ()
+            else addIndeterminate (KSet def patElements patRest) (KSet def subjElements subjRest)
 
 ------ Internalised Maps
 matchMaps ::

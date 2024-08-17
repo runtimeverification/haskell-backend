@@ -163,27 +163,6 @@ executables:
       - transformers
     ghc-options:
       - -rtsopts
-  eventlog-parser:
-    source-dirs: eventlog-parser
-    main: EventlogParser.hs
-    dependencies:
-      - aeson
-      - base
-      - binary
-      - bytestring
-      - containers
-      - directory
-      - filepath
-      - ghc-events
-      - hashable
-      - hs-backend-booster
-      - optparse-applicative
-      - text
-      - transformers
-      - unix
-      - unordered-containers
-    ghc-options:
-      - -rtsopts
   kore-json-differ:
     source-dirs: kore-json-differ
     main: Main.hs
@@ -192,33 +171,6 @@ executables:
       - bytestring
       - containers
       - hs-backend-booster
-    ghc-options:
-      - -rtsopts
-  tarball-compare:
-    source-dirs: tarball-compare
-    main: Main
-    dependencies:
-      - aeson
-      - aeson-pretty
-      - base
-      - bytestring
-      - bz2
-      - clock
-      - containers
-      - directory
-      - extra
-      - filepath
-      - hs-backend-booster
-      - kore-rpc-types
-      - monad-logger
-      - optparse-applicative
-      - prettyprinter
-      - recursion-schemes
-      - tar
-      - text
-      - transformers
-      - vector
-      - zlib
     ghc-options:
       - -rtsopts
   kore-rpc-dev:

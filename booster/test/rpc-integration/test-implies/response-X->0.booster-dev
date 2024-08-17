@@ -1,0 +1,37 @@
+{
+    "jsonrpc": "2.0",
+    "id": "4420567456-001",
+    "result": {
+        "valid": false,
+        "implication": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "Implies",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortInt",
+                    "args": []
+                },
+                "first": {
+                    "tag": "EVar",
+                    "name": "x",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                },
+                "second": {
+                    "tag": "DV",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    },
+                    "value": "0"
+                }
+            }
+        }
+    }
+}

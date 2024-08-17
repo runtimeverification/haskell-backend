@@ -92,14 +92,14 @@ responseParsing =
         "Response parsing"
         [ "sat" `parsesTo` Sat
         , "unsat" `parsesTo` Unsat
-        , "unknown" `parsesTo` Unknown
+        , "unknown" `parsesTo` Unknown Nothing
         , "success" `parsesTo` Success
         , "(error \"Something was wrong\")" `parsesTo` Error "Something was wrong"
         , "((x 0))" `parsesTo` Values [(Atom "x", SMT.Int 0)]
         , "((x 0) (y true))" `parsesTo` Values [(Atom "x", SMT.Int 0), (Atom "y", SMT.Bool True)]
         ]
   where
-    parsesTo :: BS.ByteString -> SMT.Response -> TestTree
+    parsesTo :: BS.ByteString -> SMT.ResponseUnresolved -> TestTree
     input `parsesTo` expected =
         testCase (show input <> " parses to " <> show expected) $
             expected @=? readResponse input

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -10,6 +11,7 @@ License     : BSD-3-Clause
 module Booster.Pattern.Rewrite (
     performRewrite,
     rewriteStep,
+    RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
     RewriteTrace (..),
@@ -19,7 +21,6 @@ module Booster.Pattern.Rewrite (
 ) where
 
 import Control.Applicative ((<|>))
-import Control.Exception qualified as Exception (throw)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -48,8 +49,9 @@ import Booster.Definition.Base
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
+    CacheTag (Equations),
     EquationFailure (..),
-    SimplifierCache,
+    SimplifierCache (..),
     evaluatePattern,
     simplifyConstraint,
  )
@@ -61,6 +63,7 @@ import Booster.Pattern.Match (
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
     MatchType (Rewrite),
     SortError,
+    Substitution,
     matchTerms,
  )
 import Booster.Pattern.Pretty
@@ -79,10 +82,14 @@ newtype RewriteT io a = RewriteT
 data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
-    , smtSolver :: Maybe SMT.SMTContext
+    , smtSolver :: SMT.SMTContext
+    , varsToAvoid :: Set.Set Variable
     , doTracing :: Flag "CollectRewriteTraces"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , -- below: parameters used only in performRewrite
+      mbMaxDepth, mbSimplify :: Maybe Natural
+    , cutLabels, terminalLabels :: [Text]
     }
 
 instance MonadIO io => LoggerMIO (RewriteT io) where
@@ -98,22 +105,12 @@ pattern NoCollectRewriteTraces :: Flag "CollectRewriteTraces"
 pattern NoCollectRewriteTraces = Flag False
 
 runRewriteT ::
-    LoggerMIO io =>
-    Flag "CollectRewriteTraces" ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
+    RewriteConfig ->
     SimplifierCache ->
     RewriteT io a ->
     io (Either (RewriteFailed "Rewrite") (a, SimplifierCache))
-runRewriteT doTracing definition llvmApi smtSolver cache m = do
-    logger <- getLogger
-    prettyModifiers <- getPrettyModifiers
-    runExceptT
-        . flip runStateT cache
-        . flip runReaderT RewriteConfig{definition, llvmApi, smtSolver, doTracing, logger, prettyModifiers}
-        . unRewriteT
-        $ m
+runRewriteT rewriteConfig cache =
+    runExceptT . flip runStateT cache . flip runReaderT rewriteConfig . unRewriteT
 
 throw :: LoggerMIO io => RewriteFailed "Rewrite" -> RewriteT io a
 throw = RewriteT . lift . lift . throwE
@@ -338,92 +335,26 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 pat
                                 rule.computedAttributes.notPreservesDefinednessReasons
 
-                    -- apply substitution to rule requires constraints and simplify (one by one
-                    -- in isolation). Stop if false, abort rewrite if indeterminate.
-                    let ruleRequires =
-                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
-                        notAppliedIfBottom = RewriteRuleAppT $ pure NotApplied
-                    -- filter out any predicates known to be _syntactically_ present in the known prior
-                    let prior = pat.constraints
-                        (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
-                    unless (null knownTrue) $
-                        logMessage $
-                            renderOneLineText $
-                                "Known true side conditions (won't check):"
-                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ knownTrue)
-
-                    unclearRequires <-
-                        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom prior) toCheck
-
-                    -- check unclear requires-clauses in the context of known constraints (prior)
-                    mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
-
-                    let smtUnclear = do
-                            withContext CtxConstraint . withContext CtxAbort . logMessage $
-                                WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> unclearRequires)]) $
-                                    renderOneLineText $
-                                        "Uncertain about condition(s) in a rule:"
-                                            <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                            failRewrite $
-                                RuleConditionUnclear rule . coerce . foldl1 AndTerm $
-                                    map coerce unclearRequires
-                    case mbSolver of
-                        Just solver -> do
-                            checkAllRequires <-
-                                SMT.checkPredicates solver prior mempty (Set.fromList unclearRequires)
-
-                            case checkAllRequires of
-                                Left SMT.SMTSolverUnknown{} ->
-                                    smtUnclear -- abort rewrite if a solver result was Unknown
-                                Left other ->
-                                    liftIO $ Exception.throw other -- fail hard on other SMT errors
-                                Right (Just False) -> do
-                                    -- requires is actually false given the prior
-                                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
-                                    RewriteRuleAppT $ pure NotApplied
-                                Right (Just True) ->
-                                    pure () -- can proceed
-                                Right Nothing ->
-                                    smtUnclear -- no implication could be determined
-                        Nothing ->
-                            unless (null unclearRequires) $ do
-                                withContext CtxConstraint . withContext CtxAbort $
-                                    logMessage $
-                                        WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> unclearRequires)]) $
-                                            renderOneLineText $
-                                                "Uncertain about a condition(s) in rule, no SMT solver:"
-                                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                                failRewrite $
-                                    RuleConditionUnclear rule (head unclearRequires)
+                    -- check required constraints from lhs: Stop if any is false, abort rewrite if indeterminate.
+                    checkRequires subst
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
-                    let ruleEnsures =
-                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
-                                Set.toList rule.ensures
-                        trivialIfBottom = RewriteRuleAppT $ pure Trivial
-                    newConstraints <-
-                        catMaybes <$> mapM (checkConstraint id trivialIfBottom prior) ruleEnsures
+                    newConstraints <- checkEnsures subst
 
-                    -- check all new constraints together with the known side constraints
-                    whenJust mbSolver $ \solver ->
-                        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                            Right (Just False) -> do
-                                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                                RewriteRuleAppT $ pure Trivial
-                            Right _other ->
-                                pure ()
-                            Left SMT.SMTSolverUnknown{} ->
-                                pure ()
-                            Left other ->
-                                liftIO $ Exception.throw other
+                    -- if a new constraint is going to be added, the equation cache is invalid
+                    unless (null newConstraints) $ do
+                        withContextFor Equations . logMessage $
+                            ("New path condition ensured, invalidating cache" :: Text)
+                        lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
 
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
                     -- present in the input pattern and in the unification substitution
-                    let varsFromInput = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
+                    varsFromInput <- lift . RewriteT $ asks (.varsToAvoid)
+                    let varsFromPattern = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
                         varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
-                        forbiddenVars = varsFromInput <> varsFromSubst
+                        forbiddenVars = varsFromInput <> varsFromPattern <> varsFromSubst
                         existentialSubst =
                             Map.fromSet
                                 (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
@@ -444,8 +375,26 @@ applyRule pat@Pattern{ceilConditions} rule =
                         withPatternContext rewritten $
                             return (rule, rewritten)
   where
+    filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
+    filterOutKnownConstraints priorKnowledge constraitns = do
+        let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
+        unless (null knownTrue) $
+            getPrettyModifiers >>= \case
+                ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                    logMessage $
+                        renderOneLineText $
+                            "Known true side conditions (won't check):"
+                                <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
+        pure toCheck
+
     failRewrite :: RewriteFailed "Rewrite" -> RewriteRuleAppT (RewriteT io) a
     failRewrite = lift . (throw)
+
+    notAppliedIfBottom :: RewriteRuleAppT (RewriteT io) a
+    notAppliedIfBottom = RewriteRuleAppT $ pure NotApplied
+
+    trivialIfBottom :: RewriteRuleAppT (RewriteT io) a
+    trivialIfBottom = RewriteRuleAppT $ pure Trivial
 
     checkConstraint ::
         (Predicate -> a) ->
@@ -467,6 +416,72 @@ applyRule pat@Pattern{ceilConditions} rule =
             Right other -> pure $ Just $ onUnclear other
             Left UndefinedTerm{} -> onBottom
             Left _ -> pure $ Just $ onUnclear p
+
+    checkRequires ::
+        Substitution -> RewriteRuleAppT (RewriteT io) ()
+    checkRequires matchingSubst = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        -- apply substitution to rule requires
+        let ruleRequires =
+                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.requires
+
+        -- filter out any predicates known to be _syntactically_ present in the known prior
+        toCheck <- lift $ filterOutKnownConstraints pat.constraints ruleRequires
+
+        -- simplify the constraints (one by one in isolation). Stop if false, abort rewrite if indeterminate.
+        unclearRequires <-
+            catMaybes <$> mapM (checkConstraint id notAppliedIfBottom pat.constraints) toCheck
+
+        -- unclear conditions may have been simplified and
+        -- could now be syntactically present in the path constraints, filter again
+        stillUnclear <- lift $ filterOutKnownConstraints pat.constraints unclearRequires
+
+        -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
+        solver <- lift $ RewriteT $ (.smtSolver) <$> ask
+        let smtUnclear = do
+                withContext CtxConstraint . withContext CtxAbort . logMessage $
+                    WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
+                        renderOneLineText $
+                            "Uncertain about condition(s) in a rule:"
+                                <+> (hsep . punctuate comma . map (pretty' @mods) $ stillUnclear)
+                failRewrite $
+                    RuleConditionUnclear rule . coerce . foldl1 AndTerm $
+                        map coerce stillUnclear
+        SMT.checkPredicates solver pat.constraints mempty (Set.fromList stillUnclear) >>= \case
+            SMT.IsUnknown{} ->
+                smtUnclear -- abort rewrite if a solver result was Unknown
+            SMT.IsInvalid -> do
+                -- requires is actually false given the prior
+                withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                RewriteRuleAppT $ pure NotApplied
+            SMT.IsValid ->
+                pure () -- can proceed
+    checkEnsures ::
+        Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
+    checkEnsures matchingSubst = do
+        -- apply substitution to rule requires
+        let ruleEnsures =
+                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) $
+                    Set.toList rule.ensures
+        newConstraints <-
+            catMaybes <$> mapM (checkConstraint id trivialIfBottom pat.constraints) ruleEnsures
+
+        -- check all new constraints together with the known side constraints
+        solver <- lift $ RewriteT $ (.smtSolver) <$> ask
+        (lift $ SMT.checkPredicates solver pat.constraints mempty (Set.fromList newConstraints)) >>= \case
+            SMT.IsInvalid -> do
+                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                RewriteRuleAppT $ pure Trivial
+            _other ->
+                pure ()
+
+        -- if a new constraint is going to be added, the equation cache is invalid
+        unless (null newConstraints) $ do
+            withContextFor Equations . logMessage $
+                ("New path condition ensured, invalidating cache" :: Text)
+
+            lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
+        pure newConstraints
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
@@ -700,26 +715,30 @@ mkDiffTerms = \case
 performRewrite ::
     forall io.
     LoggerMIO io =>
-    Flag "CollectRewriteTraces" ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    Maybe SMT.SMTContext ->
-    -- | maximum depth
-    Maybe Natural ->
-    -- | cut point rule labels
-    [Text] ->
-    -- | terminal rule labels
-    [Text] ->
+    RewriteConfig ->
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
-performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalLabels pat = do
+performRewrite rewriteConfig pat = do
     (rr, RewriteStepsState{counter, traces}) <-
         flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
+    RewriteConfig
+        { definition
+        , llvmApi
+        , smtSolver
+        , doTracing
+        , mbMaxDepth
+        , mbSimplify
+        , cutLabels
+        , terminalLabels
+        } = rewriteConfig
+
     logDepth = withContext CtxDepth . logMessage
 
     depthReached n = maybe False (n >=) mbMaxDepth
+
+    shouldSimplifyAt c = c > 0 && maybe False ((== 0) . (c `mod`)) mbSimplify
 
     showCounter = (<> " steps.") . pack . show
 
@@ -737,8 +756,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     simplifyP p = withContext CtxSimplify $ do
         st <- get
         let cache = st.simplifierCache
-            smt = st.smtSolver
-        evaluatePattern def mLlvmLibrary smt cache p >>= \(res, newCache) -> do
+        evaluatePattern definition llvmApi smtSolver cache p >>= \(res, newCache) -> do
             updateCache newCache
             case res of
                 Right newPattern -> do
@@ -796,16 +814,19 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     doSteps wasSimplified pat' = do
         RewriteStepsState{counter, simplifierCache} <- get
         logDepth $ showCounter counter
-        if depthReached counter
-            then do
+
+        if
+            | depthReached counter -> do
                 logDepth $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
                 (if wasSimplified then pure else simplifyResult pat') $ RewriteFinished Nothing Nothing pat'
-            else
+            | shouldSimplifyAt counter && not wasSimplified -> do
+                logDepth $ "Interim simplification after " <> maybe "??" showCounter mbSimplify
+                simplifyP pat' >>= \case
+                    Nothing -> pure $ RewriteTrivial pat'
+                    Just newPat -> doSteps True newPat
+            | otherwise ->
                 runRewriteT
-                    doTracing
-                    def
-                    mLlvmLibrary
-                    mSolver
+                    rewriteConfig
                     simplifierCache
                     (withPatternContext pat' $ rewriteStep cutLabels terminalLabels pat')
                     >>= \case
@@ -871,8 +892,6 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                         Left failure@(RuleApplicationUnclear rule _ remainder)
                             | not wasSimplified -> do
                                 emitRewriteTrace $ RewriteStepFailed failure
-                                -- simplify remainders, substitute and rerun.
-                                -- If failed, do the pattern-wide simplfication and rerun again
                                 withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                             | otherwise -> do
                                 -- was already simplified, emit an abort log entry
@@ -911,7 +930,6 @@ data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace ()))
     , simplifierCache :: SimplifierCache
-    , smtSolver :: Maybe SMT.SMTContext
     }
 
 rewriteStart :: RewriteStepsState
@@ -920,5 +938,4 @@ rewriteStart =
         { counter = 0
         , traces = mempty
         , simplifierCache = mempty
-        , smtSolver = Nothing
         }

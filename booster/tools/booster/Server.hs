@@ -67,7 +67,6 @@ import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.ParsedKore (loadDefinition)
-import Booster.Trace
 import Booster.Util qualified as Booster
 import Data.Data (Proxy)
 import GlobalMain qualified
@@ -127,17 +126,19 @@ main = do
                     , mainModuleName
                     , port
                     , llvmLibraryFile
-                    , logLevels
-                    , logFormat
-                    , logTimeStamps
-                    , timeStampsFormat
-                    , logContexts
-                    , logFile
+                    , logOptions =
+                        LogOptions
+                            { logLevels
+                            , logFormat
+                            , logTimeStamps
+                            , timeStampsFormat
+                            , logContexts
+                            , logFile
+                            , prettyPrintOptions
+                            }
                     , smtOptions
                     , equationOptions
-                    , indexCells
-                    , prettyPrintOptions
-                    , eventlogEnabledUserEvents
+                    , rewriteOptions
                     }
             , proxyOptions =
                 ProxyOptions
@@ -162,10 +163,6 @@ main = do
         if logTimeStamps then Just <$> Booster.newTimeCache timestampFlag else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
-        liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
-            putStrLn $ "Tracing " <> show t
-            enableCustomUserEvent t
-
         let koreLogRenderer = case logFormat of
                 Standard -> renderStandardPretty
                 OneLine -> renderOnelinePretty
@@ -239,7 +236,7 @@ main = do
                 mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                 definitionsWithCeilSummaries <-
                     liftIO $
-                        loadDefinition indexCells definitionFile
+                        loadDefinition rewriteOptions.indexCells definitionFile
                             >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
@@ -307,6 +304,7 @@ main = do
                                 , defaultMain = mainModuleName
                                 , mLlvmLibrary
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
+                                , rewriteOptions
                                 , addedModules = mempty
                                 }
                 statsVar <- Stats.newStats
@@ -488,6 +486,7 @@ translateSMTOpts = \case
             , retryLimit =
                 KoreSMT.RetryLimit . maybe Unlimited (Limit . fromIntegral) $ smtOpts.retryLimit
             , tactic = fmap translateSExpr smtOpts.tactic
+            , args = smtOpts.args
             }
     Nothing ->
         defaultKoreSolverOptions{solver = KoreSMT.None}
@@ -501,6 +500,7 @@ translateSMTOpts = \case
             , prelude = KoreSMT.Prelude Nothing
             , solver = KoreSMT.Z3
             , tactic = Nothing
+            , args = []
             }
     translateSExpr :: SMT.SExpr -> KoreSMT.SExpr
     translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
@@ -535,7 +535,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , loggerEnv
                 }
   where
-    KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic} = koreSolverOptions
+    KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic, args} = koreSolverOptions
     smtConfig :: KoreSMT.Config
     smtConfig =
         KoreSMT.defaultConfig
@@ -544,6 +544,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
               KoreSMT.timeOut = timeOut
             , KoreSMT.retryLimit = retryLimit
             , KoreSMT.tactic = tactic
+            , KoreSMT.arguments = args <> KoreSMT.defaultConfig.arguments
             }
 
     -- SMT solver with user declared lemmas

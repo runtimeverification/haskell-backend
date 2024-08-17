@@ -1,10 +1,14 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
+{-# OPTIONS -fforce-recomp #-}
+
 module Booster.CLOptions (
     CLOptions (..),
     EquationOptions (..),
     LogFormat (..),
+    LogOptions (..),
+    RewriteOptions (..),
     TimestampFormat (..),
     clOptionsParser,
     adjustLogLevels,
@@ -22,38 +26,41 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeASCII)
+import Data.Version (Version (..), showVersion)
+import Numeric.Natural (Natural)
 import Options.Applicative
-import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
-import Text.Read (readMaybe)
 
 import Booster.GlobalState (EquationOptions (..))
 import Booster.Log.Context (ContextFilter, ctxt, readContextFilter)
 import Booster.Pattern.Pretty
 import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
 import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
-import Booster.Trace (CustomUserEventType)
 import Booster.Util (Bound (..), encodeLabel)
 import Booster.VersionInfo (VersionInfo (..), versionInfo)
+import Paths_hs_backend_booster (version)
 
 data CLOptions = CLOptions
     { definitionFile :: FilePath
     , mainModuleName :: Text
     , llvmLibraryFile :: Maybe FilePath
     , port :: Int
-    , logLevels :: [LogLevel]
+    , logOptions :: LogOptions
+    , smtOptions :: Maybe SMTOptions
+    , equationOptions :: EquationOptions
+    , rewriteOptions :: RewriteOptions
+    }
+    deriving stock (Show)
+
+data LogOptions = LogOptions
+    { logLevels :: [LogLevel]
     , logTimeStamps :: Bool
     , timeStampsFormat :: TimestampFormat
     , logFormat :: LogFormat
     , logContexts :: [ContextFilter]
     , logFile :: Maybe FilePath
-    , smtOptions :: Maybe SMTOptions
-    , equationOptions :: EquationOptions
-    , indexCells :: [Text]
     , prettyPrintOptions :: [ModifierT]
-    , -- developer options below
-      eventlogEnabledUserEvents :: [CustomUserEventType]
     }
-    deriving (Show)
+    deriving stock (Show)
 
 data LogFormat
     = Standard
@@ -76,6 +83,12 @@ instance Show TimestampFormat where
     show = \case
         Pretty -> "pretty"
         Nanoseconds -> "nanoseconds"
+
+data RewriteOptions = RewriteOptions
+    { indexCells :: [Text]
+    , interimSimplification :: Maybe Natural
+    }
+    deriving stock (Show, Eq)
 
 clOptionsParser :: Parser CLOptions
 clOptionsParser =
@@ -104,7 +117,15 @@ clOptionsParser =
                 <> help "Port for the RPC server to bind to"
                 <> showDefault
             )
-        <*> many
+        <*> parseLogOptions
+        <*> parseSMTOptions
+        <*> parseEquationOptions
+        <*> parseRewriteOptions
+
+parseLogOptions :: Parser LogOptions
+parseLogOptions =
+    LogOptions
+        <$> many
             ( option
                 (eitherReader readLogLevel)
                 ( metavar "LEVEL"
@@ -155,15 +176,6 @@ clOptionsParser =
                         "Log file to output the logs into"
                 )
             )
-        <*> parseSMTOptions
-        <*> parseEquationOptions
-        <*> option
-            (eitherReader $ mapM (readCellName . trim) . splitOn ",")
-            ( metavar "CELL-NAME[,CELL-NAME]"
-                <> long "index-cells"
-                <> help "Names of configuration cells to index rewrite rules with (default: 'k')"
-                <> value []
-            )
         <*> option
             (eitherReader $ mapM (readModifierT . trim) . splitOn ",")
             ( metavar "PRETTY_PRINT"
@@ -171,21 +183,6 @@ clOptionsParser =
                 <> long "pretty-print"
                 <> help "Prety print options for kore terms: decode, infix, truncated"
                 <> showDefault
-            )
-        -- developer options below
-        <*> many
-            ( option
-                (eitherReader readEventLogTracing)
-                ( metavar "TRACE"
-                    <> long "trace"
-                    <> short 't'
-                    <> help
-                        ( "Eventlog tracing options: "
-                            <> intercalate
-                                ", "
-                                [toKebab $ fromHumps $ show t | t <- [minBound .. maxBound] :: [CustomUserEventType]]
-                        )
-                )
             )
   where
     readLogLevel :: String -> Either String LogLevel
@@ -197,12 +194,6 @@ clOptionsParser =
         other
             | other `elem` map fst allowedLogLevels -> Right (LevelOther $ pack other)
             | otherwise -> Left $ other <> ": Unsupported log level"
-
-    readEventLogTracing :: String -> Either String CustomUserEventType
-    readEventLogTracing =
-        (\s -> maybe (Left $ s <> " not supported in eventlog tracing") Right $ readMaybe s)
-            . toPascal
-            . fromKebab
 
     readLogFormat :: String -> Either String LogFormat
     readLogFormat = \case
@@ -223,18 +214,6 @@ clOptionsParser =
         "pretty" -> Right Pretty
         "nanoseconds" -> Right Nanoseconds
         other -> Left $ other <> ": Unsupported timestamp format"
-
-    readCellName :: String -> Either String Text
-    readCellName input
-        | null input =
-            Left "Empty cell name"
-        | all isAscii input
-        , all isPrint input =
-            Right $ "Lbl'-LT-'" <> enquote input <> "'-GT-'"
-        | otherwise =
-            Left $ "Illegal non-ascii characters in `" <> input <> "'"
-
-    enquote = decodeASCII . encodeLabel . BS.pack
 
 -- custom log levels that can be selected
 allowedLogLevels :: [(String, String)]
@@ -297,8 +276,8 @@ levelToContext =
             ,
                 [ [ctxt| request*,booster>rewrite*,detail. |]
                 , [ctxt| request*,booster>rewrite*,match|definedness|constraint,abort. |]
-                , [ctxt| proxy. |]
-                , [ctxt| proxy,abort. |]
+                , [ctxt| request*,proxy. |]
+                , [ctxt| request*,proxy,abort. |]
                 , [ctxt| request*,booster>failure,abort |]
                 ]
             )
@@ -382,16 +361,18 @@ parseSMTOptions =
                                 \Example: '(check-sat-using smt)' (i.e., plain 'check-sat')"
                         )
                     )
+                <*> many
+                    ( strOption
+                        ( metavar "SMT_ARG"
+                            <> long "smt-arg"
+                            <> help
+                                ( "Arguments to be passed to the SMT solver process"
+                                )
+                        )
+                    )
             )
   where
     smtDefaults = defaultSMTOptions
-
-    nonnegativeInt :: ReadM Int
-    nonnegativeInt =
-        auto >>= \case
-            i
-                | i < 0 -> readerError "must be a non-negative integer."
-                | otherwise -> pure i
 
     readTactic =
         either (readerError . ("Invalid s-expression. " <>)) pure . SMT.parseSExpr . BS.pack =<< str
@@ -419,12 +400,46 @@ parseEquationOptions =
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
 
-    nonnegativeInt :: ReadM Int
-    nonnegativeInt =
-        auto >>= \case
-            i
-                | i < 0 -> readerError "must be a non-negative integer."
-                | otherwise -> pure i
+parseRewriteOptions :: Parser RewriteOptions
+parseRewriteOptions =
+    RewriteOptions
+        <$> option
+            (eitherReader $ mapM (readCellName . trim) . splitOn ",")
+            ( metavar "CELL-NAME[,CELL-NAME]"
+                <> long "index-cells"
+                <> help "Names of configuration cells to index rewrite rules with (default: 'k')"
+                <> value []
+            )
+        <*> optional
+            ( option
+                (intWith (> 0))
+                ( metavar "DEPTH"
+                    <> long "simplify-each"
+                    <> help "If given: Simplify the term each time the given rewrite depth is reached"
+                )
+            )
+  where
+    readCellName :: String -> Either String Text
+    readCellName input
+        | null input =
+            Left "Empty cell name"
+        | all isAscii input
+        , all isPrint input =
+            Right $ "Lbl'-LT-'" <> enquote input <> "'-GT-'"
+        | otherwise =
+            Left $ "Illegal non-ascii characters in `" <> input <> "'"
+
+    enquote = decodeASCII . encodeLabel . BS.pack
+
+intWith :: Integral i => (Integer -> Bool) -> ReadM i
+intWith p =
+    auto >>= \case
+        i
+            | not (p i) -> readerError $ show i <> ": Invalid integer value."
+            | otherwise -> pure (fromIntegral i)
+
+nonnegativeInt :: Integral i => ReadM i
+nonnegativeInt = intWith (>= 0)
 
 versionInfoParser :: Parser (a -> a)
 versionInfoParser =
@@ -436,12 +451,15 @@ versionInfoParser =
         )
 
 versionInfoStr :: String
-versionInfoStr =
-    unlines
-        [ "hs-backend-booster version:"
-        , "  revision:\t" <> gitHash <> if gitDirty then " (dirty)" else ""
-        , "  branch:\t" <> fromMaybe "<unknown>" gitBranch
-        , "  last commit:\t" <> gitCommitDate
-        ]
+versionInfoStr
+    | version == dummyVersion =
+        unlines
+            [ "hs-backend-booster custom build:"
+            , "  revision:\t" <> gitHash <> if gitDirty then " (dirty)" else ""
+            , "  branch:\t" <> fromMaybe "<unknown>" gitBranch
+            , "  last commit:\t" <> gitCommitDate
+            ]
+    | otherwise = showVersion version
   where
     VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
+    dummyVersion = Version [0, 1, 0] []

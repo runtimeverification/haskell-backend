@@ -11,7 +11,7 @@ module Main (main) where
 import Control.Concurrent.MVar (newMVar)
 import Control.Concurrent.MVar qualified as MVar
 import Control.Exception (AsyncException (UserInterrupt), handleJust)
-import Control.Monad (forM_, void, when)
+import Control.Monad (void, when)
 import Control.Monad.Catch (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (
@@ -45,7 +45,6 @@ import Booster.Log.Context qualified
 import Booster.Pattern.Pretty
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
-import Booster.Trace
 import Booster.Util qualified as Booster
 import Data.Limit (Limit (..))
 import GlobalMain qualified
@@ -142,14 +141,16 @@ main = do
             { clOptions =
                 clOPts@CLOptions
                     { port
-                    , logLevels
-                    , logContexts
-                    , logFormat
+                    , logOptions =
+                        LogOptions
+                            { logLevels
+                            , logContexts
+                            , logFormat
+                            , logFile
+                            , logTimeStamps
+                            , prettyPrintOptions
+                            }
                     , smtOptions
-                    , eventlogEnabledUserEvents
-                    , logFile
-                    , logTimeStamps
-                    , prettyPrintOptions
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -167,10 +168,6 @@ main = do
     mTimeCache <- if logTimeStamps then Just <$> (newTimeCache "%Y-%m-%d %T") else pure Nothing
 
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
-        liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
-            putStrLn $ "Tracing " <> show t
-            enableCustomUserEvent t
-
         let koreLogActions ::
                 forall m.
                 MonadIO m =>
@@ -307,6 +304,7 @@ translateSMTOpts = \case
             , retryLimit =
                 KoreSMT.RetryLimit . maybe Unlimited (Limit . fromIntegral) $ smtOpts.retryLimit
             , tactic = fmap translateSExpr smtOpts.tactic
+            , args = smtOpts.args
             }
     Nothing ->
         defaultKoreSolverOptions{solver = KoreSMT.None}
@@ -320,6 +318,7 @@ translateSMTOpts = \case
             , prelude = KoreSMT.Prelude Nothing
             , solver = KoreSMT.Z3
             , tactic = Nothing
+            , args = []
             }
     translateSExpr :: SMT.SExpr -> KoreSMT.SExpr
     translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
