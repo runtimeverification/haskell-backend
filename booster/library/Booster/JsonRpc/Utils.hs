@@ -39,7 +39,6 @@ import Booster.Syntax.Json.Internalise
 import Data.Binary.Builder (fromLazyByteString, toLazyByteString)
 import Data.List (intersperse)
 import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Types
@@ -252,11 +251,11 @@ diffBy def pat1 pat2 =
                 [ "Conditions:"
                     : fmap
                         (Pretty.indent 4 . pretty . PrettyWithModifiers @['Decoded, 'Truncated])
-                        (Set.toList ps.boolPredicates)
+                        ps.boolPredicates
                 , "Ceil conditions:"
                     : map
                         (Pretty.indent 4 . pretty . PrettyWithModifiers @['Decoded, 'Truncated])
-                        (Set.toList ps.ceilPredicates)
+                        ps.ceilPredicates
                 , "Substitutions:"
                     : fmap
                         (Pretty.indent 4)
