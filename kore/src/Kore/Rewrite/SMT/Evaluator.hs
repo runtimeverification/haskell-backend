@@ -112,7 +112,11 @@ evalPredicate onUnknown predicate sideConditionM = case predicate of
         Nothing ->
             decidePredicate onUnknown SideCondition.top [] predicate
         Just sideCondition ->
-            decidePredicate onUnknown sideCondition (Predicate.getMultiAndPredicate $ from @_ @(Predicate _) sideCondition) predicate
+            decidePredicate
+                onUnknown
+                sideCondition
+                (Predicate.getMultiAndPredicate $ from @_ @(Predicate _) sideCondition)
+                predicate
 
 {- | Attempt to evaluate the 'Conditional' argument with an optional side
  condition using an external SMT solver.
@@ -193,11 +197,12 @@ decidePredicate onUnknown sideCondition sideConditionPredicates predicate =
     query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         Morph.hoist SMT.liftSMT $ do
-            sideConditionPredicates' <- concatMap SMT.splitAnd <$>
-                traverse
-                    (translatePredicate sideCondition tools)
-                    sideConditionPredicates
-            predicate' <- SMT.splitAnd <$> translatePredicate sideCondition tools predicate 
+            sideConditionPredicates' <-
+                concatMap SMT.splitAnd
+                    <$> traverse
+                        (translatePredicate sideCondition tools)
+                        sideConditionPredicates
+            predicate' <- SMT.splitAnd <$> translatePredicate sideCondition tools predicate
             let predicates' = SMT.transitiveClosure (Set.fromList predicate') $ Set.fromList sideConditionPredicates'
             -- when (Set.fromList predicate' /= predicates') $ liftIO $ do
             --     putStrLn $ "predicate: " <> show (Set.fromList predicate')

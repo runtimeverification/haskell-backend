@@ -515,6 +515,6 @@ closureOver atoms exprs = loop mempty exprs atoms
     loop acc exprs' currentAtoms =
         let (addedExprs, rest) = Set.partition (Set.null . Set.intersection currentAtoms . smtVars) exprs'
             newAtoms = Set.unions $ Set.map smtVars addedExprs
-        in if Set.null addedExprs
-               then acc
-               else loop (acc <> addedExprs) rest newAtoms
+         in if Set.null addedExprs
+                then acc
+                else loop (acc <> addedExprs) rest newAtoms
