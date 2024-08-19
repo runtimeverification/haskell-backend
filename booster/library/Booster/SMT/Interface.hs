@@ -419,12 +419,21 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     translated = SMT.runTranslator $ do
         let mkSMTEquation v t =
                 SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
-        smtSubst <-
+        smtSubst <- -- FIXME filter these, too.
             mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs givenSubst
-        smtPs <-
-            mapM (\(Predicate p) -> Assert (mkComment p) <$> SMT.translateTerm p) $ Set.toList givenPs
+
+        groundTruth <-
+            mapM (\(Predicate p) -> (p,) <$> SMT.translateTerm p) $ Set.toList givenPs
+
         toCheck <-
             mapM (SMT.translateTerm . coerce) $ Set.toList psToCheck
+
+        let interestingVars = mconcat $ map smtVars toCheck
+            filteredGroundTruth = closureOver interestingVars $ Set.fromList $ map snd groundTruth
+
+        let mkAssert (p, sexpr) = Assert (mkComment p) sexpr
+            smtPs = map mkAssert $ filter ((`Set.member` filteredGroundTruth) . snd) groundTruth
+
         pure (smtSubst <> smtPs, toCheck)
 
     -- Given the known truth and the expressions to check,
@@ -488,3 +497,24 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                         "Given ∧ P and Given ∧ !P interpreted as "
                             <> pack (show (positive', negative'))
                 pure (positive', negative')
+
+-- this should probably have a better home but lives here for a quick experiment
+smtVars :: SMT.SExpr -> Set SMT.SMTId
+smtVars (Atom smtId@(SMTId bs))
+    | "SMT-" `BS.isPrefixOf` bs = Set.singleton smtId
+    | otherwise = mempty
+smtVars (List exprs) = mconcat $ map smtVars exprs
+
+{- | filters the given 'exprs' to only return those which use any SMT
+  atoms from 'atoms' or from other expressions that are also returned.
+-}
+closureOver :: Set SMT.SMTId -> Set SMT.SExpr -> Set SMT.SExpr
+closureOver atoms exprs = loop mempty exprs atoms
+  where
+    loop :: Set SMT.SExpr -> Set SMT.SExpr -> Set SMT.SMTId -> Set SMT.SExpr
+    loop acc exprs' currentAtoms =
+        let (addedExprs, rest) = Set.partition (Set.null . Set.intersection currentAtoms . smtVars) exprs'
+            newAtoms = Set.unions $ Set.map smtVars addedExprs
+        in if Set.null addedExprs
+               then acc
+               else loop (acc <> addedExprs) rest newAtoms
