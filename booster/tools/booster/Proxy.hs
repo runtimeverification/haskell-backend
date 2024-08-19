@@ -34,7 +34,9 @@ import Booster.Definition.Base (KoreDefinition)
 import Booster.JsonRpc as Booster (ServerState (..), execStateToKoreJson, toExecState)
 import Booster.JsonRpc.Utils
 import Booster.Log
+import Booster.Pattern.Base (Pattern (..))
 import Booster.Syntax.Json.Internalise
+import Data.Set qualified as Set
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
@@ -515,12 +517,17 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         def
                                         simplified.state.term
                         case internalPattern of
-                            Right (p, sub, unsup) ->
+                            Right (term, preds, ceilConditions, sub, unsup) ->
                                 -- put back the ruleId, ruleSubstitution and rulePredicate that was originally passed to simplifyExecuteState
                                 -- this ensures the information from next states in a branch reponse doesn't get lost
                                 pure $
                                     Right
-                                        ( (Booster.toExecState p sub unsup Nothing)
+                                        ( ( Booster.toExecState
+                                                Pattern{term, ceilConditions, constraints = Set.fromList preds}
+                                                sub
+                                                unsup
+                                                Nothing
+                                          )
                                             { ruleId = s.ruleId
                                             , ruleSubstitution = s.ruleSubstitution
                                             , rulePredicate = s.rulePredicate

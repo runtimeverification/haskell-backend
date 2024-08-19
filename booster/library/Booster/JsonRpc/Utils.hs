@@ -39,7 +39,6 @@ import Booster.Syntax.Json.Internalise
 import Data.Binary.Builder (fromLazyByteString, toLazyByteString)
 import Data.List (intersperse)
 import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Types
@@ -53,6 +52,10 @@ diffJson file1 file2 =
         -- useful when comparing responses of `kore-rpc` and `kore-rpc-booster`
         (contents1@(RpcResponse (Execute res1)), RpcResponse (Execute res2))
             | sameModuloBranchOrder res1 res2 -> Identical $ rpcTypeOf contents1
+        -- special case for GetModel results: only compare the satisfiable fields,
+        -- ignore variable assignments if present
+        (contents1@(RpcResponse (GetModel res1)), RpcResponse (GetModel res2))
+            | sameModuloModel res1 res2 -> Identical $ rpcTypeOf contents1
         (contents1, contents2)
             | contents1 == contents2 ->
                 Identical $ rpcTypeOf contents1
@@ -78,6 +81,9 @@ diffJson file1 file2 =
                     length xs == 2 && length ys == 2 && (xs == ys || xs == reverse ys)
                 _ -> False
         | otherwise = False
+
+    sameModuloModel :: GetModelResult -> GetModelResult -> Bool
+    sameModuloModel res1 res2 = res1.satisfiable == res2.satisfiable
 
 data DiffResult
     = Identical KoreRpcType
@@ -252,11 +258,11 @@ diffBy def pat1 pat2 =
                 [ "Conditions:"
                     : fmap
                         (Pretty.indent 4 . pretty . PrettyWithModifiers @['Decoded, 'Truncated])
-                        (Set.toList ps.boolPredicates)
+                        ps.boolPredicates
                 , "Ceil conditions:"
                     : map
                         (Pretty.indent 4 . pretty . PrettyWithModifiers @['Decoded, 'Truncated])
-                        (Set.toList ps.ceilPredicates)
+                        ps.ceilPredicates
                 , "Substitutions:"
                     : fmap
                         (Pretty.indent 4)

@@ -58,6 +58,7 @@ import Booster.Pattern.Rewrite (
 import Booster.Pattern.Util (
     freeVariables,
     sortOfPattern,
+    sortOfTerm,
     substituteInPredicate,
     substituteInTerm,
  )
@@ -116,9 +117,9 @@ respond stateVar request =
                                     RpcError.CouldNotVerifyPattern
                                         [ patternErrorToRpcError patternError
                                         ]
-                    Right (pat, substitution, unsupported) -> do
+                    Right (term, preds, ceils, substitution, unsupported) -> do
                         unless (null unsupported) $ do
-                            withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $
+                            withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfTerm term) unsupported) $
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
                         let cutPoints = fromMaybe [] req.cutPointRules
                             terminals = fromMaybe [] req.terminalRules
@@ -133,9 +134,9 @@ respond stateVar request =
                         -- apply the given substitution before doing anything else
                         let substPat =
                                 Pattern
-                                    { term = substituteInTerm substitution pat.term
-                                    , constraints = Set.map (substituteInPredicate substitution) pat.constraints
-                                    , ceilConditions = pat.ceilConditions
+                                    { term = substituteInTerm substitution term
+                                    , constraints = Set.fromList $ map (substituteInPredicate substitution) preds
+                                    , ceilConditions = ceils
                                     }
                             -- remember all variables used in the substitutions
                             substVars =
@@ -280,7 +281,7 @@ respond stateVar request =
                                 withKorePatternContext (KoreJson.KJAnd (externaliseSort $ SortApp "SortBool" []) ps.unsupported) $ do
                                     logMessage ("ignoring unsupported predicate parts" :: Text)
                             -- apply the given substitution before doing anything else
-                            let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
+                            let predicates = map (substituteInPredicate ps.substitution) ps.boolPredicates
                             withContext CtxConstraint $
                                 ApplyEquations.simplifyConstraints
                                     def
@@ -295,7 +296,7 @@ respond stateVar request =
                                                         sortOfJson req.state.term
                                                 result =
                                                     map (externalisePredicate predicateSort) newPreds
-                                                        <> map (externaliseCeil predicateSort) (Set.toList ps.ceilPredicates)
+                                                        <> map (externaliseCeil predicateSort) ps.ceilPredicates
                                                         <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList ps.substitution)
                                                         <> ps.unsupported
 
@@ -350,10 +351,10 @@ respond stateVar request =
                                                         ( Text.unlines $
                                                             map
                                                                 (renderText . ("#Ceil:" <>) . pretty' @mods)
-                                                                (Set.toList ps.ceilPredicates)
+                                                                ps.ceilPredicates
                                                                 <> map prettyPattern ps.unsupported
                                                         )
-                                        pure (Set.toList ps.boolPredicates, ps.substitution)
+                                        pure (ps.boolPredicates, ps.substitution)
 
                             smtResult <-
                                 if null boolPs && Map.null suppliedSubst
