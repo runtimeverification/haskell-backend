@@ -188,12 +188,12 @@ equationToSMTLemma equation
         -- if requires empty: just (= (lhs) (rhs))
         -- if requires not empty: (=> (requires) (= (lhs) (rhs)))
         lemmaRaw <-
-            if Set.null equation.requires
+            if null equation.requires
                 then pure equationRaw
                 else do
                     smtPremise <-
                         foldl1 SMT.and
-                            <$> mapM (translateTerm . \(Predicate t) -> t) (Set.toList equation.requires)
+                            <$> mapM (translateTerm . \(Predicate t) -> t) equation.requires
                     pure $ SMT.implies smtPremise equationRaw
         -- NB ensures has no SMT implications (single shot sat-check)
 
@@ -247,13 +247,13 @@ equationToSMTLemma equation
                     ( pretty (PrettyWithModifiers @['Decoded, 'Truncated] equation.lhs)
                         <> " == "
                         <> pretty (PrettyWithModifiers @['Decoded, 'Truncated] equation.rhs)
-                        : if Set.null equation.requires
+                        : if null equation.requires
                             then []
                             else
                                 "  requires"
                                     : map
                                         ((Pretty.indent 4 . pretty) . (PrettyWithModifiers @['Decoded, 'Truncated]))
-                                        (Set.toList equation.requires)
+                                        equation.requires
                     )
             lemmaComment = BS.pack (Pretty.renderDefault prettyLemma)
 

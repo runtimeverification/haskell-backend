@@ -72,7 +72,7 @@ emptyKoreDefinition attributes =
 
 data RewriteRule (tag :: k) = RewriteRule
     { lhs, rhs :: Term
-    , requires, ensures :: Set Predicate
+    , requires, ensures :: [Predicate]
     , attributes :: AxiomAttributes
     , computedAttributes :: ComputedAxiomAttributes
     , existentials :: Set Variable
@@ -86,7 +86,7 @@ data Alias = Alias
     { name :: AliasName
     , params :: [Sort]
     , args :: [Variable]
-    , rhs :: Pattern
+    , rhs :: Term
     }
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)
