@@ -204,8 +204,8 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                 (Right IsTop{}, _) ->
                     pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $
                         "The check implication step expects the antecedent term to be function-like."
-                ( Right (IsPattern (existsL, (patL, substitutionL, unsupportedL)))
-                    , Right (IsPattern (existsR, (patR, substitutionR, unsupportedR)))
+                ( Right (IsPattern (existsL, patL, substitutionL, unsupportedL))
+                    , Right (IsPattern (existsR, patR, substitutionR, unsupportedR))
                     ) ->
                         checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR
                 (Right IsPattern{}, Right (IsTop sort)) ->
