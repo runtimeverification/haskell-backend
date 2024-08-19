@@ -178,7 +178,6 @@ mergeDefs k1 k2
                 <$> mergeDisjoint Def.modules k1 k2
                 <*> mergeDisjoint Def.sorts k1 k2
                 <*> mergeDisjoint Def.symbols k1 k2
-                <*> mergeDisjoint Def.aliases k1 k2
                 <*> pure (mergeTheories rewriteTheory k1 k2)
                 <*> pure (mergeTheories functionEquations k1 k2)
                 <*> pure (mergeTheories simplifications k1 k2)
@@ -223,7 +222,6 @@ addModule
         { name = Syntax.Id n
         , sorts = parsedSorts
         , symbols = parsedSymbols
-        , aliases = parsedAliases
         , axioms = parsedAxioms
         }
     ( Imported
@@ -232,7 +230,6 @@ addModule
                     , modules = currentModules
                     , sorts = currentSorts
                     , symbols = currentSymbols
-                    , aliases = currentAliases
                     , rewriteTheory = currentRewriteTheory
                     , functionEquations = currentFctEqs
                     , simplifications = currentSimpls
@@ -286,76 +283,20 @@ addModule
             let symbols =
                     renameSmtLibDuplicates symbols'
 
-            let defWithNewSortsAndSymbols =
+            let def =
                     Partial
                         KoreDefinition
                             { attributes = defAttributes
                             , modules
                             , sorts = sorts' -- no subsort information yet
                             , symbols
-                            , aliases = currentAliases -- no aliases yet
                             , rewriteTheory = currentRewriteTheory -- no rules yet
                             , functionEquations = Map.empty
                             , simplifications = Map.empty
                             , ceils = Map.empty
                             }
 
-            let internaliseAlias ::
-                    ParsedAlias ->
-                    Except DefinitionError (Def.AliasName, Alias)
-                -- TODO(Ana): do we need to handle attributes?
-                internaliseAlias palias@ParsedAlias{name, sortVars, argSorts, sort, args, rhs} = do
-                    unless
-                        (length argSorts == length args)
-                        (throwE (DefinitionAliasError name.getId . WrongAliasSortCount $ palias))
-                    let paramNames = (.getId) <$> sortVars
-                        params = Def.SortVar . textToBS <$> paramNames
-                        argNames = textToBS . (.getId) <$> args
-                        internalName = textToBS name.getId
-                    internalArgSorts <-
-                        traverse
-                            (withExcept DefinitionSortError . internaliseSort (Set.fromList paramNames) sorts')
-                            argSorts
-                    internalResSort <-
-                        withExcept DefinitionSortError $
-                            internaliseSort (Set.fromList paramNames) sorts' sort
-                    let internalArgs = uncurry Def.Variable <$> zip internalArgSorts argNames
-
-                    (rhsTerm, predicates, ceilConditions, substitution, _unsupported) <- -- FIXME
-                        withExcept (DefinitionAliasError name.getId . InconsistentAliasPattern . (: [])) $
-                            internalisePattern
-                                AllowAlias
-                                IgnoreSubsorts
-                                (Just sortVars)
-                                defWithNewSortsAndSymbols.partial
-                                rhs
-                    unless (null substitution) $
-                        throwE $
-                            DefinitionAliasError name.getId $
-                                InconsistentAliasPattern [SubstitutionNotAllowed]
-                    unless (null predicates) $
-                        throwE $
-                            DefinitionAliasError name.getId $
-                                InconsistentAliasPattern [PredicateNotAllowed]
-                    unless (null ceilConditions) $
-                        throwE $
-                            DefinitionAliasError name.getId $
-                                InconsistentAliasPattern [CeilNotAllowed]
-                    let rhsSort = Util.sortOfTerm rhsTerm
-                    unless
-                        (rhsSort == internalResSort)
-                        (throwE (DefinitionSortError (GeneralError "IncompatibleSorts")))
-                    return (internalName, Alias{name = internalName, params, args = internalArgs, rhs = rhsTerm})
-                -- filter out "antiLeft" aliases, recognised by name and argument count
-                notPriority :: ParsedAlias -> Bool
-                notPriority alias =
-                    not $ null alias.args && "priority" `Text.isPrefixOf` alias.name.getId
-            newAliases <- traverse internaliseAlias $ filter notPriority parsedAliases
-            let aliases = Map.fromList newAliases <> currentAliases
-
-            let defWithAliases :: PartialDefinition
-                defWithAliases = Partial defWithNewSortsAndSymbols.partial{aliases}
-            newAxioms <- mapMaybeM (internaliseAxiom defWithAliases) parsedAxioms
+            newAxioms <- mapMaybeM (internaliseAxiom def) parsedAxioms
 
             let newRewriteRules = mapMaybe retractRewriteRule newAxioms
                 subsortPairs = mapMaybe retractSubsortRule newAxioms
@@ -378,7 +319,7 @@ addModule
                     subsortClosure sorts' subsortPairs
 
             pure $
-                defWithAliases.partial
+                def.partial
                     { sorts
                     , rewriteTheory
                     , functionEquations
@@ -790,16 +731,12 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
                         lhs
                         rhs
                         attribs
-        RewriteRuleAxiom' alias args rhs' attribs ->
-            let (rhs, existentials) = extractExistentials rhs'
-             in Just . RewriteRuleAxiom
-                    <$> internaliseRewriteRule
-                        partialDefinition
-                        existentials
-                        (textToBS alias)
-                        args
-                        rhs
-                        attribs
+        RewriteRuleAxiom'{} ->
+            throwE $
+                DefinitionSortError $
+                    GeneralError
+                        ( "Rules with antiLeft aliases are no longer supported. Please rekompile your definition with a newer version of K."
+                        )
         SimplificationAxiom' requires lhs rhs sortVars attribs ->
             Just
                 <$> internaliseSimpleEquation
@@ -827,9 +764,6 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
                     rhs
                     sortVars
                     attribs
-
-orFailWith :: Maybe a -> e -> Except e a
-mbX `orFailWith` err = maybe (throwE err) pure mbX
 
 internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported ::
     KoreDefinition ->
@@ -912,85 +846,6 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
         variableSort <- lookupInternalSort Nothing partialDefinition.sorts right sort
         let variableName = textToBS name.getId
         pure $ Variable{variableSort, variableName}
-
-internaliseRewriteRule ::
-    KoreDefinition ->
-    [(Id, Sort)] ->
-    AliasName ->
-    [Syntax.KorePattern] ->
-    Syntax.KorePattern ->
-    AxiomAttributes ->
-    Except DefinitionError (RewriteRule k)
-internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttributes = do
-    let ref = sourceRef axAttributes
-    alias <-
-        withExcept (DefinitionAliasError $ Text.decodeLatin1 aliasName) $
-            Map.lookup aliasName partialDefinition.aliases
-                `orFailWith` UnknownAlias aliasName
-    args <-
-        traverse
-            ( withExcept (DefinitionPatternError ref)
-                . internaliseTerm AllowAlias IgnoreSubsorts Nothing partialDefinition
-            )
-            aliasArgs
-    -- prefix all variables in lhs and rhs with "Rule#" and "Ex#" to avoid
-    -- name clashes with patterns from the user
-    lhs <- Util.modifyVariablesInT (Util.modifyVarName Util.markAsRuleVar) <$> expandAlias alias args
-
-    existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
-    let renameVariable v
-            | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
-            | otherwise = Util.modifyVarName Util.markAsRuleVar v
-    (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
-            partialDefinition
-            ref
-            Nothing
-            renameVariable
-            right
-
-    let notPreservesDefinednessReasons =
-            -- users can override the definedness computation by an explicit attribute
-            if coerce axAttributes.preserving
-                then []
-                else
-                    [ UndefinedSymbol s.name
-                    | s <- Util.filterTermSymbols (not . Util.isDefinedSymbol) rhs
-                    ]
-        containsAcSymbols =
-            Util.checkTermSymbols Util.checkSymbolIsAc lhs
-        computedAttributes =
-            ComputedAxiomAttributes{notPreservesDefinednessReasons, containsAcSymbols}
-        existentials = Set.map (Util.modifyVarName Util.markAsExVar) existentials'
-        attributes =
-            axAttributes
-                { concreteness = Util.modifyVarNameConcreteness Util.markAsRuleVar axAttributes.concreteness
-                }
-    return
-        RewriteRule
-            { lhs
-            , rhs
-            , requires = mempty
-            , ensures
-            , attributes
-            , computedAttributes
-            , existentials
-            }
-  where
-    mkVar (name, sort) = do
-        variableSort <- lookupInternalSort Nothing partialDefinition.sorts right sort
-        let variableName = textToBS name.getId
-        pure $ Variable{variableSort, variableName}
-
-expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.Term
-expandAlias alias currentArgs
-    | length alias.args /= length currentArgs =
-        throwE $
-            DefinitionAliasError (Text.decodeLatin1 alias.name) $
-                WrongAliasArgCount alias currentArgs
-    | otherwise = do
-        let substitution = Map.fromList (zip alias.args currentArgs)
-        pure $ Util.substituteInTerm substitution alias.rhs
 
 {- | Internalises simplification rules, for term simplification
    (represented as a 'RewriteRule').
@@ -1320,7 +1175,6 @@ data DefinitionError
     | DefinitionAttributeError Text
     | DefinitionSortError SortError
     | DefinitionPatternError SourceRef PatternError
-    | DefinitionAliasError Text AliasError
     | DefinitionAxiomError AxiomError
     | DefinitionTermOrPredicateError SourceRef TermOrPredicateError
     | ElemSymbolMalformed Def.Symbol
@@ -1349,9 +1203,6 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods DefinitionError
             pretty $ "Sort error: " <> renderSortError @mods (PrettyWithModifiers sortErr)
         DefinitionPatternError ref patErr ->
             "Pattern error in " <> pretty ref <> ": " <> pretty (show patErr)
-        -- TODO define a pretty instance?
-        DefinitionAliasError name err ->
-            pretty $ "Alias error in " <> Text.unpack name <> ": " <> show err
         DefinitionAxiomError err ->
             "Bad rewrite rule " <> pretty err
         DefinitionTermOrPredicateError ref (PatternExpected p) ->
@@ -1397,13 +1248,6 @@ definitionErrorToRpcError = \case
     location rule =
         either (const "unknown location") pretty $
             runExcept (Attributes.readLocation rule.attributes)
-
-data AliasError
-    = UnknownAlias AliasName
-    | WrongAliasSortCount ParsedAlias
-    | WrongAliasArgCount Alias [Def.Term]
-    | InconsistentAliasPattern [PatternError]
-    deriving stock (Eq, Show)
 
 data AxiomError
     = MalformedRewriteRule ParsedAxiom
