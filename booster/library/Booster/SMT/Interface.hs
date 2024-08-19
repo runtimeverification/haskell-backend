@@ -513,7 +513,7 @@ closureOver atoms exprs = loop mempty exprs atoms
   where
     loop :: Set SMT.SExpr -> Set SMT.SExpr -> Set SMT.SMTId -> Set SMT.SExpr
     loop acc exprs' currentAtoms =
-        let (addedExprs, rest) = Set.partition (Set.null . Set.intersection currentAtoms . smtVars) exprs'
+        let (rest, addedExprs) = Set.partition (Set.null . Set.intersection currentAtoms . smtVars) exprs'
             newAtoms = Set.unions $ Set.map smtVars addedExprs
          in if Set.null addedExprs
                 then acc
