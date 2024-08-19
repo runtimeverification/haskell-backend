@@ -43,7 +43,6 @@ data KoreDefinition = KoreDefinition
     , modules :: Map ByteString ModuleAttributes
     , sorts :: Map SortName (SortAttributes, Set SortName)
     , symbols :: Map SymbolName Symbol -- constructors and functions
-    , aliases :: Map AliasName Alias
     , rewriteTheory :: Theory (RewriteRule "Rewrite")
     , functionEquations :: Theory (RewriteRule "Function")
     , simplifications :: Theory (RewriteRule "Simplification")
@@ -63,7 +62,6 @@ emptyKoreDefinition attributes =
         , modules = Map.empty
         , sorts = Map.empty
         , symbols = Map.empty
-        , aliases = Map.empty
         , rewriteTheory = Map.empty
         , functionEquations = Map.empty
         , simplifications = Map.empty
@@ -76,17 +74,6 @@ data RewriteRule (tag :: k) = RewriteRule
     , attributes :: AxiomAttributes
     , computedAttributes :: ComputedAxiomAttributes
     , existentials :: Set Variable
-    }
-    deriving stock (Eq, Ord, Show, GHC.Generic)
-    deriving anyclass (NFData)
-
-type AliasName = ByteString
-
-data Alias = Alias
-    { name :: AliasName
-    , params :: [Sort]
-    , args :: [Variable]
-    , rhs :: Term
     }
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)
