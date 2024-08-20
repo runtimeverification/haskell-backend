@@ -48,11 +48,11 @@ trap "exit 1"  HUP INT PIPE QUIT TERM
 trap clean_up  EXIT
 
 feature_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --ignore-environment --command bash -c "$1"
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --ignore-environment --command bash -c "$1"
 }
 
 cd $TEMPD
