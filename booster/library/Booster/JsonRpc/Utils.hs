@@ -52,6 +52,10 @@ diffJson file1 file2 =
         -- useful when comparing responses of `kore-rpc` and `kore-rpc-booster`
         (contents1@(RpcResponse (Execute res1)), RpcResponse (Execute res2))
             | sameModuloBranchOrder res1 res2 -> Identical $ rpcTypeOf contents1
+        -- special case for GetModel results: only compare the satisfiable fields,
+        -- ignore variable assignments if present
+        (contents1@(RpcResponse (GetModel res1)), RpcResponse (GetModel res2))
+            | sameModuloModel res1 res2 -> Identical $ rpcTypeOf contents1
         (contents1, contents2)
             | contents1 == contents2 ->
                 Identical $ rpcTypeOf contents1
@@ -77,6 +81,9 @@ diffJson file1 file2 =
                     length xs == 2 && length ys == 2 && (xs == ys || xs == reverse ys)
                 _ -> False
         | otherwise = False
+
+    sameModuloModel :: GetModelResult -> GetModelResult -> Bool
+    sameModuloModel res1 res2 = res1.satisfiable == res2.satisfiable
 
 data DiffResult
     = Identical KoreRpcType
