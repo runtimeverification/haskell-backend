@@ -434,8 +434,8 @@ checkPredicates ctxt givenPs givenSubst psToCheck
     translated = SMT.runTranslator $ do
         let mkSMTEquation v t =
                 SMT.eq <$> SMT.translateTerm (Var v) <*> SMT.translateTerm t
-        smtSubst <- -- FIXME filter these, too.
-            mapM (\(v, t) -> Assert "Substitution" <$> mkSMTEquation v t) $ Map.assocs givenSubst
+        substEqs <-
+            mapM (uncurry mkSMTEquation) $ Map.assocs givenSubst
 
         groundTruth <-
             mapM (\(Predicate p) -> (p,) <$> SMT.translateTerm p) $ Set.toList givenPs
@@ -445,9 +445,11 @@ checkPredicates ctxt givenPs givenSubst psToCheck
 
         let interestingVars = mconcat $ map smtVars toCheck
             filteredGroundTruth = closureOver interestingVars $ Set.fromList $ map snd groundTruth
+            filteredSubstEqs = closureOver interestingVars $ Set.fromList substEqs
 
         let mkAssert (p, sexpr) = Assert (mkComment p) sexpr
             smtPs = map mkAssert $ filter ((`Set.member` filteredGroundTruth) . snd) groundTruth
+            smtSubst = map (Assert "Substitution") $ Set.toList filteredSubstEqs
 
         pure (smtSubst <> smtPs, toCheck)
 
@@ -513,23 +515,22 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                             <> pack (show (positive', negative'))
                 pure (positive', negative')
 
--- this should probably have a better home but lives here for a quick experiment
-smtVars :: SMT.SExpr -> Set SMT.SMTId
-smtVars (Atom smtId@(SMTId bs))
-    | "SMT-" `BS.isPrefixOf` bs = Set.singleton smtId
-    | otherwise = mempty
-smtVars (List exprs) = mconcat $ map smtVars exprs
+    -- functions for filtering ground truth and substitution equations
+    smtVars :: SMT.SExpr -> Set SMT.SMTId
+    smtVars (Atom smtId@(SMTId bs))
+        | "SMT-" `BS.isPrefixOf` bs = Set.singleton smtId
+        | otherwise = mempty
+    smtVars (List exprs) = mconcat $ map smtVars exprs
 
-{- | filters the given 'exprs' to only return those which use any SMT
-  atoms from 'atoms' or from other expressions that are also returned.
--}
-closureOver :: Set SMT.SMTId -> Set SMT.SExpr -> Set SMT.SExpr
-closureOver atoms exprs = loop mempty exprs atoms
-  where
-    loop :: Set SMT.SExpr -> Set SMT.SExpr -> Set SMT.SMTId -> Set SMT.SExpr
-    loop acc exprs' currentAtoms =
-        let (rest, addedExprs) = Set.partition (Set.null . Set.intersection currentAtoms . smtVars) exprs'
-            newAtoms = Set.unions $ Set.map smtVars addedExprs
-         in if Set.null addedExprs
-                then acc
-                else loop (acc <> addedExprs) rest newAtoms
+    -- filters given 'exprs' to only return those which use any of the
+    -- SMT 'atoms' or from other expressions that are also returned.
+    closureOver :: Set SMT.SMTId -> Set SMT.SExpr -> Set SMT.SExpr
+    closureOver atoms exprs = loop mempty exprs atoms
+      where
+        loop :: Set SMT.SExpr -> Set SMT.SExpr -> Set SMT.SMTId -> Set SMT.SExpr
+        loop acc exprs' currentAtoms =
+            let (rest, addedExprs) = Set.partition (Set.null . Set.intersection currentAtoms . smtVars) exprs'
+                newAtoms = Set.unions $ Set.map smtVars addedExprs
+             in if Set.null addedExprs
+                    then acc
+                    else loop (acc <> addedExprs) rest newAtoms
