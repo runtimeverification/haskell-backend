@@ -316,7 +316,6 @@ testDef =
         Map.empty -- no modules (HACK)
         defSorts
         defSymbols
-        Map.empty -- no aliases
         Map.empty -- no rules
         Map.empty -- no function equations
         Map.empty -- no simplifications
@@ -334,7 +333,6 @@ displayTestDef = do
         prunedDef =
             def
                 { modules = Map.empty
-                , aliases = Map.empty
                 , functionEquations = Map.empty
                 , simplifications = Map.empty
                 }
