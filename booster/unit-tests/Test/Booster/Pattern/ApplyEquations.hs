@@ -154,7 +154,7 @@ test_simplifyPattern =
   where
     simpl t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluatePattern simplDef Nothing ns mempty t
+        runNoLoggingT $ fst <$> evaluatePattern simplDef Nothing ns mempty NoCheckConstraintsConsistent t
     a = var "A" someSort
 
 test_simplifyConstraint :: TestTree
