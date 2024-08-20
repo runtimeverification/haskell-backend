@@ -172,15 +172,6 @@ readSyntacticClauses attributes = do
         | all isDigit (Text.unpack str) = first Text.pack $ readEither (Text.unpack str)
         | otherwise = Left $ "invalid syntactic clause" <> (Text.pack $ show str)
 
--- where
---   readWord8 str =
---     readT [] = Right 50 -- HACK to accept `simplification()` from internal modules
---     readT [n]
---         | Text.null n = Right 50 -- HACK to accept `simplification("")`
---         | all isDigit (Text.unpack n) = Priority <$> readEither (Text.unpack n)
---         | otherwise = Left $ "invalid priority value " <> show n
---     readT ns = Left $ "invalid priority value " <> show ns
-
 instance HasAttributes ParsedSymbol where
     type Attributes ParsedSymbol = SymbolAttributes
 
