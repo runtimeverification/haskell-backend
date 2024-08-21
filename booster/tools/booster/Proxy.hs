@@ -351,7 +351,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                             r
                                                 { state = execStateToKoreJson simplifiedBoosterState
                                                 , maxDepth = Just $ Depth 1
-                                                , assumeStateDefined = Just True
+                                                , assumeDefined = Just True
                                                 }
                                         )
                             Booster.Log.withContexts [CtxProxy, CtxTiming, CtxKore] $

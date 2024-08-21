@@ -141,7 +141,7 @@ respond reqId serverState moduleName runSMT =
                 , cutPointRules
                 , terminalRules
                 , movingAverageStepTimeout
-                , assumeStateDefined
+                , assumeDefined
                 , stepTimeout
                 , logSuccessfulRewrites
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
@@ -167,7 +167,7 @@ respond reqId serverState moduleName runSMT =
                                                 then EnableMovingAverage
                                                 else DisableMovingAverage
                                             )
-                                            ( if fromMaybe False assumeStateDefined
+                                            ( if fromMaybe False assumeDefined
                                                 then EnableAssumeInitialDefined
                                                 else DisableAssumeInitialDefined
                                             )

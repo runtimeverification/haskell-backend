@@ -132,7 +132,7 @@ respond stateVar request =
                                         , req.logFailedRewrites
                                         ]
                             checkConstraintsConsistent =
-                                case req.assumeStateDefined of
+                                case req.assumeDefined of
                                     Nothing -> ApplyEquations.CheckConstraintsConsistent
                                     Just False -> ApplyEquations.CheckConstraintsConsistent
                                     Just True -> ApplyEquations.NoCheckConstraintsConsistent
