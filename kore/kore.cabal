@@ -569,6 +569,7 @@ library
     SMT
     SMT.AST
     SMT.SimpleSMT
+    SMT.Utils
     SQL
     SQL.ColumnDef
     SQL.Key
