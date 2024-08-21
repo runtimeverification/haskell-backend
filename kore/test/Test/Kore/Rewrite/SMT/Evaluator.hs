@@ -243,7 +243,8 @@ assertRefuted prop = do
         SMT.Evaluator.decidePredicate
             (ErrorDecidePredicateUnknown $srcLoc Nothing)
             SideCondition.top
-            (prop :| [])
+            []
+            prop
             & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 

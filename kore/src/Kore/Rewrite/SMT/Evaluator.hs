@@ -94,6 +94,7 @@ import SMT (
  )
 import SMT qualified
 import SMT.SimpleSMT qualified as SimpleSMT
+import SMT.Utils qualified as SMT
 
 {- | Attempt to evaluate the 'Predicate' argument with an optional side
  condition using an external SMT solver.
@@ -109,11 +110,13 @@ evalPredicate onUnknown predicate sideConditionM = case predicate of
     Predicate.PredicateFalse -> return $ Just False
     _ -> case sideConditionM of
         Nothing ->
-            predicate :| []
-                & decidePredicate onUnknown SideCondition.top
+            decidePredicate onUnknown SideCondition.top [] predicate
         Just sideCondition ->
-            predicate :| [from @_ @(Predicate _) sideCondition]
-                & decidePredicate onUnknown sideCondition
+            decidePredicate
+                onUnknown
+                sideCondition
+                (Predicate.getMultiAndPredicate $ from @_ @(Predicate _) sideCondition)
+                predicate
 
 {- | Attempt to evaluate the 'Conditional' argument with an optional side
  condition using an external SMT solver.
@@ -164,9 +167,10 @@ decidePredicate ::
     InternalVariable variable =>
     OnDecidePredicateUnknown ->
     SideCondition variable ->
-    NonEmpty (Predicate variable) ->
+    [Predicate variable] ->
+    Predicate variable ->
     Simplifier (Maybe Bool)
-decidePredicate onUnknown sideCondition predicates =
+decidePredicate onUnknown sideCondition sideConditionPredicates predicate =
     whileDebugEvaluateCondition predicates $
         do
             result <- query >>= whenUnknown retry
@@ -187,14 +191,23 @@ decidePredicate onUnknown sideCondition predicates =
                     empty
             & runMaybeT
   where
+    predicates = predicate :| sideConditionPredicates
+
     query :: MaybeT Simplifier Result
     query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         Morph.hoist SMT.liftSMT $ do
-            predicates' <-
-                traverse
-                    (translatePredicate sideCondition tools)
-                    predicates
+            sideConditionPredicates' <-
+                concatMap SMT.splitAnd
+                    <$> traverse
+                        (translatePredicate sideCondition tools)
+                        sideConditionPredicates
+            predicate' <- SMT.splitAnd <$> translatePredicate sideCondition tools predicate
+            let predicates' = SMT.transitiveClosure (Set.fromList predicate') $ Set.fromList sideConditionPredicates'
+            -- when (Set.fromList predicate' /= predicates') $ liftIO $ do
+            --     putStrLn $ "predicate: " <> show (Set.fromList predicate')
+            --     putStrLn $ "sideConditionPredicates: " <> show sideConditionPredicates'
+            --     putStrLn $ "pruned to: " <> show predicates'
             traverse_ SMT.assert predicates'
             SMT.check >>= maybe empty return
 
