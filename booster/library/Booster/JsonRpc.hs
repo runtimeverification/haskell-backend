@@ -131,6 +131,11 @@ respond stateVar request =
                                         [ req.logSuccessfulRewrites
                                         , req.logFailedRewrites
                                         ]
+                            checkConstraintsConsistent =
+                                case req.assumeStateDefined of
+                                    Nothing -> ApplyEquations.CheckConstraintsConsistent
+                                    Just False -> ApplyEquations.CheckConstraintsConsistent
+                                    Just True -> ApplyEquations.NoCheckConstraintsConsistent
                         -- apply the given substitution before doing anything else
                         let substPat =
                                 Pattern
@@ -154,7 +159,7 @@ respond stateVar request =
                                 mLlvmLibrary
                                 solver
                                 mempty
-                                ApplyEquations.CheckConstraintsConsistent
+                                checkConstraintsConsistent
                                 substPat
 
                         case evaluatedInitialPattern of

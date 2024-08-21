@@ -43,7 +43,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
 
 Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name), `assume-state-defined` (description follows) and all the `log-*` options, which default to false if unspecified.
 
-If `assume-state-defined` is set to `true`, the all sub-terms of `state` will be assumed to be defined before attempting rewrite rules.
+The `assume-state-defined` flag has different meaning in Booster and Kore. If set to `true`, Booster will not check the constraints of the initial pattern for satisfiability. It is the responsibility of the caller to ensure that the pattern is not vacuous. In Kore, if `assume-state-defined` is set to `true`, then all sub-terms of `state` will be assumed to be defined before attempting rewrite rules.
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
