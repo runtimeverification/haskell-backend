@@ -162,15 +162,20 @@ respond stateVar request =
                                 checkConstraintsConsistent
                                 substPat
 
+                        let trivialResponse =
+                                execResponse
+                                    req
+                                    (0, mempty, RewriteTrivial substPat)
+                                    substitution
+                                    unsupported
+
                         case evaluatedInitialPattern of
                             (Left ApplyEquations.SideConditionFalse{}, _) -> do
                                 -- input pattern's constraints are Bottom, return Vacuous
-                                pure $
-                                    execResponse
-                                        req
-                                        (0, mempty, RewriteTrivial substPat)
-                                        substitution
-                                        unsupported
+                                pure trivialResponse
+                            (Left ApplyEquations.UndefinedTerm{}, _) -> do
+                                -- LLVM has stumbled upon an undefined term, the whole term is Bottom, return Vacuous
+                                pure trivialResponse
                             (Left other, _) ->
                                 pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
                             (Right newPattern, simplifierCache) -> do
