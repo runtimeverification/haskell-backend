@@ -853,8 +853,9 @@ applyEquation term rule =
 
                         let (syntacticRequires, restRequires) = partitionClauses rawRequired rule.attributes.syntacticClauses
                         -- check required conditions
-                        withContext CtxConstraint $ withContext CtxSyntactic $
-                            checkRequiresSyntactically subst (Set.toList knownPredicates) syntacticRequires restRequires
+                        withContext CtxConstraint $
+                            withContext CtxSyntactic $
+                                checkRequiresSyntactically subst (Set.toList knownPredicates) syntacticRequires restRequires
 
                         -- check all ensured conditions together with the path condition
                         ensuredConditions <- checkEnsures rule subst
@@ -935,10 +936,11 @@ filterOutKnownConstraints priorKnowledge constraitns = do
     pure toCheck
 
 partitionClauses :: [a] -> SyntacticClauses -> ([a], [a])
-partitionClauses required (SyntacticClauses cs') = 
-    let cs = Set.fromList cs' in
-    bimap (map snd) (map snd) $
-    partition (\(idx, _elem) -> idx `Set.member` cs) $ zip [0..] required
+partitionClauses required (SyntacticClauses cs') =
+    let cs = Set.fromList cs'
+     in bimap (map snd) (map snd) $
+            partition (\(idx, _elem) -> idx `Set.member` cs) $
+                zip [0 ..] required
 
 checkRequiresSyntactically ::
     forall io.
@@ -1000,8 +1002,8 @@ checkRequiresSyntactically currentSubst knownPredicates restRequires' syntacticR
                                             (_, IndeterminateCondition{}) -> loopOver cs
                                             (_, ConditionFalse{}) -> loopOver cs
                                             err -> throwE err
-                                        )
-                        in loopOver knownPredicates
+                                         )
+             in loopOver knownPredicates
   where
     simplifyWithLLVM term = do
         simplified <-
