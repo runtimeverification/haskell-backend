@@ -940,7 +940,7 @@ partitionClauses required (SyntacticClauses cs') =
     let cs = Set.fromList cs'
      in bimap (map snd) (map snd) $
             partition (\(idx, _elem) -> idx `Set.member` cs) $
-                zip [0 ..] required
+                zip [1 ..] required
 
 checkRequiresSyntactically ::
     forall io.
