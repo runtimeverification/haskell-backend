@@ -853,9 +853,17 @@ applyEquation term rule =
 
                         let (syntacticRequires, restRequires) = partitionClauses rawRequired rule.attributes.syntacticClauses
                         -- check required conditions
-                        withContext CtxConstraint $
-                            withContext CtxSyntactic $
-                                checkRequiresSyntactically subst (Set.toList knownPredicates) syntacticRequires restRequires
+                        withContext CtxConstraint $ do
+                            unless (null syntacticRequires) $
+                                withContext CtxSyntactic $
+                                    logMessage $
+                                        renderOneLineText $
+                                            "Checking the following syntactically:"
+                                                <+> ( hsep $
+                                                        intersperse "," $
+                                                            map (pretty' @mods) syntacticRequires
+                                                    )
+                            checkRequiresSyntactically subst (Set.toList knownPredicates) restRequires syntacticRequires
 
                         -- check all ensured conditions together with the path condition
                         ensuredConditions <- checkEnsures rule subst
@@ -953,25 +961,47 @@ checkRequiresSyntactically ::
         ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
         (EquationT io)
         ()
-checkRequiresSyntactically currentSubst knownPredicates restRequires' syntacticRequires = do
+checkRequiresSyntactically currentSubst knownPredicates restRequires syntacticRequires = do
     ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
     case syntacticRequires of
-        [] -> checkRequiresSemantically currentSubst (Set.fromList knownPredicates) restRequires'
+        [] -> checkRequiresSemantically currentSubst (Set.fromList knownPredicates) restRequires
         (headSyntacticRequires : restSyntacticRequires) -> do
             koreDef <- (.definition) <$> lift getConfig
             let loopOver = \case
                     [] ->
                         -- no more @knownPredicates@, but unresolved syntactic condition remains: abort
-                        throwRemainingRequires currentSubst restRequires'
-                    (c : cs) -> case matchTermsWithSubst Eval koreDef currentSubst (coerce headSyntacticRequires) (coerce c) of
-                        MatchFailed{} -> loopOver cs
-                        MatchIndeterminate{} -> loopOver cs
+                        throwRemainingRequires currentSubst restRequires
+                    ((c :: Predicate) : cs) -> case matchTermsWithSubst Eval koreDef currentSubst (coerce headSyntacticRequires) (coerce c) of
+                        MatchFailed failReason -> do
+                            withContext CtxSyntactic $
+                                withTermContext (coerce c) $
+                                    withContext CtxMatch $
+                                        withContext CtxFailure $
+                                            logPretty' @mods failReason
+                            loopOver cs
+                        MatchIndeterminate remainder -> do
+                            withContext CtxSyntactic $
+                                withTermContext (coerce c) $
+                                    withContext CtxMatch $
+                                        withContext CtxFailure $
+                                            logMessage $
+                                                WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                                    renderOneLineText $
+                                                        "Uncertain about match with rule. Remainder:"
+                                                            <+> ( hsep $
+                                                                    punctuate comma $
+                                                                        map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
+                                                                            NonEmpty.toList remainder
+                                                                )
+
+                            loopOver cs
                         MatchSuccess newSubst ->
                             -- we got a substitution from matching @headSyntacticRequires@ against the clause @c@ of the path condition,
                             -- try applying it to @syntacticRequires <> restRequires'@, simplifying that with LLVM,
                             -- and filtering from the path condition
                             ( do
-                                withContext CtxSubstitution
+                                withContext CtxSyntactic
+                                    $ withContext CtxSubstitution
                                     $ logMessage
                                     $ WithJsonMessage
                                         (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList newSubst)])
@@ -983,20 +1013,24 @@ checkRequiresSyntactically currentSubst knownPredicates restRequires' syntacticR
                                                         Map.toList newSubst
                                             )
 
-                                let substitited = map (coerce . substituteInTerm newSubst . coerce) (syntacticRequires <> restRequires')
-                                simplified <- coerce <$> mapM simplifyWithLLVM substitited
-                                stillUnclear <- lift $ filterOutKnownConstraints (Set.fromList knownPredicates) simplified
+                                let substitited = map (coerce . substituteInTerm newSubst . coerce) (syntacticRequires <> restRequires)
+                                simplified <- withContext CtxSyntactic $ coerce <$> mapM simplifyWithLLVM substitited
+                                stillUnclear <-
+                                    withContext CtxSyntactic $
+                                        lift $
+                                            filterOutKnownConstraints (Set.fromList knownPredicates) simplified
                                 case stillUnclear of
                                     [] -> pure () -- done
                                     _ -> do
-                                        logMessage $
-                                            renderOneLineText
-                                                ( "Uncertain about conditions in syntactic simplification rule: "
-                                                    <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
-                                                )
+                                        withContext CtxSyntactic $
+                                            logMessage $
+                                                renderOneLineText
+                                                    ( "Uncertain about conditions in syntactic simplification rule: "
+                                                        <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
+                                                    )
                                         -- @newSubst@ does not solve the conditions completely, repeat the process for @restSyntacticRequires@
                                         -- using the learned @newSubst@
-                                        checkRequiresSyntactically newSubst knownPredicates restRequires' restSyntacticRequires
+                                        checkRequiresSyntactically newSubst knownPredicates restRequires restSyntacticRequires
                             )
                                 `catchE` ( \case
                                             (_, IndeterminateCondition{}) -> loopOver cs
@@ -1032,7 +1066,7 @@ checkRequiresSyntactically currentSubst knownPredicates restRequires' syntacticR
                             ( "Uncertain about conditions in syntactic simplification rule: "
                                 <+> hsep (intersperse "," $ map (pretty' @mods) substituted)
                             )
-            , IndeterminateCondition restRequires'
+            , IndeterminateCondition restRequires
             )
 
 checkRequiresSemantically ::
@@ -1112,7 +1146,7 @@ checkConstraint ::
         )
         (EquationT io)
         (Maybe Predicate)
-checkConstraint whenBottom (Predicate p) = withContext CtxConstraint $ do
+checkConstraint whenBottom (Predicate p) = do
     let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
         fallBackToUnsimplifiedOrBottom = \case
             UndefinedTerm{} -> pure FalseBool
