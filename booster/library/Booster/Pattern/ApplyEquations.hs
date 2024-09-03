@@ -863,7 +863,11 @@ applyEquation term rule =
                                                         intersperse "," $
                                                             map (pretty' @mods) syntacticRequires
                                                     )
-                            checkRequiresSyntactically subst (Set.toList knownPredicates) restRequires syntacticRequires
+                            finalSubstWithSyntacticPredicates <-
+                                checkRequiresSyntactically subst (Set.toList knownPredicates) restRequires syntacticRequires
+                            -- check concreteness again, in case we have matched an argument which nonetheless violates a concrete/symbolic constraint
+                            checkConcretenessStrict rule.attributes.concreteness finalSubstWithSyntacticPredicates
+                            checkRequiresSemantically finalSubstWithSyntacticPredicates knownPredicates restRequires
 
                         -- check all ensured conditions together with the path condition
                         ensuredConditions <- checkEnsures rule subst
@@ -880,26 +884,36 @@ applyEquation term rule =
     allMustBeConcrete (AllConstrained Concrete) = True
     allMustBeConcrete _ = False
 
-    checkConcreteness Unconstrained _ = pure ()
-    checkConcreteness (AllConstrained constrained) subst =
-        mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
-    checkConcreteness (SomeConstrained mapping) subst =
-        void $ Map.traverseWithKey (verifyVar subst) (Map.mapWithKey mkCheck mapping)
+    checkConcreteness' _ Unconstrained _ = pure ()
+    checkConcreteness' _ (AllConstrained constrained) subst =
+        forM_ (Map.assocs subst) $ \(Variable{variableName}, t) ->
+            mkCheck variableName constrained t
+    checkConcreteness' throwOnVarNotFound (SomeConstrained mapping) subst =
+        forM_ (Map.assocs mapping) $ \((variableName, sortName), constrained) ->
+            case Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst of
+                Nothing -> when throwOnVarNotFound $ do
+                    logMessage $ Text.pack $ "Variable not found: " <> show (variableName, sortName)
+                    lift . throw . InternalError . Text.pack $ "Variable not found: " <> show (variableName, sortName)
+                Just t -> mkCheck variableName constrained t
 
-    toPair Variable{variableSort, variableName} =
-        case variableSort of
-            SortApp sortName _ -> (variableName, sortName)
-            SortVar varName -> (variableName, varName)
+    -- strictly check concreteness of variables in the substitution, throwing an error if the variable is not found
+    checkConcretenessStrict = checkConcreteness' True
+    -- ignore missing variables. This may be necessary with a rule such as
+    -- rule A <=Int B => true requires C <=IntB andBool A <=Int C [concrete(A, C)]
+    -- where checking concretenes after mattching on the LHS would throw an error on C
+    -- hence, we have to call this check twice, once non-strictly after the inital match to prune
+    -- any obvious non-applicable rules and second time strictly, when we matched on C in the path condition
+    checkConcreteness = checkConcreteness' False
 
     mkCheck ::
-        (VarName, SortName) ->
+        VarName ->
         Constrained ->
         Term ->
         ExceptT
             ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
             (EquationT io)
             ()
-    mkCheck (varName, _) constrained (Term attributes _)
+    mkCheck varName constrained (Term attributes _)
         | not test =
             throwE
                 ( \ctxt ->
@@ -908,7 +922,7 @@ applyEquation term rule =
                             renderOneLineText $
                                 hsep
                                     [ "Concreteness constraint violated: "
-                                    , pretty $ show constrained <> " variable " <> show varName
+                                    , pretty $ "variable " <> BS.unpack varName <> " should map to a " <> show constrained <> " term"
                                     ]
                 , MatchConstraintViolated constrained varName
                 )
@@ -917,14 +931,6 @@ applyEquation term rule =
         test = case constrained of
             Concrete -> attributes.isConstructorLike
             Symbolic -> not attributes.isConstructorLike
-
-    verifyVar subst (variableName, sortName) check =
-        maybe
-            ( lift . throw . InternalError . Text.pack $
-                "Variable not found: " <> show (variableName, sortName)
-            )
-            check
-            $ Map.lookup Variable{variableSort = SortApp sortName [], variableName} subst
 
 filterOutKnownConstraints ::
     forall io.
@@ -960,11 +966,11 @@ checkRequiresSyntactically ::
     ExceptT
         ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
         (EquationT io)
-        ()
+        Substitution
 checkRequiresSyntactically currentSubst knownPredicates restRequires syntacticRequires = do
     ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
     case syntacticRequires of
-        [] -> checkRequiresSemantically currentSubst (Set.fromList knownPredicates) restRequires
+        [] -> pure currentSubst
         (headSyntacticRequires : restSyntacticRequires) -> do
             koreDef <- (.definition) <$> lift getConfig
             let loopOver = \case
@@ -1020,7 +1026,7 @@ checkRequiresSyntactically currentSubst knownPredicates restRequires syntacticRe
                                         lift $
                                             filterOutKnownConstraints (Set.fromList knownPredicates) simplified
                                 case stillUnclear of
-                                    [] -> pure () -- done
+                                    [] -> pure newSubst -- done
                                     _ -> do
                                         withContext CtxSyntactic $
                                             logMessage $
