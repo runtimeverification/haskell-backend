@@ -83,7 +83,7 @@ import Booster.Syntax.ParsedKore.Internalise (
     addToDefinitions,
     definitionErrorToRpcError,
  )
-import Booster.Util (Flag (..), constructorName)
+import Booster.Util (Flag (..))
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..), Respond)
 import Kore.JsonRpc.Types qualified as RpcTypes

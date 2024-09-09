@@ -899,7 +899,7 @@ applyEquation term rule =
     -- strictly check concreteness of variables in the substitution, throwing an error if the variable is not found
     checkConcretenessStrict = checkConcreteness' True
     -- ignore missing variables. This may be necessary with a rule such as
-    -- rule A <=Int B => true requires C <=IntB andBool A <=Int C [concrete(A, C)]
+    -- rule A <=Int B => true requires C <=Int B andBool A <=Int C [concrete(A, C)]
     -- where checking concretenes after mattching on the LHS would throw an error on C
     -- hence, we have to call this check twice, once non-strictly after the inital match to prune
     -- any obvious non-applicable rules and second time strictly, when we matched on C in the path condition
