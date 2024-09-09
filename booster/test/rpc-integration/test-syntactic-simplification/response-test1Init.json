@@ -141,29 +141,13 @@
                                 "value": "true"
                             },
                             "second": {
-                                "tag": "App",
-                                "name": "Lbl'Unds-LT-'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "EVar",
-                                        "name": "Var'Ques'X0",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        }
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "100"
-                                    }
-                                ]
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortBool",
+                                    "args": []
+                                },
+                                "value": "true"
                             }
                         },
                         {
