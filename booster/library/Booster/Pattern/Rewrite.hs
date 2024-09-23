@@ -338,26 +338,7 @@ applyRule pat@Pattern{ceilConditions} rule =
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
-                    let prior = pat.constraints
-                    solver <- lift $ RewriteT $ (.smtSolver) <$> ask
-                    let ruleEnsures =
-                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
-                                Set.toList rule.ensures
-                    newConstraints <-
-                        catMaybes <$> mapM (checkConstraint returnTrivial prior) ruleEnsures
-
-                    -- check all new constraints together with the known side constraints
-                    (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
-                        Right (Just False) -> do
-                            withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                            -- it's probably still fine to return trivial here even if we assumed unclear required conditions
-                            returnTrivial
-                        Right _other ->
-                            pure ()
-                        Left SMT.SMTSolverUnknown{} ->
-                            pure ()
-                        Left other ->
-                            liftIO $ Exception.throw other
+                    newConstraints <- checkEnsures subst
 
                     -- if a new constraint is going to be added, the equation cache is invalid
                     unless (null newConstraints) $ do
@@ -476,6 +457,31 @@ applyRule pat@Pattern{ceilConditions} rule =
                     "Uncertain about condition(s) in a rule, adding as remainder:"
                         <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
                 pure unclearRequires
+
+    checkEnsures ::
+        Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
+    checkEnsures matchingSubst = do
+        let prior = pat.constraints
+        solver <- lift $ RewriteT $ (.smtSolver) <$> ask
+        let ruleEnsures =
+                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) $
+                    Set.toList rule.ensures
+        newConstraints <-
+            catMaybes <$> mapM (checkConstraint returnTrivial prior) ruleEnsures
+
+        -- check all new constraints together with the known side constraints
+        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
+            Right (Just False) -> do
+                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                -- it's probably still fine to return trivial here even if we assumed unclear required conditions
+                returnTrivial
+            Right _other ->
+                pure ()
+            Left SMT.SMTSolverUnknown{} ->
+                pure ()
+            Left other ->
+                liftIO $ Exception.throw other
+        pure newConstraints
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
