@@ -332,49 +332,14 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 pat
                                 rule.computedAttributes.notPreservesDefinednessReasons
 
-                    -- apply substitution to rule requires constraints and simplify (one by one
-                    -- in isolation). Stop if false, abort rewrite if indeterminate.
-                    let ruleRequires =
-                            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
-                    -- filter out any predicates known to be _syntactically_ present in the known prior
-                    let prior = pat.constraints
-                    toCheck <- lift $ filterOutKnownConstraints prior ruleRequires
-
-                    unclearRequires <-
-                        catMaybes <$> mapM (checkConstraint returnNotApplied prior) toCheck
-
-                    -- unclear conditions may have been simplified and
-                    -- could now be syntactically present in the path constraints, filter again
-                    stillUnclear <- lift $ filterOutKnownConstraints prior unclearRequires
-
-                    -- check unclear requires-clauses in the context of known constraints (prior)
-                    solver <- lift $ RewriteT $ (.smtSolver) <$> ask
-
-                    checkAllRequires <-
-                        SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
-
-                    unclearRequiresAfterSmt <- case checkAllRequires of
-                        Left SMT.SMTSolverUnknown{} -> do
-                            withContext CtxConstraint . logMessage . renderOneLineText $
-                                "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
-                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                            pure unclearRequires
-                        Left other ->
-                            liftIO $ Exception.throw other -- fail hard on other SMT errors
-                        Right (Just False) -> do
-                            -- requires is actually false given the prior
-                            withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
-                            returnNotApplied
-                        Right (Just True) ->
-                            pure [] -- can proceed
-                        Right Nothing -> do
-                            withContext CtxConstraint . logMessage . renderOneLineText $
-                                "Uncertain about condition(s) in a rule, adding as remainder:"
-                                    <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
-                            pure unclearRequires
+                    -- check required constraints from lhs: Stop if any is false,
+                    -- add as remainders if indeterminate.
+                    unclearRequiresAfterSmt <- checkRequires subst
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
+                    let prior = pat.constraints
+                    solver <- lift $ RewriteT $ (.smtSolver) <$> ask
                     let ruleEnsures =
                             concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
                                 Set.toList rule.ensures
@@ -466,6 +431,51 @@ applyRule pat@Pattern{ceilConditions} rule =
             Right other -> pure $ Just other
             Left UndefinedTerm{} -> onBottom
             Left _ -> pure $ Just p
+
+    checkRequires ::
+        Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
+    checkRequires matchingSubst = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        -- apply substitution to rule requires constraints and simplify (one by one
+        -- in isolation). Stop if false, abort rewrite if indeterminate.
+        let ruleRequires =
+                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.requires
+        -- filter out any predicates known to be _syntactically_ present in the known prior
+        let prior = pat.constraints
+        toCheck <- lift $ filterOutKnownConstraints prior ruleRequires
+
+        unclearRequires <-
+            catMaybes <$> mapM (checkConstraint returnNotApplied prior) toCheck
+
+        -- unclear conditions may have been simplified and
+        -- could now be syntactically present in the path constraints, filter again
+        stillUnclear <- lift $ filterOutKnownConstraints prior unclearRequires
+
+        -- check unclear requires-clauses in the context of known constraints (prior)
+        solver <- lift $ RewriteT $ (.smtSolver) <$> ask
+
+        checkAllRequires <-
+            SMT.checkPredicates solver prior mempty (Set.fromList stillUnclear)
+
+        case checkAllRequires of
+            Left SMT.SMTSolverUnknown{} -> do
+                withContext CtxConstraint . logMessage . renderOneLineText $
+                    "Uncertain about condition(s) in a rule, SMT returned unknown, adding as remainder:"
+                        <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                pure unclearRequires
+            Left other ->
+                liftIO $ Exception.throw other -- fail hard on other SMT errors
+            Right (Just False) -> do
+                -- requires is actually false given the prior
+                withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                returnNotApplied
+            Right (Just True) ->
+                pure [] -- can proceed
+            Right Nothing -> do
+                withContext CtxConstraint . logMessage . renderOneLineText $
+                    "Uncertain about condition(s) in a rule, adding as remainder:"
+                        <+> (hsep . punctuate comma . map (pretty' @mods) $ unclearRequires)
+                pure unclearRequires
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
