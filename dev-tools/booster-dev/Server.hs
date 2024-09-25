@@ -163,10 +163,12 @@ runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOpti
                         }
             jsonRpcServer
                 (serverSettings port "*")
-                ( const $
+                ( \rawReq req ->
                     flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                         . Booster.Log.unLoggerT
+                        . Booster.Log.withContextFor (getReqId rawReq)
                         . Booster.Log.withContext Booster.Log.CtxBooster
                         . respond stateVar
+                        $ req
                 )
                 [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
