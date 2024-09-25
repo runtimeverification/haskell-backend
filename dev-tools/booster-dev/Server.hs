@@ -143,7 +143,7 @@ runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOpti
         withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
             let boosterContextLogger = case logFormat of
                     Json -> Booster.Log.jsonLogger $ fromMaybe stderrLogger mFileLogger
-                    _ -> Booster.Log.textLogger stderrLogger
+                    _ -> Booster.Log.textLogger $ fromMaybe stderrLogger mFileLogger
                 filteredBoosterContextLogger =
                     flip Booster.Log.filterLogger boosterContextLogger $ \(Booster.Log.LogMessage (Booster.Flag alwaysDisplay) ctxts _) ->
                         alwaysDisplay
