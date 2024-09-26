@@ -66,7 +66,7 @@ data LogFormat
     = Standard
     | OneLine
     | Json
-    deriving (Eq)
+    deriving (Eq, Enum)
 
 instance Show LogFormat where
     show = \case
@@ -155,7 +155,10 @@ parseLogOptions =
             ( metavar "LOGFORMAT"
                 <> value OneLine
                 <> long "log-format"
-                <> help "Format to output logs in"
+                <> help
+                    ( "Format to output logs in. Available formats: "
+                        <> intercalate ", " (map show $ enumFrom (toEnum @LogFormat 0))
+                    )
                 <> showDefault
             )
         <*> many
