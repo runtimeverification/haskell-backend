@@ -299,8 +299,8 @@ smtDeclarations def
     -- collect function symbols of an equation (LHS + requires, RHS)
     collectSymbols :: RewriteRule t -> ([SymbolName], [SymbolName])
     collectSymbols rule =
-        ( collectNames rule.lhs <> concatMap (collectNames . coerce) rule.requires
-        , collectNames rule.rhs
+        ( smtOpaqueNames rule.lhs <> concatMap (smtOpaqueNames . coerce) rule.requires
+        , smtOpaqueNames rule.rhs
         )
 
     -- symbol used on LHS => lookup must include sym -> this rule
@@ -367,10 +367,18 @@ selectLemmas :: Map SymbolName (Set DeclareCommand) -> [Predicate] -> [DeclareCo
 selectLemmas m ps =
     Set.toList $ Set.unions $ mapMaybe (flip Map.lookup m) usedFcts
   where
-    usedFcts = concatMap (collectNames . coerce) ps
+    usedFcts = concatMap (smtOpaqueNames . coerce) ps
 
-collectNames :: Term -> [SymbolName]
-collectNames = map (.name) . filterTermSymbols isFunctionSymbol
+-- | returns all names of symbols with `smt-lib` attribute (_not_
+-- `smt-hook` ones) that occur in the given term
+smtOpaqueNames :: Term -> [SymbolName]
+smtOpaqueNames =
+    map (.name) . filterTermSymbols isSMTOpaqueFunction
+  where
+    isSMTOpaqueFunction s
+        | isFunctionSymbol s
+        , Just (SMTLib _) <- s.attributes.smt = True
+        | otherwise = False
 
 smtName, quoted :: BS.ByteString -> SMTId
 smtName = SMTId
