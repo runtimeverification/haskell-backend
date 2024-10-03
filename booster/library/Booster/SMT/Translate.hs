@@ -296,17 +296,15 @@ smtDeclarations def
             . concatMap Map.elems
             . Map.elems
 
-    -- collect function symbols of an equation (LHS + requires, RHS)
-    collectSymbols :: RewriteRule t -> ([SymbolName], [SymbolName])
+    -- collect function symbols of an equation (LHS + requires <> RHS)
+    collectSymbols :: RewriteRule t -> [SymbolName]
     collectSymbols rule =
-        ( smtOpaqueNames rule.lhs <> concatMap (smtOpaqueNames . coerce) rule.requires
-        , smtOpaqueNames rule.rhs
-        )
+        concatMap smtOpaqueNames (rule.lhs : rule.rhs : map coerce rule.requires)
 
-    -- symbol used on LHS => lookup must include sym -> this rule
-    -- symbol used on RHS => lookups returning this rule must be
-    -- _extended_ by rules reachable from that symbol. Requires a
-    -- transitive closure of the lookup map.
+    -- We require a _transitive_ lookup map: if a symbol S is used in a
+    -- rule R, the lookup for S must also return all lemmas for any
+    -- symbol S' that is used in rule R (in its LHS, RHS or
+    -- requires-clause - we assume no ensures-clause
 
     initialLookup ::
         Theory (RewriteRule t) ->
@@ -314,7 +312,7 @@ smtDeclarations def
     initialLookup = fmap (Map.unionsWith (<>) . map mapFrom) . allSMTEquations
       where
         mapFrom (eqn, smt) =
-            Map.fromList [(sym, Set.singleton (eqn, smt)) | sym <- fst $ collectSymbols eqn]
+            Map.fromList [(sym, Set.singleton (eqn, smt)) | sym <- collectSymbols eqn]
 
     closeOverSymbols ::
         forall a t.
@@ -337,8 +335,8 @@ smtDeclarations def
             case Map.lookup k m of
                 Nothing -> pure () -- should not happen, keys won't change
                 Just eqs -> do
-                    let rhsSyms = concatMap (snd . collectSymbols . fst) $ toList eqs
-                        newEqs = Set.unions $ mapMaybe (flip Map.lookup m) rhsSyms
+                    let syms = concatMap (collectSymbols . fst) $ toList eqs
+                        newEqs = Set.unions $ mapMaybe (flip Map.lookup m) syms
                         newM = Map.update (Just . (<> newEqs)) k m
                     put newM
 
