@@ -367,15 +367,17 @@ selectLemmas m ps =
   where
     usedFcts = concatMap (smtOpaqueNames . coerce) ps
 
--- | returns all names of symbols with `smt-lib` attribute (_not_
--- `smt-hook` ones) that occur in the given term
+{- | returns all names of symbols with `smt-lib` attribute (_not_
+`smt-hook` ones) that occur in the given term
+-}
 smtOpaqueNames :: Term -> [SymbolName]
 smtOpaqueNames =
     map (.name) . filterTermSymbols isSMTOpaqueFunction
   where
     isSMTOpaqueFunction s
         | isFunctionSymbol s
-        , Just (SMTLib _) <- s.attributes.smt = True
+        , Just (SMTLib _) <- s.attributes.smt =
+            True
         | otherwise = False
 
 smtName, quoted :: BS.ByteString -> SMTId
