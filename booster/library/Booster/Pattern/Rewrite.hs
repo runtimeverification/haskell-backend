@@ -178,7 +178,14 @@ rewriteStep cutLabels terminalLabels pat = do
         -- try all rules of the priority group. This will immediately
         -- fail the rewrite if anything is uncertain (unification,
         -- definedness, rule conditions)
-        results <- filter (/= NotApplied) <$> mapM (applyRule pattr) rules
+        results <-
+            filter (/= NotApplied)
+                <$> forM
+                    rules
+                    ( \rule -> do
+                        result <- applyRule pattr rule
+                        pure (fmap (rule,) result)
+                    )
 
         -- simplify and filter out bottom states
 
@@ -290,7 +297,7 @@ applyRule ::
     LoggerMIO io =>
     Pattern ->
     RewriteRule "Rewrite" ->
-    RewriteT io (RewriteRuleAppResult (RewriteRule "Rewrite", Pattern))
+    RewriteT io (RewriteRuleAppResult Pattern)
 applyRule pat@Pattern{ceilConditions} rule =
     withRuleContext rule $
         runRewriteRuleAppT $
@@ -408,7 +415,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 ceilConditions
                     withContext CtxSuccess $
                         withPatternContext rewritten $
-                            return (rule, rewritten)
+                            return rewritten
   where
     filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
