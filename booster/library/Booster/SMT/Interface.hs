@@ -20,6 +20,7 @@ module Booster.SMT.Interface (
     hardResetSolver,
     pattern IsUnknown,
     IsSatResult,
+    showIsSatResult,
     pattern IsSat,
     pattern IsUnsat,
     IsValidResult,
@@ -191,7 +192,7 @@ finaliseSolver ctxt = do
 pattern IsUnknown :: unknown -> Either unknown b
 pattern IsUnknown u = Left u
 
-newtype IsSat' a = IsSat' (Maybe a) deriving (Functor)
+newtype IsSat' a = IsSat' (Maybe a) deriving (Functor, Show, Eq)
 
 type IsSatResult a = Either Text (IsSat' a)
 
@@ -200,6 +201,12 @@ pattern IsSat a = Right (IsSat' (Just a))
 
 pattern IsUnsat :: IsSatResult a
 pattern IsUnsat = Right (IsSat' Nothing)
+
+showIsSatResult :: IsSatResult a -> Text
+showIsSatResult = \case
+    IsSat{} -> "SAT"
+    IsUnsat -> "UNSAT"
+    IsUnknown{} -> "UNKNOWN"
 
 {-# COMPLETE IsSat, IsUnsat, IsUnknown #-}
 
