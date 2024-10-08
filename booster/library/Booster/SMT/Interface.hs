@@ -206,7 +206,7 @@ showIsSatResult :: IsSatResult a -> Text
 showIsSatResult = \case
     IsSat{} -> "SAT"
     IsUnsat -> "UNSAT"
-    IsUnknown{} -> "UNKNOWN"
+    IsUnknown reason -> "UNKNOWN " <> reason
 
 {-# COMPLETE IsSat, IsUnsat, IsUnknown #-}
 
