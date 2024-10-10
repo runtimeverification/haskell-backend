@@ -43,7 +43,7 @@ data ExecuteRequest = ExecuteRequest
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
     , stepTimeout :: !(Maybe Int)
-    , assumeStateDefined :: !(Maybe Bool)
+    , assumeDefined :: !(Maybe Bool)
     , logSuccessfulRewrites :: !(Maybe Bool)
     , logFailedRewrites :: !(Maybe Bool)
     }

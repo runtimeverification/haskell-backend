@@ -38,16 +38,24 @@ Rules `init` and `AC` introduce constraints on this variable:
    _Expected:_
    - The rewrite is stuck with `<k>d</k><int>N</int> \and...(contradiction)`
    - The result is simplified and discovered to be `vacuous` (with state `d`).
-1) _vacuous-but-rewritten_
+1) _vacuous-not-rewritten_
 
    _Input:_
    - `execute` request with initial state  `<k>b</k><int>N</int> \and N
      ==Int 1  \and N =/=Int  1` (A contradiction in the initial constraints).
 
    _Expected:_
-   - Rewrite with `BD` (despite the contradiction)
-   - The rewrite is stuck with `<k>d</k><int>N</int> \and...(contradiction)`
-   - The result is simplified and discovered to be `vacuous` (with state `d`).
+   - The state is simplified and discovered to be `vacuous` (with state `b`).
+
+1) _unchecked-vacuous-rewritten_
+
+   _Input:_ same as _vacuous-not-rewritten_
+   - `execute` request with initial state  `<k>b</k><int>N</int> \and N
+     ==Int 1  \and N =/=Int  1` (A contradiction in the initial constraints).
+
+   _Expected:_
+   - the input constraints are not checked for satisfiability (`"assume-defined": true` is in params)
+   - one rewrite step is made and the result is `stuck`
 
 With `kore-rpc-dev`, some contradictions will be discovered before or while
 attempting to rewrite (at the time of writing, it returns `stuck`, though).

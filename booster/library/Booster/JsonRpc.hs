@@ -131,6 +131,11 @@ respond stateVar request =
                                         [ req.logSuccessfulRewrites
                                         , req.logFailedRewrites
                                         ]
+                            checkConstraintsConsistent =
+                                case req.assumeDefined of
+                                    Nothing -> ApplyEquations.CheckConstraintsConsistent
+                                    Just False -> ApplyEquations.CheckConstraintsConsistent
+                                    Just True -> ApplyEquations.NoCheckConstraintsConsistent
                         -- apply the given substitution before doing anything else
                         let substPat =
                                 Pattern
@@ -147,26 +152,54 @@ respond stateVar request =
 
                         solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
 
-                        logger <- getLogger
-                        prettyModifiers <- getPrettyModifiers
-                        let rewriteConfig =
-                                RewriteConfig
-                                    { definition = def
-                                    , llvmApi = mLlvmLibrary
-                                    , smtSolver = solver
-                                    , varsToAvoid = substVars
-                                    , doTracing
-                                    , logger
-                                    , prettyModifiers
-                                    , mbMaxDepth = mbDepth
-                                    , mbSimplify = rewriteOpts.interimSimplification
-                                    , cutLabels = cutPoints
-                                    , terminalLabels = terminals
-                                    }
-                        result <-
-                            performRewrite rewriteConfig substPat
-                        SMT.finaliseSolver solver
-                        pure $ execResponse req result substitution unsupported
+                        -- check input pattern's consistency before starting rewriting
+                        evaluatedInitialPattern <-
+                            ApplyEquations.evaluatePattern
+                                def
+                                mLlvmLibrary
+                                solver
+                                mempty
+                                checkConstraintsConsistent
+                                substPat
+
+                        let trivialResponse =
+                                execResponse
+                                    req
+                                    (0, mempty, RewriteTrivial substPat)
+                                    substitution
+                                    unsupported
+
+                        case evaluatedInitialPattern of
+                            (Left ApplyEquations.SideConditionFalse{}, _) -> do
+                                -- input pattern's constraints are Bottom, return Vacuous
+                                pure trivialResponse
+                            (Left ApplyEquations.UndefinedTerm{}, _) -> do
+                                -- LLVM has stumbled upon an undefined term, the whole term is Bottom, return Vacuous
+                                pure trivialResponse
+                            (Left other, _) ->
+                                pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                            (Right newPattern, simplifierCache) -> do
+                                logger <- getLogger
+                                prettyModifiers <- getPrettyModifiers
+                                let rewriteConfig =
+                                        RewriteConfig
+                                            { definition = def
+                                            , llvmApi = mLlvmLibrary
+                                            , smtSolver = solver
+                                            , varsToAvoid = substVars
+                                            , doTracing
+                                            , logger
+                                            , prettyModifiers
+                                            , mbMaxDepth = mbDepth
+                                            , mbSimplify = rewriteOpts.interimSimplification
+                                            , cutLabels = cutPoints
+                                            , terminalLabels = terminals
+                                            }
+
+                                result <-
+                                    performRewrite rewriteConfig simplifierCache newPattern
+                                SMT.finaliseSolver solver
+                                pure $ execResponse req result substitution unsupported
             RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
                 -- block other request executions while modifying the server state
                 state <- liftIO $ takeMVar stateVar
@@ -255,21 +288,29 @@ respond stateVar request =
                                     , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
                                     }
-                        ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPat >>= \case
-                            (Right newPattern, _) -> do
-                                let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
-                                    tSort = externaliseSort (sortOfPattern newPattern)
-                                    result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
-                                        [] -> term
-                                        ps -> KoreJson.KJAnd tSort $ term : ps
-                                pure $ Right (addHeader result)
-                            (Left ApplyEquations.SideConditionFalse{}, _) -> do
-                                let tSort = externaliseSort $ sortOfPattern pat
-                                pure $ Right (addHeader $ KoreJson.KJBottom tSort)
-                            (Left (ApplyEquations.EquationLoop _terms), _) ->
-                                pure . Left . RpcError.backendError $ RpcError.Aborted "equation loop detected"
-                            (Left other, _) ->
-                                pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                        -- evaluate the pattern, checking the constrains for consistency
+                        ApplyEquations.evaluatePattern
+                            def
+                            mLlvmLibrary
+                            solver
+                            mempty
+                            ApplyEquations.CheckConstraintsConsistent
+                            substPat
+                            >>= \case
+                                (Right newPattern, _) -> do
+                                    let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
+                                        tSort = externaliseSort (sortOfPattern newPattern)
+                                        result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
+                                            [] -> term
+                                            ps -> KoreJson.KJAnd tSort $ term : ps
+                                    pure $ Right (addHeader result)
+                                (Left ApplyEquations.SideConditionFalse{}, _) -> do
+                                    let tSort = externaliseSort $ sortOfPattern pat
+                                    pure $ Right (addHeader $ KoreJson.KJBottom tSort)
+                                (Left (ApplyEquations.EquationLoop _terms), _) ->
+                                    pure . Left . RpcError.backendError $ RpcError.Aborted "equation loop detected"
+                                (Left other, _) ->
+                                    pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
                     -- predicate only
                     Right (Predicates ps)
                         | null ps.boolPredicates && null ps.ceilPredicates && null ps.substitution && null ps.unsupported ->
