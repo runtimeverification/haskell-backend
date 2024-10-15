@@ -16,7 +16,6 @@ import Data.Aeson (eitherDecode)
 import Data.ByteString.Lazy qualified as BS
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Text (Text)
 import Data.Text.IO qualified as Text
 import Prettyprinter
 import System.Environment (getArgs)
@@ -48,11 +47,13 @@ main = do
         Right KoreJson{term} -> do
             case runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing internalDef term of
                 Right (trm, preds, ceils, subst, unsupported) -> do
-                    mapM_ Text.putStrLn $
-                        ["Pretty-printing pattern:", renderText $ pretty' @'[Decoded] trm]
-                            <> renderThings "Bool predicates:" preds
-                            <> renderThings "Ceil predicates:" ceils
-                            <> ["Substitution:", showSubst subst]
+                    Text.putStrLn . renderText . vsep $
+                        [ "Pretty-printing pattern:"
+                        , pretty' @'[Decoded, Infix] trm
+                        , renderThings "Bool predicates:" preds
+                        , renderThings "Ceil predicates:" ceils
+                        , hang 2 $ "Substitution:" <> line <> showSubst subst
+                        ]
                     unless (null unsupported) $ do
                         putStrLn $ "...as well as " <> show (length unsupported) <> " unsupported parts:"
                         mapM_ print unsupported
@@ -60,24 +61,22 @@ main = do
                     case runExcept $ internalisePredicates DisallowAlias CheckSubsorts Nothing internalDef [term] of
                         Left es -> error (show es)
                         Right ts -> do
-                            mapM_ Text.putStrLn $
-                                "Pretty-printing predicates:"
-                                    : renderThings "Bool predicates:" ts.boolPredicates
-                                        <> renderThings "Ceil predicates:" ts.ceilPredicates
-                                        <> ["Substitution:", showSubst ts.substitution]
+                            Text.putStrLn . renderText . vsep $
+                                [ "Pretty-printing predicates:"
+                                , renderThings "Bool predicates:" ts.boolPredicates
+                                , renderThings "Ceil predicates:" ts.ceilPredicates
+                                , hang 2 $ "Substitution:" <> line <> showSubst ts.substitution
+                                ]
                             unless (null ts.unsupported) $ do
                                 putStrLn $ "...as well as " <> show (length ts.unsupported) <> " unsupported parts:"
                                 mapM_ print ts.unsupported
                 Left err -> error (show err)
   where
-    showSubst :: Map Variable Term -> Text
+    showSubst :: Map Variable Term -> Doc ann
     showSubst m =
-        renderText $
-            vsep
-                [ pretty' @'[Decoded] v <+> "->" <+> pretty' @'[Decoded] expr
-                | (v, expr) <- Map.assocs m
-                ]
+        vsep
+            [pretty' @'[Decoded] v <+> "->" <+> pretty' @'[Decoded, Infix] expr | (v, expr) <- Map.assocs m]
 
-    renderThings :: Pretty (PrettyWithModifiers '[Decoded] a) => Text -> [a] -> [Text]
-    renderThings heading [] = [heading <> " -"]
-    renderThings heading things = heading : map (renderText . pretty' @'[Decoded]) things
+    renderThings :: Pretty (PrettyWithModifiers '[Decoded, Infix] a) => Doc ann -> [a] -> Doc ann
+    renderThings heading [] = heading <> " -"
+    renderThings heading things = hang 2 $ vsep $ heading : map (pretty' @'[Decoded, Infix]) things
