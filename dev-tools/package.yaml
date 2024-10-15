@@ -157,6 +157,7 @@ executables:
       - base
       - aeson
       - bytestring
+      - containers
       - hs-backend-booster
       - prettyprinter
       - text
