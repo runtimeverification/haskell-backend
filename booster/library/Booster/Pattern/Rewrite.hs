@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
