@@ -455,7 +455,7 @@ applyRule pat@Pattern{ceilConditions} rule =
     checkEnsures ::
         Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
     checkEnsures matchingSubst = do
-        -- apply substitution to rule requires
+        -- apply substitution to rule ensures
         let ruleEnsures =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
         newConstraints <-
@@ -483,12 +483,6 @@ applyRule pat@Pattern{ceilConditions} rule =
             _other ->
                 pure ()
 
-        -- if a new constraint is going to be added, the equation cache is invalid
-        unless (null newConstraints) $ do
-            withContextFor Equations . logMessage $
-                ("New path condition ensured, invalidating cache" :: Text)
-
-            lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
         pure newConstraints
 
     smtUnclear :: [Predicate] -> RewriteRuleAppT (RewriteT io) ()
