@@ -32,14 +32,15 @@ externalisePattern ::
     Internal.Pattern ->
     Map Internal.Variable Internal.Term ->
     (Syntax.KorePattern, Maybe Syntax.KorePattern, Maybe Syntax.KorePattern)
-externalisePattern Internal.Pattern{term = term, constraints, ceilConditions} substitutions =
+externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution = ensuredSubstitution} inputSubstitution =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        substitution =
+        substitutions = inputSubstitution <> ensuredSubstitution
+        externalisedSubstitution =
             if null substitutions
                 then Nothing
                 else Just . multiAnd sort . map (uncurry $ externaliseSubstitution sort) . Map.toList $ substitutions
-        predicate =
+        externalisedPredicate =
             if null constraints && null ceilConditions
                 then Nothing
                 else
@@ -47,7 +48,7 @@ externalisePattern Internal.Pattern{term = term, constraints, ceilConditions} su
                         multiAnd sort $
                             map (externalisePredicate sort) (Set.toList constraints)
                                 ++ map (externaliseCeil sort) ceilConditions
-     in (externaliseTerm term, predicate, substitution)
+     in (externaliseTerm term, externalisedPredicate, externalisedSubstitution)
   where
     multiAnd :: Syntax.Sort -> [Syntax.KorePattern] -> Syntax.KorePattern
     multiAnd _ [] = error "multiAnd: empty"

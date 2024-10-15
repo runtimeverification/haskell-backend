@@ -8,7 +8,6 @@ module Booster.Pattern.Match (
     MatchResult (..),
     MatchType (..),
     FailReason (..),
-    Substitution,
     matchTerms,
     checkSubsort,
     SortError (..),
@@ -118,8 +117,6 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods FailReason) whe
             hsep ["Argument length differ", pretty' @mods t1, pretty' @mods t2]
         SubjectVariableMatch t v ->
             hsep ["Cannot match variable in subject:", pretty' @mods v, pretty' @mods t]
-
-type Substitution = Map Variable Term
 
 {- | Attempts to find a simple unifying substitution for the given
    terms.

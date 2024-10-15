@@ -36,7 +36,7 @@ import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack)
@@ -49,9 +49,11 @@ import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
     CacheTag (Equations),
+    Direction (..),
     EquationFailure (..),
     SimplifierCache (..),
     evaluatePattern,
+    evaluateTerm,
     simplifyConstraint,
  )
 import Booster.Pattern.Base
@@ -62,7 +64,6 @@ import Booster.Pattern.Match (
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
     MatchType (Rewrite),
     SortError,
-    Substitution,
     matchTerms,
  )
 import Booster.Pattern.Pretty
@@ -393,13 +394,15 @@ applyRule pat@Pattern{ceilConditions} rule =
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
-                    newConstraints <- checkEnsures subst
+                    ensuredConditions <- checkEnsures subst
 
                     -- if a new constraint is going to be added, the equation cache is invalid
-                    unless (null newConstraints) $ do
+                    unless (null ensuredConditions) $ do
                         withContextFor Equations . logMessage $
                             ("New path condition ensured, invalidating cache" :: Text)
                         lift invalidateRewriterEquationsCache
+
+                    let (newSubsitution, newConstraints) = partitionPredicates ensuredConditions
 
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
@@ -413,16 +416,24 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
                                 rule.existentials
 
+                    normalisedPatternSubst <-
+                        lift $ normaliseSubstitution pat.constraints pat.substitution newSubsitution
+
                     -- modify the substitution to include the existentials
-                    let substWithExistentials = subst `Map.union` existentialSubst
+                    let substWithExistentials = subst <> existentialSubst
 
                     let rewritten =
                             Pattern
-                                (substituteInTerm substWithExistentials rule.rhs)
+                                (substituteInTerm normalisedPatternSubst . substituteInTerm substWithExistentials $ rule.rhs)
                                 -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
                                 ( pat.constraints
-                                    <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
+                                    <> ( Set.fromList $
+                                            map
+                                                (coerce . substituteInTerm normalisedPatternSubst . substituteInTerm substWithExistentials . coerce)
+                                                newConstraints
+                                       )
                                 )
+                                normalisedPatternSubst
                                 ceilConditions
                     withContext CtxSuccess $ do
                         case unclearRequiresAfterSmt of
@@ -442,6 +453,39 @@ applyRule pat@Pattern{ceilConditions} rule =
                                             , Just rulePredicate
                                             )
   where
+    -- extract substitution items from a list of generic predicates. Return empty substitution if none are found
+    partitionPredicates :: [Predicate] -> (Substitution, [Predicate])
+    partitionPredicates ps =
+        let (substItems, normalPreds) = partition (isJust . destructEq) ps
+         in (Map.fromList . mapMaybe destructEq $ substItems, normalPreds)
+
+    -- Given known predicates, a known substitution and a newly acquired substitution (from the ensures clause):
+    -- - apply the new substitution to the old substitution
+    -- - simplify the substituted old substitution, assuming known truth
+    -- - TODO check for loops?
+    -- - filter out possible trivial items
+    -- - finally, merge with the new substitution items and return
+    normaliseSubstitution ::
+        Set.Set Predicate -> Substitution -> Substitution -> RewriteT io Substitution
+    normaliseSubstitution knownTruth oldSubst newSubst = do
+        RewriteConfig{definition, llvmApi, smtSolver} <- RewriteT ask
+        let substitutedOldSubst = Map.map (substituteInTerm newSubst) oldSubst
+        simplifiedSubstitution <-
+            processResults
+                <$> traverse
+                    (fmap fst . evaluateTerm BottomUp definition llvmApi smtSolver knownTruth)
+                    substitutedOldSubst
+        pure (newSubst `Map.union` simplifiedSubstitution) -- new bindings take priority
+      where
+        processResults =
+            Map.fromList
+                . mapMaybe
+                    ( \case
+                        (var, Left _err) -> (var,) <$> Map.lookup var oldSubst
+                        (var, Right simplified) -> Just (var, simplified)
+                    )
+                . Map.assocs
+
     filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
         let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
@@ -517,7 +561,7 @@ applyRule pat@Pattern{ceilConditions} rule =
     checkEnsures ::
         Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
     checkEnsures matchingSubst = do
-        -- apply substitution to rule requires
+        -- apply substitution to rule ensures
         let ruleEnsures =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
         newConstraints <-
@@ -532,11 +576,6 @@ applyRule pat@Pattern{ceilConditions} rule =
             _other ->
                 pure ()
 
-        -- if a new constraint is going to be added, the equation cache is invalid
-        unless (null newConstraints) $ do
-            withContextFor Equations . logMessage $
-                ("New path condition ensured, invalidating cache" :: Text)
-            lift invalidateRewriterEquationsCache
         pure newConstraints
 
     -- Instantiate the requires clause of the rule and simplify, but not prune.
@@ -761,7 +800,7 @@ mkDiffTerms = \case
   * RewriteStuck: config could not be re-written by any rule, return current
   * RewriteFailed: rewriter cannot handle the case, return current
 
-  The actions are logged at the custom log level '"Rewrite"'.
+  The result also includes a @'Substitution'@ accumulated from the rules ensures clauses.
 
 
     This flow chart should represent the actions of this function:

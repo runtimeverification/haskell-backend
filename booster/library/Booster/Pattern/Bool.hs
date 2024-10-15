@@ -12,6 +12,7 @@ module Booster.Pattern.Bool (
     splitBoolPredicates,
     splitAndBools,
     collapseAndBools,
+    destructEq,
     -- patterns
     pattern TrueBool,
     pattern FalseBool,
@@ -38,18 +39,20 @@ import Booster.Definition.Attributes.Base (
     pattern IsNotMacroOrAlias,
  )
 import Booster.Pattern.Base (
-    Pattern,
+    Pattern (..),
     Predicate (..),
     Symbol (Symbol),
     Term,
-    constraints,
+    Variable,
     pattern DomainValue,
+    pattern KSeq,
     pattern SortBool,
     pattern SortInt,
     pattern SortK,
     pattern SortKItem,
     pattern SortSet,
     pattern SymbolApplication,
+    pattern Var,
  )
 import Booster.Pattern.Util (isConcrete)
 import Booster.SMT.Base (SExpr (Atom), SMTId (..))
@@ -217,3 +220,12 @@ splitAndBools p@(Predicate t)
 -- | Inverse of splitAndBools
 collapseAndBools :: [Predicate] -> Predicate
 collapseAndBools = Predicate . foldAndBool . map (\(Predicate p) -> p)
+
+-- | Pattern match on an equality predicate and try extracting a variable assignment
+destructEq :: Predicate -> Maybe (Variable, Term)
+destructEq = \case
+    Predicate (EqualsInt (Var x) t) -> Just (x, t)
+    Predicate (EqualsBool (Var x) t) -> Just (x, t)
+    Predicate
+        (EqualsK (KSeq _lhsSort (Var x)) (KSeq _rhsSort t)) -> Just (x, t)
+    _ -> Nothing
