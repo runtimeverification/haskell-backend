@@ -462,14 +462,14 @@ evaluatePattern' ::
     LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
+evaluatePattern' pat@Pattern{term, ceilConditions, substitution} = withPatternContext pat $ do
     newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
-    pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
+    pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions, substitution}
   where
     -- when TooManyIterations exception occurred while evaluating the top-level term,
     -- i.e. not in a recursive evaluation of a side-condition,

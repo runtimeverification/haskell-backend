@@ -111,12 +111,14 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         { term = substituteInTerm substitutionL patL.term
                                         , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
                                         , ceilConditions = patL.ceilConditions
+                                        , substitution = substitutionL
                                         }
                                 substPatR =
                                     Pattern
                                         { term = substituteInTerm substitutionR patR.term
                                         , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
                                         , ceilConditions = patR.ceilConditions
+                                        , substitution = substitutionR
                                         }
 
                             SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
