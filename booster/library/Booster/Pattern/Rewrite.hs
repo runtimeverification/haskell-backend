@@ -63,7 +63,6 @@ import Booster.Pattern.Match (
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
     MatchType (Rewrite),
     SortError,
-    Substitution,
     matchTerms,
  )
 import Booster.Pattern.Pretty
@@ -340,13 +339,16 @@ applyRule pat@Pattern{ceilConditions} rule =
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
-                    newConstraints <- checkEnsures subst
+                    ensuredConditions <- checkEnsures subst
 
                     -- if a new constraint is going to be added, the equation cache is invalid
-                    unless (null newConstraints) $ do
+                    unless (null ensuredConditions) $ do
                         withContextFor Equations . logMessage $
                             ("New path condition ensured, invalidating cache" :: Text)
                         lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
+
+                    let isSubstitution = const False
+                        (_newSubsitutionItems, newConstraints) = partition isSubstitution ensuredConditions
 
                     -- existential variables may be present in rule.rhs and rule.ensures,
                     -- need to strip prefixes and freshen their names with respect to variables already
@@ -370,6 +372,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 ( pat.constraints
                                     <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
                                 )
+                                pat.substitution
                                 ceilConditions
                     withContext CtxSuccess $
                         withPatternContext rewritten $
@@ -669,7 +672,7 @@ mkDiffTerms = \case
   * RewriteStuck: config could not be re-written by any rule, return current
   * RewriteFailed: rewriter cannot handle the case, return current
 
-  The actions are logged at the custom log level '"Rewrite"'.
+  The result also includes a @'Substitution'@ accumulated from the rules ensures clauses.
 
 
     This flow chart should represent the actions of this function:
