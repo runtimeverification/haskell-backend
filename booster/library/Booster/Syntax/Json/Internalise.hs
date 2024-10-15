@@ -221,7 +221,7 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                 pure $
                     IsPattern
                         ( existentialVars
-                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions}
+                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions, substitution = mempty} -- this is the ensures-substitution, leave empty
                         , subst
                         , unknown
                         )
@@ -252,7 +252,12 @@ internaliseTermOrPredicate allowAlias checkSubsorts sortVars definition syntaxPa
                     internalisePattern allowAlias checkSubsorts sortVars definition syntaxPatt
                 pure $
                     TermAndPredicates
-                        Internal.Pattern{term, constraints = Set.fromList constrs, ceilConditions}
+                        Internal.Pattern
+                            { term
+                            , constraints = Set.fromList constrs
+                            , ceilConditions
+                            , substitution = mempty -- this is the ensures-substitution, leave empty
+                            }
                         substitution
                         unsupported
             )
