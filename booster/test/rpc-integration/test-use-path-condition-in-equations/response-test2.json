@@ -63,13 +63,13 @@
                             "sorts": [],
                             "args": [
                                 {
-                                    "tag": "EVar",
-                                    "name": "Var'Ques'X",
+                                    "tag": "DV",
                                     "sort": {
                                         "tag": "SortApp",
                                         "name": "SortInt",
                                         "args": []
-                                    }
+                                    },
+                                    "value": "42"
                                 }
                             ]
                         },
@@ -90,6 +90,41 @@
                             ]
                         }
                     ]
+                }
+            },
+            "substitution": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "Equals",
+                    "argSort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    },
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortGeneratedTopCell",
+                        "args": []
+                    },
+                    "first": {
+                        "tag": "EVar",
+                        "name": "Var'Ques'X",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        }
+                    },
+                    "second": {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        },
+                        "value": "42"
+                    }
                 }
             },
             "predicate": {

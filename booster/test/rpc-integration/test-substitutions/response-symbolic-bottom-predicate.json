@@ -67,7 +67,7 @@
                             "args": [
                                 {
                                     "tag": "EVar",
-                                    "name": "X",
+                                    "name": "Y",
                                     "sort": {
                                         "tag": "SortApp",
                                         "name": "SortInt",
@@ -109,6 +109,41 @@
                             ]
                         }
                     ]
+                }
+            },
+            "substitution": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "Equals",
+                    "argSort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    },
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortGeneratedTopCell",
+                        "args": []
+                    },
+                    "first": {
+                        "tag": "EVar",
+                        "name": "X",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        }
+                    },
+                    "second": {
+                        "tag": "EVar",
+                        "name": "Y",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        }
+                    }
                 }
             },
             "predicate": {
@@ -155,15 +190,6 @@
                                 "sorts": [],
                                 "args": [
                                     {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "1"
-                                    },
-                                    {
                                         "tag": "EVar",
                                         "name": "X",
                                         "sort": {
@@ -171,6 +197,15 @@
                                             "name": "SortInt",
                                             "args": []
                                         }
+                                    },
+                                    {
+                                        "tag": "DV",
+                                        "sort": {
+                                            "tag": "SortApp",
+                                            "name": "SortInt",
+                                            "args": []
+                                        },
+                                        "value": "1"
                                     }
                                 ]
                             }
