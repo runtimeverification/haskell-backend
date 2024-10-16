@@ -455,21 +455,42 @@ evaluatePattern ::
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
 evaluatePattern def mLlvmLibrary smtSolver cache pat =
-    runEquationT def mLlvmLibrary smtSolver cache pat.constraints . evaluatePattern' $ pat
+    runEquationT
+        def
+        mLlvmLibrary
+        smtSolver
+        cache
+        -- interpret substitution as additional known constraints
+        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+        . evaluatePattern'
+        $ pat
 
 -- version for internal nested evaluation
 evaluatePattern' ::
     LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' pat@Pattern{term, ceilConditions, substitution} = withPatternContext pat $ do
+evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
-    pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions, substitution}
+    -- The interface-level evaluatePattern puts pat.substitution together with pat.constraints
+    -- into the simplifier state as known truth. Here the substitution will bubble-up as part of
+    -- evaluatedConstraints. To avoid duplicating constraints (i.e. having equivalent entities
+    -- in pat.predicate and pat.substitution), we discard the old substitution here
+    -- and extract a possible simplified one from evaluatedConstraints.
+    let (simplifiedSubsitution, simplifiedConstraints) = partitionPredicates (Set.toList evaluatedConstraints)
+
+    pure
+        Pattern
+            { constraints = Set.fromList simplifiedConstraints
+            , term = newTerm
+            , ceilConditions
+            , substitution = simplifiedSubsitution
+            }
   where
     -- when TooManyIterations exception occurred while evaluating the top-level term,
     -- i.e. not in a recursive evaluation of a side-condition,
