@@ -24,7 +24,6 @@ module Booster.Syntax.Json.Internalise (
     textToBS,
     trm,
     handleBS,
-    asEquations,
     TermOrPredicates (..),
     InternalisedPredicates (..),
     PatternOrTopOrBottom (..),
