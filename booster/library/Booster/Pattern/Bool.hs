@@ -10,7 +10,9 @@ module Booster.Pattern.Bool (
     negateBool,
     splitBoolPredicates,
     splitAndBools,
+    mkEq,
     destructEq,
+    asEquations,
     -- patterns
     pattern TrueBool,
     pattern FalseBool,
@@ -25,6 +27,8 @@ module Booster.Pattern.Bool (
 ) where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 
 import Booster.Definition.Attributes.Base (
     FunctionType (..),
@@ -52,7 +56,7 @@ import Booster.Pattern.Base (
     pattern SymbolApplication,
     pattern Var,
  )
-import Booster.Pattern.Util (isConcrete)
+import Booster.Pattern.Util (isConcrete, sortOfTerm)
 import Booster.SMT.Base (SExpr (Atom), SMTId (..))
 
 pattern HookedTotalFunction :: ByteString -> SymbolAttributes
@@ -210,6 +214,12 @@ splitAndBools p@(Predicate t)
     | AndBool l r <- t = concatMap (splitAndBools . Predicate) [l, r]
     | otherwise = [p]
 
+mkEq :: Variable -> Term -> Predicate
+mkEq x t = Predicate $ case sortOfTerm t of
+    SortInt -> EqualsInt (Var x) t
+    SortBool -> EqualsBool (Var x) t
+    otherSort -> EqualsK (KSeq otherSort (Var x)) (KSeq otherSort t)
+
 -- | Pattern match on an equality predicate and try extracting a variable assignment
 destructEq :: Predicate -> Maybe (Variable, Term)
 destructEq = \case
@@ -218,3 +228,7 @@ destructEq = \case
     Predicate
         (EqualsK (KSeq _lhsSort (Var x)) (KSeq _rhsSort t)) -> Just (x, t)
     _ -> Nothing
+
+-- | turns a substitution into a list of equations
+asEquations :: Map Variable Term -> [Predicate]
+asEquations = map (uncurry mkEq) . Map.assocs
