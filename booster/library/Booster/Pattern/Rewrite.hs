@@ -304,23 +304,38 @@ applyRule pat@Pattern{ceilConditions} rule =
                                                                 NE.toList remainder
                                                     )
                             failRewrite $ RuleApplicationUnclear rule pat.term remainder
-                        MatchSuccess substitution -> do
+                        MatchSuccess matchingSubstitution -> do
+                            -- existential variables may be present in rule.rhs and rule.ensures,
+                            -- need to strip prefixes and freshen their names with respect to variables already
+                            -- present in the input pattern and in the unification substitution
+                            varsFromInput <- lift . RewriteT $ asks (.varsToAvoid)
+                            let varsFromPattern = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
+                                varsFromSubst = Set.unions . map freeVariables . Map.elems $ matchingSubstitution
+                                forbiddenVars = varsFromInput <> varsFromPattern <> varsFromSubst
+                                existentialSubst =
+                                    Map.fromSet
+                                        (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
+                                        rule.existentials
+                                combinedSubstitution = matchingSubstitution <> existentialSubst
+
                             withContext CtxSuccess $ do
                                 logMessage rule
                                 withContext CtxSubstitution
                                     $ logMessage
                                     $ WithJsonMessage
                                         ( object
-                                            ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList substitution)]
+                                            [ "substitution"
+                                                .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList combinedSubstitution)
+                                            ]
                                         )
                                     $ renderOneLineText
                                     $ "Substitution:"
                                         <+> ( hsep $
                                                 intersperse "," $
                                                     map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
-                                                        Map.toList substitution
+                                                        Map.toList combinedSubstitution
                                             )
-                            pure substitution
+                            pure combinedSubstitution
 
                     -- Also fail the whole rewrite if a rule applies but may introduce
                     -- an undefined term.
@@ -349,37 +364,29 @@ applyRule pat@Pattern{ceilConditions} rule =
                             ("New path condition ensured, invalidating cache" :: Text)
                         lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
 
+                    -- partition ensured constrains into substitution and predicates
                     let (newSubsitution, newConstraints) = partitionPredicates ensuredConditions
 
-                    -- existential variables may be present in rule.rhs and rule.ensures,
-                    -- need to strip prefixes and freshen their names with respect to variables already
-                    -- present in the input pattern and in the unification substitution
-                    varsFromInput <- lift . RewriteT $ asks (.varsToAvoid)
-                    let varsFromPattern = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
-                        varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
-                        forbiddenVars = varsFromInput <> varsFromPattern <> varsFromSubst
-                        existentialSubst =
-                            Map.fromSet
-                                (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
-                                rule.existentials
-
+                    -- merge existing substitution and newly acquired one, applying the latter to the former
                     normalisedPatternSubst <-
-                        lift $ normaliseSubstitution pat.constraints pat.substitution newSubsitution
-
-                    -- modify the substitution to include the existentials
-                    let substWithExistentials = subst <> existentialSubst
-
+                        lift $
+                            normaliseSubstitution
+                                pat.constraints
+                                pat.substitution
+                                newSubsitution
+                    -- NOTE it is necessary to first apply the rule substitution and then the pattern/ensures substitution, but it is suboptimal to traverse the term twice.
+                    -- TODO a substitution composition operator
+                    let rewrittenTerm = substituteInTerm normalisedPatternSubst . substituteInTerm subst $ rule.rhs
+                        substitutedNewConstraints =
+                            Set.fromList $
+                                map
+                                    (coerce . substituteInTerm normalisedPatternSubst . substituteInTerm subst . coerce)
+                                    newConstraints
                     let rewritten =
                             Pattern
-                                (substituteInTerm normalisedPatternSubst . substituteInTerm substWithExistentials $ rule.rhs)
+                                rewrittenTerm
                                 -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
-                                ( pat.constraints
-                                    <> ( Set.fromList $
-                                            map
-                                                (coerce . substituteInTerm normalisedPatternSubst . substituteInTerm substWithExistentials . coerce)
-                                                newConstraints
-                                       )
-                                )
+                                (pat.constraints <> substitutedNewConstraints)
                                 normalisedPatternSubst
                                 ceilConditions
                     withContext CtxSuccess $
@@ -396,7 +403,7 @@ applyRule pat@Pattern{ceilConditions} rule =
     -- - apply the new substitution to the old substitution
     -- - simplify the substituted old substitution, assuming known truth
     -- - TODO check for loops?
-    -- - filter out possible trivial items
+    -- - TODO filter out possible trivial items?
     -- - finally, merge with the new substitution items and return
     normaliseSubstitution ::
         Set.Set Predicate -> Substitution -> Substitution -> RewriteT io Substitution
@@ -470,23 +477,36 @@ applyRule pat@Pattern{ceilConditions} rule =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.requires
 
         -- filter out any predicates known to be _syntactically_ present in the known prior
-        toCheck <- lift $ filterOutKnownConstraints pat.constraints ruleRequires
+        toCheck <-
+            lift $
+                filterOutKnownConstraints
+                    (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                    ruleRequires
 
         -- simplify the constraints (one by one in isolation). Stop if false, abort rewrite if indeterminate.
         unclearRequires <-
-            catMaybes <$> mapM (checkConstraint id notAppliedIfBottom pat.constraints) toCheck
+            catMaybes
+                <$> mapM
+                    ( checkConstraint
+                        id
+                        notAppliedIfBottom
+                        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                    )
+                    toCheck
 
         -- unclear conditions may have been simplified and
         -- could now be syntactically present in the path constraints, filter again
-        stillUnclear <- lift $ filterOutKnownConstraints pat.constraints unclearRequires
+        stillUnclear <-
+            lift $
+                filterOutKnownConstraints
+                    (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                    unclearRequires
 
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
-        SMT.checkPredicates solver pat.constraints mempty (Set.fromList stillUnclear) >>= \case
-            SMT.IsUnknown reason -> do
-                -- abort rewrite if a solver result was Unknown
-                withContext CtxAbort $ logMessage reason
-                smtUnclear stillUnclear
+        SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList stillUnclear) >>= \case
+            SMT.IsUnknown{} ->
+                smtUnclear stillUnclear -- abort rewrite if a solver result was Unknown
             SMT.IsInvalid -> do
                 -- requires is actually false given the prior
                 withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
@@ -500,13 +520,20 @@ applyRule pat@Pattern{ceilConditions} rule =
         let ruleEnsures =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
         newConstraints <-
-            catMaybes <$> mapM (checkConstraint id trivialIfBottom pat.constraints) ruleEnsures
+            catMaybes
+                <$> mapM
+                    ( checkConstraint
+                        id
+                        trivialIfBottom
+                        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                    )
+                    ruleEnsures
 
         -- check all new constraints together with the known side constraints
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
         -- TODO it is probably enough to establish satisfiablity (rather than validity) of the ensured conditions.
         -- For now, we check validity to be safe and admit indeterminate result (i.e. (P, not P) is (Sat, Sat)).
-        (lift $ SMT.checkPredicates solver pat.constraints mempty (Set.fromList newConstraints)) >>= \case
+        (lift $ SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList newConstraints)) >>= \case
             SMT.IsInvalid -> do
                 withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
