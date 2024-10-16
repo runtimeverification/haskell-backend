@@ -24,6 +24,7 @@ module Booster.Syntax.Json.Internalise (
     textToBS,
     trm,
     handleBS,
+    asEquations,
     TermOrPredicates (..),
     InternalisedPredicates (..),
     PatternOrTopOrBottom (..),
@@ -481,6 +482,10 @@ mkEq x t = Internal.Predicate $ case sortOfTerm t of
     Internal.SortBool -> Internal.EqualsBool (Internal.Var x) t
     otherSort -> Internal.EqualsK (Internal.KSeq otherSort (Internal.Var x)) (Internal.KSeq otherSort t)
 
+-- | turns a substitution into a list of equations
+asEquations :: Map Internal.Variable Internal.Term -> [Internal.Predicate]
+asEquations = map (uncurry mkEq) . Map.assocs
+
 internalisePred ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -540,10 +545,12 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                 ensureEqualSorts (sortOfTerm a) argS
                 ensureEqualSorts (sortOfTerm b) argS
                 case (argS, a, b) of
+                    -- for "true" #Equals P, check whether P is in fact a substitution
                     (Internal.SortBool, Internal.TrueBool, x) ->
-                        pure [BoolPred $ Internal.Predicate x]
+                        mapM mbSubstitution [x]
                     (Internal.SortBool, x, Internal.TrueBool) ->
-                        pure [BoolPred $ Internal.Predicate x]
+                        mapM mbSubstitution [x]
+                    -- we could also detect NotBool (NEquals _) in "false" #Equals P
                     (Internal.SortBool, Internal.FalseBool, x) ->
                         pure [BoolPred $ Internal.Predicate $ Internal.NotBool x]
                     (Internal.SortBool, x, Internal.FalseBool) ->
@@ -599,6 +606,33 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                     unless (name1 == name2) $
                         throwE (IncompatibleSorts (map externaliseSort [s1, s2]))
                     zipWithM_ go args1 args2
+
+    mbSubstitution :: Internal.Term -> Except PatternError InternalisedPredicate
+    mbSubstitution = \case
+        eq@(Internal.EqualsInt (Internal.Var x) e)
+            | x `Set.member` freeVariables e -> pure $ boolPred eq
+            | otherwise -> pure $ SubstitutionPred x e
+        eq@(Internal.EqualsInt e (Internal.Var x))
+            | x `Set.member` freeVariables e -> pure $ boolPred eq
+            | otherwise -> pure $ SubstitutionPred x e
+        eq@(Internal.EqualsK (Internal.KSeq _sortL (Internal.Var x)) (Internal.KSeq _sortR e)) ->
+            do
+                -- NB sorts do not have to agree! (could be subsorts)
+                pure $
+                    if (x `Set.member` freeVariables e)
+                        then boolPred eq
+                        else SubstitutionPred x e
+        eq@(Internal.EqualsK (Internal.KSeq _sortL e) (Internal.KSeq _sortR (Internal.Var x))) ->
+            do
+                -- NB sorts do not have to agree! (could be subsorts)
+                pure $
+                    if (x `Set.member` freeVariables e)
+                        then boolPred eq
+                        else SubstitutionPred x e
+        other ->
+            pure $ boolPred other
+
+    boolPred = BoolPred . Internal.Predicate
 
 ----------------------------------------
 
