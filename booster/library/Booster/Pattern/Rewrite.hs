@@ -37,7 +37,7 @@ import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack)
@@ -393,12 +393,6 @@ applyRule pat@Pattern{ceilConditions} rule =
                         withPatternContext rewritten $
                             return (rule, rewritten)
   where
-    -- extract substitution items from a list of generic predicates. Return empty substitution if none are found
-    partitionPredicates :: [Predicate] -> (Substitution, [Predicate])
-    partitionPredicates ps =
-        let (substItems, normalPreds) = partition (isJust . destructEq) ps
-         in (Map.fromList . mapMaybe destructEq $ substItems, normalPreds)
-
     -- Given known predicates, a known substitution and a newly acquired substitution (from the ensures clause):
     -- - apply the new substitution to the old substitution
     -- - simplify the substituted old substitution, assuming known truth

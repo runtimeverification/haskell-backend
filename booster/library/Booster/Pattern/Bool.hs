@@ -13,6 +13,7 @@ module Booster.Pattern.Bool (
     mkEq,
     destructEq,
     asEquations,
+    partitionPredicates,
     -- patterns
     pattern TrueBool,
     pattern FalseBool,
@@ -27,8 +28,10 @@ module Booster.Pattern.Bool (
 ) where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.List (partition)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust, mapMaybe)
 
 import Booster.Definition.Attributes.Base (
     FunctionType (..),
@@ -232,3 +235,9 @@ destructEq = \case
 -- | turns a substitution into a list of equations
 asEquations :: Map Variable Term -> [Predicate]
 asEquations = map (uncurry mkEq) . Map.assocs
+
+-- | Extract substitution items from a list of generic predicates. Return empty substitution if none are found
+partitionPredicates :: [Predicate] -> (Map Variable Term, [Predicate])
+partitionPredicates ps =
+    let (substItems, normalPreds) = partition (isJust . destructEq) ps
+     in (Map.fromList . mapMaybe destructEq $ substItems, normalPreds)
