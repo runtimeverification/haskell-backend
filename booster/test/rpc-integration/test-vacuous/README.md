@@ -37,6 +37,7 @@ Rules `init` and `AC` introduce constraints on this variable:
 
    _Expected:_
    - The rewrite is stuck with `<k>d</k><int>N</int> \and...(contradiction)`
+   - The `N` is substituted by value `1` in the final result (booster).
    - The result is simplified and discovered to be `vacuous` (with state `d`).
 1) _vacuous-but-rewritten_
 
@@ -47,6 +48,7 @@ Rules `init` and `AC` introduce constraints on this variable:
    _Expected:_
    - Rewrite with `BD` (despite the contradiction)
    - The rewrite is stuck with `<k>d</k><int>N</int> \and...(contradiction)`
+   - The `N` is substituted by value `1` in the final result (booster).
    - The result is simplified and discovered to be `vacuous` (with state `d`).
 
 With `kore-rpc-dev`, some contradictions will be discovered before or while
