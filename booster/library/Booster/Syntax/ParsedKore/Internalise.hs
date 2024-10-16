@@ -765,6 +765,10 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
                     sortVars
                     attribs
 
+{- | internalises a pattern and turns its contained substitution into
+   equations (predicates). Errors if any ceil conditions or
+   unsupported predicates are found.
+-}
 internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported ::
     KoreDefinition ->
     SourceRef ->
@@ -776,16 +780,16 @@ internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref 
     (term, preds, ceilConditions, substitution, unsupported) <-
         withExcept (DefinitionPatternError ref) $
             internalisePattern AllowAlias IgnoreSubsorts maybeVars partialDefinition t
-    unless (null substitution) $
-        throwE $
-            DefinitionPatternError ref SubstitutionNotAllowed
     unless (null ceilConditions) $
         throwE $
             DefinitionPatternError ref CeilNotAllowed
     unless (null unsupported) $
         throwE $
             DefinitionPatternError ref (NotSupported (head unsupported))
-    pure (Util.modifyVariablesInT f term, map (Util.modifyVariablesInP f) preds)
+    pure
+        ( Util.modifyVariablesInT f term
+        , map (Util.modifyVariablesInP f) (preds <> asEquations substitution)
+        )
 
 internaliseRewriteRuleNoAlias ::
     KoreDefinition ->
@@ -964,12 +968,10 @@ internaliseCeil partialDef left right sortVars attrs = do
         internalPs <-
             withExcept (DefinitionPatternError (sourceRef attrs)) $
                 internalisePredicates AllowAlias IgnoreSubsorts (Just sortVars) partialDef [p]
-        let constraints = internalPs.boolPredicates
-            substitutions = internalPs.substitution
+        let
+            -- turn substitution-like predicates back into equations
+            constraints = internalPs.boolPredicates <> asEquations internalPs.substitution
             unsupported = internalPs.unsupported
-        unless (null substitutions) $
-            throwE $
-                DefinitionPatternError (sourceRef attrs) SubstitutionNotAllowed
         unless (null unsupported) $
             throwE $
                 DefinitionPatternError (sourceRef attrs) $
@@ -1005,9 +1007,6 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
         withExcept (DefinitionPatternError (sourceRef attrs)) $
             internalisePattern AllowAlias IgnoreSubsorts (Just sortVars) partialDef $
                 Syntax.KJAnd leftTerm.sort [leftTerm, requires]
-    unless (null substitution) $
-        throwE $
-            DefinitionPatternError (sourceRef attrs) SubstitutionNotAllowed
     unless (null ceils) $
         throwE $
             DefinitionPatternError (sourceRef attrs) CeilNotAllowed
@@ -1049,7 +1048,8 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
             RewriteRule
                 { lhs
                 , rhs
-                , requires = map (Util.modifyVariablesInP $ Util.modifyVarName ("Eq#" <>)) preds
+                , requires =
+                    map (Util.modifyVariablesInP $ Util.modifyVarName ("Eq#" <>)) (preds <> asEquations substitution)
                 , ensures
                 , attributes
                 , computedAttributes
