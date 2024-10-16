@@ -137,7 +137,7 @@ respond stateVar request =
                                     { term = substituteInTerm substitution term
                                     , constraints = Set.fromList $ map (substituteInPredicate substitution) preds
                                     , ceilConditions = ceils
-                                    , substitution = mempty -- this is the ensures-substitution, leave empty
+                                    , substitution
                                     }
                             -- remember all variables used in the substitutions
                             substVars =
@@ -255,7 +255,7 @@ respond stateVar request =
                                     { term = substituteInTerm substitution pat.term
                                     , constraints = Set.map (substituteInPredicate substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
-                                    , substitution = mempty -- this is the ensures-substitution, leave empty
+                                    , substitution
                                     }
                         ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPat >>= \case
                             (Right newPattern, _) -> do
@@ -290,7 +290,7 @@ respond stateVar request =
                                     mLlvmLibrary
                                     solver
                                     mempty
-                                    predicates
+                                    predicates -- TODO include ps.substitution?
                                     >>= \case
                                         (Right newPreds, _) -> do
                                             let predicateSort =
