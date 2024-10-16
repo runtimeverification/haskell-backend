@@ -54,7 +54,7 @@ import Booster.Definition.Base as Def
 import Booster.Pattern.Base (Predicate (Predicate), Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
-import Booster.Pattern.Bool (foldAndBool, pattern TrueBool)
+import Booster.Pattern.Bool (asEquations, foldAndBool, pattern TrueBool)
 import Booster.Pattern.Index as Idx
 import Booster.Pattern.Pretty
 import Booster.Pattern.Util qualified as Util
