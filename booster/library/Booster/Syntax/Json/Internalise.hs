@@ -463,7 +463,7 @@ mkSubstitution initialSubst =
             Map.partition ((== 1) . length) $
                 Map.fromListWith (<>) [(v, [t]) | SubstitutionPred v t <- initialSubst]
         equations =
-            [mkEq v t | (v, ts) <- Map.assocs duplicates, t <- ts]
+            [Internal.mkEq v t | (v, ts) <- Map.assocs duplicates, t <- ts]
      in execState breakCycles (Map.map head substMap, equations)
   where
     breakCycles :: State (Map Internal.Variable Internal.Term, [Internal.Predicate]) ()
@@ -477,19 +477,9 @@ mkSubstitution initialSubst =
             else do
                 modify $ \(m, eqs) ->
                     ( m `Map.withoutKeys` cycleNodes
-                    , eqs <> (map (uncurry mkEq) $ Map.assocs $ m `Map.restrictKeys` cycleNodes)
+                    , eqs <> (map (uncurry Internal.mkEq) $ Map.assocs $ m `Map.restrictKeys` cycleNodes)
                     )
                 breakCycles
-
-mkEq :: Internal.Variable -> Internal.Term -> Internal.Predicate
-mkEq x t = Internal.Predicate $ case sortOfTerm t of
-    Internal.SortInt -> Internal.EqualsInt (Internal.Var x) t
-    Internal.SortBool -> Internal.EqualsBool (Internal.Var x) t
-    otherSort -> Internal.EqualsK (Internal.KSeq otherSort (Internal.Var x)) (Internal.KSeq otherSort t)
-
--- | turns a substitution into a list of equations
-asEquations :: Map Internal.Variable Internal.Term -> [Internal.Predicate]
-asEquations = map (uncurry mkEq) . Map.assocs
 
 internalisePred ::
     Flag "alias" ->
@@ -562,12 +552,12 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                         pure [BoolPred $ Internal.Predicate $ Internal.NotBool x]
                     (_, Internal.Var x, t)
                         | x `Set.member` freeVariables t ->
-                            pure [BoolPred $ mkEq x t]
+                            pure [BoolPred $ Internal.mkEq x t]
                         | otherwise ->
                             pure [SubstitutionPred x t]
                     (_, t, Internal.Var x)
                         | x `Set.member` freeVariables t ->
-                            pure [BoolPred $ mkEq x t]
+                            pure [BoolPred $ Internal.mkEq x t]
                         | otherwise ->
                             pure [SubstitutionPred x t]
                     (Internal.SortInt, _, _) ->
