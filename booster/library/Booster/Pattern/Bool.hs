@@ -10,10 +10,6 @@ module Booster.Pattern.Bool (
     negateBool,
     splitBoolPredicates,
     splitAndBools,
-    mkEq,
-    destructEq,
-    asEquations,
-    partitionPredicates,
     -- patterns
     pattern TrueBool,
     pattern FalseBool,
@@ -28,10 +24,6 @@ module Booster.Pattern.Bool (
 ) where
 
 import Data.ByteString.Char8 (ByteString)
-import Data.List (partition)
-import Data.Map.Strict (Map)
-import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, mapMaybe)
 
 import Booster.Definition.Attributes.Base (
     FunctionType (..),
@@ -48,18 +40,15 @@ import Booster.Pattern.Base (
     Predicate (..),
     Symbol (Symbol),
     Term,
-    Variable,
     pattern DomainValue,
-    pattern KSeq,
     pattern SortBool,
     pattern SortInt,
     pattern SortK,
     pattern SortKItem,
     pattern SortSet,
     pattern SymbolApplication,
-    pattern Var,
  )
-import Booster.Pattern.Util (isConcrete, sortOfTerm)
+import Booster.Pattern.Util (isConcrete)
 import Booster.SMT.Base (SExpr (Atom), SMTId (..))
 
 pattern HookedTotalFunction :: ByteString -> SymbolAttributes
@@ -216,28 +205,3 @@ splitAndBools :: Predicate -> [Predicate]
 splitAndBools p@(Predicate t)
     | AndBool l r <- t = concatMap (splitAndBools . Predicate) [l, r]
     | otherwise = [p]
-
-mkEq :: Variable -> Term -> Predicate
-mkEq x t = Predicate $ case sortOfTerm t of
-    SortInt -> EqualsInt (Var x) t
-    SortBool -> EqualsBool (Var x) t
-    otherSort -> EqualsK (KSeq otherSort (Var x)) (KSeq otherSort t)
-
--- | Pattern match on an equality predicate and try extracting a variable assignment
-destructEq :: Predicate -> Maybe (Variable, Term)
-destructEq = \case
-    Predicate (EqualsInt (Var x) t) -> Just (x, t)
-    Predicate (EqualsBool (Var x) t) -> Just (x, t)
-    Predicate
-        (EqualsK (KSeq _lhsSort (Var x)) (KSeq _rhsSort t)) -> Just (x, t)
-    _ -> Nothing
-
--- | turns a substitution into a list of equations
-asEquations :: Map Variable Term -> [Predicate]
-asEquations = map (uncurry mkEq) . Map.assocs
-
--- | Extract substitution items from a list of generic predicates. Return empty substitution if none are found
-partitionPredicates :: [Predicate] -> (Map Variable Term, [Predicate])
-partitionPredicates ps =
-    let (substItems, normalPreds) = partition (isJust . destructEq) ps
-     in (Map.fromList . mapMaybe destructEq $ substItems, normalPreds)

@@ -54,9 +54,10 @@ import Booster.Definition.Base as Def
 import Booster.Pattern.Base (Predicate (Predicate), Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
-import Booster.Pattern.Bool (asEquations, foldAndBool, pattern TrueBool)
+import Booster.Pattern.Bool (foldAndBool, pattern TrueBool)
 import Booster.Pattern.Index as Idx
 import Booster.Pattern.Pretty
+import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util qualified as Util
 import Booster.Prettyprinter hiding (attributes)
 import Booster.Syntax.Json.Internalise
@@ -788,7 +789,7 @@ internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref 
             DefinitionPatternError ref (NotSupported (head unsupported))
     pure
         ( Util.modifyVariablesInT f term
-        , map (Util.modifyVariablesInP f) (preds <> asEquations substitution)
+        , map (Util.modifyVariablesInP f) (preds <> Substitution.asEquations substitution)
         )
 
 internaliseRewriteRuleNoAlias ::
@@ -970,7 +971,7 @@ internaliseCeil partialDef left right sortVars attrs = do
                 internalisePredicates AllowAlias IgnoreSubsorts (Just sortVars) partialDef [p]
         let
             -- turn substitution-like predicates back into equations
-            constraints = internalPs.boolPredicates <> asEquations internalPs.substitution
+            constraints = internalPs.boolPredicates <> Substitution.asEquations internalPs.substitution
             unsupported = internalPs.unsupported
         unless (null unsupported) $
             throwE $
@@ -1017,7 +1018,7 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
     argPairs <- mapM internaliseArg args
     let lhs =
             Util.modifyVariablesInT (Util.modifyVarName ("Eq#" <>)) $
-                Util.substituteInTerm (Map.fromList argPairs) left
+                Substitution.substituteInTerm (Map.fromList argPairs) left
     (rhs, ensures) <-
         internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
             partialDef
@@ -1049,7 +1050,9 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
                 { lhs
                 , rhs
                 , requires =
-                    map (Util.modifyVariablesInP $ Util.modifyVarName ("Eq#" <>)) (preds <> asEquations substitution)
+                    map
+                        (Util.modifyVariablesInP $ Util.modifyVarName ("Eq#" <>))
+                        (preds <> Substitution.asEquations substitution)
                 , ensures
                 , attributes
                 , computedAttributes

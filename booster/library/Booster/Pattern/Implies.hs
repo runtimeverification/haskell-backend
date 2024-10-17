@@ -26,7 +26,8 @@ import Booster.Pattern.Base (Pattern (..), Predicate (..))
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (Implies), matchTerms)
 import Booster.Pattern.Pretty (FromModifiersT, ModifiersRep (..), pretty')
-import Booster.Pattern.Util (freeVariables, sortOfPattern, substituteInPredicate, substituteInTerm)
+import Booster.Pattern.Substitution qualified as Substitution
+import Booster.Pattern.Util (freeVariables, sortOfPattern)
 import Booster.Prettyprinter (renderDefault)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (addHeader, prettyPattern)
@@ -108,15 +109,15 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 -- apply the given substitution before doing anything else
                                 substPatL =
                                     Pattern
-                                        { term = substituteInTerm substitutionL patL.term
-                                        , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
+                                        { term = Substitution.substituteInTerm substitutionL patL.term
+                                        , constraints = Set.map (Substitution.substituteInPredicate substitutionL) patL.constraints
                                         , ceilConditions = patL.ceilConditions
                                         , substitution = substitutionL
                                         }
                                 substPatR =
                                     Pattern
-                                        { term = substituteInTerm substitutionR patR.term
-                                        , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
+                                        { term = Substitution.substituteInTerm substitutionR patR.term
+                                        , constraints = Set.map (Substitution.substituteInPredicate substitutionR) patR.constraints
                                         , ceilConditions = patR.ceilConditions
                                         , substitution = substitutionR
                                         }
@@ -158,7 +159,8 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
                             let filteredConsequentPreds =
-                                    Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
+                                    Set.map (Substitution.substituteInPredicate subst) substPatR.constraints
+                                        `Set.difference` substPatL.constraints
 
                             if null filteredConsequentPreds
                                 then

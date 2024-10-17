@@ -68,8 +68,8 @@ import Booster.Pattern.Base (
     TermAttributes (hash),
     pattern AndTerm,
  )
-import Booster.Pattern.Bool (asEquations)
 import Booster.Pattern.Pretty
+import Booster.Pattern.Substitution (asEquations)
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.Syntax.Json (KorePattern, addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (externaliseTerm)

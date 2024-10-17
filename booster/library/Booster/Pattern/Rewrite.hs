@@ -66,6 +66,7 @@ import Booster.Pattern.Match (
     matchTerms,
  )
 import Booster.Pattern.Pretty
+import Booster.Pattern.Substitution
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
