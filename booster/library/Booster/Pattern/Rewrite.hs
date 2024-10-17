@@ -37,7 +37,7 @@ import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack)
@@ -50,11 +50,9 @@ import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
     CacheTag (Equations),
-    Direction (..),
     EquationFailure (..),
     SimplifierCache (..),
     evaluatePattern,
-    evaluateTerm,
     simplifyConstraint,
  )
 import Booster.Pattern.Base
@@ -371,7 +369,6 @@ applyRule pat@Pattern{ceilConditions} rule =
                     normalisedPatternSubst <-
                         lift $
                             normaliseSubstitution
-                                pat.constraints
                                 pat.substitution
                                 newSubsitution
                     -- NOTE it is necessary to first apply the rule substitution and then the pattern/ensures substitution, but it is suboptimal to traverse the term twice.
@@ -395,31 +392,12 @@ applyRule pat@Pattern{ceilConditions} rule =
   where
     -- Given known predicates, a known substitution and a newly acquired substitution (from the ensures clause):
     -- - apply the new substitution to the old substitution
-    -- - simplify the substituted old substitution, assuming known truth
-    -- - TODO check for loops?
-    -- - TODO filter out possible trivial items?
-    -- - finally, merge with the new substitution items and return
+    -- - merge with the new substitution items and return
     normaliseSubstitution ::
-        Set.Set Predicate -> Substitution -> Substitution -> RewriteT io Substitution
-    normaliseSubstitution knownTruth oldSubst newSubst = do
-        RewriteConfig{definition, llvmApi, smtSolver} <- RewriteT ask
+        Substitution -> Substitution -> RewriteT io Substitution
+    normaliseSubstitution oldSubst newSubst = do
         let substitutedOldSubst = Map.map (substituteInTerm newSubst) oldSubst
-        simplifiedSubstitution <-
-            processResults
-                <$> traverse
-                    (fmap fst . evaluateTerm BottomUp definition llvmApi smtSolver knownTruth)
-                    substitutedOldSubst
-        pure (newSubst `Map.union` simplifiedSubstitution) -- new bindings take priority
-      where
-        processResults =
-            Map.fromList
-                . mapMaybe
-                    ( \case
-                        (var, Left _err) -> (var,) <$> Map.lookup var oldSubst
-                        (var, Right simplified) -> Just (var, simplified)
-                    )
-                . Map.assocs
-
+        pure (newSubst `Map.union` substitutedOldSubst) -- new bindings take priority
     filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
         let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
