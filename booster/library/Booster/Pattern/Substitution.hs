@@ -46,9 +46,13 @@ mkEq x t = Predicate $ case sortOfTerm t of
 destructEq :: Predicate -> Maybe (Variable, Term)
 destructEq = \case
     Predicate (EqualsInt (Var x) t) -> Just (x, t)
+    Predicate (EqualsInt t (Var x)) -> Just (x, t)
     Predicate (EqualsBool (Var x) t) -> Just (x, t)
+    Predicate (EqualsBool t (Var x)) -> Just (x, t)
     Predicate
         (EqualsK (KSeq _lhsSort (Var x)) (KSeq _rhsSort t)) -> Just (x, t)
+    Predicate
+        (EqualsK (KSeq _lhsSort t) (KSeq _rhsSort (Var x))) -> Just (x, t)
     _ -> Nothing
 
 -- | turns a substitution into a list of equations
