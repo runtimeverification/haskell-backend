@@ -766,18 +766,20 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
                     sortVars
                     attribs
 
-{- | internalises a pattern and turns its contained substitution into
-   equations (predicates). Errors if any ceil conditions or
-   unsupported predicates are found.
+{- | Internalises a pattern to be used as a rule left/right-hand side.
+
+     Turns its contained substitution into predicates.
+
+     Errors if any ceil conditions or unsupported predicates are found.
 -}
-internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported ::
+internaliseRulePattern ::
     KoreDefinition ->
     SourceRef ->
     Maybe [Id] ->
     (Variable -> Variable) ->
     Syntax.KorePattern ->
     Except DefinitionError (Def.Term, [Predicate])
-internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported partialDefinition ref maybeVars f t = do
+internaliseRulePattern partialDefinition ref maybeVars f t = do
     (term, preds, ceilConditions, substitution, unsupported) <-
         withExcept (DefinitionPatternError ref) $
             internalisePattern AllowAlias IgnoreSubsorts maybeVars partialDefinition t
@@ -806,7 +808,7 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
     -- to avoid name clashes with patterns from the user;
     -- filter out literal `Top` constraints
     (lhs, requires) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+        internaliseRulePattern
             partialDefinition
             ref
             Nothing
@@ -817,7 +819,7 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
             | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
             | otherwise = Util.modifyVarName Util.markAsRuleVar v
     (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+        internaliseRulePattern
             partialDefinition
             ref
             Nothing
@@ -873,14 +875,14 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
     | Syntax.KJApp{} <- left = do
         -- this ensures that `left` is a _term_ (invariant guarded by classifyAxiom)
         (lhs, requires) <-
-            internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+            internaliseRulePattern
                 partialDef
                 (sourceRef attrs)
                 (Just sortVars)
                 (Util.modifyVarName ("Eq#" <>))
                 $ Syntax.KJAnd left.sort [left, precond]
         (rhs, ensures) <-
-            internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+            internaliseRulePattern
                 partialDef
                 (sourceRef attrs)
                 (Just sortVars)
@@ -932,7 +934,7 @@ internaliseCeil ::
 internaliseCeil partialDef left right sortVars attrs = do
     -- this ensures that `left` is a _term_ (invariant guarded by classifyAxiom)
     (lhs, _) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+        internaliseRulePattern
             partialDef
             (sourceRef attrs)
             (Just sortVars)
@@ -1020,7 +1022,7 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
             Util.modifyVariablesInT (Util.modifyVarName ("Eq#" <>)) $
                 Substitution.substituteInTerm (Map.fromList argPairs) left
     (rhs, ensures) <-
-        internalisePatternEnsureNoSubstitutionOrCeilOrUnsupported
+        internaliseRulePattern
             partialDef
             (sourceRef attrs)
             (Just sortVars)
