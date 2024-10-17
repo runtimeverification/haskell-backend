@@ -307,7 +307,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                         MatchSuccess matchingSubstitution -> do
                             -- existential variables may be present in rule.rhs and rule.ensures,
                             -- need to strip prefixes and freshen their names with respect to variables already
-                            -- present in the input pattern and in the unification substitution
+                            -- present in the input pattern and in the matching substitution
                             varsFromInput <- lift . RewriteT $ asks (.varsToAvoid)
                             let varsFromPattern = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
                                 varsFromSubst = Set.unions . map freeVariables . Map.elems $ matchingSubstitution
@@ -499,8 +499,10 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
         SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList stillUnclear) >>= \case
-            SMT.IsUnknown{} ->
-                smtUnclear stillUnclear -- abort rewrite if a solver result was Unknown
+            SMT.IsUnknown reason -> do
+                -- abort rewrite if a solver result was Unknown
+                withContext CtxAbort $ logMessage reason
+                smtUnclear stillUnclear
             SMT.IsInvalid -> do
                 -- requires is actually false given the prior
                 withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
@@ -528,6 +530,11 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- TODO it is probably enough to establish satisfiablity (rather than validity) of the ensured conditions.
         -- For now, we check validity to be safe and admit indeterminate result (i.e. (P, not P) is (Sat, Sat)).
         (lift $ SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList newConstraints)) >>= \case
+            SMT.IsUnknown SMT.ImplicationIndeterminate -> do
+                pure ()
+            SMT.IsUnknown SMT.InconsistentGroundTruth -> do
+                withContext CtxWarn $ logMessage ("Ground truth is #Bottom." :: Text)
+                RewriteRuleAppT $ pure Trivial
             SMT.IsInvalid -> do
                 withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
