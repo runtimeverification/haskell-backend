@@ -12,7 +12,7 @@ module Booster.SMT.Interface (
     SMTOptions (..), -- re-export
     defaultSMTOptions, -- re-export
     SMTError (..),
-    UnkwnonReason (..),
+    UnknownReason (..),
     initSolver,
     noSolver,
     finaliseSolver,
@@ -198,7 +198,7 @@ finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
     destroyContext ctxt
 
-data UnkwnonReason
+data UnknownReason
     = -- | SMT prelude is UNSAT
       InconsistentGroundTruth
     | -- | (P, not P) is (SAT, SAT)
@@ -208,18 +208,18 @@ data UnkwnonReason
     deriving (Show, Eq, Generic)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] UnkwnonReason
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] UnknownReason
 
-instance Log.ToLogFormat UnkwnonReason where
+instance Log.ToLogFormat UnknownReason where
     toTextualLog = pack . show
     toJSONLog = toJSON
 
-pattern IsUnknown :: UnkwnonReason -> Either UnkwnonReason b
+pattern IsUnknown :: UnknownReason -> Either UnknownReason b
 pattern IsUnknown u = Left u
 
 newtype IsSat' a = IsSat' (Maybe a) deriving (Functor)
 
-type IsSatResult a = Either UnkwnonReason (IsSat' a)
+type IsSatResult a = Either UnknownReason (IsSat' a)
 
 pattern IsSat :: a -> IsSatResult a
 pattern IsSat a = Right (IsSat' (Just a))
@@ -373,7 +373,7 @@ mkComment = BS.pack . Pretty.renderDefault . pretty' @'[Decoded]
 
 newtype IsValid' = IsValid' Bool
 
-type IsValidResult = Either UnkwnonReason IsValid'
+type IsValidResult = Either UnknownReason IsValid'
 
 pattern IsValid, IsInvalid :: IsValidResult
 pattern IsValid = Right (IsValid' True)
