@@ -527,7 +527,11 @@ applyRule pat@Pattern{ceilConditions} rule =
 
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
-        SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList stillUnclear) >>= \case
+        SMT.checkPredicates
+            solver
+            (pat.constraints <> (Set.fromList $ asEquations pat.substitution))
+            mempty
+            (Set.fromList stillUnclear) >>= \case
             SMT.IsUnknown reason -> do
                 -- return unclear rewrite rule condition if the condition is indeterminate
                 withContext CtxConstraint . withContext CtxWarn . logMessage $
@@ -562,23 +566,30 @@ applyRule pat@Pattern{ceilConditions} rule =
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
         -- TODO it is probably enough to establish satisfiablity (rather than validity) of the ensured conditions.
         -- For now, we check validity to be safe and admit indeterminate result (i.e. (P, not P) is (Sat, Sat)).
-        (lift $ SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList newConstraints)) >>= \case
-            SMT.IsInvalid -> do
-                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                returnTrivial
-            SMT.IsUnknown SMT.InconsistentGroundTruth -> do
-                withContext CtxSuccess $ logMessage ("Ground truth is #Bottom." :: Text)
-                returnTrivial
-            SMT.IsUnknown SMT.ImplicationIndeterminate -> do
-                -- the new constraint is satisfiable, continue
-                pure ()
-            SMT.IsUnknown reason -> do
-                -- abort rewrite if a solver result was Unknown for a reason other
-                -- then SMT.ImplicationIndeterminate of SMT.InconsistentGroundTruth
-                withContext CtxAbort $ logMessage reason
-                smtUnclear newConstraints
-            _other ->
-                pure ()
+        ( lift $
+                SMT.checkPredicates
+                    solver
+                    (pat.constraints <> (Set.fromList $ asEquations pat.substitution))
+                    mempty
+                    (Set.fromList newConstraints)
+            )
+            >>= \case
+                SMT.IsInvalid -> do
+                    withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                    returnTrivial
+                SMT.IsUnknown SMT.InconsistentGroundTruth -> do
+                    withContext CtxSuccess $ logMessage ("Ground truth is #Bottom." :: Text)
+                    returnTrivial
+                SMT.IsUnknown SMT.ImplicationIndeterminate -> do
+                    -- the new constraint is satisfiable, continue
+                    pure ()
+                SMT.IsUnknown reason -> do
+                    -- abort rewrite if a solver result was Unknown for a reason other
+                    -- then SMT.ImplicationIndeterminate of SMT.InconsistentGroundTruth
+                    withContext CtxAbort $ logMessage reason
+                    smtUnclear newConstraints
+                _other ->
+                    pure ()
 
         -- if a new constraint is going to be added, the equation cache is invalid
         unless (null newConstraints) $ do
