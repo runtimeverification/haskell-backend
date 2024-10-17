@@ -363,7 +363,7 @@ respond stateVar request =
                                         withContext CtxGetModel $
                                             withContext CtxSMT $
                                                 logMessage ("No predicates or substitutions given, returning Unknown" :: Text)
-                                        pure $ SMT.IsUnknown "No predicates or substitutions given"
+                                        pure $ SMT.IsUnknown (SMT.SMTUnknownReason "No predicates or substitutions given")
                                     else do
                                         solver <- SMT.initSolver def smtOptions
                                         result <- SMT.getModelFor solver boolPs suppliedSubst
@@ -407,7 +407,7 @@ respond stateVar request =
                                             , substitution = Nothing
                                             }
                                 SMT.IsUnknown reason -> do
-                                    logMessage $ "SMT result: Unknown - " <> reason
+                                    logMessage $ "SMT result: Unknown - " <> show reason
                                     pure . Right . RpcTypes.GetModel $
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unknown

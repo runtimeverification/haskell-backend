@@ -12,6 +12,7 @@ module Booster.SMT.Interface (
     SMTOptions (..), -- re-export
     defaultSMTOptions, -- re-export
     SMTError (..),
+    UnkwnonReason (..),
     initSolver,
     noSolver,
     finaliseSolver,
@@ -33,6 +34,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.State
 import Data.Aeson (object, (.=))
+import Data.Aeson.Types (FromJSON (..), ToJSON (..))
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce
 import Data.Data (Proxy)
@@ -44,6 +46,14 @@ import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines, unwords)
+import Deriving.Aeson (
+    CamelToKebab,
+    CustomJSON (..),
+    FieldLabelModifier,
+    OmitNothingFields,
+    StripPrefix,
+ )
+import GHC.Generics (Generic)
 import Prettyprinter (Pretty, backslash, hsep, punctuate, slash, (<+>))
 import SMTLIB.Backends.Process qualified as Backend
 
@@ -188,12 +198,28 @@ finaliseSolver ctxt = do
     Log.logMessage ("Closing SMT solver" :: Text)
     destroyContext ctxt
 
-pattern IsUnknown :: unknown -> Either unknown b
+data UnkwnonReason
+    = -- | SMT prelude is UNSAT
+      InconsistentGroundTruth
+    | -- | (P, not P) is (SAT, SAT)
+      ImplicationIndeterminate
+    | -- | SMT solver returned unknown
+      SMTUnknownReason Text
+    deriving (Show, Eq, Generic)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] UnkwnonReason
+
+instance Log.ToLogFormat UnkwnonReason where
+    toTextualLog = pack . show
+    toJSONLog = toJSON
+
+pattern IsUnknown :: UnkwnonReason -> Either UnkwnonReason b
 pattern IsUnknown u = Left u
 
 newtype IsSat' a = IsSat' (Maybe a) deriving (Functor)
 
-type IsSatResult a = Either Text (IsSat' a)
+type IsSatResult a = Either UnkwnonReason (IsSat' a)
 
 pattern IsSat :: a -> IsSatResult a
 pattern IsSat a = Right (IsSat' (Just a))
@@ -243,7 +269,7 @@ isSatReturnTransState ctxt ps subst
         SMT.runCmd CheckSat >>= \case
             Sat -> pure $ IsSat transState
             Unsat -> pure IsUnsat
-            Unknown reason -> retry (solve smtToCheck transState) (pure $ IsUnknown reason)
+            Unknown reason -> retry (solve smtToCheck transState) (pure $ IsUnknown (SMTUnknownReason reason))
             other -> do
                 let msg = "Unexpected result while calling 'check-sat': " <> show other
                 Log.withContext Log.CtxAbort $ Log.logMessage $ Text.pack msg
@@ -347,7 +373,7 @@ mkComment = BS.pack . Pretty.renderDefault . pretty' @'[Decoded]
 
 newtype IsValid' = IsValid' Bool
 
-type IsValidResult = Either (Maybe Text) IsValid'
+type IsValidResult = Either UnkwnonReason IsValid'
 
 pattern IsValid, IsInvalid :: IsValidResult
 pattern IsValid = Right (IsValid' True)
@@ -418,14 +444,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
                     hsep ("Predicates to check:" : map (pretty' @mods) (Set.toList psToCheck))
         result <- interactWithSolver smtGiven sexprsToCheck
         case result of
-            (Unsat, Unsat) -> pure $ IsUnknown Nothing -- defensive choice for inconsistent ground truth
+            (Unsat, Unsat) -> pure $ IsUnknown InconsistentGroundTruth
             (Sat, Sat) -> do
                 Log.logMessage ("Implication not determined" :: Text)
-                pure $ IsUnknown Nothing
+                pure $ IsUnknown ImplicationIndeterminate
             (Sat, Unsat) -> pure IsValid
             (Unsat, Sat) -> pure IsInvalid
-            (Unknown reason, _) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
-            (_, Unknown reason) -> retry (solve smtGiven sexprsToCheck transState) (pure $ IsUnknown $ Just reason)
+            (Unknown reason, _) -> retry (solve smtGiven sexprsToCheck transState) (pure . IsUnknown . SMTUnknownReason $ reason)
+            (_, Unknown reason) -> retry (solve smtGiven sexprsToCheck transState) (pure . IsUnknown . SMTUnknownReason $ reason)
             other ->
                 throwSMT $
                     "Unexpected result while checking a condition: " <> Text.pack (show other)
