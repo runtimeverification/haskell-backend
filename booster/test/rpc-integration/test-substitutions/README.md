@@ -42,6 +42,6 @@ NB: Booster applies the given substitution before performing any action.
 * `state-symbolic-bottom-predicate.execute`
   - starts from `symbolic-subst`
   - with an equation that is instantly false: `X = 1 +Int X`
-  - leading to a vacuous state in `kore-rpc-booster` after rewriting once,
+  - leading to a vacuous state in `kore-rpc-booster` and `booster-dev` at 0 steps,
   - while `kore-rpc-dev` returns `stuck` instantly after 0 steps,
     returning the exact input as `state`.
