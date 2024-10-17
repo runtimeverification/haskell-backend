@@ -279,8 +279,8 @@ applyRule pat@Pattern{ceilConditions} rule =
             getPrettyModifiers >>= \case
                 ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
                     def <- lift getDefinition
-                    -- unify terms
-                    subst <- withContext CtxMatch $ case matchTerms Rewrite def rule.lhs pat.term of
+                    -- match term with rule's left-hand side
+                    ruleSubstitution <- withContext CtxMatch $ case matchTerms Rewrite def rule.lhs pat.term of
                         MatchFailed (SubsortingError sortError) -> do
                             withContext CtxError $ logPretty' @mods sortError
                             failRewrite $ RewriteSortError rule pat.term sortError
@@ -315,7 +315,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                     Map.fromSet
                                         (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
                                         rule.existentials
-                                combinedSubstitution = matchingSubstitution <> existentialSubst
+                                ruleSubstitution = matchingSubstitution <> existentialSubst
 
                             withContext CtxSuccess $ do
                                 logMessage rule
@@ -324,7 +324,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                     $ WithJsonMessage
                                         ( object
                                             [ "substitution"
-                                                .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList combinedSubstitution)
+                                                .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList ruleSubstitution)
                                             ]
                                         )
                                     $ renderOneLineText
@@ -332,9 +332,9 @@ applyRule pat@Pattern{ceilConditions} rule =
                                         <+> ( hsep $
                                                 intersperse "," $
                                                     map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
-                                                        Map.toList combinedSubstitution
+                                                        Map.toList ruleSubstitution
                                             )
-                            pure combinedSubstitution
+                            pure ruleSubstitution
 
                     -- Also fail the whole rewrite if a rule applies but may introduce
                     -- an undefined term.
@@ -351,11 +351,11 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 rule.computedAttributes.notPreservesDefinednessReasons
 
                     -- check required constraints from lhs: Stop if any is false, abort rewrite if indeterminate.
-                    checkRequires subst
+                    checkRequires ruleSubstitution
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
-                    ensuredConditions <- checkEnsures subst
+                    ensuredConditions <- checkEnsures ruleSubstitution
 
                     -- if a new constraint is going to be added, the equation cache is invalid
                     unless (null ensuredConditions) $ do
@@ -366,39 +366,26 @@ applyRule pat@Pattern{ceilConditions} rule =
                     -- partition ensured constrains into substitution and predicates
                     let (newSubsitution, newConstraints) = partitionPredicates ensuredConditions
 
-                    -- merge existing substitution and newly acquired one, applying the latter to the former
-                    normalisedPatternSubst <-
-                        lift $
-                            normaliseSubstitution
-                                pat.substitution
-                                newSubsitution
-                    -- NOTE it is necessary to first apply the rule substitution and then the pattern/ensures substitution, but it is suboptimal to traverse the term twice.
-                    -- TODO a substitution composition operator
-                    let rewrittenTerm = substituteInTerm normalisedPatternSubst . substituteInTerm subst $ rule.rhs
+                    -- compose the existing substitution pattern and the newly acquired one
+                    let modifiedPatternSubst = newSubsitution `compose` pat.substitution
+
+                    let rewrittenTerm = substituteInTerm (modifiedPatternSubst `compose` ruleSubstitution) rule.rhs
                         substitutedNewConstraints =
                             Set.fromList $
                                 map
-                                    (coerce . substituteInTerm normalisedPatternSubst . substituteInTerm subst . coerce)
+                                    (coerce . substituteInTerm (modifiedPatternSubst `compose` ruleSubstitution) . coerce)
                                     newConstraints
                     let rewritten =
                             Pattern
                                 rewrittenTerm
                                 -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
                                 (pat.constraints <> substitutedNewConstraints)
-                                normalisedPatternSubst
+                                modifiedPatternSubst -- ruleSubstitution is not needed, do not attach it to the result
                                 ceilConditions
                     withContext CtxSuccess $
                         withPatternContext rewritten $
                             return (rule, rewritten)
   where
-    -- Given known predicates, a known substitution and a newly acquired substitution (from the ensures clause):
-    -- - apply the new substitution to the old substitution
-    -- - merge with the new substitution items and return
-    normaliseSubstitution ::
-        Substitution -> Substitution -> RewriteT io Substitution
-    normaliseSubstitution oldSubst newSubst = do
-        let substitutedOldSubst = Map.map (substituteInTerm newSubst) oldSubst
-        pure (newSubst `Map.union` substitutedOldSubst) -- new bindings take priority
     filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
         let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
