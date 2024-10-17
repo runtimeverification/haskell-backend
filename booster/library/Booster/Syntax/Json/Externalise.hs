@@ -13,15 +13,16 @@ module Booster.Syntax.Json.Externalise (
 ) where
 
 import Data.Foldable ()
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
 
 import Booster.Pattern.Base (externaliseKmapUnsafe)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
+import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util (sortOfTerm)
-import Data.Map (Map)
-import Data.Map qualified as Map
 import Kore.Syntax.Json.Types qualified as Syntax
 
 {- | Converts an internal pattern to a triple of term, predicate and substitution in
@@ -35,7 +36,7 @@ externalisePattern ::
 externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution = ensuredSubstitution} inputSubstitution =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        substitutions = ensuredSubstitution <> inputSubstitution -- TODO ensuredSubstitution takes priority. Do we even need inputSubstitution?
+        substitutions = ensuredSubstitution `Substitution.compose` inputSubstitution -- TODO ensuredSubstitution takes priority. Do we even need inputSubstitution?
         externalisedSubstitution =
             if null substitutions
                 then Nothing
