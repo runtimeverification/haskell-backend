@@ -506,23 +506,24 @@ applyRule pat@Pattern{ceilConditions} rule =
                     (pat.constraints <> (Set.fromList $ asEquations pat.substitution))
                     mempty
                     (Set.fromList newConstraints)
-            ) >>= \case
-            SMT.IsInvalid -> do
-                withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
-                RewriteRuleAppT $ pure Trivial
-            SMT.IsUnknown SMT.InconsistentGroundTruth -> do
-                withContext CtxSuccess $ logMessage ("Ground truth is #Bottom." :: Text)
-                RewriteRuleAppT $ pure Trivial
-            SMT.IsUnknown SMT.ImplicationIndeterminate -> do
-                -- the new constraint is satisfiable, continue
-                pure ()
-            SMT.IsUnknown reason -> do
-                -- abort rewrite if a solver result was Unknown for a reason other
-                -- then SMT.ImplicationIndeterminate of SMT.InconsistentGroundTruth
-                withContext CtxAbort $ logMessage reason
-                smtUnclear newConstraints
-            _other ->
-                pure ()
+            )
+            >>= \case
+                SMT.IsInvalid -> do
+                    withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
+                    RewriteRuleAppT $ pure Trivial
+                SMT.IsUnknown SMT.InconsistentGroundTruth -> do
+                    withContext CtxSuccess $ logMessage ("Ground truth is #Bottom." :: Text)
+                    RewriteRuleAppT $ pure Trivial
+                SMT.IsUnknown SMT.ImplicationIndeterminate -> do
+                    -- the new constraint is satisfiable, continue
+                    pure ()
+                SMT.IsUnknown reason -> do
+                    -- abort rewrite if a solver result was Unknown for a reason other
+                    -- then SMT.ImplicationIndeterminate of SMT.InconsistentGroundTruth
+                    withContext CtxAbort $ logMessage reason
+                    smtUnclear newConstraints
+                _other ->
+                    pure ()
 
         pure newConstraints
 
