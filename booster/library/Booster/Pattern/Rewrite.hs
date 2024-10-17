@@ -464,17 +464,22 @@ applyRule pat@Pattern{ceilConditions} rule =
 
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
-        SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList stillUnclear) >>= \case
-            SMT.IsUnknown reason -> do
-                -- abort rewrite if a solver result was Unknown
-                withContext CtxAbort $ logMessage reason
-                smtUnclear stillUnclear
-            SMT.IsInvalid -> do
-                -- requires is actually false given the prior
-                withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
-                RewriteRuleAppT $ pure NotApplied
-            SMT.IsValid ->
-                pure () -- can proceed
+        SMT.checkPredicates
+            solver
+            (pat.constraints <> (Set.fromList $ asEquations pat.substitution))
+            mempty
+            (Set.fromList stillUnclear)
+            >>= \case
+                SMT.IsUnknown reason -> do
+                    -- abort rewrite if a solver result was Unknown
+                    withContext CtxAbort $ logMessage reason
+                    smtUnclear stillUnclear
+                SMT.IsInvalid -> do
+                    -- requires is actually false given the prior
+                    withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
+                    RewriteRuleAppT $ pure NotApplied
+                SMT.IsValid ->
+                    pure () -- can proceed
     checkEnsures ::
         Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
     checkEnsures matchingSubst = do
@@ -495,7 +500,13 @@ applyRule pat@Pattern{ceilConditions} rule =
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
         -- TODO it is probably enough to establish satisfiablity (rather than validity) of the ensured conditions.
         -- For now, we check validity to be safe and admit indeterminate result (i.e. (P, not P) is (Sat, Sat)).
-        (lift $ SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList newConstraints)) >>= \case
+        ( lift $
+                SMT.checkPredicates
+                    solver
+                    (pat.constraints <> (Set.fromList $ asEquations pat.substitution))
+                    mempty
+                    (Set.fromList newConstraints)
+            ) >>= \case
             SMT.IsInvalid -> do
                 withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
