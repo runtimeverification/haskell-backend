@@ -67,6 +67,7 @@ import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match
 import Booster.Pattern.Pretty
 import Booster.Pattern.Substitution
+import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
@@ -494,7 +495,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions, substitution} = withPatternCo
             { constraints = Set.fromList simplifiedConstraints
             , term = newTerm
             , ceilConditions
-            , substitution = simplifiedSubsitution
+            , substitution = simplifiedSubsitution `Substitution.compose` substitution
             }
   where
     -- when TooManyIterations exception occurred while evaluating the top-level term,
