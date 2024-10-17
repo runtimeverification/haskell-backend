@@ -471,7 +471,7 @@ evaluatePattern' ::
     LoggerMIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
+evaluatePattern' pat@Pattern{term, ceilConditions, substitution} = withPatternContext pat $ do
     newTerm <- withTermContext term $ evaluateTerm' BottomUp term `catch_` keepTopLevelResults
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
@@ -484,6 +484,10 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     -- in pat.predicate and pat.substitution), we discard the old substitution here
     -- and extract a possible simplified one from evaluatedConstraints.
     let (simplifiedSubsitution, simplifiedConstraints) = partitionPredicates (Set.toList evaluatedConstraints)
+
+    logMessage . ("Substitution size: " <>) . show . length . Map.assocs $ substitution
+    logMessage . ("Simplified substitution size: " <>) . show . length . Map.assocs $
+        simplifiedSubsitution
 
     pure
         Pattern
