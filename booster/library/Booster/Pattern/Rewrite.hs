@@ -508,11 +508,6 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- TODO it is probably enough to establish satisfiablity (rather than validity) of the ensured conditions.
         -- For now, we check validity to be safe and admit indeterminate result (i.e. (P, not P) is (Sat, Sat)).
         (lift $ SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList newConstraints)) >>= \case
-            SMT.IsUnknown SMT.ImplicationIndeterminate -> do
-                pure ()
-            SMT.IsUnknown SMT.InconsistentGroundTruth -> do
-                withContext CtxWarn $ logMessage ("Ground truth is #Bottom." :: Text)
-                RewriteRuleAppT $ pure Trivial
             SMT.IsInvalid -> do
                 withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
