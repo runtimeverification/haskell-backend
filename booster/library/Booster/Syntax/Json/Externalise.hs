@@ -13,15 +13,16 @@ module Booster.Syntax.Json.Externalise (
 ) where
 
 import Data.Foldable ()
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
 
 import Booster.Pattern.Base (externaliseKmapUnsafe)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
+import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util (sortOfTerm)
-import Data.Map (Map)
-import Data.Map qualified as Map
 import Kore.Syntax.Json.Types qualified as Syntax
 
 {- | Converts an internal pattern to a triple of term, predicate and substitution in
@@ -32,14 +33,15 @@ externalisePattern ::
     Internal.Pattern ->
     Map Internal.Variable Internal.Term ->
     (Syntax.KorePattern, Maybe Syntax.KorePattern, Maybe Syntax.KorePattern)
-externalisePattern Internal.Pattern{term = term, constraints, ceilConditions} substitutions =
+externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution = ensuredSubstitution} inputSubstitution =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        substitution =
+        substitutions = ensuredSubstitution `Substitution.compose` inputSubstitution -- TODO ensuredSubstitution takes priority. Do we even need inputSubstitution?
+        externalisedSubstitution =
             if null substitutions
                 then Nothing
                 else Just . multiAnd sort . map (uncurry $ externaliseSubstitution sort) . Map.toList $ substitutions
-        predicate =
+        externalisedPredicate =
             if null constraints && null ceilConditions
                 then Nothing
                 else
@@ -47,7 +49,7 @@ externalisePattern Internal.Pattern{term = term, constraints, ceilConditions} su
                         multiAnd sort $
                             map (externalisePredicate sort) (Set.toList constraints)
                                 ++ map (externaliseCeil sort) ceilConditions
-     in (externaliseTerm term, predicate, substitution)
+     in (externaliseTerm term, externalisedPredicate, externalisedSubstitution)
   where
     multiAnd :: Syntax.Sort -> [Syntax.KorePattern] -> Syntax.KorePattern
     multiAnd _ [] = error "multiAnd: empty"
