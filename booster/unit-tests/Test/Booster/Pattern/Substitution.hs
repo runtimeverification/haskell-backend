@@ -45,7 +45,7 @@ test_subst =
                 "compose is transitive and saturating"
                 $ (("X" |-> [trm| Z:SomeSort{} |]) `compose` ("Y" |-> [trm| X:SomeSort{} |]))
                     @?= ("X" |-> [trm| Z:SomeSort{} |])
-                    <> ("Y" |-> [trm| Z:SomeSort{} |])
+                        <> ("Y" |-> [trm| Z:SomeSort{} |])
             ]
         ]
 
