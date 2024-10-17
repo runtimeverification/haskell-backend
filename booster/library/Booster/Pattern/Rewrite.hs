@@ -438,18 +438,11 @@ applyRule pat@Pattern{ceilConditions} rule =
 
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
-        let smtUnclear = do
-                withContext CtxConstraint . withContext CtxAbort . logMessage $
-                    WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
-                        renderOneLineText $
-                            "Uncertain about condition(s) in a rule:"
-                                <+> (hsep . punctuate comma . map (pretty' @mods) $ stillUnclear)
-                failRewrite $
-                    RuleConditionUnclear rule . coerce . foldl1 AndTerm $
-                        map coerce stillUnclear
         SMT.checkPredicates solver pat.constraints mempty (Set.fromList stillUnclear) >>= \case
-            SMT.IsUnknown{} ->
-                smtUnclear -- abort rewrite if a solver result was Unknown
+            SMT.IsUnknown reason -> do
+                -- abort rewrite if a solver result was Unknown
+                withContext CtxAbort $ logMessage reason
+                smtUnclear stillUnclear
             SMT.IsInvalid -> do
                 -- requires is actually false given the prior
                 withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
@@ -467,10 +460,23 @@ applyRule pat@Pattern{ceilConditions} rule =
 
         -- check all new constraints together with the known side constraints
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
+        -- TODO it is probably enough to establish satisfiablity (rather than validity) of the ensured conditions.
+        -- For now, we check validity to be safe and admit indeterminate result (i.e. (P, not P) is (Sat, Sat)).
         (lift $ SMT.checkPredicates solver pat.constraints mempty (Set.fromList newConstraints)) >>= \case
             SMT.IsInvalid -> do
                 withContext CtxSuccess $ logMessage ("New constraints evaluated to #Bottom." :: Text)
                 RewriteRuleAppT $ pure Trivial
+            SMT.IsUnknown SMT.InconsistentGroundTruth -> do
+                withContext CtxSuccess $ logMessage ("Ground truth is #Bottom." :: Text)
+                RewriteRuleAppT $ pure Trivial
+            SMT.IsUnknown SMT.ImplicationIndeterminate -> do
+                -- the new constraint is satisfiable, continue
+                pure ()
+            SMT.IsUnknown reason -> do
+                -- abort rewrite if a solver result was Unknown for a reason other
+                -- then SMT.ImplicationIndeterminate of SMT.InconsistentGroundTruth
+                withContext CtxAbort $ logMessage reason
+                smtUnclear newConstraints
             _other ->
                 pure ()
 
@@ -481,6 +487,18 @@ applyRule pat@Pattern{ceilConditions} rule =
 
             lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
         pure newConstraints
+
+    smtUnclear :: [Predicate] -> RewriteRuleAppT (RewriteT io) ()
+    smtUnclear predicates = do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
+        withContext CtxConstraint . withContext CtxAbort . logMessage $
+            WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> predicates)]) $
+                renderOneLineText $
+                    "Uncertain about condition(s) in a rule:"
+                        <+> (hsep . punctuate comma . map (pretty' @mods) $ predicates)
+        failRewrite $
+            RuleConditionUnclear rule . coerce . foldl1 AndTerm $
+                map coerce predicates
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
