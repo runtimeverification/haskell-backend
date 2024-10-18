@@ -35,6 +35,8 @@ module Booster.Syntax.Json.Internalise (
     pattern CheckSubsorts,
     pattern IgnoreSubsorts,
     logPatternError,
+    -- substitution mining
+    extractSubsitution,
     -- for test only
     InternalisedPredicate (..),
 ) where
@@ -507,6 +509,10 @@ mbSubstitution = \case
         boolPred other
   where
     boolPred = BoolPred . Internal.Predicate
+
+extractSubsitution ::
+    [Internal.Predicate] -> (Map Internal.Variable Internal.Term, [Internal.Predicate])
+extractSubsitution = mkSubstitution . map mbSubstitution . coerce
 
 internalisePred ::
     Flag "alias" ->

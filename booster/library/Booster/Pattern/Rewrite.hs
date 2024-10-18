@@ -71,6 +71,7 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
+import Booster.Syntax.Json.Internalise (extractSubsitution)
 import Booster.Util (Flag (..))
 
 newtype RewriteT io a = RewriteT
@@ -367,7 +368,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                     let (newSubsitution, newConstraints) = partitionPredicates ensuredConditions
 
                     -- compose the existing substitution pattern and the newly acquired one
-                    let modifiedPatternSubst = newSubsitution `compose` pat.substitution
+                    let (modifiedPatternSubst, leftoverConstraints) = extractSubsitution . asEquations $ newSubsitution `compose` pat.substitution
 
                     let rewrittenTerm = substituteInTerm (modifiedPatternSubst `compose` ruleSubstitution) rule.rhs
                         substitutedNewConstraints =
@@ -379,7 +380,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                             Pattern
                                 rewrittenTerm
                                 -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
-                                (pat.constraints <> substitutedNewConstraints)
+                                (pat.constraints <> substitutedNewConstraints <> Set.fromList leftoverConstraints)
                                 modifiedPatternSubst -- ruleSubstitution is not needed, do not attach it to the result
                                 ceilConditions
                     withContext CtxSuccess $
