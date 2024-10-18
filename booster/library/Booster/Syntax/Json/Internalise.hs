@@ -481,6 +481,33 @@ mkSubstitution initialSubst =
                     )
                 breakCycles
 
+-- | Given a equality @'Term'@, decide if it can be interpreted as substitution.
+mbSubstitution ::
+    Internal.Term -> InternalisedPredicate
+mbSubstitution = \case
+    eq@(Internal.EqualsInt (Internal.Var x) e)
+        | x `Set.member` freeVariables e -> boolPred eq
+        | otherwise -> SubstitutionPred x e
+    eq@(Internal.EqualsInt e (Internal.Var x))
+        | x `Set.member` freeVariables e -> boolPred eq
+        | otherwise -> SubstitutionPred x e
+    eq@(Internal.EqualsK (Internal.KSeq _sortL (Internal.Var x)) (Internal.KSeq _sortR e)) ->
+        do
+            -- NB sorts do not have to agree! (could be subsorts)
+            if (x `Set.member` freeVariables e)
+                then boolPred eq
+                else SubstitutionPred x e
+    eq@(Internal.EqualsK (Internal.KSeq _sortL e) (Internal.KSeq _sortR (Internal.Var x))) ->
+        do
+            -- NB sorts do not have to agree! (could be subsorts)
+            if (x `Set.member` freeVariables e)
+                then boolPred eq
+                else SubstitutionPred x e
+    other ->
+        boolPred other
+  where
+    boolPred = BoolPred . Internal.Predicate
+
 internalisePred ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -542,9 +569,9 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                 case (argS, a, b) of
                     -- for "true" #Equals P, check whether P is in fact a substitution
                     (Internal.SortBool, Internal.TrueBool, x) ->
-                        mapM mbSubstitution [x]
+                        pure [mbSubstitution x]
                     (Internal.SortBool, x, Internal.TrueBool) ->
-                        mapM mbSubstitution [x]
+                        pure [mbSubstitution x]
                     -- we could also detect NotBool (NEquals _) in "false" #Equals P
                     (Internal.SortBool, Internal.FalseBool, x) ->
                         pure [BoolPred $ Internal.Predicate $ Internal.NotBool x]
@@ -601,33 +628,6 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                     unless (name1 == name2) $
                         throwE (IncompatibleSorts (map externaliseSort [s1, s2]))
                     zipWithM_ go args1 args2
-
-    mbSubstitution :: Internal.Term -> Except PatternError InternalisedPredicate
-    mbSubstitution = \case
-        eq@(Internal.EqualsInt (Internal.Var x) e)
-            | x `Set.member` freeVariables e -> pure $ boolPred eq
-            | otherwise -> pure $ SubstitutionPred x e
-        eq@(Internal.EqualsInt e (Internal.Var x))
-            | x `Set.member` freeVariables e -> pure $ boolPred eq
-            | otherwise -> pure $ SubstitutionPred x e
-        eq@(Internal.EqualsK (Internal.KSeq _sortL (Internal.Var x)) (Internal.KSeq _sortR e)) ->
-            do
-                -- NB sorts do not have to agree! (could be subsorts)
-                pure $
-                    if (x `Set.member` freeVariables e)
-                        then boolPred eq
-                        else SubstitutionPred x e
-        eq@(Internal.EqualsK (Internal.KSeq _sortL e) (Internal.KSeq _sortR (Internal.Var x))) ->
-            do
-                -- NB sorts do not have to agree! (could be subsorts)
-                pure $
-                    if (x `Set.member` freeVariables e)
-                        then boolPred eq
-                        else SubstitutionPred x e
-        other ->
-            pure $ boolPred other
-
-    boolPred = BoolPred . Internal.Predicate
 
 ----------------------------------------
 
