@@ -19,6 +19,7 @@ import Data.Text.Encoding qualified as Text
 import Booster.Pattern.Base (externaliseKmapUnsafe)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
+import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util (sortOfTerm)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -35,7 +36,7 @@ externalisePattern ::
 externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution = ensuredSubstitution} inputSubstitution =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        substitutions = ensuredSubstitution <> inputSubstitution -- TODO ensuredSubstitution takes priority. Do we even need inputSubstitution?
+        substitutions = inputSubstitution <> (ensuredSubstitution `Substitution.compose` inputSubstitution)
         externalisedSubstitution =
             if null substitutions
                 then Nothing

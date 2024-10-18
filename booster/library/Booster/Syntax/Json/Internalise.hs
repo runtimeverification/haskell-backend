@@ -35,6 +35,8 @@ module Booster.Syntax.Json.Internalise (
     pattern CheckSubsorts,
     pattern IgnoreSubsorts,
     logPatternError,
+    -- substitution mining
+    extractSubsitution,
     -- for test only
     InternalisedPredicate (..),
 ) where
@@ -52,7 +54,7 @@ import Data.Coerce (coerce)
 import Data.Foldable ()
 import Data.Generics (extQ)
 import Data.Graph (SCC (..), stronglyConnComp)
-import Data.List (foldl1', nub)
+import Data.List (foldl', foldl1', nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -507,6 +509,25 @@ mbSubstitution = \case
         boolPred other
   where
     boolPred = BoolPred . Internal.Predicate
+
+extractSubsitution ::
+    [Internal.Predicate] -> (Map Internal.Variable Internal.Term, Set Internal.Predicate)
+extractSubsitution ps =
+    let (potentialSubstituion, otherPreds) = partitionSubstitutionPreds . map mbSubstitution . coerce $ ps
+        (newSubstitution, leftoverPreds) = mkSubstitution potentialSubstituion
+     in (newSubstitution, Set.fromList $ leftoverPreds <> map unsafeFromBoolPred otherPreds)
+  where
+    partitionSubstitutionPreds = foldl' accumulate ([], [])
+      where
+        accumulate (accSubst, accOther) = \case
+            pSubst@SubstitutionPred{} -> (pSubst : accSubst, accOther)
+            pOther -> (accSubst, pOther : accOther)
+
+    -- this conversion is safe withing this function since we pass Internal.Predicate as input
+    unsafeFromBoolPred :: InternalisedPredicate -> Internal.Predicate
+    unsafeFromBoolPred = \case
+        BoolPred p -> coerce p
+        _ -> error "extractSubsitution.unsafeFromBoolPred: impossible case"
 
 internalisePred ::
     Flag "alias" ->
