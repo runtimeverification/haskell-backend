@@ -36,7 +36,8 @@ externalisePattern ::
 externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution = ensuredSubstitution} inputSubstitution =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        substitutions = inputSubstitution <> (ensuredSubstitution `Substitution.compose` inputSubstitution)
+        -- inputSubstitution is probably not needed here at all
+        substitutions = ensuredSubstitution `Substitution.compose` inputSubstitution
         externalisedSubstitution =
             if null substitutions
                 then Nothing
