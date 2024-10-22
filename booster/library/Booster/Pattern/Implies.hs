@@ -122,7 +122,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         , substitution = substitutionR
                                         }
 
-                            SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
+                            SMT.isSat solver (Set.toList substPatL.constraints) substPatL.substitution >>= \case
                                 SMT.IsUnsat ->
                                     let sort = externaliseSort $ sortOfPattern substPatL
                                      in implies' (Kore.Syntax.KJBottom sort) sort antecedent.term consequent.term mempty
@@ -159,8 +159,10 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
                             let filteredConsequentPreds =
-                                    Set.map (Substitution.substituteInPredicate subst) substPatR.constraints
-                                        `Set.difference` substPatL.constraints
+                                    Set.map
+                                        (Substitution.substituteInPredicate subst)
+                                        (substPatR.constraints <> (Set.fromList $ Substitution.asEquations substPatR.substitution))
+                                        `Set.difference` (substPatL.constraints <> (Set.fromList $ Substitution.asEquations substPatL.substitution))
 
                             if null filteredConsequentPreds
                                 then
