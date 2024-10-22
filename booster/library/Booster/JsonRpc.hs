@@ -68,6 +68,7 @@ import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (
     InternalisedPredicates (..),
     TermOrPredicates (..),
+    extractSubsitution,
     internalisePattern,
     internaliseTermOrPredicate,
     logPatternError,
@@ -289,16 +290,17 @@ respond stateVar request =
                                     mLlvmLibrary
                                     solver
                                     mempty
-                                    predicates -- TODO include ps.substitution?
+                                    (predicates <> Substitution.asEquations ps.substitution)
                                     >>= \case
-                                        (Right newPreds, _) -> do
+                                        (Right simplified, _) -> do
                                             let predicateSort =
                                                     fromMaybe (error "not a predicate") $
                                                         sortOfJson req.state.term
+                                                (simplifiedSubstitution, simplifiedPredicates) = extractSubsitution simplified
                                                 result =
-                                                    map (externalisePredicate predicateSort) newPreds
+                                                    map (externalisePredicate predicateSort) (Set.toList simplifiedPredicates)
                                                         <> map (externaliseCeil predicateSort) ps.ceilPredicates
-                                                        <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList ps.substitution)
+                                                        <> map (uncurry $ externaliseSubstitution predicateSort) (Map.assocs simplifiedSubstitution)
                                                         <> ps.unsupported
 
                                             pure $ Right (addHeader $ Syntax.KJAnd predicateSort result)
