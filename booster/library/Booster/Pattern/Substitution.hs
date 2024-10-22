@@ -8,9 +8,7 @@ This module is intended to be imported qualified.
 -}
 module Booster.Pattern.Substitution (
     mkEq,
-    destructEq,
     asEquations,
-    partitionPredicates,
     compose,
     substituteInPredicate,
     substituteInTerm,
@@ -18,16 +16,19 @@ module Booster.Pattern.Substitution (
 
 import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
-import Data.List (partition)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust, mapMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Util (sortOfTerm)
 
+{- | Compose substitutions:
+     - apply the left one to the assignments in the right one
+     - merge left with the result of above, left takes priority
+-}
 compose :: Substitution -> Substitution -> Substitution
 compose newSubst oldSubst =
     let substitutedOldSubst = Map.map (substituteInTerm newSubst) oldSubst
@@ -40,26 +41,9 @@ mkEq x t = Predicate $ case sortOfTerm t of
     SortBool -> EqualsBool (Var x) t
     otherSort -> EqualsK (KSeq otherSort (Var x)) (KSeq otherSort t)
 
-{- | Pattern match on an equality predicate and try extracting a variable assignment.
-     This is a partial inverse of @'mkEq'@
--}
-destructEq :: Predicate -> Maybe (Variable, Term)
-destructEq = \case
-    Predicate (EqualsInt (Var x) t) -> Just (x, t)
-    Predicate (EqualsBool (Var x) t) -> Just (x, t)
-    Predicate
-        (EqualsK (KSeq _lhsSort (Var x)) (KSeq _rhsSort t)) -> Just (x, t)
-    _ -> Nothing
-
 -- | turns a substitution into a list of equations
 asEquations :: Map Variable Term -> [Predicate]
 asEquations = map (uncurry mkEq) . Map.assocs
-
--- | Extract substitution items from a list of generic predicates. Return empty substitution if none are found
-partitionPredicates :: [Predicate] -> (Map Variable Term, [Predicate])
-partitionPredicates ps =
-    let (substItems, normalPreds) = partition (isJust . destructEq) ps
-     in (Map.fromList . mapMaybe destructEq $ substItems, normalPreds)
 
 substituteInTerm :: Substitution -> Term -> Term
 substituteInTerm substitution = goSubst
