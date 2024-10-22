@@ -19,9 +19,7 @@ import Data.Text.Encoding qualified as Text
 import Booster.Pattern.Base (externaliseKmapUnsafe)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
-import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util (sortOfTerm)
-import Data.Map (Map)
 import Data.Map qualified as Map
 import Kore.Syntax.Json.Types qualified as Syntax
 
@@ -31,17 +29,15 @@ import Kore.Syntax.Json.Types qualified as Syntax
 -}
 externalisePattern ::
     Internal.Pattern ->
-    Map Internal.Variable Internal.Term ->
     (Syntax.KorePattern, Maybe Syntax.KorePattern, Maybe Syntax.KorePattern)
-externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution = ensuredSubstitution} inputSubstitution =
+externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution} =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
         -- inputSubstitution is probably not needed here at all
-        substitutions = ensuredSubstitution `Substitution.compose` inputSubstitution
         externalisedSubstitution =
-            if null substitutions
+            if null substitution
                 then Nothing
-                else Just . multiAnd sort . map (uncurry $ externaliseSubstitution sort) . Map.toList $ substitutions
+                else Just . multiAnd sort . map (uncurry $ externaliseSubstitution sort) . Map.toList $ substitution
         externalisedPredicate =
             if null constraints && null ceilConditions
                 then Nothing

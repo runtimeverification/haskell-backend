@@ -44,7 +44,7 @@ import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Sort (SortApp), Term, Variable)
+import Booster.Pattern.Base (Pattern (..), Sort (SortApp))
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Implies (runImplies)
 import Booster.Pattern.Pretty
@@ -166,7 +166,7 @@ respond stateVar request =
                         result <-
                             performRewrite rewriteConfig substPat
                         SMT.finaliseSolver solver
-                        pure $ execResponse req result substitution unsupported
+                        pure $ execResponse req result unsupported
             RpcTypes.AddModule RpcTypes.AddModuleRequest{_module, nameAsId = nameAsId'} -> Booster.Log.withContext CtxAddModule $ runExceptT $ do
                 -- block other request executions while modifying the server state
                 state <- liftIO $ takeMVar stateVar
@@ -244,21 +244,21 @@ respond stateVar request =
                                     RpcError.CouldNotVerifyPattern $
                                         map patternErrorToRpcError patternErrors
                     -- term and predicate (pattern)
-                    Right (TermAndPredicates pat substitution unsupported) -> do
+                    Right (TermAndPredicates pat unsupported) -> do
                         unless (null unsupported) $ do
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
                         -- apply the given substitution before doing anything else
                         let substPat =
                                 Pattern
-                                    { term = Substitution.substituteInTerm substitution pat.term
-                                    , constraints = Set.map (Substitution.substituteInPredicate substitution) pat.constraints
+                                    { term = Substitution.substituteInTerm pat.substitution pat.term
+                                    , constraints = Set.map (Substitution.substituteInPredicate pat.substitution) pat.constraints
                                     , ceilConditions = pat.ceilConditions
-                                    , substitution
+                                    , substitution = pat.substitution
                                     }
                         ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPat >>= \case
                             (Right newPattern, _) -> do
-                                let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
+                                let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern
                                     tSort = externaliseSort (sortOfPattern newPattern)
                                     result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
                                         [] -> term
@@ -333,7 +333,7 @@ respond stateVar request =
                             -- term and predicates were sent. Only work on predicates
                             (boolPs, suppliedSubst) <-
                                 case things of
-                                    TermAndPredicates pat substitution unsupported -> do
+                                    TermAndPredicates pat unsupported -> do
                                         withContext CtxGetModel $
                                             logMessage' ("ignoring supplied terms and only checking predicates" :: Text)
 
@@ -342,7 +342,7 @@ respond stateVar request =
                                                 logMessage' ("ignoring unsupported predicates" :: Text)
                                                 withContext CtxDetail $
                                                     logMessage (Text.unwords $ map prettyPattern unsupported)
-                                        pure (Set.toList pat.constraints, substitution)
+                                        pure (Set.toList pat.constraints, pat.substitution)
                                     Predicates ps -> do
                                         unless (null ps.ceilPredicates && null ps.unsupported) $ do
                                             withContext CtxGetModel $ do
@@ -473,10 +473,9 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
 execResponse ::
     RpcTypes.ExecuteRequest ->
     (Natural, Seq (RewriteTrace ()), RewriteResult Pattern) ->
-    Map Variable Term ->
     [Syntax.KorePattern] ->
     Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
-execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
+execResponse req (d, traces, rr) unsupported = case rr of
     RewriteBranch p nexts ->
         Right $
             RpcTypes.Execute
@@ -484,10 +483,10 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.Branching
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p unsupported Nothing
                     , nextStates =
                         Just $
-                            map (\(_, muid, p') -> toExecState p' originalSubstitution unsupported (Just muid)) $
+                            map (\(_, muid, p') -> toExecState p' unsupported (Just muid)) $
                                 toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -499,7 +498,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.Stuck
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -511,7 +510,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.Vacuous
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -523,8 +522,8 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
-                    , nextStates = Just [toExecState next originalSubstitution unsupported Nothing]
+                    , state = toExecState p unsupported Nothing
+                    , nextStates = Just [toExecState next unsupported Nothing]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }
@@ -535,7 +534,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p unsupported Nothing
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
@@ -547,7 +546,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                     { reason = RpcTypes.DepthBound
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -564,7 +563,7 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                                     (logSuccessfulRewrites, logFailedRewrites)
                                     (RewriteStepFailed failure)
                          in logs <|> abortRewriteLog
-                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , state = toExecState p unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -587,8 +586,8 @@ execResponse req (d, traces, rr) originalSubstitution unsupported = case rr of
                 xs@(_ : _) -> Just xs
 
 toExecState ::
-    Pattern -> Map Variable Term -> [Syntax.KorePattern] -> Maybe UniqueId -> RpcTypes.ExecuteState
-toExecState pat sub unsupported muid =
+    Pattern -> [Syntax.KorePattern] -> Maybe UniqueId -> RpcTypes.ExecuteState
+toExecState pat unsupported muid =
     RpcTypes.ExecuteState
         { term = addHeader t
         , predicate = addHeader <$> addUnsupported p
@@ -598,7 +597,7 @@ toExecState pat sub unsupported muid =
         , ruleId = getUniqueId <$> muid
         }
   where
-    (t, p, s) = externalisePattern pat sub
+    (t, p, s) = externalisePattern pat
     termSort = externaliseSort $ sortOfPattern pat
     allUnsupported = Syntax.KJAnd termSort unsupported
     addUnsupported

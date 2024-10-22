@@ -69,8 +69,10 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                      in runExcept $
                             internalisePatternOrTopOrBottom DisallowAlias CheckSubsorts Nothing def existentials korePat
 
-                checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR = do
-                    let freeVarsL =
+                checkImplies patL unsupportedL existsL patR unsupportedR existsR = do
+                    let substitutionL = patL.substitution
+                        substitutionR = patR.substitution
+                        freeVarsL =
                             ( freeVariables patL.term
                                 <> (Set.unions $ Set.map (freeVariables . coerce) patL.constraints)
                                 <> (Set.fromList $ Map.keys substitutionL)
@@ -210,10 +212,10 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                 (Right IsTop{}, _) ->
                     pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $
                         "The check implication step expects the antecedent term to be function-like."
-                ( Right (IsPattern (existsL, patL, substitutionL, unsupportedL))
-                    , Right (IsPattern (existsR, patR, substitutionR, unsupportedR))
+                ( Right (IsPattern (existsL, patL, unsupportedL))
+                    , Right (IsPattern (existsR, patR, unsupportedR))
                     ) ->
-                        checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR
+                        checkImplies patL unsupportedL existsL patR unsupportedR existsR
                 (Right IsPattern{}, Right (IsTop sort)) ->
                     implies' (Kore.Syntax.KJTop sort) sort antecedent.term consequent.term mempty
                 (Right IsPattern{}, Right (IsBottom sort)) ->

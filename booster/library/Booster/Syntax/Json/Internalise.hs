@@ -133,12 +133,11 @@ data TermOrPredicates -- = Either Predicate Pattern
     = Predicates InternalisedPredicates
     | TermAndPredicates
         Internal.Pattern
-        (Map Internal.Variable Internal.Term)
         [Syntax.KorePattern]
     deriving stock (Eq, Show)
 
 retractPattern :: TermOrPredicates -> Maybe Internal.Pattern
-retractPattern (TermAndPredicates patt _ _) = Just patt
+retractPattern (TermAndPredicates patt _) = Just patt
 retractPattern _ = Nothing
 
 -- main interface functions
@@ -204,7 +203,7 @@ internalisePatternOrTopOrBottom ::
     Except
         PatternError
         ( PatternOrTopOrBottom
-            ([Internal.Variable], Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern])
+            ([Internal.Variable], Internal.Pattern, [Syntax.KorePattern])
         )
 internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition existentials p = do
     let exploded = explodeAnd p
@@ -223,8 +222,7 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                 pure $
                     IsPattern
                         ( existentialVars
-                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions, substitution = mempty} -- this is the ensures-substitution, leave empty
-                        , subst
+                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions, substitution = subst}
                         , unknown
                         )
   where
@@ -258,9 +256,8 @@ internaliseTermOrPredicate allowAlias checkSubsorts sortVars definition syntaxPa
                             { term
                             , constraints = Set.fromList constrs
                             , ceilConditions
-                            , substitution = mempty -- this is the ensures-substitution, leave empty
+                            , substitution = substitution
                             }
-                        substitution
                         unsupported
             )
 
