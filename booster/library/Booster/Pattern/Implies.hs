@@ -26,7 +26,8 @@ import Booster.Pattern.Base (Pattern (..), Predicate (..))
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (Implies), matchTerms)
 import Booster.Pattern.Pretty (FromModifiersT, ModifiersRep (..), pretty')
-import Booster.Pattern.Util (freeVariables, sortOfPattern, substituteInPredicate, substituteInTerm)
+import Booster.Pattern.Substitution (asEquations)
+import Booster.Pattern.Util (freeVariables, sortOfPattern)
 import Booster.Prettyprinter (renderDefault)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (addHeader, prettyPattern)
@@ -68,8 +69,10 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                      in runExcept $
                             internalisePatternOrTopOrBottom DisallowAlias CheckSubsorts Nothing def existentials korePat
 
-                checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR = do
-                    let freeVarsL =
+                checkImplies patL unsupportedL existsL patR unsupportedR existsR = do
+                    let substitutionL = patL.substitution
+                        substitutionR = patR.substitution
+                        freeVarsL =
                             ( freeVariables patL.term
                                 <> (Set.unions $ Set.map (freeVariables . coerce) patL.constraints)
                                 <> (Set.fromList $ Map.keys substitutionL)
@@ -104,41 +107,26 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     map (pack . show) $
                                         unsupportedL <> unsupportedR
                         | otherwise -> do
-                            let
-                                -- apply the given substitution before doing anything else
-                                substPatL =
-                                    Pattern
-                                        { term = substituteInTerm substitutionL patL.term
-                                        , constraints = Set.map (substituteInPredicate substitutionL) patL.constraints
-                                        , ceilConditions = patL.ceilConditions
-                                        }
-                                substPatR =
-                                    Pattern
-                                        { term = substituteInTerm substitutionR patR.term
-                                        , constraints = Set.map (substituteInPredicate substitutionR) patR.constraints
-                                        , ceilConditions = patR.ceilConditions
-                                        }
-
-                            SMT.isSat solver (Set.toList substPatL.constraints) >>= \case
+                            SMT.isSat solver (Set.toList patL.constraints) patL.substitution >>= \case
                                 SMT.IsUnsat ->
-                                    let sort = externaliseSort $ sortOfPattern substPatL
+                                    let sort = externaliseSort $ sortOfPattern patL
                                      in implies' (Kore.Syntax.KJBottom sort) sort antecedent.term consequent.term mempty
-                                _ -> checkImpliesMatchTerms existsL substPatL existsR substPatR
+                                _ -> checkImpliesMatchTerms existsL patL existsR patR
 
-                checkImpliesMatchTerms existsL substPatL existsR substPatR =
-                    case matchTerms Booster.Pattern.Match.Implies def substPatR.term substPatL.term of
+                checkImpliesMatchTerms existsL patL existsR patR =
+                    case matchTerms Booster.Pattern.Match.Implies def patR.term patL.term of
                         MatchFailed (SubsortingError sortError) ->
                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
                                 show sortError
                         MatchFailed{} ->
                             doesNotImply
-                                (sortOfPattern substPatL)
-                                (externaliseExistTerm existsL substPatL.term)
-                                (externaliseExistTerm existsR substPatR.term)
+                                (sortOfPattern patL)
+                                (externaliseExistTerm existsL patL.term)
+                                (externaliseExistTerm existsR patR.term)
                         MatchIndeterminate remainder ->
-                            ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPatL >>= \case
+                            ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
-                                    if substPatL == simplifedSubstPatL
+                                    if patL == simplifedSubstPatL
                                         then -- we are being conservative here for now and returning an error.
                                         -- since we have already simplified the LHS, we may want to eventually return implise, but the condition
                                         -- will contain the remainder as an equality contraint, predicating the implication on that equality being true.
@@ -151,19 +139,20 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                                                 map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
                                                                     NonEmpty.toList remainder
                                                         )
-                                        else checkImpliesMatchTerms existsL simplifedSubstPatL existsR substPatR
+                                        else checkImpliesMatchTerms existsL simplifedSubstPatL existsR patR
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
                             let filteredConsequentPreds =
-                                    Set.map (substituteInPredicate subst) substPatR.constraints `Set.difference` substPatL.constraints
+                                    (patR.constraints <> (Set.fromList $ asEquations patR.substitution))
+                                        `Set.difference` (patL.constraints <> (Set.fromList $ asEquations patL.substitution))
 
                             if null filteredConsequentPreds
                                 then
                                     implies
-                                        (sortOfPattern substPatL)
-                                        (externaliseExistTerm existsL substPatL.term)
-                                        (externaliseExistTerm existsR substPatR.term)
+                                        (sortOfPattern patL)
+                                        (externaliseExistTerm existsL patL.term)
+                                        (externaliseExistTerm existsR patR.term)
                                         subst
                                 else
                                     ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
@@ -171,9 +160,9 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                             if all (== Predicate TrueBool) newPreds
                                                 then
                                                     implies
-                                                        (sortOfPattern substPatL)
-                                                        (externaliseExistTerm existsL substPatL.term)
-                                                        (externaliseExistTerm existsR substPatR.term)
+                                                        (sortOfPattern patL)
+                                                        (externaliseExistTerm existsL patL.term)
+                                                        (externaliseExistTerm existsR patR.term)
                                                         subst
                                                 else -- here we conservatively abort
                                                 -- an anlternative would be to return valid, putting the unknown constraints into the
@@ -204,10 +193,10 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                 (Right IsTop{}, _) ->
                     pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly $
                         "The check implication step expects the antecedent term to be function-like."
-                ( Right (IsPattern (existsL, patL, substitutionL, unsupportedL))
-                    , Right (IsPattern (existsR, patR, substitutionR, unsupportedR))
+                ( Right (IsPattern (existsL, patL, unsupportedL))
+                    , Right (IsPattern (existsR, patR, unsupportedR))
                     ) ->
-                        checkImplies patL substitutionL unsupportedL existsL patR substitutionR unsupportedR existsR
+                        checkImplies patL unsupportedL existsL patR unsupportedR existsR
                 (Right IsPattern{}, Right (IsTop sort)) ->
                     implies' (Kore.Syntax.KJTop sort) sort antecedent.term consequent.term mempty
                 (Right IsPattern{}, Right (IsBottom sort)) ->
