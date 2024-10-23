@@ -20,7 +20,6 @@ import Booster.Pattern.Base (externaliseKmapUnsafe)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Util (sortOfTerm)
-import Data.Map (Map)
 import Data.Map qualified as Map
 import Kore.Syntax.Json.Types qualified as Syntax
 
@@ -30,16 +29,16 @@ import Kore.Syntax.Json.Types qualified as Syntax
 -}
 externalisePattern ::
     Internal.Pattern ->
-    Map Internal.Variable Internal.Term ->
     (Syntax.KorePattern, Maybe Syntax.KorePattern, Maybe Syntax.KorePattern)
-externalisePattern Internal.Pattern{term = term, constraints, ceilConditions} substitutions =
+externalisePattern Internal.Pattern{term = term, constraints, ceilConditions, substitution} =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        substitution =
-            if null substitutions
+        -- inputSubstitution is probably not needed here at all
+        externalisedSubstitution =
+            if null substitution
                 then Nothing
-                else Just . multiAnd sort . map (uncurry $ externaliseSubstitution sort) . Map.toList $ substitutions
-        predicate =
+                else Just . multiAnd sort . map (uncurry $ externaliseSubstitution sort) . Map.toList $ substitution
+        externalisedPredicate =
             if null constraints && null ceilConditions
                 then Nothing
                 else
@@ -47,7 +46,7 @@ externalisePattern Internal.Pattern{term = term, constraints, ceilConditions} su
                         multiAnd sort $
                             map (externalisePredicate sort) (Set.toList constraints)
                                 ++ map (externaliseCeil sort) ceilConditions
-     in (externaliseTerm term, predicate, substitution)
+     in (externaliseTerm term, externalisedPredicate, externalisedSubstitution)
   where
     multiAnd :: Syntax.Sort -> [Syntax.KorePattern] -> Syntax.KorePattern
     multiAnd _ [] = error "multiAnd: empty"

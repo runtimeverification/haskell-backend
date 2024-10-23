@@ -279,18 +279,9 @@ diffBy def pat1 pat2 =
             <> if null ps.unsupported
                 then ""
                 else BS.unlines ("Unsupported parts:" : map Json.encode ps.unsupported)
-    renderBS (TermAndPredicates p m u) =
+    renderBS (TermAndPredicates p u) =
         ( BS.pack . renderDefault $
             pretty (PrettyWithModifiers @['Decoded, 'Truncated] p)
-                <+> vsep
-                    ( map
-                        ( \(k, v) ->
-                            pretty (PrettyWithModifiers @['Decoded, 'Truncated] k)
-                                <+> "="
-                                <+> pretty (PrettyWithModifiers @['Decoded, 'Truncated] v)
-                        )
-                        (Map.toList m)
-                    )
         )
             <> if null u then "" else BS.unlines ("Unsupported parts: " : map Json.encode u)
     internalise =
