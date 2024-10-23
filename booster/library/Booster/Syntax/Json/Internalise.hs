@@ -24,7 +24,6 @@ module Booster.Syntax.Json.Internalise (
     textToBS,
     trm,
     handleBS,
-    asEquations,
     TermOrPredicates (..),
     InternalisedPredicates (..),
     PatternOrTopOrBottom (..),
@@ -36,6 +35,8 @@ module Booster.Syntax.Json.Internalise (
     pattern CheckSubsorts,
     pattern IgnoreSubsorts,
     logPatternError,
+    -- substitution mining
+    extractSubstitution,
     -- for test only
     InternalisedPredicate (..),
 ) where
@@ -50,6 +51,7 @@ import Data.ByteString.Char8 (ByteString, isPrefixOf)
 import Data.ByteString.Char8 qualified as BS
 import Data.Char (isLower)
 import Data.Coerce (coerce)
+import Data.Either (partitionEithers)
 import Data.Foldable ()
 import Data.Generics (extQ)
 import Data.Graph (SCC (..), stronglyConnComp)
@@ -72,6 +74,7 @@ import Booster.Log (LoggerMIO, logMessage, withKorePatternContext)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Pretty
+import Booster.Pattern.Substitution qualified as Internal
 import Booster.Pattern.Util (freeVariables, sortOfTerm, substituteInSort)
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json (addHeader)
@@ -131,15 +134,20 @@ data TermOrPredicates -- = Either Predicate Pattern
     = Predicates InternalisedPredicates
     | TermAndPredicates
         Internal.Pattern
-        (Map Internal.Variable Internal.Term)
         [Syntax.KorePattern]
     deriving stock (Eq, Show)
 
 retractPattern :: TermOrPredicates -> Maybe Internal.Pattern
-retractPattern (TermAndPredicates patt _ _) = Just patt
+retractPattern (TermAndPredicates patt _) = Just patt
 retractPattern _ = Nothing
 
--- main interface functions
+{- | Internalise a @'Syntax.KorePattern'@ into the components constituting a @'Internal.Pattern'@
+
+     Note: This function will NOT apply the internalised @'Internal.Substitution'@ to the other components.
+           The callers of this function must decide if it is necessary to substitute.
+           Use @'internalisePatternOrTopOrBottom'@ or @'internaliseTermOrPredicate'@ that return an already
+           substituted @'Internal.Pattern'@.
+-}
 internalisePattern ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -151,7 +159,7 @@ internalisePattern ::
         ( Internal.Term
         , [Internal.Predicate]
         , [Internal.Ceil]
-        , Map Internal.Variable Internal.Term
+        , Internal.Substitution
         , [Syntax.KorePattern]
         )
 internalisePattern allowAlias checkSubsorts sortVars definition p = do
@@ -191,7 +199,11 @@ data PatternOrTopOrBottom a
     | IsPattern a
     deriving (Functor)
 
--- main interface functions
+{- | Internalise a @'Syntax.KorePattern'@ into @'Internal.Pattern'@, detecting and reporting trivial cases.
+
+     Note: This function will apply the internalised @'Internal.Substitution'@ part of the pattern's constraints
+           to the term and constraints (but not the ceils).
+-}
 internalisePatternOrTopOrBottom ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -202,7 +214,7 @@ internalisePatternOrTopOrBottom ::
     Except
         PatternError
         ( PatternOrTopOrBottom
-            ([Internal.Variable], Internal.Pattern, Map Internal.Variable Internal.Term, [Syntax.KorePattern])
+            ([Internal.Variable], Internal.Pattern, [Syntax.KorePattern])
         )
 internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition existentials p = do
     let exploded = explodeAnd p
@@ -221,8 +233,12 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                 pure $
                     IsPattern
                         ( existentialVars
-                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions}
-                        , subst
+                        , Internal.Pattern
+                            { term = Internal.substituteInTerm subst term
+                            , constraints = Set.map (Internal.substituteInPredicate subst) . Set.fromList $ preds
+                            , ceilConditions
+                            , substitution = subst
+                            }
                         , unknown
                         )
   where
@@ -236,6 +252,15 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
         Syntax.KJBottom{sort} : _ -> Just $ IsBottom sort
         _ : xs -> isBottom xs
 
+{- | Internalise a @'Syntax.KorePattern'@ into either @'Internal.Pattern'@
+     or @'[InternalisedPredicates]'@ if only terms of sort bool are present.
+
+     Note: If this function successfully internalises a @'Internal.Pattern'@, it will apply the
+           @'Internal.Substitution'@ part to the term and constraints (but not the ceils).
+
+           Otherwise, when we get predicates only, the substitution part
+           is not applied to the rest of the predicates.
+-}
 internaliseTermOrPredicate ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -252,8 +277,12 @@ internaliseTermOrPredicate allowAlias checkSubsorts sortVars definition syntaxPa
                     internalisePattern allowAlias checkSubsorts sortVars definition syntaxPatt
                 pure $
                     TermAndPredicates
-                        Internal.Pattern{term, constraints = Set.fromList constrs, ceilConditions}
-                        substitution
+                        Internal.Pattern
+                            { term = Internal.substituteInTerm substitution term
+                            , constraints = Set.map (Internal.substituteInPredicate substitution) . Set.fromList $ constrs
+                            , ceilConditions
+                            , substitution
+                            }
                         unsupported
             )
 
@@ -458,7 +487,7 @@ mkSubstitution initialSubst =
             Map.partition ((== 1) . length) $
                 Map.fromListWith (<>) [(v, [t]) | SubstitutionPred v t <- initialSubst]
         equations =
-            [mkEq v t | (v, ts) <- Map.assocs duplicates, t <- ts]
+            [Internal.mkEq v t | (v, ts) <- Map.assocs duplicates, t <- ts]
      in execState breakCycles (Map.map head substMap, equations)
   where
     breakCycles :: State (Map Internal.Variable Internal.Term, [Internal.Predicate]) ()
@@ -472,19 +501,53 @@ mkSubstitution initialSubst =
             else do
                 modify $ \(m, eqs) ->
                     ( m `Map.withoutKeys` cycleNodes
-                    , eqs <> (map (uncurry mkEq) $ Map.assocs $ m `Map.restrictKeys` cycleNodes)
+                    , eqs <> (map (uncurry Internal.mkEq) $ Map.assocs $ m `Map.restrictKeys` cycleNodes)
                     )
                 breakCycles
 
-mkEq :: Internal.Variable -> Internal.Term -> Internal.Predicate
-mkEq x t = Internal.Predicate $ case sortOfTerm t of
-    Internal.SortInt -> Internal.EqualsInt (Internal.Var x) t
-    Internal.SortBool -> Internal.EqualsBool (Internal.Var x) t
-    otherSort -> Internal.EqualsK (Internal.KSeq otherSort (Internal.Var x)) (Internal.KSeq otherSort t)
+-- | Given a equality @'Term'@, decide if it can be interpreted as substitution.
+mbSubstitution ::
+    Internal.Term -> InternalisedPredicate
+mbSubstitution = \case
+    eq@(Internal.EqualsInt (Internal.Var x) e)
+        | x `Set.member` freeVariables e -> boolPred eq
+        | otherwise -> SubstitutionPred x e
+    eq@(Internal.EqualsInt e (Internal.Var x))
+        | x `Set.member` freeVariables e -> boolPred eq
+        | otherwise -> SubstitutionPred x e
+    eq@(Internal.EqualsK (Internal.KSeq _sortL (Internal.Var x)) (Internal.KSeq _sortR e)) ->
+        do
+            -- NB sorts do not have to agree! (could be subsorts)
+            if (x `Set.member` freeVariables e)
+                then boolPred eq
+                else SubstitutionPred x e
+    eq@(Internal.EqualsK (Internal.KSeq _sortL e) (Internal.KSeq _sortR (Internal.Var x))) ->
+        do
+            -- NB sorts do not have to agree! (could be subsorts)
+            if (x `Set.member` freeVariables e)
+                then boolPred eq
+                else SubstitutionPred x e
+    other ->
+        boolPred other
+  where
+    boolPred = BoolPred . Internal.Predicate
 
--- | turns a substitution into a list of equations
-asEquations :: Map Internal.Variable Internal.Term -> [Internal.Predicate]
-asEquations = map (uncurry mkEq) . Map.assocs
+extractSubstitution ::
+    [Internal.Predicate] -> (Map Internal.Variable Internal.Term, Set Internal.Predicate)
+extractSubstitution ps =
+    let (potentialSubstitution, otherPreds) = partitionSubstitutionPreds . map mbSubstitution . coerce $ ps
+        (newSubstitution, leftoverPreds) = mkSubstitution potentialSubstitution
+     in (newSubstitution, Set.fromList $ leftoverPreds <> otherPreds)
+  where
+    partitionSubstitutionPreds = partitionEithers . map unpackBoolPred
+      where
+        unpackBoolPred :: InternalisedPredicate -> Either InternalisedPredicate Internal.Predicate
+        unpackBoolPred = \case
+            pSubst@SubstitutionPred{} -> Left pSubst
+            BoolPred p -> Right p
+            other ->
+                -- this case is impossible the input is a valid Internal.Predicate
+                error $ "extractSubstitution: unsupported predicate " <> show other
 
 internalisePred ::
     Flag "alias" ->
@@ -547,9 +610,9 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                 case (argS, a, b) of
                     -- for "true" #Equals P, check whether P is in fact a substitution
                     (Internal.SortBool, Internal.TrueBool, x) ->
-                        mapM mbSubstitution [x]
+                        pure [mbSubstitution x]
                     (Internal.SortBool, x, Internal.TrueBool) ->
-                        mapM mbSubstitution [x]
+                        pure [mbSubstitution x]
                     -- we could also detect NotBool (NEquals _) in "false" #Equals P
                     (Internal.SortBool, Internal.FalseBool, x) ->
                         pure [BoolPred $ Internal.Predicate $ Internal.NotBool x]
@@ -557,12 +620,12 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                         pure [BoolPred $ Internal.Predicate $ Internal.NotBool x]
                     (_, Internal.Var x, t)
                         | x `Set.member` freeVariables t ->
-                            pure [BoolPred $ mkEq x t]
+                            pure [BoolPred $ Internal.mkEq x t]
                         | otherwise ->
                             pure [SubstitutionPred x t]
                     (_, t, Internal.Var x)
                         | x `Set.member` freeVariables t ->
-                            pure [BoolPred $ mkEq x t]
+                            pure [BoolPred $ Internal.mkEq x t]
                         | otherwise ->
                             pure [SubstitutionPred x t]
                     (Internal.SortInt, _, _) ->
@@ -606,33 +669,6 @@ internalisePred allowAlias checkSubsorts sortVars definition@KoreDefinition{sort
                     unless (name1 == name2) $
                         throwE (IncompatibleSorts (map externaliseSort [s1, s2]))
                     zipWithM_ go args1 args2
-
-    mbSubstitution :: Internal.Term -> Except PatternError InternalisedPredicate
-    mbSubstitution = \case
-        eq@(Internal.EqualsInt (Internal.Var x) e)
-            | x `Set.member` freeVariables e -> pure $ boolPred eq
-            | otherwise -> pure $ SubstitutionPred x e
-        eq@(Internal.EqualsInt e (Internal.Var x))
-            | x `Set.member` freeVariables e -> pure $ boolPred eq
-            | otherwise -> pure $ SubstitutionPred x e
-        eq@(Internal.EqualsK (Internal.KSeq _sortL (Internal.Var x)) (Internal.KSeq _sortR e)) ->
-            do
-                -- NB sorts do not have to agree! (could be subsorts)
-                pure $
-                    if (x `Set.member` freeVariables e)
-                        then boolPred eq
-                        else SubstitutionPred x e
-        eq@(Internal.EqualsK (Internal.KSeq _sortL e) (Internal.KSeq _sortR (Internal.Var x))) ->
-            do
-                -- NB sorts do not have to agree! (could be subsorts)
-                pure $
-                    if (x `Set.member` freeVariables e)
-                        then boolPred eq
-                        else SubstitutionPred x e
-        other ->
-            pure $ boolPred other
-
-    boolPred = BoolPred . Internal.Predicate
 
 ----------------------------------------
 
