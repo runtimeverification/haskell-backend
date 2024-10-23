@@ -6,7 +6,6 @@ module Booster.Pattern.Util (
     substituteInSort,
     sortOfTerm,
     sortOfPattern,
-    modifyVariables,
     modifyVariablesInT,
     modifyVariablesInP,
     modifyVarName,
@@ -79,15 +78,6 @@ substituteInSort subst (SortApp n args) =
 
 sortOfPattern :: Pattern -> Sort
 sortOfPattern pat = sortOfTerm pat.term
-
-modifyVariables :: (Variable -> Variable) -> Pattern -> Pattern
-modifyVariables f p =
-    Pattern
-        { term = modifyVariablesInT f p.term
-        , constraints = Set.map (modifyVariablesInP f) p.constraints
-        , substitution = Map.map (coerce $ modifyVariablesInT f) p.substitution
-        , ceilConditions = map (coerce $ modifyVariablesInT f) p.ceilConditions
-        }
 
 modifyVariablesInT :: (Variable -> Variable) -> Term -> Term
 modifyVariablesInT f = cata $ \case
