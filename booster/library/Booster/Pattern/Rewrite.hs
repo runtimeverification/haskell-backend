@@ -74,7 +74,7 @@ import Booster.Syntax.Json.Internalise (extractSubstitution)
 import Booster.Util (Flag (..))
 
 {- | The @'RewriteT'@ monad encapsulates the effects needed to make a single rewrite step.
-     See @'rewriteStep'@ and '@applyRule@'.
+     See @'rewriteStep'@ and @'applyRule'@.
 -}
 newtype RewriteT io a = RewriteT
     { unRewriteT ::
