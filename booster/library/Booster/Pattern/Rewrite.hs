@@ -71,7 +71,7 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
-import Booster.Syntax.Json.Internalise (extractSubsitution)
+import Booster.Syntax.Json.Internalise (extractSubstitution)
 import Booster.Util (Flag (..))
 
 newtype RewriteT io a = RewriteT
@@ -365,10 +365,10 @@ applyRule pat@Pattern{ceilConditions} rule =
                         lift . RewriteT . lift . modify $ \s -> s{equations = mempty}
 
                     -- partition ensured constrains into substitution and predicates
-                    let (newSubsitution, newConstraints) = extractSubsitution ensuredConditions
+                    let (newSubsitution, newConstraints) = extractSubstitution ensuredConditions
 
                     -- compose the existing substitution pattern and the newly acquired one
-                    let (modifiedPatternSubst, leftoverConstraints) = extractSubsitution . asEquations $ newSubsitution `compose` pat.substitution
+                    let (modifiedPatternSubst, leftoverConstraints) = extractSubstitution . asEquations $ newSubsitution `compose` pat.substitution
 
                     let rewrittenTerm = substituteInTerm (modifiedPatternSubst `compose` ruleSubstitution) rule.rhs
                         substitutedNewConstraints =

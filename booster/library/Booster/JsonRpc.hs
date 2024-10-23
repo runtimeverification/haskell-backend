@@ -68,7 +68,7 @@ import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (
     InternalisedPredicates (..),
     TermOrPredicates (..),
-    extractSubsitution,
+    extractSubstitution,
     internalisePattern,
     internaliseTermOrPredicate,
     logPatternError,
@@ -296,7 +296,7 @@ respond stateVar request =
                                             let predicateSort =
                                                     fromMaybe (error "not a predicate") $
                                                         sortOfJson req.state.term
-                                                (simplifiedSubstitution, simplifiedPredicates) = extractSubsitution simplified
+                                                (simplifiedSubstitution, simplifiedPredicates) = extractSubstitution simplified
                                                 result =
                                                     map (externalisePredicate predicateSort) (Set.toList simplifiedPredicates)
                                                         <> map (externaliseCeil predicateSort) ps.ceilPredicates

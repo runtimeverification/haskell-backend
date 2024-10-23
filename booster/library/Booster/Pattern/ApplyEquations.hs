@@ -71,7 +71,7 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
-import Booster.Syntax.Json.Internalise (extractSubsitution)
+import Booster.Syntax.Json.Internalise (extractSubstitution)
 import Booster.Util (Bound (..))
 import Kore.JsonRpc.Types.ContextLog (CLContext (CLWithId), IdContext (CtxCached))
 import Kore.Util (showHashHex)
@@ -484,7 +484,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     -- evaluatedConstraints. To avoid duplicating constraints (i.e. having equivalent entities
     -- in pat.predicate and pat.substitution), we discard the old substitution here
     -- and extract a possible simplified one from evaluatedConstraints.
-    let (simplifiedSubsitution, simplifiedConstraints) = extractSubsitution (Set.toList evaluatedConstraints)
+    let (simplifiedSubsitution, simplifiedConstraints) = extractSubstitution (Set.toList evaluatedConstraints)
 
     pure
         Pattern

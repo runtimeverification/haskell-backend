@@ -36,7 +36,7 @@ module Booster.Syntax.Json.Internalise (
     pattern IgnoreSubsorts,
     logPatternError,
     -- substitution mining
-    extractSubsitution,
+    extractSubstitution,
     -- for test only
     InternalisedPredicate (..),
 ) where
@@ -507,9 +507,9 @@ mbSubstitution = \case
   where
     boolPred = BoolPred . Internal.Predicate
 
-extractSubsitution ::
+extractSubstitution ::
     [Internal.Predicate] -> (Map Internal.Variable Internal.Term, Set Internal.Predicate)
-extractSubsitution ps =
+extractSubstitution ps =
     let (potentialSubstituion, otherPreds) = partitionSubstitutionPreds . map mbSubstitution . coerce $ ps
         (newSubstitution, leftoverPreds) = mkSubstitution potentialSubstituion
      in (newSubstitution, Set.fromList $ leftoverPreds <> map unsafeFromBoolPred otherPreds)
