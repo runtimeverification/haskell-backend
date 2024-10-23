@@ -530,7 +530,7 @@ applyRule pat@Pattern{ceilConditions} rule =
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
         SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList stillUnclear) >>= \case
             SMT.IsUnknown reason -> do
-                withContext CtxAbort $ logMessage reason
+                withContext CtxWarn $ logMessage reason
                 -- return unclear rewrite rule condition if the condition is indeterminate
                 withContext CtxConstraint . withContext CtxWarn . logMessage $
                     WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
