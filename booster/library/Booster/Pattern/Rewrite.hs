@@ -950,6 +950,7 @@ performRewrite rewriteConfig pat = do
             simplifyP p >>= \case
                 Nothing -> pure $ RewriteTrivial orig
                 Just p' -> do
+                    -- simplify the 3rd component, i.e. the pattern
                     let simplifyP3rd (a, b, c, e, f) =
                             fmap (a,b,,e,f) <$> simplifyP c
                     nexts' <- catMaybes <$> mapM simplifyP3rd (toList nexts)

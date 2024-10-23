@@ -22,7 +22,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
-import Data.Bifunctor (second)
+import Data.Bifunctor (first, second)
 import Data.Foldable
 import Data.List (singleton)
 import Data.Map.Strict (Map)
@@ -57,7 +57,9 @@ import Booster.Pattern.Rewrite (
  )
 import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util (
+    externaliseRuleMarker,
     freeVariables,
+    modifyVarName,
     sortOfPattern,
     sortOfTerm,
  )
@@ -481,10 +483,9 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , logs
                     , state = toExecState p unsupported Nothing Nothing Nothing
                     , nextStates =
-                        -- FIXME return _ruleSubst in the response, removing '#'s from the variable names to make pyk happy
                         Just
                             $ map
-                                ( \(_, muid, p', mrulePred, _ruleSubst) -> toExecState p' unsupported (Just muid) mrulePred Nothing
+                                ( \(_, muid, p', mrulePred, ruleSubst) -> toExecState p' unsupported (Just muid) mrulePred (Just ruleSubst)
                                 )
                             $ toList nexts
                     , rule = Nothing
@@ -604,7 +605,7 @@ toExecState pat unsupported muid mrulePredicate mruleSubst =
     mrulePredExt = externalisePredicate termSort <$> mrulePredicate
     mruleSubstExt =
         Syntax.KJAnd predicateSort
-            . map (uncurry $ externaliseSubstitution predicateSort)
+            . map (uncurry (externaliseSubstitution predicateSort) . first (modifyVarName externaliseRuleMarker))
             . Map.toList
             <$> mruleSubst
     (t, p, s) = externalisePattern pat
