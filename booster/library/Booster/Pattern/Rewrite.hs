@@ -435,12 +435,13 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- apply substitution to rule requires
         let ruleRequires =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.requires
+            knownConstraints = pat.constraints <> (Set.fromList . asEquations $ pat.substitution)
 
         -- filter out any predicates known to be _syntactically_ present in the known prior
         toCheck <-
             lift $
                 filterOutKnownConstraints
-                    (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                    knownConstraints
                     ruleRequires
 
         -- simplify the constraints (one by one in isolation). Stop if false, abort rewrite if indeterminate.
@@ -450,7 +451,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                     ( checkConstraint
                         id
                         notAppliedIfBottom
-                        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                        knownConstraints
                     )
                     toCheck
 
@@ -459,7 +460,7 @@ applyRule pat@Pattern{ceilConditions} rule =
         stillUnclear <-
             lift $
                 filterOutKnownConstraints
-                    (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                    knownConstraints
                     unclearRequires
 
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
@@ -481,13 +482,14 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- apply substitution to rule ensures
         let ruleEnsures =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
+            knownConstraints = pat.constraints <> (Set.fromList . asEquations $ pat.substitution)
         newConstraints <-
             catMaybes
                 <$> mapM
                     ( checkConstraint
                         id
                         trivialIfBottom
-                        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+                        knownConstraints
                     )
                     ruleEnsures
 
