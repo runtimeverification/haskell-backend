@@ -51,10 +51,11 @@ import Data.ByteString.Char8 (ByteString, isPrefixOf)
 import Data.ByteString.Char8 qualified as BS
 import Data.Char (isLower)
 import Data.Coerce (coerce)
+import Data.Either (partitionEithers)
 import Data.Foldable ()
 import Data.Generics (extQ)
 import Data.Graph (SCC (..), stronglyConnComp)
-import Data.List (foldl', foldl1', nub)
+import Data.List (foldl1', nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -510,21 +511,19 @@ mbSubstitution = \case
 extractSubstitution ::
     [Internal.Predicate] -> (Map Internal.Variable Internal.Term, Set Internal.Predicate)
 extractSubstitution ps =
-    let (potentialSubstituion, otherPreds) = partitionSubstitutionPreds . map mbSubstitution . coerce $ ps
-        (newSubstitution, leftoverPreds) = mkSubstitution potentialSubstituion
-     in (newSubstitution, Set.fromList $ leftoverPreds <> map unsafeFromBoolPred otherPreds)
+    let (potentialSubstitution, otherPreds) = partitionSubstitutionPreds . map mbSubstitution . coerce $ ps
+        (newSubstitution, leftoverPreds) = mkSubstitution potentialSubstitution
+     in (newSubstitution, Set.fromList $ leftoverPreds <> otherPreds)
   where
-    partitionSubstitutionPreds = foldl' accumulate ([], [])
+    partitionSubstitutionPreds = partitionEithers . map unpackBoolPred
       where
-        accumulate (accSubst, accOther) = \case
-            pSubst@SubstitutionPred{} -> (pSubst : accSubst, accOther)
-            pOther -> (accSubst, pOther : accOther)
-
-    -- this conversion is safe withing this function since we pass Internal.Predicate as input
-    unsafeFromBoolPred :: InternalisedPredicate -> Internal.Predicate
-    unsafeFromBoolPred = \case
-        BoolPred p -> coerce p
-        _ -> error "extractSubsitution.unsafeFromBoolPred: impossible case"
+        unpackBoolPred :: InternalisedPredicate -> Either InternalisedPredicate Internal.Predicate
+        unpackBoolPred = \case
+            pSubst@SubstitutionPred{} -> Left pSubst
+            BoolPred p -> Right p
+            other ->
+                -- this case is impossible the input is a valid Internal.Predicate
+                error $ "extractSubstitution: unsupported predicate " <> show other
 
 internalisePred ::
     Flag "alias" ->
