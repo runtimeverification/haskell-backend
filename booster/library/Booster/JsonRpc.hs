@@ -131,7 +131,8 @@ respond stateVar request =
                                         [ req.logSuccessfulRewrites
                                         , req.logFailedRewrites
                                         ]
-                        -- apply the given substitution before doing anything else
+                        -- apply the given substitution before doing anything else,
+                        -- as internalisePattern does not substitute
                         let substPat =
                                 Pattern
                                     { term = Substitution.substituteInTerm substitution term
@@ -245,19 +246,12 @@ respond stateVar request =
                                     RpcError.CouldNotVerifyPattern $
                                         map patternErrorToRpcError patternErrors
                     -- term and predicate (pattern)
+                    -- NOTE: the input substitution will have already been applied by internaliseTermOrPredicate
                     Right (TermAndPredicates pat unsupported) -> do
                         unless (null unsupported) $ do
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
-                        -- apply the given substitution before doing anything else
-                        let substPat =
-                                Pattern
-                                    { term = Substitution.substituteInTerm pat.substitution pat.term
-                                    , constraints = Set.map (Substitution.substituteInPredicate pat.substitution) pat.constraints
-                                    , ceilConditions = pat.ceilConditions
-                                    , substitution = pat.substitution
-                                    }
-                        ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty substPat >>= \case
+                        ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty pat >>= \case
                             (Right newPattern, _) -> do
                                 let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern
                                     tSort = externaliseSort (sortOfPattern newPattern)

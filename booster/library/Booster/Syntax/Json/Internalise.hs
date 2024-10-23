@@ -141,7 +141,13 @@ retractPattern :: TermOrPredicates -> Maybe Internal.Pattern
 retractPattern (TermAndPredicates patt _) = Just patt
 retractPattern _ = Nothing
 
--- main interface functions
+{- | Internalise a @'Syntax.KorePattern'@ into the components constituting a @'Internal.Pattern'@
+
+     Note: This function will NOT apply the internalised @'Internal.Substitution'@ to the other components.
+           The callers of this function must decide if it is necessary to substitute.
+           Use @'internalisePatternOrTopOrBottom'@ or @'internaliseTermOrPredicate'@ that return an already
+           substituted @'Internal.Pattern'@.
+-}
 internalisePattern ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -153,7 +159,7 @@ internalisePattern ::
         ( Internal.Term
         , [Internal.Predicate]
         , [Internal.Ceil]
-        , Map Internal.Variable Internal.Term
+        , Internal.Substitution
         , [Syntax.KorePattern]
         )
 internalisePattern allowAlias checkSubsorts sortVars definition p = do
@@ -193,7 +199,11 @@ data PatternOrTopOrBottom a
     | IsPattern a
     deriving (Functor)
 
--- main interface functions
+{- | Internalise a @'Syntax.KorePattern'@ into @'Internal.Pattern'@, detecting and reporting trivial cases.
+
+     Note: This function will apply the internalised @'Internal.Substitution'@ part of the pattern's constraints
+           to the term and constraints (but not the ceils).
+-}
 internalisePatternOrTopOrBottom ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -223,7 +233,12 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
                 pure $
                     IsPattern
                         ( existentialVars
-                        , Internal.Pattern{term, constraints = Set.fromList preds, ceilConditions, substitution = subst}
+                        , Internal.Pattern
+                            { term = Internal.substituteInTerm subst term
+                            , constraints = Set.map (Internal.substituteInPredicate subst) . Set.fromList $ preds
+                            , ceilConditions
+                            , substitution = subst
+                            }
                         , unknown
                         )
   where
@@ -237,6 +252,15 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
         Syntax.KJBottom{sort} : _ -> Just $ IsBottom sort
         _ : xs -> isBottom xs
 
+{- | Internalise a @'Syntax.KorePattern'@ into either @'Internal.Pattern'@
+     or @'[InternalisedPredicates]'@ if only terms of sort bool are present.
+
+     Note: If this function successfully internalises a @'Internal.Pattern'@, it will apply the
+           @'Internal.Substitution'@ part to the term and constraints (but not the ceils).
+
+           Otherwise, when we get predicates only, the substitution part
+           is not applied to the rest of the predicates.
+-}
 internaliseTermOrPredicate ::
     Flag "alias" ->
     Flag "subsorts" ->
@@ -254,10 +278,10 @@ internaliseTermOrPredicate allowAlias checkSubsorts sortVars definition syntaxPa
                 pure $
                     TermAndPredicates
                         Internal.Pattern
-                            { term
-                            , constraints = Set.fromList constrs
+                            { term = Internal.substituteInTerm substitution term
+                            , constraints = Set.map (Internal.substituteInPredicate substitution) . Set.fromList $ constrs
                             , ceilConditions
-                            , substitution = substitution
+                            , substitution
                             }
                         unsupported
             )
