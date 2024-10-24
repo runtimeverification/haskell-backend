@@ -180,15 +180,9 @@ rewriteStep cutLabels terminalLabels pat = do
         -- try all rules of the priority group. This will immediately
         -- fail the rewrite if anything is uncertain (unification,
         -- definedness, rule conditions)
-        results <-
-            zip rules
-                <$> mapM (applyRule pat) rules
+        results <- applyRuleGroup rules pat
 
-        let labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
-            ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
-            uniqueId = (.uniqueId) . (.attributes)
-
-        case postProcessRuleAttempts results of
+        case results of
             OnlyTrivial ->
                 -- all branches in this priority group are trivial,
                 -- i.e. rules which did apply had an ensures condition which evaluated to false.
@@ -198,6 +192,7 @@ rewriteStep cutLabels terminalLabels pat = do
                     RewriteStuck{} -> pure $ RewriteTrivial pat
                     other -> pure other
             AppliedRules (RewriteGroupApplicationData{ruleApplicationData = []}) ->
+                -- not applicable rules in this group, try other groups
                 -- TODO check that remainder is trivial, abort otherwise
                 processGroups rest
             AppliedRules
@@ -206,6 +201,7 @@ rewriteStep cutLabels terminalLabels pat = do
                         , remainderPrediate = groupRemainderPrediate
                         }
                     )
+                    -- only one rule applies, see if it's special and return an appropriate result
                     | not (Set.null groupRemainderPrediate) && not (any isFalse groupRemainderPrediate) -> do
                         -- a non-trivial remainder with a single applicable rule is
                         -- an indication if semantics incompleteness: abort
@@ -216,7 +212,6 @@ rewriteStep cutLabels terminalLabels pat = do
                             RewriteRemainderPredicate [rule] satRes . coerce . foldl1 AndTerm $
                                 map coerce . Set.toList $
                                     groupRemainderPrediate
-                    -- a single rule applies, see if it's special and return an appropriate result
                     | labelOf rule `elem` cutLabels ->
                         pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat applied.rewritten
                     | labelOf rule `elem` terminalLabels ->
@@ -225,7 +220,7 @@ rewriteStep cutLabels terminalLabels pat = do
                         pure $ RewriteFinished (Just $ ruleLabelOrLocT rule) (Just $ uniqueId rule) applied.rewritten
             AppliedRules
                 (RewriteGroupApplicationData{ruleApplicationData = xs, remainderPrediate = groupRemainderPrediate}) -> do
-                    -- multiple rules apply, analyse brunching and remainders
+                    -- multiple rules apply, analyse branching and remainders
                     if any isFalse groupRemainderPrediate
                         then do
                             logRemainder (map fst xs) SMT.IsUnsat groupRemainderPrediate
@@ -242,28 +237,30 @@ rewriteStep cutLabels terminalLabels pat = do
                                     pure $ mkBranch pat xs
                                 satRes@(SMT.IsSat{}) -> do
                                     -- the remainder condition is satisfiable.
-                                    -- TODO construct the remainder branch and consider it
+                                    -- TODO construct the remainder branch and consider it.
                                     -- To construct the "remainder pattern",
-                                    -- we add the remainder condition to the predicates of the @pattr@
+                                    -- we add the remainder condition to the predicates of the pattr
                                     throwRemainder (map fst xs) satRes groupRemainderPrediate
                                 satRes@SMT.IsUnknown{} -> do
                                     -- solver cannot solve the remainder
                                     -- TODO descend into the remainder branch anyway
                                     throwRemainder (map fst xs) satRes groupRemainderPrediate
 
+    labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
+    ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
+    uniqueId = (.uniqueId) . (.attributes)
+
     mkBranch ::
         Pattern ->
         [(RewriteRule "Rewrite", RewriteRuleAppliedData)] ->
         RewriteResult Pattern
     mkBranch base leafs =
-        let ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
-            uniqueId = (.uniqueId) . (.attributes)
-         in RewriteBranch base $
-                NE.fromList $
-                    map
-                        ( \(rule, RewriteRuleAppliedData{rewritten, rulePredicate, ruleSubstitution}) -> (ruleLabelOrLocT rule, uniqueId rule, rewritten, rulePredicate, ruleSubstitution)
-                        )
-                        leafs
+        RewriteBranch base $
+            NE.fromList $
+                map
+                    ( \(rule, RewriteRuleAppliedData{rewritten, rulePredicate, ruleSubstitution}) -> (ruleLabelOrLocT rule, uniqueId rule, rewritten, rulePredicate, ruleSubstitution)
+                    )
+                    leafs
 
     -- abort rewriting by throwing a remainder predicate as an exception, to be caught and processed in @performRewrite@
     throwRemainder ::
@@ -636,17 +633,37 @@ applyRule pat@Pattern{ceilConditions} rule =
         collapseAndBools . catMaybes
             <$> mapM (checkConstraint id returnNotApplied pat.constraints) ruleRequires
 
-data RuleGroupApplication a = OnlyTrivial | AppliedRules a
-
-data RewriteGroupApplicationData = RewriteGroupApplicationData
-    { ruleApplicationData :: [(RewriteRule "Rewrite", RewriteRuleAppliedData)]
-    , remainderPrediate :: Set.Set Predicate
-    }
-
 ruleGroupPriority :: [RewriteRule a] -> Maybe Priority
 ruleGroupPriority = \case
     [] -> Nothing
     (rule : _) -> Just rule.attributes.priority
+
+-- | Apply a group of rules to a pattern independently, producing several results when many rules apply
+applyRuleGroup ::
+    LoggerMIO io => [RewriteRule "Rewrite"] -> Pattern -> RewriteT io RuleGroupApplication
+applyRuleGroup rules pat =
+    postProcessGroupResults . zip rules
+        <$> traverse (applyRule pat) rules
+
+-- | The result of applying a group of rules independently to the same input pattern
+data RuleGroupApplication
+    = -- | all rule applications were trivial, which is not the same as no rules applied, i.e. 'AppliedRules []'
+      OnlyTrivial
+    | AppliedRules RewriteGroupApplicationData
+
+{- | The payload of @'RuleGroupApplication'@.
+
+     Note that @'RewriteRuleAppliedData'@a also has a 'remainderPrediate' field, and
+     all of them must be 'Nothing' at that point.
+     This invariant might be encoded in the types with something like Trees That Grow,
+     but we choose not too.
+-}
+data RewriteGroupApplicationData = RewriteGroupApplicationData
+    { ruleApplicationData :: [(RewriteRule "Rewrite", RewriteRuleAppliedData)]
+    -- ^ several applied rules with the rewritten term and metadata
+    , remainderPrediate :: Set.Set Predicate
+    -- ^ the remainder predicate of the whole group
+    }
 
 {- | Given a list of rule application attempts, i.e. a result of applying a priority group of rules in parallel,
      post-process them:
@@ -654,10 +671,10 @@ ruleGroupPriority = \case
      - extract (possibly trivial) remainder predicates of every rule
        and return them as a set relating to the whole group.
 -}
-postProcessRuleAttempts ::
+postProcessGroupResults ::
     [(RewriteRule "Rewrite", RewriteRuleAppResult RewriteRuleAppliedData)] ->
-    RuleGroupApplication RewriteGroupApplicationData
-postProcessRuleAttempts = \case
+    RuleGroupApplication
+postProcessGroupResults = \case
     [] -> AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], remainderPrediate = mempty})
     apps -> case filter ((/= NotApplied) . snd) apps of
         [] -> AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], remainderPrediate = mempty})
