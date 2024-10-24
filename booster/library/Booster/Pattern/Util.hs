@@ -10,6 +10,7 @@ module Booster.Pattern.Util (
     modifyVariablesInP,
     modifyVarName,
     modifyVarNameConcreteness,
+    externaliseRuleMarker,
     freeVariables,
     isConstructorSymbol,
     isFunctionSymbol,
@@ -97,12 +98,21 @@ markAsExVar :: VarName -> VarName
 markAsExVar = ("Ex#" <>)
 
 {- | Strip variable provenance prefixes introduced using "markAsRuleVar" and "markAsExVar"
-in "Syntax.ParsedKore.Internalize"
+in Syntax.ParsedKore.Internalise"
 -}
 stripMarker :: VarName -> VarName
 stripMarker name =
     let noRule = BS.stripPrefix "Rule#" name
         noEx = BS.stripPrefix "Ex#" name
+     in fromMaybe name $ noRule <|> noEx
+
+{- | Strip # symbols from Booster's internal variables names.
+     Only used for constructing "rule-substitution" fields of execute responses.
+-}
+externaliseRuleMarker :: VarName -> VarName
+externaliseRuleMarker name =
+    let noRule = (fmap ("Rule" <>)) . BS.stripPrefix "Rule#" $ name
+        noEx = (fmap ("Ex" <>)) . BS.stripPrefix "Ex#" $ name
      in fromMaybe name $ noRule <|> noEx
 
 freshenVar :: Variable -> Set Variable -> Variable
