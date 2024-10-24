@@ -3,7 +3,7 @@
     "id": 1,
     "result": {
         "reason": "stuck",
-        "depth": 1,
+        "depth": 2,
         "state": {
             "term": {
                 "format": "KORE",
