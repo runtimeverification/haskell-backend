@@ -145,6 +145,16 @@ updateRewriterCache cache = RewriteT . lift . modify $ \s@RewriteState{} -> s{ca
   The result can be a failure (providing some context for why it
   failed), or a rewritten pattern with a new term and possibly new
   additional constraints.
+
+  Note:
+  This function will only return @'RewriteBranch'@ if the remainder predicate of a rule priority group is unsatisfiable,
+  i.e. the group is complete. If the remainder is satisfiable, the rewriting is currently aborted.
+
+  A naive algorithm to compute the remainder conditions would be: after applying a group of rules,
+  take their substituted requires clauses, disjunct and negate. However, this yields a non-minimal
+  predicate that was not simplified and syntactically filtered, potentially making it harder
+  for the SMT solver to solve. Instead, we re-use the indeterminate results obtained while applying individual
+  rules and simplifying/checking their individual requires clauses. See @'applyRule'@ for more details.
 -}
 rewriteStep ::
     LoggerMIO io =>
