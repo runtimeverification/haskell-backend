@@ -49,6 +49,7 @@ import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Implies (runImplies)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
+    RewriteBranchNextState (..),
     RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
@@ -485,7 +486,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates =
                         Just
                             $ map
-                                ( \(_, muid, p', mrulePred, ruleSubst) -> toExecState p' unsupported (Just muid) mrulePred (Just ruleSubst)
+                                ( \(RewriteBranchNextState{ruleUniqueId, rewrittenPat, mRulePredicate, ruleSubstitution}) -> toExecState rewrittenPat unsupported (Just ruleUniqueId) mRulePredicate (Just ruleSubstitution)
                                 )
                             $ toList nexts
                     , rule = Nothing

@@ -175,7 +175,13 @@ testConf = do
 ignoreRulePredicateAndSubst :: RewriteResult Pattern -> RewriteResult Pattern
 ignoreRulePredicateAndSubst =
     \case
-        RewriteBranch pre posts -> RewriteBranch pre (NE.map (\(lbl, uid, p, _, _) -> (lbl, uid, p, Nothing, mempty)) posts)
+        RewriteBranch pre posts ->
+            RewriteBranch
+                pre
+                ( NE.map
+                    (\nextState -> nextState{mRulePredicate = Nothing, ruleSubstitution = mempty})
+                    posts
+                )
         other -> other
 
 ----------------------------------------
@@ -268,7 +274,7 @@ t `branchesTo` ts =
         @?>>= Right
             ( RewriteBranch (Pattern_ t) $
                 NE.fromList $
-                    map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t', Nothing, mempty)) ts
+                    map (\(lbl, t') -> RewriteBranchNextState lbl mockUniqueId (Pattern_ t') Nothing mempty) ts
             )
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
@@ -312,19 +318,19 @@ canRewrite =
                     RewriteStuck
         , testCase "Rewrites con3 twice, branching on con1" $ do
             let branch1 =
-                    ( "con1-f2"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
-                    , Nothing
-                    , mempty
-                    )
+                    RewriteBranchNextState
+                        "con1-f2"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                        Nothing
+                        mempty
                 branch2 =
-                    ( "con1-f1'"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
-                    , Nothing
-                    , mempty
-                    )
+                    RewriteBranchNextState
+                        "con1-f1'"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                        Nothing
+                        mempty
 
             rewrites
                 (Steps 1)
@@ -409,19 +415,20 @@ supportsDepthControl =
                 (RewriteFinished Nothing Nothing)
         , testCase "prefers reporting branches to stopping at depth" $ do
             let branch1 =
-                    ( "con1-f2"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
-                    , Nothing
-                    , mempty
-                    )
+                    RewriteBranchNextState
+                        "con1-f2"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                        Nothing
+                        mempty
+
                 branch2 =
-                    ( "con1-f1'"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
-                    , Nothing
-                    , mempty
-                    )
+                    RewriteBranchNextState
+                        "con1-f1'"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                        Nothing
+                        mempty
 
             rewritesToDepth
                 (MaxDepth 2)
@@ -466,19 +473,20 @@ supportsCutPoints =
                     RewriteStuck
         , testCase "prefers reporting branches to stopping at label in one branch" $ do
             let branch1 =
-                    ( "con1-f2"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
-                    , Nothing
-                    , mempty
-                    )
+                    RewriteBranchNextState
+                        "con1-f2"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                        Nothing
+                        mempty
+
                 branch2 =
-                    ( "con1-f1'"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
-                    , Nothing
-                    , mempty
-                    )
+                    RewriteBranchNextState
+                        "con1-f1'"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                        Nothing
+                        mempty
 
             rewritesToCutPoint
                 "con1-f2"
