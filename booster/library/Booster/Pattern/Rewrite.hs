@@ -221,30 +221,21 @@ rewriteStep cutLabels terminalLabels pat = do
             AppliedRules
                 (RewriteGroupApplicationData{ruleApplicationData = xs, remainderPrediate = groupRemainderPrediate}) -> do
                     -- multiple rules apply, analyse branching and remainders
-                    if any isFalse groupRemainderPrediate
-                        then do
+                    isSatRemainder groupRemainderPrediate >>= \case
+                        SMT.IsUnsat -> do
+                            -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
                             logRemainder (map fst xs) SMT.IsUnsat groupRemainderPrediate
-                            -- the remainder predicate is trivially false, return the branching result
                             pure $ mkBranch pat xs
-                        else do
-                            -- otherwise, we need to check the remainder predicate with the SMT solver
-                            --      and construct an additional remainder branch if needed
-                            solver <- getSolver
-                            SMT.isSat solver (Set.toList $ pat.constraints <> groupRemainderPrediate) pat.substitution >>= \case
-                                SMT.IsUnsat -> do
-                                    -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
-                                    logRemainder (map fst xs) SMT.IsUnsat groupRemainderPrediate
-                                    pure $ mkBranch pat xs
-                                satRes@(SMT.IsSat{}) -> do
-                                    -- the remainder condition is satisfiable.
-                                    -- TODO construct the remainder branch and consider it.
-                                    -- To construct the "remainder pattern",
-                                    -- we add the remainder condition to the predicates of the pattr
-                                    throwRemainder (map fst xs) satRes groupRemainderPrediate
-                                satRes@SMT.IsUnknown{} -> do
-                                    -- solver cannot solve the remainder
-                                    -- TODO descend into the remainder branch anyway
-                                    throwRemainder (map fst xs) satRes groupRemainderPrediate
+                        satRes@(SMT.IsSat{}) -> do
+                            -- the remainder condition is satisfiable.
+                            -- TODO construct the remainder branch and consider it.
+                            -- To construct the "remainder pattern",
+                            -- we add the remainder condition to the predicates of pat
+                            throwRemainder (map fst xs) satRes groupRemainderPrediate
+                        satRes@SMT.IsUnknown{} -> do
+                            -- solver cannot solve the remainder
+                            -- TODO descend into the remainder branch anyway
+                            throwRemainder (map fst xs) satRes groupRemainderPrediate
 
     labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
     ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
@@ -261,6 +252,15 @@ rewriteStep cutLabels terminalLabels pat = do
                     ( \(rule, RewriteRuleAppliedData{rewritten, rulePredicate, ruleSubstitution}) -> (ruleLabelOrLocT rule, uniqueId rule, rewritten, rulePredicate, ruleSubstitution)
                     )
                     leafs
+
+    -- check the remainder predicate for satisfiability under the pre-branch pattern's constraints
+    isSatRemainder :: LoggerMIO io => Set.Set Predicate -> RewriteT io (SMT.IsSatResult ())
+    isSatRemainder remainderPredicate =
+        if any isFalse remainderPredicate
+            then pure SMT.IsUnsat
+            else do
+                solver <- getSolver
+                SMT.isSat solver (Set.toList $ pat.constraints <> remainderPredicate) pat.substitution
 
     -- abort rewriting by throwing a remainder predicate as an exception, to be caught and processed in @performRewrite@
     throwRemainder ::
