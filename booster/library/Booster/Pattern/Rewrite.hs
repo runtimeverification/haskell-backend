@@ -191,51 +191,45 @@ rewriteStep cutLabels terminalLabels pat = do
                 processGroups rest >>= \case
                     RewriteStuck{} -> pure $ RewriteTrivial pat
                     other -> pure other
-            AppliedRules (RewriteGroupApplicationData{ruleApplicationData = []}) ->
-                -- not applicable rules in this group, try other groups
-                -- TODO check that remainder is trivial, abort otherwise
+            AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], remainderPrediate}) -> do
+                -- no applicable rules in this group, try other groups
+                assertRemainderUnsat [] remainderPrediate
                 processGroups rest
             AppliedRules
                 ( RewriteGroupApplicationData
                         { ruleApplicationData = [(rule, applied@RewriteRuleAppliedData{})]
-                        , remainderPrediate = groupRemainderPrediate
+                        , remainderPrediate
                         }
-                    )
+                    ) -> do
+                    -- a non-trivial remainder with a single applicable rule is
+                    -- an indication if semantics incompleteness: abort
+                    assertRemainderUnsat [rule] remainderPrediate
                     -- only one rule applies, see if it's special and return an appropriate result
-                    | not (Set.null groupRemainderPrediate) && not (any isFalse groupRemainderPrediate) -> do
-                        -- a non-trivial remainder with a single applicable rule is
-                        -- an indication if semantics incompleteness: abort
-                        -- TODO refactor remainder check into a function and reuse below
-                        solver <- getSolver
-                        satRes <- SMT.isSat solver (Set.toList $ pat.constraints <> groupRemainderPrediate) pat.substitution
-                        throw $
-                            RewriteRemainderPredicate [rule] satRes . coerce . foldl1 AndTerm $
-                                map coerce . Set.toList $
-                                    groupRemainderPrediate
-                    | labelOf rule `elem` cutLabels ->
-                        pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat applied.rewritten
-                    | labelOf rule `elem` terminalLabels ->
-                        pure $ RewriteTerminal (labelOf rule) (uniqueId rule) applied.rewritten
-                    | otherwise ->
-                        pure $ RewriteFinished (Just $ ruleLabelOrLocT rule) (Just $ uniqueId rule) applied.rewritten
+                    if
+                        | labelOf rule `elem` cutLabels ->
+                            pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat applied.rewritten
+                        | labelOf rule `elem` terminalLabels ->
+                            pure $ RewriteTerminal (labelOf rule) (uniqueId rule) applied.rewritten
+                        | otherwise ->
+                            pure $ RewriteFinished (Just $ ruleLabelOrLocT rule) (Just $ uniqueId rule) applied.rewritten
             AppliedRules
-                (RewriteGroupApplicationData{ruleApplicationData = xs, remainderPrediate = groupRemainderPrediate}) -> do
+                (RewriteGroupApplicationData{ruleApplicationData = xs, remainderPrediate}) -> do
                     -- multiple rules apply, analyse branching and remainders
-                    isSatRemainder groupRemainderPrediate >>= \case
+                    isSatRemainder remainderPrediate >>= \case
                         SMT.IsUnsat -> do
                             -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
-                            logRemainder (map fst xs) SMT.IsUnsat groupRemainderPrediate
+                            logRemainder (map fst xs) SMT.IsUnsat remainderPrediate
                             pure $ mkBranch pat xs
                         satRes@(SMT.IsSat{}) -> do
                             -- the remainder condition is satisfiable.
                             -- TODO construct the remainder branch and consider it.
                             -- To construct the "remainder pattern",
                             -- we add the remainder condition to the predicates of pat
-                            throwRemainder (map fst xs) satRes groupRemainderPrediate
+                            throwRemainder (map fst xs) satRes remainderPrediate
                         satRes@SMT.IsUnknown{} -> do
                             -- solver cannot solve the remainder
                             -- TODO descend into the remainder branch anyway
-                            throwRemainder (map fst xs) satRes groupRemainderPrediate
+                            throwRemainder (map fst xs) satRes remainderPrediate
 
     labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
     ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
@@ -253,6 +247,14 @@ rewriteStep cutLabels terminalLabels pat = do
                     )
                     leafs
 
+    -- check the remainder predicate for satisfiablity. Do nothing if unsat, abort rewriting otherwise
+    assertRemainderUnsat ::
+        LoggerMIO io => [RewriteRule "Rewrite"] -> Set.Set Predicate -> RewriteT io ()
+    assertRemainderUnsat rules remainderPrediate =
+        isSatRemainder remainderPrediate >>= \case
+            SMT.IsUnsat -> pure ()
+            otherSatRes -> throwRemainder rules otherSatRes remainderPrediate
+
     -- check the remainder predicate for satisfiability under the pre-branch pattern's constraints
     isSatRemainder :: LoggerMIO io => Set.Set Predicate -> RewriteT io (SMT.IsSatResult ())
     isSatRemainder remainderPredicate =
@@ -262,7 +264,7 @@ rewriteStep cutLabels terminalLabels pat = do
                 solver <- getSolver
                 SMT.isSat solver (Set.toList $ pat.constraints <> remainderPredicate) pat.substitution
 
-    -- abort rewriting by throwing a remainder predicate as an exception, to be caught and processed in @performRewrite@
+    -- abort rewriting by throwing a remainder predicate as an exception, to be caught and processed in performRewrite
     throwRemainder ::
         LoggerMIO io => [RewriteRule "Rewrite"] -> SMT.IsSatResult () -> Set.Set Predicate -> RewriteT io a
     throwRemainder rules satResult remainderPredicate =
