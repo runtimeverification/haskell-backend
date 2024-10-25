@@ -467,6 +467,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                                 (pat.constraints <> substitutedNewConstraints <> leftoverConstraints)
                                 modifiedPatternSubst -- ruleSubstitution is not needed, do not attach it to the result
                                 ceilConditions
+                    rulePredicate <- mkSimplifiedRulePredicate (modifiedPatternSubst `compose` ruleSubstitution)
                     withContext CtxSuccess $ do
                         case unclearRequiresAfterSmt of
                             [] ->
@@ -476,10 +477,9 @@ applyRule pat@Pattern{ceilConditions} rule =
                                             { rewritten
                                             , remainderPredicate = Nothing
                                             , ruleSubstitution = modifiedPatternSubst `compose` ruleSubstitution
-                                            , rulePredicate = Nothing
+                                            , rulePredicate = Just rulePredicate
                                             }
                             _ -> do
-                                rulePredicate <- mkSimplifiedRulePredicate (modifiedPatternSubst `compose` ruleSubstitution)
                                 -- the requires clause was unclear:
                                 -- - add it as an assumption to the pattern
                                 -- - return it's negation as a rule remainder to construct
