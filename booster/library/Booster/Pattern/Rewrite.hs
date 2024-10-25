@@ -227,13 +227,13 @@ rewriteStep cutLabels terminalLabels pat = do
                             pure $ mkBranch pat ruleApplicationData
                         satRes@(SMT.IsSat{}) -> do
                             -- the remainder condition is satisfiable.
-                            -- TODO construct the remainder branch and consider it.
                             -- To construct the "remainder pattern",
                             -- we add the remainder condition to the predicates of pat
+                            -- TODO: construct the remainder branch and consider it.
                             throwRemainder (map fst ruleApplicationData) satRes groupRemainderPredicate
                         satRes@SMT.IsUnknown{} -> do
                             -- solver cannot solve the remainder
-                            -- TODO descend into the remainder branch anyway
+                            -- TODO: descend into the remainder branch anyway, same as in the satisfiable case
                             throwRemainder (map fst ruleApplicationData) satRes groupRemainderPredicate
 
     labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
