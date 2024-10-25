@@ -167,6 +167,10 @@ rewriteStep cutLabels terminalLabels pat = do
 
     -- process one priority group at a time (descending priority),
     -- until a result is obtained or the entire rewrite fails.
+    logMessage
+        ( "Applicable rule groups (priority, count): "
+            <> (Text.pack . show $ zip (map ruleGroupPriority rules) (map length rules))
+        )
     processGroups rules
   where
     processGroups ::
@@ -191,19 +195,19 @@ rewriteStep cutLabels terminalLabels pat = do
                 processGroups rest >>= \case
                     RewriteStuck{} -> pure $ RewriteTrivial pat
                     other -> pure other
-            AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], remainderPrediate}) -> do
+            AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], groupRemainderPredicate}) -> do
                 -- no applicable rules in this group, try other groups
-                assertRemainderUnsat [] remainderPrediate
+                assertRemainderUnsat [] groupRemainderPredicate
                 processGroups rest
             AppliedRules
                 ( RewriteGroupApplicationData
                         { ruleApplicationData = [(rule, applied@RewriteRuleAppliedData{})]
-                        , remainderPrediate
+                        , groupRemainderPredicate
                         }
                     ) -> do
                     -- a non-trivial remainder with a single applicable rule is
                     -- an indication if semantics incompleteness: abort
-                    assertRemainderUnsat [rule] remainderPrediate
+                    assertRemainderUnsat [rule] groupRemainderPredicate
                     -- only one rule applies, see if it's special and return an appropriate result
                     if
                         | labelOf rule `elem` cutLabels ->
@@ -213,23 +217,23 @@ rewriteStep cutLabels terminalLabels pat = do
                         | otherwise ->
                             pure $ RewriteFinished (Just $ ruleLabelOrLocT rule) (Just $ uniqueId rule) applied.rewritten
             AppliedRules
-                (RewriteGroupApplicationData{ruleApplicationData = xs, remainderPrediate}) -> do
+                (RewriteGroupApplicationData{ruleApplicationData, groupRemainderPredicate}) -> do
                     -- multiple rules apply, analyse branching and remainders
-                    isSatRemainder remainderPrediate >>= \case
+                    isSatRemainder groupRemainderPredicate >>= \case
                         SMT.IsUnsat -> do
                             -- the remainder condition is unsatisfiable: no need to consider the remainder branch.
-                            logRemainder (map fst xs) SMT.IsUnsat remainderPrediate
-                            pure $ mkBranch pat xs
+                            logRemainder (map fst ruleApplicationData) SMT.IsUnsat groupRemainderPredicate
+                            pure $ mkBranch pat ruleApplicationData
                         satRes@(SMT.IsSat{}) -> do
                             -- the remainder condition is satisfiable.
                             -- TODO construct the remainder branch and consider it.
                             -- To construct the "remainder pattern",
                             -- we add the remainder condition to the predicates of pat
-                            throwRemainder (map fst xs) satRes remainderPrediate
+                            throwRemainder (map fst ruleApplicationData) satRes groupRemainderPredicate
                         satRes@SMT.IsUnknown{} -> do
                             -- solver cannot solve the remainder
                             -- TODO descend into the remainder branch anyway
-                            throwRemainder (map fst xs) satRes remainderPrediate
+                            throwRemainder (map fst ruleApplicationData) satRes groupRemainderPredicate
 
     labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
     ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
@@ -250,15 +254,15 @@ rewriteStep cutLabels terminalLabels pat = do
     -- check the remainder predicate for satisfiablity. Do nothing if unsat, abort rewriting otherwise
     assertRemainderUnsat ::
         LoggerMIO io => [RewriteRule "Rewrite"] -> Set.Set Predicate -> RewriteT io ()
-    assertRemainderUnsat rules remainderPrediate =
+    assertRemainderUnsat rules remainderPrediate = do
         isSatRemainder remainderPrediate >>= \case
             SMT.IsUnsat -> pure ()
             otherSatRes -> throwRemainder rules otherSatRes remainderPrediate
 
-    -- check the remainder predicate for satisfiability under the pre-branch pattern's constraints
+    -- check the remainder predicate for satisfiability under the pre-branch pattern's constraints. Empty set is considered UNSAT
     isSatRemainder :: LoggerMIO io => Set.Set Predicate -> RewriteT io (SMT.IsSatResult ())
     isSatRemainder remainderPredicate =
-        if any isFalse remainderPredicate
+        if Set.null remainderPredicate || any isFalse remainderPredicate
             then pure SMT.IsUnsat
             else do
                 solver <- getSolver
@@ -269,16 +273,15 @@ rewriteStep cutLabels terminalLabels pat = do
         LoggerMIO io => [RewriteRule "Rewrite"] -> SMT.IsSatResult () -> Set.Set Predicate -> RewriteT io a
     throwRemainder rules satResult remainderPredicate =
         throw $
-            RewriteRemainderPredicate rules satResult . coerce . foldl1 AndTerm $
-                map coerce . Set.toList $
-                    remainderPredicate
+            RewriteRemainderPredicate rules satResult . coerce . collapseAndBools . Set.toList $
+                remainderPredicate
 
     -- log a remainder predicate as an exception without aborting rewriting
     logRemainder ::
         LoggerMIO io => [RewriteRule "Rewrite"] -> SMT.IsSatResult () -> Set.Set Predicate -> RewriteT io ()
     logRemainder rules satResult remainderPredicate = do
         ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
-        let remainderForLogging = coerce . foldl1 AndTerm $ map coerce . Set.toList $ remainderPredicate
+        let remainderForLogging = coerce . collapseAndBools . Set.toList $ remainderPredicate
         withContext CtxRemainder . withContext CtxContinue
             $ logMessage
             $ WithJsonMessage
@@ -622,7 +625,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                     "Uncertain about condition(s) in a rule:"
                         <+> (hsep . punctuate comma . map (pretty' @mods) $ predicates)
         failRewrite $
-            RuleConditionUnclear rule . coerce . foldl1 AndTerm $
+            RuleConditionUnclear rule . coerce . collapseAndBools $
                 map coerce predicates
 
     -- Instantiate the requires clause of the rule and simplify, but not prune.
@@ -645,7 +648,7 @@ applyRuleGroup ::
     LoggerMIO io => [RewriteRule "Rewrite"] -> Pattern -> RewriteT io RuleGroupApplication
 applyRuleGroup rules pat =
     postProcessGroupResults . zip rules
-        <$> traverse (applyRule pat) rules
+        <$> mapM (applyRule pat) rules
 
 -- | The result of applying a group of rules independently to the same input pattern
 data RuleGroupApplication
@@ -663,7 +666,7 @@ data RuleGroupApplication
 data RewriteGroupApplicationData = RewriteGroupApplicationData
     { ruleApplicationData :: [(RewriteRule "Rewrite", RewriteRuleAppliedData)]
     -- ^ several applied rules with the rewritten term and metadata
-    , remainderPrediate :: Set.Set Predicate
+    , groupRemainderPredicate :: Set.Set Predicate
     -- ^ the remainder predicate of the whole group
     }
 
@@ -677,14 +680,18 @@ postProcessGroupResults ::
     [(RewriteRule "Rewrite", RewriteRuleAppResult RewriteRuleAppliedData)] ->
     RuleGroupApplication
 postProcessGroupResults = \case
-    [] -> AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], remainderPrediate = mempty})
+    [] ->
+        AppliedRules
+            (RewriteGroupApplicationData{ruleApplicationData = [], groupRemainderPredicate = mempty})
     apps -> case filter ((/= NotApplied) . snd) apps of
-        [] -> AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], remainderPrediate = mempty})
+        [] ->
+            AppliedRules
+                (RewriteGroupApplicationData{ruleApplicationData = [], groupRemainderPredicate = mempty})
         xs
             | all ((== Trivial) . snd) xs -> OnlyTrivial
             | otherwise ->
-                let (ruleApplicationData, remainderPrediate) = go ([], mempty) xs
-                 in AppliedRules (RewriteGroupApplicationData{ruleApplicationData, remainderPrediate})
+                let (ruleApplicationData, groupRemainderPredicate) = go ([], mempty :: Set.Set Predicate) xs
+                 in AppliedRules (RewriteGroupApplicationData{ruleApplicationData, groupRemainderPredicate})
   where
     go acc@(accPatterns, accRemainders) = \case
         [] -> (reverse accPatterns, accRemainders)
@@ -749,7 +756,10 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods (RewriteFailed 
         RewriteRemainderPredicate rules satResult predicate ->
             hsep
                 [ pretty (SMT.showIsSatResult satResult)
-                , "remainder predicate after applying rules"
+                , "remainder predicate after applying"
+                , pretty (length rules)
+                , "rules at priority"
+                , pretty (show $ ruleGroupPriority rules)
                 , hsep $ punctuate comma $ map ruleLabelOrLoc rules
                 , ": "
                 , pretty' @mods predicate
