@@ -31,3 +31,44 @@ Over time, as the booster was able to pass more tests and handle more inputs, th
 To date, the most work has been put into making the `execute` endpoint of the booster as complete and performant as possible, as that is where the bulk of time on long-running proofs is spent.
 Necessarily, as part of the `execute` endpoints reasoning, simplification reasoning of the booster needs to be improved too, which means the `simplify` endpoint has improved as well.
 Only a very rudimentary `implies` endpoint has been implemented, to handle most of the failure cases as fast as possible, and usually the more complicated reasoning is still delegated to the Kore `implies` endpoint.
+
+## [Rewriting Algorithm](#rewriting)
+
+### [Single Rewrite Rule](#rewriting-apply-single-rule)
+
+[applyRule](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L329)
+
+Steps to apply a rewrite rule include:
+
+- Matching with the rule, i.e. does the current configuration looks like a rule's left-hand side. Successful matching produces a substitution `RULE_SUBSTITUTION`, assigning the left-hand side rule variables with the stuff from the configuration. See [#rule-matching](#rule-matching) for more details.
+- Checking the rule's requires clause. Unclear conditions may produce a remainder predicate, which affects the wider rewriting step process. See [#checking-requires](#checking-requires).
+- Checking the rule's ensures clause, and extracting the possible new substitution items from the ensured constraints. See [#checking-ensures](#checking-ensures).
+- Constructing the final rewritten configuration.
+
+**TODO**: list abort conditions.
+
+#### [Matching the configuration with the rule's left-hand side](#rule-matching)
+
+See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L48) module, specifically the [matchTerms](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L132), [match](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L171) and [match1](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L191) functions
+- rules are indexed by the head symbol of the `<k>` cell (or other index-cells), i.e. we only try the rules that have the same head symbol that the configuration
+- rules can fail matching, usually that means that the rule and the configuration have different constructor symbols or domains values in some cells.
+  This means that the rule does not apply and we can proceed to trying other rules.
+- rule matching can be indeterminate. We really do not want this to happen, as it will abort rewriting and cause a fallback to Kore (or a full-stop of using the `booster-dev` server).
+  Common cases include unevaluated function symbols. See [match1](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L191) and look for `addIndetermiante` for the exhaustive list.
+
+### [Checking `requires` --- the rule's pre-condition](#checking-requires)
+
+-   now we have to check the rule's side-condition, aka the `requires` and `ensures` clauses. Booster represents the `requires` and `ensures` clauses as a set of boolean predicates, constituting the conjuncts, i.e. they are implicitly connected by `_andBool_`, but Booster works with them independently, which makes filtering, de-duplication and other operations straightforward. Write your requires clauses in CNF!
+-   the requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L496) function in applyRule. It will:
+    -   substitute the rule's requires clause with the matching substitution
+    -   check if we already have any of the conjuncts verbatim in the pattern's constrains. If so, we filter them out as known truth
+    -   simplify every conjunct individually by applying equations. This is where Petar is welcome to take over with his 4 hours workshop on simplifications.
+    -   filter again
+    -   if any clauses remain, it's time to fire-up Z3 and check them for validity.
+        -   some rule will be rejected at that point, as their pre-condition P (the `requires` clause) is invalid, which means that the rule is applicable statically, but the dynamic conditions makes it inapplicable.
+        -   some rules may have an indeterminate pre-condition P, which means that both P and its negation are satisfiable, i.e. the solver said (SAT, SAT) for (P, not P).
+            In this case we can apply this rule conditionally, but add P into the path condition.
+            We effectively do the same we cannot establish the validity of P due to a solver timeout, i.e. we add the predicate as an assumption. This may potentially lead to a vacuous branch.
+        -   some rules will have a valid requires clause, which means they definitely do apply and we do need to add anything else into the path condition as an assumption.
+
+### [Checking `ensures` --- the rule's post-condition](#checking-ensures)
