@@ -16,6 +16,8 @@ module REMAINDER-PREDICATES
                  | test3State1()
                  | test3State2()
                  | test3State3()
+                 | test3State4()
+                 | test3State5()
 
                  | test4Init()
                  | test4State1()
@@ -84,7 +86,7 @@ module REMAINDER-PREDICATES
   ////////////////////////////////////////////////////////////////////////////////
   /// two rules apply with SAT remainder predicate,                             //
   /// have to consider the remainder branch where X ==Int 0,                    //
-  /// no further rules apply.                                                   //
+  /// but there are no further rules to apply.                                  //
   /// Aborts with boosted-dev; results in 3 branches in kore-rpc-booster.       //
   ////////////////////////////////////////////////////////////////////////////////
   rule [test2-init]: <k> test2Init() => test2State1() ... </k>
@@ -101,7 +103,7 @@ module REMAINDER-PREDICATES
   ////////////////////////////////////////////////////////////////////////////////
   /// two rules apply with SAT remainder predicate,                             //
   /// have to consider the remainder branch where X ==Int 0,                    //
-  /// but the are no further rules to apply.                                    //
+  /// no further rules apply.                                                   //
   /// Aborts with boosted-dev; results in 3 branches in kore-rpc-booster.       //
   ////////////////////////////////////////////////////////////////////////////////
   rule [test3-init]: <k> test3Init() => test3State1() ... </k>
@@ -114,6 +116,10 @@ module REMAINDER-PREDICATES
   rule [test3-1-3]: <k> test3State1() => test3State3() ... </k>
                     <int> X                                </int>
                     requires X <Int 0
+
+  // this rule is intentionally unreachable
+  rule [test3-4-5]: <k> test3State4() => test3State5() ... </k>
+
 
   ////////////////////////////////////////////////////////////////////////////////
   /// two hight-priorty rules apply with SAT remainder predicate,               //
@@ -161,6 +167,7 @@ module REMAINDER-PREDICATES
   rule [test5-1-4]: <k> test5State1() => test5State4() ... </k>
                     [priority(49)]
 
+  // this rule is intentionally unreachable
   rule [test5-1-5]: <k> test5State1() => test5State5() ... </k>
                     <int> X        </int>
                     requires X ==Int 0
@@ -168,7 +175,7 @@ module REMAINDER-PREDICATES
   ////////////////////////////////////////////////////////////////////////////////
   /// two hight-priorty rules apply with SAT remainder predicate,               //
   /// have to consider the remainder branch where X ==Int 0,                    //
-  /// two rule at a lower priority applies unconditionally.                     //
+  /// two rules of lower priority appliy unconditionally.                       //
   /// Aborts with boosted-dev; results in 4 branches in kore-rpc-booster.       //
   ////////////////////////////////////////////////////////////////////////////////
   rule [test6-init]: <k> test6Init() => test6State1() ... </k>
