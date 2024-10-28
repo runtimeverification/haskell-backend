@@ -116,6 +116,16 @@ cp -r $PYTEST_TEMP_DIR/foundry/* $FOUNDRY_DIR
 
 mkdir -p $SCRIPT_DIR/logs
 
+# use special options if given, but restore KORE_RPC_OPTS afterwards
+FEATURE_SERVER_OPTS=${FEATURE_SERVER_OPTS:-''}
+if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
+    echo "Using special options '${FEATURE_SERVER_OPTS}' via KORE_RPC_OPTS"
+    if [ ! -z "${KORE_RPC_OPTS:-}" ]; then
+        PRIOR_OPTS=${KORE_RPC_OPTS}
+    fi
+    export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
+fi
+
 # set test arguments and select which tests to run
 QUOTE='"'
 TEST_ARGS="--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT -k 'not (test_kontrol_cse or test_foundry_minimize_proof or test_kontrol_end_to_end)'"
@@ -124,11 +134,17 @@ feature_shell "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE | tee $SCR
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [ -z "$BUG_REPORT" ]; then
-if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-  # remove proofs so that they are not reused by the master shell call
-  rm -rf $FOUNDRY_DIR/out/proofs
-  master_shell "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
-  killall kore-rpc-booster || echo "no zombie processes found"
+    if [ ! -z "${PRIOR_OPTS:-}" ]; then
+        export KORE_RPC_OPTS=${PRIOR_OPTS}
+    else
+        unset KORE_RPC_OPTS
+    fi
+    if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
+      # remove proofs so that they are not reused by the master shell call
+      rm -rf $FOUNDRY_DIR/out/proofs
+      master_shell "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
+      killall kore-rpc-booster || echo "no zombie processes found"
+    fi
 fi
 
 cd $SCRIPT_DIR
