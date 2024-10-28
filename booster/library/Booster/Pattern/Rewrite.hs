@@ -13,7 +13,7 @@ module Booster.Pattern.Rewrite (
     RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
-    RewriteBranchNextState (..),
+    AppliedRuleMetadata (..),
     RewriteTrace (..),
     pattern CollectRewriteTraces,
     pattern NoCollectRewriteTraces,
@@ -44,7 +44,12 @@ import Data.Text as Text (Text, pack)
 import Numeric.Natural
 import Prettyprinter
 
-import Booster.Definition.Attributes.Base
+import Booster.Definition.Attributes.Base (
+    NotPreservesDefinednessReason (..),
+    Priority (..),
+    UniqueId (..),
+ )
+import Booster.Definition.Attributes.Base qualified as Attributes
 import Booster.Definition.Base
 import Booster.LLVM as LLVM (API)
 import Booster.Log
@@ -262,13 +267,14 @@ rewriteStep cutLabels terminalLabels pat = do
             NE.fromList $
                 map
                     ( \(rule, RewriteRuleAppliedData{rewritten, rulePredicate, ruleSubstitution}) ->
-                        RewriteBranchNextState
-                            { ruleLabel = ruleLabelOrLocT rule
-                            , ruleUniqueId = uniqueId rule
-                            , rewrittenPat = rewritten
-                            , mRulePredicate = rulePredicate
+                        ( rewritten
+                        , AppliedRuleMetadata
+                            { ruleUniqueId = uniqueId rule
+                            , ruleLabel = ruleLabelOrLocT rule
+                            , rulePredicate = fromMaybe (Predicate TrueBool) rulePredicate
                             , ruleSubstitution
                             }
+                        )
                     )
                     leafs
 
@@ -810,20 +816,19 @@ ruleLabelOrLoc rule =
     fromMaybe "unknown rule" $
         fmap pretty rule.attributes.ruleLabel <|> fmap pretty rule.attributes.location
 
-data RewriteBranchNextState pat = RewriteBranchNextState
+-- | Metadata of an applied rewrite rule
+data AppliedRuleMetadata = AppliedRuleMetadata
     { ruleLabel :: Text
     , ruleUniqueId :: UniqueId
-    , rewrittenPat :: pat
-    , mRulePredicate :: Maybe Predicate
+    , rulePredicate :: Predicate
     , ruleSubstitution :: Substitution
     }
     deriving stock (Eq, Show)
-    deriving (Functor, Foldable, Traversable)
 
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult pat
     = -- | branch point
-      RewriteBranch pat (NonEmpty (RewriteBranchNextState pat))
+      RewriteBranch pat (NonEmpty (pat, AppliedRuleMetadata))
     | -- | no rules could be applied, config is stuck
       RewriteStuck pat
     | -- | cut point rule, return current (lhs) and single next state
@@ -1052,10 +1057,8 @@ performRewrite rewriteConfig pat = do
                 Nothing -> pure $ RewriteTrivial orig
                 Just p' -> do
                     -- simplify the next-state pattern inside a branch payload
-                    let simplifyRewritten pattr@RewriteBranchNextState{rewrittenPat} = do
-                            ( fmap @Maybe
-                                    ( \rewrittenSimplified -> (pattr{rewrittenPat = rewrittenSimplified})
-                                    )
+                    let simplifyRewritten (rewrittenPat, mRuleMetadata) = do
+                            ( fmap @Maybe (,mRuleMetadata)
                                 )
                                 <$> simplifyP rewrittenPat
                     nexts' <- catMaybes <$> mapM simplifyRewritten (toList nexts)
@@ -1063,7 +1066,8 @@ performRewrite rewriteConfig pat = do
                         -- The `[]` case should be `Stuck` not `Trivial`, because `RewriteTrivial p'`
                         -- means the pattern `p'` is bottom, but we know that is not the case here.
                         [] -> RewriteStuck p'
-                        [RewriteBranchNextState{ruleLabel, ruleUniqueId, rewrittenPat}] -> RewriteFinished (Just ruleLabel) (Just ruleUniqueId) rewrittenPat
+                        [(rewrittenPat, ruleMetadata)] ->
+                            RewriteFinished (Just $ ruleLabel ruleMetadata) (Just $ ruleUniqueId ruleMetadata) rewrittenPat
                         ns -> RewriteBranch p' $ NE.fromList ns
         r@RewriteStuck{} -> pure r
         r@RewriteTrivial{} -> pure r
@@ -1135,7 +1139,13 @@ performRewrite rewriteConfig pat = do
                                 RewriteBranch pat'' branches -> withPatternContext pat' $ do
                                     emitRewriteTrace $
                                         RewriteBranchingStep pat'' $
-                                            fmap (\RewriteBranchNextState{ruleLabel, ruleUniqueId} -> (ruleLabel, ruleUniqueId)) branches
+                                            fmap
+                                                ( \(_, mRuleMetadata) ->
+                                                    ( ruleLabel mRuleMetadata
+                                                    , ruleUniqueId mRuleMetadata
+                                                    )
+                                                )
+                                                branches
                                     pure simplified
                                 _other -> withPatternContext pat' $ error "simplifyResult: Unexpected return value"
                         Right (cutPoint@(RewriteCutPoint lbl _ _ _), _) -> withPatternContext pat' $ do

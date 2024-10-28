@@ -38,18 +38,18 @@ import GHC.Records
 import Numeric.Natural
 
 import Booster.CLOptions (RewriteOptions (..))
-import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
+import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Predicate, Sort (SortApp), Term, Variable)
+import Booster.Pattern.Base (Pattern (..), Sort (SortApp))
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Implies (runImplies)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
-    RewriteBranchNextState (..),
+    AppliedRuleMetadata (..),
     RewriteConfig (..),
     RewriteFailed (..),
     RewriteResult (..),
@@ -482,11 +482,11 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     { reason = RpcTypes.Branching
                     , depth
                     , logs
-                    , state = toExecState p unsupported Nothing Nothing Nothing
+                    , state = toExecState p Nothing unsupported
                     , nextStates =
                         Just
                             $ map
-                                ( \(RewriteBranchNextState{ruleUniqueId, rewrittenPat, mRulePredicate, ruleSubstitution}) -> toExecState rewrittenPat unsupported (Just ruleUniqueId) mRulePredicate (Just ruleSubstitution)
+                                ( \(rewritten, ruleMetadata) -> toExecState rewritten (Just ruleMetadata) unsupported
                                 )
                             $ toList nexts
                     , rule = Nothing
@@ -499,7 +499,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     { reason = RpcTypes.Stuck
                     , depth
                     , logs
-                    , state = toExecState p unsupported Nothing Nothing Nothing
+                    , state = toExecState p Nothing unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -511,7 +511,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     { reason = RpcTypes.Vacuous
                     , depth
                     , logs
-                    , state = toExecState p unsupported Nothing Nothing Nothing
+                    , state = toExecState p Nothing unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -523,8 +523,8 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
-                    , state = toExecState p unsupported Nothing Nothing Nothing
-                    , nextStates = Just [toExecState next unsupported Nothing Nothing Nothing]
+                    , state = toExecState p Nothing unsupported
+                    , nextStates = Just [toExecState next Nothing unsupported]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }
@@ -535,7 +535,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
-                    , state = toExecState p unsupported Nothing Nothing Nothing
+                    , state = toExecState p Nothing unsupported
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
@@ -547,7 +547,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     { reason = RpcTypes.DepthBound
                     , depth
                     , logs
-                    , state = toExecState p unsupported Nothing Nothing Nothing
+                    , state = toExecState p Nothing unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -564,7 +564,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                                     (logSuccessfulRewrites, logFailedRewrites)
                                     (RewriteStepFailed failure)
                          in logs <|> abortRewriteLog
-                    , state = toExecState p unsupported Nothing Nothing Nothing
+                    , state = toExecState p Nothing unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -588,34 +588,36 @@ execResponse req (d, traces, rr) unsupported = case rr of
 
 toExecState ::
     Pattern ->
+    Maybe AppliedRuleMetadata ->
     [Syntax.KorePattern] ->
-    Maybe UniqueId ->
-    Maybe Predicate ->
-    Maybe (Map Variable Term) ->
     RpcTypes.ExecuteState
-toExecState pat unsupported muid mrulePredicate mruleSubst =
-    RpcTypes.ExecuteState
-        { term = addHeader t
-        , predicate = addHeader <$> addUnsupported p
-        , substitution = addHeader <$> s
-        , ruleSubstitution = addHeader <$> mruleSubstExt
-        , rulePredicate = addHeader <$> mrulePredExt
-        , ruleId = getUniqueId <$> muid
-        }
-  where
-    mrulePredExt = externalisePredicate termSort <$> mrulePredicate
-    mruleSubstExt =
-        Syntax.KJAnd termSort
-            . map
-                (uncurry (externaliseSubstitution termSort) . first (modifyVarName externaliseRuleMarker))
-            . Map.toList
-            <$> mruleSubst
-    (t, p, s) = externalisePattern pat
-    termSort = externaliseSort $ sortOfPattern pat
-    allUnsupported = Syntax.KJAnd termSort unsupported
-    addUnsupported
-        | null unsupported = id
-        | otherwise = maybe (Just allUnsupported) (Just . Syntax.KJAnd termSort . (: unsupported))
+toExecState
+    pat
+    mRuleMetadata
+    unsupported =
+        RpcTypes.ExecuteState
+            { term = addHeader t
+            , predicate = addHeader <$> addUnsupported p
+            , substitution = addHeader <$> s
+            , ruleSubstitution = addHeader <$> mruleSubstExt
+            , rulePredicate = addHeader <$> mrulePredExt
+            , ruleId = getUniqueId . ruleUniqueId <$> mRuleMetadata
+            }
+      where
+        mrulePredExt = externalisePredicate termSort . rulePredicate <$> mRuleMetadata
+        mruleSubstExt =
+            Syntax.KJAnd termSort
+                . map
+                    (uncurry (externaliseSubstitution termSort) . first (modifyVarName externaliseRuleMarker))
+                . Map.toList
+                . ruleSubstitution
+                <$> mRuleMetadata
+        (t, p, s) = externalisePattern pat
+        termSort = externaliseSort $ sortOfPattern pat
+        allUnsupported = Syntax.KJAnd termSort unsupported
+        addUnsupported
+            | null unsupported = id
+            | otherwise = maybe (Just allUnsupported) (Just . Syntax.KJAnd termSort . (: unsupported))
 
 mkLogRewriteTrace ::
     (Bool, Bool) ->
