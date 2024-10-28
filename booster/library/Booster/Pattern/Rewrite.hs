@@ -208,7 +208,10 @@ rewriteStep cutLabels terminalLabels pat = do
                     other -> pure other
             AppliedRules (RewriteGroupApplicationData{ruleApplicationData = [], groupRemainderPredicate}) -> do
                 -- no applicable rules in this group, try other groups
-                assertRemainderUnsat [] groupRemainderPredicate
+                -- defensively fail in the impossible case of non-empty remainder after applying 0 rules
+                unless (Set.null groupRemainderPredicate) $
+                    throwRemainder [] (SMT.IsSat ()) groupRemainderPredicate
+
                 processGroups rest
             AppliedRules
                 ( RewriteGroupApplicationData
@@ -277,10 +280,10 @@ rewriteStep cutLabels terminalLabels pat = do
             SMT.IsUnsat -> pure ()
             otherSatRes -> throwRemainder rules otherSatRes remainderPrediate
 
-    -- check the remainder predicate for satisfiability under the pre-branch pattern's constraints. Empty set is considered UNSAT
+    -- check the remainder predicate for satisfiability under the pre-branch pattern's constraints.
     isSatRemainder :: LoggerMIO io => Set.Set Predicate -> RewriteT io (SMT.IsSatResult ())
     isSatRemainder remainderPredicate =
-        if Set.null remainderPredicate || any isFalse remainderPredicate
+        if any isFalse remainderPredicate
             then pure SMT.IsUnsat
             else do
                 solver <- getSolver
