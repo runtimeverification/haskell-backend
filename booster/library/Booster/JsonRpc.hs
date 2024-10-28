@@ -605,13 +605,13 @@ toExecState pat unsupported muid mrulePredicate mruleSubst =
   where
     mrulePredExt = externalisePredicate termSort <$> mrulePredicate
     mruleSubstExt =
-        Syntax.KJAnd predicateSort
-            . map (uncurry (externaliseSubstitution predicateSort) . first (modifyVarName externaliseRuleMarker))
+        Syntax.KJAnd termSort
+            . map
+                (uncurry (externaliseSubstitution termSort) . first (modifyVarName externaliseRuleMarker))
             . Map.toList
             <$> mruleSubst
     (t, p, s) = externalisePattern pat
     termSort = externaliseSort $ sortOfPattern pat
-    predicateSort = externaliseSort Pattern.SortBool
     allUnsupported = Syntax.KJAnd termSort unsupported
     addUnsupported
         | null unsupported = id
