@@ -1,3 +1,3 @@
-# Tests for rewrite rule remainders in `kore-rpc-booster` and `kore-rpc-booster`
+# Tests for rewrite rule remainders in `kore-rpc-booster` and `booster-dev`
 
-See `../predicate-remainders.k`.
+See [the related definition file](`../predicate-remainders.k`).
