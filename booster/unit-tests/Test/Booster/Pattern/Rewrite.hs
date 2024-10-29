@@ -173,19 +173,6 @@ testConf = do
             , terminalLabels = []
             }
 
-ignoreRulePredicateAndSubst :: RewriteResult Pattern -> RewriteResult Pattern
-ignoreRulePredicateAndSubst =
-    \case
-        RewriteBranch pre posts ->
-            RewriteBranch
-                pre
-                ( NE.map
-                    ( \(nextState, ruleMetadata) -> (nextState, ruleMetadata{rulePredicate = Predicate TrueBool, ruleSubstitution = mempty})
-                    )
-                    posts
-                )
-        other -> other
-
 ----------------------------------------
 errorCases
     , rewriteSuccess
@@ -249,16 +236,38 @@ rulePriority =
             `branchesTo` [
                              ( "con1-f2"
                              , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
+                             , Predicate TrueBool
+                             , Map.fromList
+                                [
+                                    ( Variable someSort "X"
+                                    , [trm| \dv{SomeSort{}}("otherThing") |]
+                                    )
+                                ,
+                                    ( Variable SortK "RuleVar"
+                                    , [trm| ConfigVar:SortK{} |]
+                                    )
+                                ]
                              )
                          ,
                              ( "con1-f1'"
                              , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
+                             , Predicate TrueBool
+                             , Map.fromList
+                                [
+                                    ( Variable someSort "X"
+                                    , [trm| \dv{SomeSort{}}("otherThing") |]
+                                    )
+                                ,
+                                    ( Variable SortK "RuleVar"
+                                    , [trm| ConfigVar:SortK{} |]
+                                    )
+                                ]
                              )
                          ]
 
 runWith :: Term -> IO (Either (RewriteFailed "Rewrite") (RewriteResult Pattern))
 runWith t =
-    second (ignoreRulePredicateAndSubst . fst) <$> do
+    second fst <$> do
         conf <- testConf
         runNoLoggingT $ runRewriteT conf mempty (rewriteStep [] [] $ Pattern_ t)
 
@@ -270,14 +279,14 @@ getsStuck :: Term -> IO ()
 getsStuck t1 =
     runWith t1 @?>>= Right (RewriteStuck $ Pattern_ t1)
 
-branchesTo :: Term -> [(Text, Term)] -> IO ()
+branchesTo :: Term -> [(Text, Term, Predicate, Substitution)] -> IO ()
 t `branchesTo` ts =
     runWith t
         @?>>= Right
             ( RewriteBranch (Pattern_ t) $
                 NE.fromList $
                     map
-                        (\(lbl, t') -> (Pattern_ t', AppliedRuleMetadata lbl mockUniqueId (Predicate TrueBool) mempty))
+                        (\(lbl, t', rPred, rSubst) -> (Pattern_ t', AppliedRuleMetadata lbl mockUniqueId rPred rSubst))
                         ts
             )
 
@@ -295,7 +304,7 @@ runRewrite t = do
         runNoLoggingT $
             performRewrite conf $
                 Pattern_ t
-    pure (counter, fmap (.term) (ignoreRulePredicateAndSubst res))
+    pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
 aborts failure t = runRewrite t >>= (@?= (0, RewriteAborted failure t))
@@ -327,7 +336,17 @@ canRewrite =
                         "con1-f2"
                         mockUniqueId
                         (Predicate TrueBool)
-                        mempty
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
                 branch2 =
                     ( [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
@@ -335,7 +354,17 @@ canRewrite =
                         "con1-f1'"
                         mockUniqueId
                         (Predicate TrueBool)
-                        mempty
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
             rewrites
@@ -426,7 +455,17 @@ supportsDepthControl =
                         "con1-f2"
                         mockUniqueId
                         (Predicate TrueBool)
-                        mempty
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
                 branch2 =
@@ -435,7 +474,17 @@ supportsDepthControl =
                         "con1-f1'"
                         mockUniqueId
                         (Predicate TrueBool)
-                        mempty
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
             rewritesToDepth
@@ -451,7 +500,7 @@ supportsDepthControl =
         conf <- testConf
         (counter, _, res) <-
             runNoLoggingT $ performRewrite conf{mbMaxDepth = Just depth} $ Pattern_ t
-        (counter, fmap (.term) (ignoreRulePredicateAndSubst res)) @?= (n, f t')
+        (counter, fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
 supportsCutPoints =
@@ -486,7 +535,17 @@ supportsCutPoints =
                         "con1-f2"
                         mockUniqueId
                         (Predicate TrueBool)
-                        mempty
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
                 branch2 =
@@ -495,7 +554,17 @@ supportsCutPoints =
                         "con1-f1'"
                         mockUniqueId
                         (Predicate TrueBool)
-                        mempty
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
             rewritesToCutPoint
@@ -513,7 +582,7 @@ supportsCutPoints =
             runNoLoggingT $
                 performRewrite conf{cutLabels = [lbl]} $
                     Pattern_ t
-        (counter, fmap (.term) (ignoreRulePredicateAndSubst res)) @?= (n, f t')
+        (counter, fmap (.term) res) @?= (n, f t')
 
 supportsTerminalRules :: TestTree
 supportsTerminalRules =
