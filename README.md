@@ -87,7 +87,7 @@ The `nix-env-selector` extension may prompt for the workspace to be re-loaded. O
 
 To build and run nix based packages at RV, please follow these instructions to set up nix:
 
-_We are using [nix flakes](https://nixos.wiki/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different._
+_We are using [nix flakes](https://nixos.wiki/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different. See also the [runtimeverification/rv-nix-tools](https://github.com/runtimeverification/rv-nix-tools) repository._
 
 To set up nix flakes you will need to install `nix` 2.4 or higher.If you are on a standard Linux distribution, such as Ubuntu, first [install nix](https://nixos.org/download.html#download-nix)
 and then enable flakes by editing either `~/.config/nix/nix.conf` or `/etc/nix/nix.conf` and adding:
