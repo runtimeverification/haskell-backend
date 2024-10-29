@@ -300,7 +300,7 @@ rewriteStep cutLabels terminalLabels pat = do
         LoggerMIO io => [RewriteRule "Rewrite"] -> SMT.IsSatResult () -> Set.Set Predicate -> RewriteT io a
     throwRemainder rules satResult remainderPredicate =
         throw $
-            RewriteRemainderPredicate rules satResult . coerce . collapseAndBools . Set.toList $
+            RewriteRemainderPredicate rules satResult . collapseAndBools . Set.toList $
                 remainderPredicate
 
     -- log a remainder predicate as an exception without aborting rewriting
@@ -308,13 +308,13 @@ rewriteStep cutLabels terminalLabels pat = do
         LoggerMIO io => [RewriteRule "Rewrite"] -> SMT.IsSatResult () -> Set.Set Predicate -> RewriteT io ()
     logRemainder rules satResult remainderPredicate = do
         ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
-        let remainderForLogging = coerce . collapseAndBools . Set.toList $ remainderPredicate
+        let remainderForLogging = collapseAndBools . Set.toList $ remainderPredicate
         withContext CtxRemainder . withContext CtxContinue
             $ logMessage
             $ WithJsonMessage
                 ( object
                     [ "remainder"
-                        .= externalisePredicate (externaliseSort $ sortOfPattern pat) (coerce remainderForLogging)
+                        .= externalisePredicate (externaliseSort $ sortOfPattern pat) remainderForLogging
                     ]
                 )
             $ renderOneLineText
@@ -555,7 +555,7 @@ applyRule pat@Pattern{ceilConditions} rule =
         ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
         -- apply substitution to rule requires
         let ruleRequires =
-                concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.requires
+                concatMap (splitBoolPredicates . substituteInPredicate matchingSubst) rule.requires
             knownConstraints = pat.constraints <> (Set.fromList . asEquations $ pat.substitution)
 
         -- filter out any predicates known to be _syntactically_ present in the known prior
@@ -652,8 +652,8 @@ applyRule pat@Pattern{ceilConditions} rule =
                     "Uncertain about condition(s) in a rule:"
                         <+> (hsep . punctuate comma . map (pretty' @mods) $ predicates)
         failRewrite $
-            RuleConditionUnclear rule . coerce . collapseAndBools $
-                map coerce predicates
+            RuleConditionUnclear rule . collapseAndBools $
+                predicates
 
     -- Instantiate the requires clause of the rule and simplify, but not prune.
     -- Unfortunately this function may have to re-do work that was already done by checkRequires
