@@ -24,6 +24,7 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Log (Logger (..))
 import Booster.Pattern.Base
+import Booster.Pattern.Bool
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Pretty (ModifiersRep (..))
 import Booster.Pattern.Rewrite
@@ -235,10 +236,32 @@ rulePriority =
             `branchesTo` [
                              ( "con1-f2"
                              , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("otherThing"), \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
+                             , Predicate TrueBool
+                             , Map.fromList
+                                [
+                                    ( Variable someSort "X"
+                                    , [trm| \dv{SomeSort{}}("otherThing") |]
+                                    )
+                                ,
+                                    ( Variable SortK "RuleVar"
+                                    , [trm| ConfigVar:SortK{} |]
+                                    )
+                                ]
                              )
                          ,
                              ( "con1-f1'"
                              , [trm| kCell{}( kseq{}( inj{SomeSort{},    SortKItem{}}( f1{}(   \dv{SomeSort{}}("otherThing")                                ) ), ConfigVar:SortK{}) ) |]
+                             , Predicate TrueBool
+                             , Map.fromList
+                                [
+                                    ( Variable someSort "X"
+                                    , [trm| \dv{SomeSort{}}("otherThing") |]
+                                    )
+                                ,
+                                    ( Variable SortK "RuleVar"
+                                    , [trm| ConfigVar:SortK{} |]
+                                    )
+                                ]
                              )
                          ]
 
@@ -256,11 +279,16 @@ getsStuck :: Term -> IO ()
 getsStuck t1 =
     runWith t1 @?>>= Right (RewriteStuck $ Pattern_ t1)
 
-branchesTo :: Term -> [(Text, Term)] -> IO ()
+branchesTo :: Term -> [(Text, Term, Predicate, Substitution)] -> IO ()
 t `branchesTo` ts =
     runWith t
         @?>>= Right
-            (RewriteBranch (Pattern_ t) $ NE.fromList $ map (\(lbl, t') -> (lbl, mockUniqueId, Pattern_ t')) ts)
+            ( RewriteBranch (Pattern_ t) $
+                NE.fromList $
+                    map
+                        (\(lbl, t', rPred, rSubst) -> (Pattern_ t', AppliedRuleMetadata lbl mockUniqueId rPred rSubst))
+                        ts
+            )
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
@@ -303,14 +331,40 @@ canRewrite =
                     RewriteStuck
         , testCase "Rewrites con3 twice, branching on con1" $ do
             let branch1 =
-                    ( "con1-f2"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                    ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                    , AppliedRuleMetadata
+                        "con1-f2"
+                        mockUniqueId
+                        (Predicate TrueBool)
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
                 branch2 =
-                    ( "con1-f1'"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                    ( [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                    , AppliedRuleMetadata
+                        "con1-f1'"
+                        mockUniqueId
+                        (Predicate TrueBool)
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
             rewrites
@@ -396,14 +450,41 @@ supportsDepthControl =
                 (RewriteFinished Nothing Nothing)
         , testCase "prefers reporting branches to stopping at depth" $ do
             let branch1 =
-                    ( "con1-f2"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                    ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                    , AppliedRuleMetadata
+                        "con1-f2"
+                        mockUniqueId
+                        (Predicate TrueBool)
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
+
                 branch2 =
-                    ( "con1-f1'"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                    ( [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                    , AppliedRuleMetadata
+                        "con1-f1'"
+                        mockUniqueId
+                        (Predicate TrueBool)
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
             rewritesToDepth
@@ -449,14 +530,41 @@ supportsCutPoints =
                     RewriteStuck
         , testCase "prefers reporting branches to stopping at label in one branch" $ do
             let branch1 =
-                    ( "con1-f2"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                    ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
+                    , AppliedRuleMetadata
+                        "con1-f2"
+                        mockUniqueId
+                        (Predicate TrueBool)
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
+
                 branch2 =
-                    ( "con1-f1'"
-                    , mockUniqueId
-                    , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                    ( [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}(    f1{}(   \dv{SomeSort{}}("somethingElse")                                   ) ), C:SortK{}) ) |]
+                    , AppliedRuleMetadata
+                        "con1-f1'"
+                        mockUniqueId
+                        (Predicate TrueBool)
+                        ( Map.fromList
+                            [
+                                ( Variable someSort "X"
+                                , [trm| \dv{SomeSort{}}("somethingElse") |]
+                                )
+                            ,
+                                ( Variable SortK "RuleVar"
+                                , [trm| C:SortK{} |]
+                                )
+                            ]
+                        )
                     )
 
             rewritesToCutPoint
