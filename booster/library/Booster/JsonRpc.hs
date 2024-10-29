@@ -660,7 +660,7 @@ mkLogRewriteTrace
                                             }
                                     RewriteRemainderPredicate rs _ _ ->
                                         Failure
-                                            { reason = "Uncertain about a condition in rule"
+                                            { reason = "Uncertain about the remainder after applying a rule"
                                             , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes (head rs))
                                             }
                                     DefinednessUnclear r _ undefReasons ->
