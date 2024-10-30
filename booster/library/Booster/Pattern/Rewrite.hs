@@ -1034,7 +1034,9 @@ performRewrite rewriteConfig pat = do
             case res of
                 Right newPattern -> do
                     emitRewriteTrace $ RewriteSimplified Nothing
-                    pure $ Just newPattern
+                    if isBottom newPattern
+                        then pure Nothing
+                        else pure $ Just newPattern
                 Left r@SideConditionFalse{} -> do
                     emitRewriteTrace $ RewriteSimplified (Just r)
                     pure Nothing
