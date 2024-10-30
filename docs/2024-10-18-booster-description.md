@@ -32,7 +32,7 @@ To date, the most work has been put into making the `execute` endpoint of the bo
 Necessarily, as part of the `execute` endpoints reasoning, simplification reasoning of the booster needs to be improved too, which means the `simplify` endpoint has improved as well.
 Only a very rudimentary `implies` endpoint has been implemented, to handle most of the failure cases as fast as possible, and usually the more complicated reasoning is still delegated to the Kore `implies` endpoint.
 
-## [Rewriting Algorithm](#rewriting)
+## [Rewriting](#rewriting)
 
 ### [Single Rewrite Rule](#rewriting-apply-single-rule)
 
@@ -45,7 +45,12 @@ Steps to apply a rewrite rule include:
 - Checking the rule's ensures clause, and extracting the possible new substitution items from the ensured constraints. See [#checking-ensures](#checking-ensures).
 - Constructing the final rewritten configuration.
 
-**TODO**: list abort conditions.
+The rule application routine may reach an exception condition, in which case the whole rewriting step is aborted, i.e. no other rules will be attempted, causing a full-stop.
+These **abort conditions** include:
+- indeterminate matching of the rule's left-hand side and the current configuration
+- internal error during matching, likely indicating a bug in the matcher
+- a non-preserving-definedness rule, i.e. a rule which has partial symbols on the RHS and no `preserves-definedness` attribute
+- unknown constraint in `ensures`
 
 #### [Matching the configuration with the rule's left-hand side](#rule-matching)
 
@@ -56,7 +61,7 @@ See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-b
 - rule matching can be indeterminate. We really do not want this to happen, as it will abort rewriting and cause a fallback to Kore (or a full-stop of using the `booster-dev` server).
   Common cases include unevaluated function symbols. See [match1](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L191) and look for `addIndetermiante` for the exhaustive list.
 
-### [Checking `requires` --- the rule's pre-condition](#checking-requires)
+#### [Checking `requires` --- the rule's pre-condition](#checking-requires)
 
 -   now we have to check the rule's side-condition, aka the `requires` and `ensures` clauses. Booster represents the `requires` and `ensures` clauses as a set of boolean predicates, constituting the conjuncts, i.e. they are implicitly connected by `_andBool_`, but Booster works with them independently, which makes filtering, de-duplication and other operations straightforward. Write your requires clauses in CNF!
 -   the requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L496) function in applyRule. It will:
@@ -71,4 +76,19 @@ See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-b
             We effectively do the same we cannot establish the validity of P due to a solver timeout, i.e. we add the predicate as an assumption. This may potentially lead to a vacuous branch.
         -   some rules will have a valid requires clause, which means they definitely do apply and we do need to add anything else into the path condition as an assumption.
 
-### [Checking `ensures` --- the rule's post-condition](#checking-ensures)
+#### [Checking `ensures` --- the rule's post-condition](#checking-ensures)
+
+
+### [Single Rewriting Step](#rewriting-single-step)
+
+### [Iterating Rules](#rewriting-many-steps)
+
+Successful rule application does not trigger pattern-wide simplification, i.e. very far and make many steps without simplifying the pattern even ones.
+We do need to perform a pattern-wide simplification if we hit any of the rule application abort conditions of the [single rule application algorithm](#rewriting-apply-single-rule).
+That allows us to leverage function and simplification equations to possibly simplify away the cause of the abort.
+See the [simplifier](#equations) section for details on how simplification and function evaluation is performed.
+After one round of pattern-wide simplification, we re-attempt rewriting and continue if progress has been made; otherwise we stop completely and return an aborted state.
+
+## [Applying equations: function evaluation and simplification](#equations)
+
+### [Single Equation](#equations-single-rule)
