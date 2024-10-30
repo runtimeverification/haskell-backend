@@ -1,6 +1,6 @@
 # Tests for `kore-rpc-booster` returning vacuous results after simplification
 
-Since `kore-rpc-booster` does not consider combinations of constraints, it won't discover when a reached state (or the initial state) simplifies to `\bottom`. In such cases, the `execute` request should return the current state with `"reason": "vacuous"` in the result.
+Since Booster does not check consistently of the initial pattern before starting rewriting, it won't always discover when a reached state (or the initial state) simplifies to `\bottom`. Ultimately, `kore-rpc-booster` relies on Kore's simplifier to detect such cases. When Kore prunes a `\bottom` branch, the `execute` endpoint of `kore-rpc-booster` should return the current state with `"reason": "vacuous"` in the result.
 
 The `diamond/test.k` semantics is used, which consists of simple state
 transition rules featuring additional constraints on a variable
