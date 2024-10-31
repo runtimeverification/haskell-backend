@@ -137,7 +137,7 @@ These **abort conditions** include:
 #### [Matching the configuration with the rule's left-hand side](#rule-matching)
 
 See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L48) module, specifically the [matchTerms](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L132), [match](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L171) and [match1](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L191) functions
-- rules are indexed by the head symbol of the `<k>` cell (or other index-cells), i.e. we only try the rules that have the same head symbol that the configuration
+- rules are indexed by the head symbol of the `<k>` cell (or other index cells), i.e. we only try the rules that have the same head symbol that the configuration
 - rules can fail matching, usually that means that the rule and the configuration have different constructor symbols or domains values in some cells.
   This means that the rule does not apply and we can proceed to trying other rules.
 - rule matching can be indeterminate. We really do not want this to happen, as it will abort rewriting and cause a fallback to Kore (or a full-stop of using the `booster-dev` server).
@@ -145,21 +145,37 @@ See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-b
 
 #### [Checking `requires` --- the rule's pre-condition](#checking-requires)
 
--   now we have to check the rule's side-condition, aka the `requires` and `ensures` clauses. Booster represents the `requires` and `ensures` clauses as a set of boolean predicates, constituting the conjuncts, i.e. they are implicitly connected by `_andBool_`, but Booster works with them independently, which makes filtering, de-duplication and other operations straightforward. Write your requires clauses in CNF!
--   the requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L496) function in applyRule. It will:
-    -   substitute the rule's requires clause with the matching substitution
-    -   check if we already have any of the conjuncts verbatim in the pattern's constrains. If so, we filter them out as known truth
-    -   simplify every conjunct individually by applying equations. This is where Petar is welcome to take over with his 4 hours workshop on simplifications.
-    -   filter again
-    -   if any clauses remain, it's time to fire-up Z3 and check them for validity.
-        -   some rule will be rejected at that point, as their pre-condition P (the `requires` clause) is invalid, which means that the rule is applicable statically, but the dynamic conditions makes it inapplicable.
-        -   some rules may have an indeterminate pre-condition P, which means that both P and its negation are satisfiable, i.e. the solver said (SAT, SAT) for (P, not P).
-            In this case we can apply this rule conditionally, but add P into the path condition.
-            We effectively do the same we cannot establish the validity of P due to a solver timeout, i.e. we add the predicate as an assumption. This may potentially lead to a vacuous branch.
-        -   some rules will have a valid requires clause, which means they definitely do apply and we do need to add anything else into the path condition as an assumption.
+If matching is successful, we now we have to check the rule's side-condition, aka the `requires` and `ensures` clauses. Booster represents the `requires` and `ensures` clauses as a set of boolean predicates, constituting the conjuncts. The are implicitly connected by `_andBool_`, but Booster works with them independently, which makes filtering, de-duplication and other operations more straightforward. Write your requires clauses in the conjunctive normal form!
+
+The `requires` clause represents the logical "guard" that may impose constraints on the variables appearing on the left-hand side of the rule, thus allowing to formulate dynamic conditions of the rule's applicability.
+
+The requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L496) function defined in the `where`-clause of `applyRul`e. It will:
+1. substitute the rule's requires clause with the matching substitution
+2. check if we already have any of the conjuncts verbatim in the pattern's constrains. If so, we filter them out as known truth
+3. simplify every conjunct individually by applying equations. This is morally equivalent to sending every conjunct as to the `"simplify"` endpoint and will use the same code path, bypassing internalisation.
+4. filter again, as the simplified conjuncts may not be present verbatim in the known truth
+5. if any clauses remain, it's time to fire-up Z3 and check them for validity.
+    - some rule will be rejected at that point, as their pre-condition P (the `requires` clause) is invalid, which means that the rule is applicable statically, but the dynamic conditions makes it inapplicable.
+    - some rules may have an indeterminate pre-condition P, which means that both P and its negation are satisfiable, i.e. the solver said (SAT, SAT) for (P, not P).
+      - in this case we can apply this rule conditionally, but add P into the path condition We will call `not P` the _remainder condition_ of this rule and keep track of it too
+        We effectively do the same if we cannot establish the validity of P due to a solver timeout, i.e. we add the predicate as an assumption. This may potentially lead to a vacuous branch as we discover more conditions further into the rewriting process.
+    -   some rules will have a valid requires clause, which means they definitely do apply and we do need to add anything else into the path condition as an assumption.
+
+See the [Booster.SMT.Interface](https://github.com/runtimeverification/haskell-backend/blob/booster-docs/booster/library/Booster/SMT/Interface.hs) module to learn more about how `Predicate`s are checked for satisfiable and validity using Z3.
+
+Bottom line:
+- if `requires` is UNSAT, we do not apply the rule, just if it didn't even match;
+- otherwise, i.e. `requires` is either valid or indeterminate (remember, we are keeping track of the remainder), we can proceed to the next and final step
 
 #### [Checking `ensures` --- the rule's post-condition](#checking-ensures)
 
+The `ensures` clause of the rule represents:
+- the rule's post-condition, which must be valid in order for the rule to be applicable (there is a nuance to that statement, which we will discuss at the end of the section)
+- the rule's effect on the path constraint (aka constraints, aka known truth) of the current pattern and its substitution
+
+The `ensures` clause has additional power compared to the `requires` clause, as it may impose constrains not only on the left hand-side variables (like the `requires` clause), but also on the right hand-side variables of the rule, known as `?`-variables or existential variables.
+
+The `ensures` check is in many ways similar to the `ensures` check, but with some important differences. See the `checkEnsures`[https://github.com/runtimeverification/haskell-backend/blob/booster-check-ensures-with-rule-remainder/booster/library/Booster/Pattern/Rewrite.hs#L610] function.
 
 ### [Single Rewriting Step](#rewriting-single-step)
 
