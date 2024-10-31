@@ -479,12 +479,16 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
+    -- break-up introduced symbolic _andBool_, filter-out trivial truth, de-duplicate
+    let flattenedEvaluatedConstraints =
+            Set.unions . Set.map (Set.fromList . filter (/= Predicate TrueBool) . splitBoolPredicates) $
+                evaluatedConstraints
     -- The interface-level evaluatePattern puts pat.substitution together with pat.constraints
     -- into the simplifier state as known truth. Here the substitution will bubble-up as part of
     -- evaluatedConstraints. To avoid duplicating constraints (i.e. having equivalent entities
     -- in pat.predicate and pat.substitution), we discard the old substitution here
     -- and extract a possible simplified one from evaluatedConstraints.
-    let (simplifiedSubsitution, simplifiedConstraints) = extractSubstitution (Set.toList evaluatedConstraints)
+    let (simplifiedSubsitution, simplifiedConstraints) = extractSubstitution . Set.toList $ flattenedEvaluatedConstraints
 
     pure
         Pattern
