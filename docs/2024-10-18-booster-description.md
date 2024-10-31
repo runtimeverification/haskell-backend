@@ -118,7 +118,7 @@ For an overview of what happens when an execute request is received, see the dia
 
 ### [Single Rewrite Rule](#rewriting-apply-single-rule)
 
-[applyRule](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L329)
+[applyRule](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Rewrite.hs#L329)
 
 Steps to apply a rewrite rule include:
 
@@ -136,12 +136,12 @@ These **abort conditions** include:
 
 #### [Matching the configuration with the rule's left-hand side](#rule-matching)
 
-See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L48) module, specifically the [matchTerms](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L132), [match](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L171) and [match1](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L191) functions
+See the [Booster.Pattern.Match](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Match.hs#L48) module, specifically the [matchTerms](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Match.hs#L132), [match](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Match.hs#L171) and [match1](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Match.hs#L191) functions
 - rules are indexed by the head symbol of the `<k>` cell (or other index cells), i.e. we only try the rules that have the same head symbol that the configuration
 - rules can fail matching, usually that means that the rule and the configuration have different constructor symbols or domains values in some cells.
   This means that the rule does not apply and we can proceed to trying other rules.
 - rule matching can be indeterminate. We really do not want this to happen, as it will abort rewriting and cause a fallback to Kore (or a full-stop of using the `booster-dev` server).
-  Common cases include unevaluated function symbols. See [match1](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Match.hs#L191) and look for `addIndetermiante` for the exhaustive list.
+  Common cases include unevaluated function symbols. See [match1](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Match.hs#L191) and look for `addIndetermiante` for the exhaustive list.
 
 #### [Checking `requires` --- the rule's pre-condition](#checking-requires)
 
@@ -149,7 +149,7 @@ If matching is successful, we now we have to check the rule's side-condition, ak
 
 The `requires` clause represents the logical "guard" that may impose constraints on the variables appearing on the left-hand side of the rule, thus allowing to formulate dynamic conditions of the rule's applicability.
 
-The requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/3956-booster-rewrite-rule-remainders/booster/library/Booster/Pattern/Rewrite.hs#L496) function defined in the `where`-clause of `applyRul`e. It will:
+The requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Rewrite.hs#L496) function defined in the `where`-clause of `applyRul`e. It will:
 1. substitute the rule's requires clause with the matching substitution
 2. check if we already have any of the conjuncts verbatim in the pattern's constrains. If so, we filter them out as known truth
 3. simplify every conjunct individually by applying equations. This is morally equivalent to sending every conjunct as to the `"simplify"` endpoint and will use the same code path, bypassing internalisation.
@@ -161,7 +161,7 @@ The requires clause check is encapsulated by the [checkRequires](https://github.
         We effectively do the same if we cannot establish the validity of P due to a solver timeout, i.e. we add the predicate as an assumption. This may potentially lead to a vacuous branch as we discover more conditions further into the rewriting process.
     -   some rules will have a valid requires clause, which means they definitely do apply and we do need to add anything else into the path condition as an assumption.
 
-See the [Booster.SMT.Interface](https://github.com/runtimeverification/haskell-backend/blob/booster-docs/booster/library/Booster/SMT/Interface.hs) module to learn more about how `Predicate`s are checked for satisfiable and validity using Z3.
+See the [Booster.SMT.Interface](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/SMT/Interface.hs) module to learn more about how `Predicate`s are checked for satisfiable and validity using Z3.
 
 Bottom line:
 - if `requires` is UNSAT, we do not apply the rule, just if it didn't even match;
@@ -175,9 +175,45 @@ The `ensures` clause of the rule represents:
 
 The `ensures` clause has additional power compared to the `requires` clause, as it may impose constrains not only on the left hand-side variables (like the `requires` clause), but also on the right hand-side variables of the rule, known as `?`-variables or existential variables.
 
-The `ensures` check is in many ways similar to the `ensures` check, but with some important differences. See the `checkEnsures`[https://github.com/runtimeverification/haskell-backend/blob/booster-check-ensures-with-rule-remainder/booster/library/Booster/Pattern/Rewrite.hs#L610] function.
+The `ensures` check is in many ways similar to the `ensures` check, but with some important differences. See the `checkEnsures`[https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Rewrite.hs#L610] function.
+
 
 ### [Single Rewriting Step](#rewriting-single-step)
+
+To take a rewriting step from a `Pattern` means to attempt all applicable rewrite rules at that pattern, and return one of the following results:
+
+- stuck rewrite, no rules apply
+- trivial rewrite, rewritten state is vacuous because the `ensures` clause evaluates to false
+- aborted rewrite, see the [RewriteFailed](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Rewrite.hs#L740) datatype for the possible reasons
+- rewriting finished, max depth reached
+- rewriting finished, terminal rule
+- rewriting finished, cut-point rule
+- branch, several rules apply
+
+#### Rewrite rule priorities and remainder predicates
+
+The K Framework supports a powerful feature of assigning priorities to rewrite rules, which allows better structuring of the semantics.
+
+When Booster applies rewrite rules, they are grouped by priority. The group with the higher priority applies first, and all rules are treated equally within the group.
+
+During symbolic execution, we keep track of the current path condition --- a conjunction of logical constraints that specify an equivalence class of concrete execution states. In order to prevent state explosion, it is important to only create new symbolic states that are feasible. Priority groups enable a additional mechanism for that by enabling the semantics implementer to partition rules into complete groups, and only applying lower-priority rules under the conditions where higher-priority groups are not applicable.
+
+A priority group of rules gives raise to a group **coverage condition**, which is defined as a disjunction of the requires clauses of the rules in the group. If the coverage condition is valid, it means that no other rules can possibly apply. The negation of the coverage condition is called the group's coverage condition is called the **remainder condition**. The the remainder condition is unsatisfiable, then the coverage condition is valid, and the group is complete.
+
+When applying rewrite rules, Booster will take note of any indeterminate rule conditions and use them to construct the groups remainder conditions:
+- when checking the `requires` clause of a rule, we compute the remainder condition `RULE_REM` of that attempted, which is the semantically-checked subset of the required conjuncts `P` which *unclear* after checking its entailment form the pattern's constrains `PC`, meaning that (PC /\ P, PC /\ not P) is (SAT, SAT) or any of the two queries were UNKNOWN
+- if that remainder is not empty, we return it's *negation* together with the result
+- when we are finished attempting a *priority group* of rules, we collect the negated remainder conditions `not RULE_REM_i` and conjunct them. This the groups remainder condition `GROUP_REM == not RULE_REM_1 /\ not RULE_REM_2 /\ ... /\ not RULE_REM_n`
+- At that point, we need to check `GROUP_REM` for satisfiablity.
+  - **If the `GROUP_REM` condition is UNSAT, it means that this group of rules is *complete***, meaning that no other rule can possibly apply, and we do not need to even attempt applying rules of lower priority. This behaviour is the **primary contribution of this PR**.
+  - Otherwise, if it is SAT or solver said UNKNOWN, it means that this group of rules is not complete, i.e. it does not cover the whole space of logical possibility, and we need to construct a remainder configuration, and continue attempting to apply other rules to it. If no rules remain, it means that we are stuck and the semantics is incomplete. This PR does not implement the process of descending into the remainder branch. **Booster with this PR will abort on a SAT remainder**.
+
+This behaviour is active by default in `booster-dev` and can be enabled in `kore-rpc-booster` with the flag `--fallback-on Aborted,Stuck` (the default is `Aborted,Stuck,Branching`). Note that with the default reasons, the behaviour of `kore-rpc-booster` is functionally the same, but operationally slightly different: In `Proxy.hs`, Booster may not return `Branching`, and the fallback logic will confirm that Kore returns `Branching` as well, flagging any differences in the `[proxy]` logs (see [Proxy.hs#L391](https://github.com/runtimeverification/haskell-backend/blob/master/booster/tools/booster/Proxy.hs#L391)).
+
+Note:
+a naive algorithm to compute the remainder conditions would be: after applying a group of rules, take their substituted requires clauses, disjunct and negate. However, this yields a non-minimal predicate that was not simplified and syntactically filtered, potentially making it harder for the SMT solver to solve. The algorithm described above and implemented in this PR re-uses the indeterminate results obtained while applying individual rules and simplifying/checking their individual requires clauses. This logic has been originally proposed by Sam in https://github.com/runtimeverification/haskell-backend/pull/3960.
+
+See [remainder-predicates.k](https://github.com/runtimeverification/haskell-backend/blob/master/booster/test/rpc-integration/resources/remainder-predicates.k) and [test-remainder-predicates](https://github.com/runtimeverification/haskell-backend/blob/master/booster/test/rpc-integration/test-remainder-predicates) for a series of integrations tests that cover the behaviour of `booster-dev` and `kore-rpc-booster`.
 
 ### [Iterating Rules](#rewriting-many-steps)
 
