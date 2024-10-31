@@ -32,7 +32,89 @@ To date, the most work has been put into making the `execute` endpoint of the bo
 Necessarily, as part of the `execute` endpoints reasoning, simplification reasoning of the booster needs to be improved too, which means the `simplify` endpoint has improved as well.
 Only a very rudimentary `implies` endpoint has been implemented, to handle most of the failure cases as fast as possible, and usually the more complicated reasoning is still delegated to the Kore `implies` endpoint.
 
+We now describe in more detail the implementation of Booster, focusing on the following high-level tasks:
+- rewriting, which underpins the `execute` endpoint;
+- applying equations, which underpins the `simplify` endpoint and is also used in certain key points in the `execute` endpoint;
+- definition and state internalisation, i.e. the process of transforming the external `KoreJson` terms of the semantics definition and input states into Booster's internal data structures.
+
 ## [Rewriting](#rewriting)
+
+Once the server is started with the rules for a given semantics, the execute end-point expects a configuration composed of a `Term`, representing the state of execution in a given semantics, along with boolean `Predicate`s/constraints imposed upon any symbolic parts of the state. Given this state, the server will apply semantic rules to the configuration, until either:
+
+* no more rules apply
+* a user specified break point is reached, based on a specific semantic rule or specified depth
+* a branch occurs, i.e. more than one rule applies
+* the booster cannot decide if a rule should apply
+
+The execution can roughly be divided into two phases. The rewrite rule application phase and the simplification phase. Unlike the old backend, which is much more aggressive in applying simplification and function rules, the booster tries to apply rewrite rules as long as it can. Once it reaches a point where unification fails due to some part of the configuration containing un-evaluated functions which need to match a concrete value in the rule, the booster will run the simplifier on the current configuration to try to evaluate any function calls inside the configuration before trying to re-write again. This strategy avoids the costly simplifier running after each rewrite, but can be a double edged sword as the booster often ends up building a big stack of unevaluated functions in parts of the configuration. This usually happens in rules operating on the stack/heap/memory cells of a particular semantics, which often functionally update the state from previous configuration by calling an append/upsert/etc. function. In certain instances, the configuration ends up growing at an enormous rate as these thunks build up and can cause failure when the simplifier runs out of memory, trying to simplify such a huge configuration term. To prevent this from happening, the booster proxy contains a simple strategy which allows the user to force the simplification phase to be triggered every _n_ rewrite steps  (_n_ can be specified via a flag at server startup).
+
+For an overview of what happens when an execute request is received, see the diagram bellow. We give further details of some of the steps/states in this diagram, in the following sections.
+
+```
+                                   Receive execute request   ──────────────────────────┐
+                                                                                       │
+                                             │                                         │
+                                             ▼                                         ▼
+
+                            Internalise KoreJSON into pattern P           Unsupported KoreJSON pattern
+
+                                             │                                         │
+                                             ▼                                         ▼
+
+                                       Check P /= _|_                           Return an error
+
+                                             │
+                                             │   ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────┐   │   │                                                                                                  │
+│                                        ▼   ▼   ▼                                                                                                  │
+│                                                                                                                                                   │
+│         ┌────────────────────────────  Apply rule  ◄───────────────────────────────────────────────────────────────────────────────────────────┐  │
+│         │                                                                                                                                      │  │
+│         │                                    │                                                                                                 │  │
+│         │                                    └─────────────┐                                                                                   │  │
+│         ▼                                                  ▼                                                                                   │  │
+│                                                                                                                                                │  │
+│  Rewrite aborted            ┌────────────────────  Rewrite finished  ─────────────────────────┐                                                │  │
+│                             │                                                                 │                                                │  │
+│         │                   │                               │                                 │                                                │  │
+│         │                   │                               │                                 │                                                │  │
+│         ▼                   ▼                               ▼                                 ▼                                                │  │
+│                                                                                                                                                │  │
+│  Return aborted       No rules apply                 Rewrite to P'  ───┐                  Rewrite to PS ─────────────────┬───────┐             │  │
+│                                                                        │                                                 │       │             │  │
+│                             │                           │              │                    │      │                     │       │             │  │
+│                             │                           │              │                    │      └──────────┐          │       │             │  │
+│                             │                           ▼              ▼                    ▼                 ▼          │       ▼             │  │
+│                             │                                                                                            │                     │  │
+│                             │                         P' == _|_    P' /= _|_           /\ PS == _|_      PS simplify to  │   PS simplify to  ──┘  │
+│                             │                                                                                   []       │      single P'         │
+│              ┌──────────────┼─────────────┐               │           │ │                   │                            │                        │
+│              │              │             │               │           │ │                   │                   │        │                        │
+│              ▼              ▼             ▼               │           │ │                   │                   │        └───────┐                │
+│                                                           │           │ │                   │                   │                ▼                │
+│          Does not     Simplified      Simplifies          │  ┌────────┼─┼───────────────────┘                   │                                 │
+│          simplify      already                            │  │        │ │                                       │          PS simplify to         │
+│                                                           │  │        │ │                                       │                PS'              │
+│              │              │             │               │  │        │ │                                       │                                 │
+│              │              │             │               ▼  ▼        │ │                                       │                 │               │
+│              │              │             │                           │ └─────────────────┐                     │                 ▼               │
+│              │              │             │        Return vacuous P   │                   │                     │                                 │
+│              │              │             │                           │                   │                     │         Return branching        │
+│              │              │             │                           │                   │                     │                                 │
+│              └───────┐      │             │                           ▼                   ▼                     │                                 │
+│                      ▼      ▼             │                                                                     │                                 │
+│                                           │                    Depth/rule bound       Unbounded  ───────────────┼─────────────────────────────────┘
+│                     Return stuck P        │                                                                     │
+│                                           │                           │                                         │
+│                            ▲              │                           │                                         │
+│                            │              │                           │                                         │
+└────────────────────────────┼──────────────┘                           ▼                                         │
+                             │                                                                                    │
+                             │                                    Return simplified P'                            │
+                             │                                                                                    │
+                             │                                                                                    │
+                             └────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ### [Single Rewrite Rule](#rewriting-apply-single-rule)
 
