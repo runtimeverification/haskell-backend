@@ -46,6 +46,8 @@ import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (Pattern (..), Sort (SortApp))
 import Booster.Pattern.Base qualified as Pattern
+import Booster.Pattern.Bool (isFalse)
+import Booster.Pattern.Bool qualified as Pattern
 import Booster.Pattern.Implies (runImplies)
 import Booster.Pattern.Pretty
 import Booster.Pattern.Rewrite (
@@ -255,13 +257,18 @@ respond stateVar request =
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
                         ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty pat >>= \case
-                            (Right newPattern, _) -> do
-                                let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern
-                                    tSort = externaliseSort (sortOfPattern newPattern)
-                                    result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
-                                        [] -> term
-                                        ps -> KoreJson.KJAnd tSort $ term : ps
-                                pure $ Right (addHeader result)
+                            (Right newPattern, _) ->
+                                if Pattern.isBottom newPattern
+                                    then
+                                        let tSort = externaliseSort $ sortOfPattern pat
+                                         in pure $ Right (addHeader $ KoreJson.KJBottom tSort)
+                                    else do
+                                        let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern
+                                            tSort = externaliseSort (sortOfPattern newPattern)
+                                            result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
+                                                [] -> term
+                                                ps -> KoreJson.KJAnd tSort $ term : ps
+                                        pure $ Right (addHeader result)
                             (Left ApplyEquations.SideConditionFalse{}, _) -> do
                                 let tSort = externaliseSort $ sortOfPattern pat
                                 pure $ Right (addHeader $ KoreJson.KJBottom tSort)
@@ -299,8 +306,10 @@ respond stateVar request =
                                                         <> map (externaliseCeil predicateSort) ps.ceilPredicates
                                                         <> map (uncurry $ externaliseSubstitution predicateSort) (Map.assocs simplifiedSubstitution)
                                                         <> ps.unsupported
-
-                                            pure $ Right (addHeader $ Syntax.KJAnd predicateSort result)
+                                            pure . Right $
+                                                if any isFalse simplified
+                                                    then addHeader $ KoreJson.KJBottom predicateSort
+                                                    else addHeader $ Syntax.KJAnd predicateSort result
                                         (Left something, _) ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty' @mods something
                 SMT.finaliseSolver solver
