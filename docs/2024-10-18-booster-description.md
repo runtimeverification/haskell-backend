@@ -225,4 +225,17 @@ After one round of pattern-wide simplification, we re-attempt rewriting and cont
 
 ## [Applying equations: function evaluation and simplification](#equations)
 
-### [Single Equation](#equations-single-rule)
+The simplification code path is used at two different points of the execution, as well as being exported as a separate simplify JSON RPC endpoint. The simplification procedure underpinning all of these use-cases is largely the same and comprises of two main simplifiers, the concrete and symbolic one.
+
+Concrete function evaluation is handled by the LLVM backend and thus requires the semantics to be written in such a way, so as to be able to build both the kore definition used by the haskell backend, as well as the LLVM kore definition. The booster relies on the LLVM version of a semantics, compiled as a dynamic library, which is loaded when the server starts. During simplification, the term is traversed bottom up and any concrete sub-terms are sent to he LLVM backend to be evaluated.
+
+The symbolic parts of a term are handled directly by the booster. Similarly to rewrite rules, function rules may also have side conditions. As a result, the simplifier may have to recurse into evaluating whether the side-condition of a function/simplification rule evaluates to true/false before successfully rewriting the term. At the moment, the evaluation strategy is hard-coded in the booster, and it is generally is the following:
+- traverse the term top-down once and apply LLVM simplifications to the concrete sub-terms. It is essential to discover the concrete terms top-down and thus track the concreteness of sub-terms with attributes. By doing that, we make sure that we send a few big terms to the LLVM backend and not many small terms, thus minimising the overhead.
+- traverser the term bottom-up, applying equations at every level until we make progress with at least one equation;
+- when applying equations, prefer functions, and only apply simplifications when function do not produce a result anymore, i.e. no functions apply.
+
+**TODO**: discuss the abort conditions of function vs. simplifications. In short, simplifications are optional, and functions are mandatory, i.e. we abort if a function equation produces an indeterminate match or a function condition is indeterminate.
+**TODO**: discuss the process of applying a single equation.
+**TODO**: discuss caching and how it's implemented in Booster.
+
+
