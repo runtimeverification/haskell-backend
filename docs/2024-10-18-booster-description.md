@@ -239,3 +239,10 @@ The symbolic parts of a term are handled directly by the booster. Similarly to r
 **TODO**: discuss caching and how it's implemented in Booster.
 
 
+## [Definition internalisation and pre-processing](#internalisations)
+
+Booster takes a `definition.kore`, parses it, computes term indices, puts rules in several different buckets, infers definedness of some rules.
+
+**TODO**: expand on the topics listed above
+**TODO**: specifically, talk in detail about the `Term` datatype and `TermAttributes` datatype, how they are used to compare terms. Discuss the pattern synonym-based smart constructors.
+**TODO**: it's appropriate to discuss the `"add-module"` endpoint here as well
