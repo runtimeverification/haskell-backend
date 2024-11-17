@@ -92,7 +92,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     map (pack . renderDefault . pretty' @mods) $
                                         Set.toList freeVarsRminusL
                         | not (null unsupportedL) || not (null unsupportedR) -> do
-                            Booster.Log.logMessage'
+                            Booster.Log.logMessage
                                 ("aborting due to unsupported predicate parts" :: Text)
                             unless (null unsupportedL) $
                                 Booster.Log.withContext Booster.Log.CtxDetail $
@@ -154,7 +154,8 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         (externaliseExistTerm existsL patL.term)
                                         (externaliseExistTerm existsR patR.term)
                                         subst
-                                else
+                                else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
+
                                     ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
                                         (Right newPreds, _) ->
                                             if all (== Predicate TrueBool) newPreds
@@ -164,9 +165,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                                         (externaliseExistTerm existsL patL.term)
                                                         (externaliseExistTerm existsR patR.term)
                                                         subst
-                                                else -- here we conservatively abort
-                                                -- an anlternative would be to return valid, putting the unknown constraints into the
-                                                -- condition. i.e. the implication holds conditionally, if we can prove that the unknwon constraints are true
+                                                else -- here we conservatively abort (incomplete)
                                                     pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
                                         (Left other, _) ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
