@@ -110,9 +110,10 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     pure res
                 Left err -> do
                     Booster.Log.withContext CtxProxy $
-                        Booster.Log.logMessage' $
-                            Text.pack $
-                                "implies error in booster: " <> fromError err
+                        Booster.Log.logMessage . Text.pack $
+                            "Implies abort in booster: "
+                                <> fromError err
+                                <> ". Falling back to kore."
                     (koreRes, koreTime) <- Stats.timed $ kore req
                     logStats ImpliesM (boosterTime + koreTime, koreTime)
                     pure koreRes
@@ -139,7 +140,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
             case bResult of
                 Left err -> do
                     Booster.Log.withContext CtxProxy $
-                        Booster.Log.logMessage' $
+                        Booster.Log.logMessage $
                             Text.pack $
                                 "get-model error in booster: " <> fromError err
                     Stats.timed $ kore req
@@ -222,9 +223,12 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     fromString other = Text.pack (show other)
 
                 Booster.Log.withContext CtxProxy $
-                    Booster.Log.logMessage' $
-                        Text.unwords
-                            ["Problem with simplify request: ", Text.pack getErrMsg, "-", boosterError]
+                    Booster.Log.logMessage $
+                        "Problem with booster simplify request: "
+                            <> Text.pack getErrMsg
+                            <> " - "
+                            <> boosterError
+                            <> ". Falling back to kore."
                 -- NB the timing information for booster execution is lost here.
                 loggedKore SimplifyM req
             _wrong ->
@@ -232,7 +236,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
 
     loggedKore method r = do
         Booster.Log.withContext CtxProxy $
-            Booster.Log.logMessage' $
+            Booster.Log.logMessage $
                 Text.pack $
                     show method <> " (using kore)"
         (result, time) <- Stats.timed $ kore r
@@ -584,7 +588,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
 
                     when (length filteredNexts < maybe 0 length nextStates) $
                         Booster.Log.withContext CtxProxy $
-                            Booster.Log.logMessage'
+                            Booster.Log.logMessage
                                 (Text.pack ("Pruned #Bottom states: " <> show (length nextStates)))
 
                     case reason of
@@ -617,7 +621,8 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                     }
                                         | otherwise = Nothing
                                 Booster.Log.withContext CtxProxy $
-                                    Booster.Log.logMessage' ("Continuing after rewriting with rule " <> rewriteRuleId)
+                                    Booster.Log.logMessage
+                                        ("Continuing after rewriting with rule " <> rewriteRuleId)
                                 pure $
                                     Left
                                         ( execStateToKoreJson onlyNext
