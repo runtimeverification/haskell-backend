@@ -460,7 +460,10 @@ applyRule pat@Pattern{ceilConditions} rule =
 
                     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
                     -- any are false, remove all that are trivially true, return the rest
-                    ensuredConditions <- checkEnsures ruleSubstitution
+                    --
+                    -- we need to add unclearRequiresAfterSmt (if any) as additional known truth,
+                    -- as it may allow us to prune a vacuous state
+                    ensuredConditions <- checkEnsures ruleSubstitution unclearRequiresAfterSmt
 
                     -- if a new constraint is going to be added, the equation cache is invalid
                     unless (null ensuredConditions) $ do
@@ -603,12 +606,15 @@ applyRule pat@Pattern{ceilConditions} rule =
             SMT.IsValid ->
                 pure [] -- can proceed
     checkEnsures ::
-        Substitution -> RewriteRuleAppT (RewriteT io) [Predicate]
-    checkEnsures matchingSubst = do
+        Substitution -> [Predicate] -> RewriteRuleAppT (RewriteT io) [Predicate]
+    checkEnsures matchingSubst unclearRequiresAfterSmt = do
         -- apply substitution to rule ensures
         let ruleEnsures =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
-            knownConstraints = pat.constraints <> (Set.fromList . asEquations $ pat.substitution)
+            knownConstraints =
+                pat.constraints
+                    <> (Set.fromList . asEquations $ pat.substitution)
+                    <> Set.fromList unclearRequiresAfterSmt
         newConstraints <-
             catMaybes
                 <$> mapM
