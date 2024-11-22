@@ -149,22 +149,22 @@ If matching is successful, we now we have to check the rule's side-condition, ak
 
 The `requires` clause represents the logical "guard" that may impose constraints on the variables appearing on the left-hand side of the rule, thus allowing to formulate dynamic conditions of the rule's applicability.
 
-The requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Rewrite.hs#L496) function defined in the `where`-clause of `applyRul`e. It will:
+The requires clause check is encapsulated by the [checkRequires](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/Pattern/Rewrite.hs#L496) function defined in the `where`-clause of `applyRule`. It will:
 1. substitute the rule's requires clause with the matching substitution
-2. check if we already have any of the conjuncts verbatim in the pattern's constrains. If so, we filter them out as known truth
+2. check if we already have any of the conjuncts verbatim in the pattern's path condition (`PC`). If so, we filter them out as known truth
 3. simplify every conjunct individually by applying equations. This is morally equivalent to sending every conjunct as to the `"simplify"` endpoint and will use the same code path, bypassing internalisation.
-4. filter again, as the simplified conjuncts may not be present verbatim in the known truth
-5. if any clauses remain, it's time to fire-up Z3 and check them for validity.
-    - some rule will be rejected at that point, as their pre-condition P (the `requires` clause) is invalid, which means that the rule is applicable statically, but the dynamic conditions makes it inapplicable.
-    - some rules may have an indeterminate pre-condition P, which means that both P and its negation are satisfiable, i.e. the solver said (SAT, SAT) for (P, not P).
-      - in this case we can apply this rule conditionally, but add P into the path condition We will call `not P` the _remainder condition_ of this rule and keep track of it too
+4. check again whether any of the, now simplified, conjuncts  is present verbatim in the path condition
+5. if any clauses remain, check all conjuncts together with Z3 for validity given the path condition.
+    - some rule will be rejected at that point, as their pre-condition `P` (the `requires` clause) is false given `PC`, which means that the rule is applicable statically, but the dynamic conditions makes it inapplicable.
+    - some rules may have an indeterminate pre-condition `P`, which means that both `PC /\ P` and `PC /\ not P` are `SAT` in the solver, i.e., neither `P` nor  `not P` are implied by `PC`
+      - in this case we can apply this rule conditionally, but add `P` into the path condition We will call `not P` the _remainder condition_ of this rule and keep track of it too
         We effectively do the same if we cannot establish the validity of P due to a solver timeout, i.e. we add the predicate as an assumption. This may potentially lead to a vacuous branch as we discover more conditions further into the rewriting process.
-    -   some rules will have a valid requires clause, which means they definitely do apply and we do need to add anything else into the path condition as an assumption.
+    -   some rules will have a valid requires clause, i.e., `PC => P`, which means they definitely apply and we do not need to add anything else into the path condition as an assumption.
 
 See the [Booster.SMT.Interface](https://github.com/runtimeverification/haskell-backend/blob/master/booster/library/Booster/SMT/Interface.hs) module to learn more about how `Predicate`s are checked for satisfiable and validity using Z3.
 
 Bottom line:
-- if `requires` is UNSAT, we do not apply the rule, just if it didn't even match;
+- if `requires` is found to be false, we do not apply the rule, just as if it didn't even match;
 - otherwise, i.e. `requires` is either valid or indeterminate (remember, we are keeping track of the remainder), we can proceed to the next and final step
 
 #### [Checking `ensures` --- the rule's post-condition](#checking-ensures)
@@ -198,7 +198,7 @@ When Booster applies rewrite rules, they are grouped by priority. The group with
 
 During symbolic execution, we keep track of the current path condition --- a conjunction of logical constraints that specify an equivalence class of concrete execution states. In order to prevent state explosion, it is important to only create new symbolic states that are feasible. Priority groups enable a additional mechanism for that by enabling the semantics implementer to partition rules into complete groups, and only applying lower-priority rules under the conditions where higher-priority groups are not applicable.
 
-A priority group of rules gives raise to a group **coverage condition**, which is defined as a disjunction of the requires clauses of the rules in the group. If the coverage condition is valid, it means that no other rules can possibly apply. The negation of the coverage condition is called the group's coverage condition is called the **remainder condition**. The the remainder condition is unsatisfiable, then the coverage condition is valid, and the group is complete.
+A priority group of rules gives rise to a group **coverage condition**, which is defined as a disjunction of the requires clauses of the rules in the group. If the coverage condition is valid, it means that no other rules can possibly apply. The negation of the coverage condition is called the group's **remainder condition**. If the remainder condition is unsatisfiable, then the coverage condition is valid, and the group is complete.
 
 When applying rewrite rules, Booster will take note of any indeterminate rule conditions and use them to construct the groups remainder conditions:
 - when checking the `requires` clause of a rule, we compute the remainder condition `RULE_REM` of that attempted, which is the semantically-checked subset of the required conjuncts `P` which *unclear* after checking its entailment form the pattern's constrains `PC`, meaning that (PC /\ P, PC /\ not P) is (SAT, SAT) or any of the two queries were UNKNOWN
@@ -217,7 +217,7 @@ See [remainder-predicates.k](https://github.com/runtimeverification/haskell-back
 
 ### [Iterating Rules](#rewriting-many-steps)
 
-Successful rule application does not trigger pattern-wide simplification, i.e. very far and make many steps without simplifying the pattern even ones.
+Successful rule application does not trigger pattern-wide simplification, i.e. rewriting can proceed very far and make many steps without simplifying the pattern even once.
 We do need to perform a pattern-wide simplification if we hit any of the rule application abort conditions of the [single rule application algorithm](#rewriting-apply-single-rule).
 That allows us to leverage function and simplification equations to possibly simplify away the cause of the abort.
 See the [simplifier](#equations) section for details on how simplification and function evaluation is performed.
