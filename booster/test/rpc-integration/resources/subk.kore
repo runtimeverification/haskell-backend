@@ -69,6 +69,7 @@ module SUBK
 
 // sorts
   sort SortKCellOpt{} []
+  sort SortSubstate{} []
   sort SortKCell{} []
   hooked-sort SortMap{} [concat{}(Lbl'Unds'Map'Unds'{}()), element{}(Lbl'UndsPipe'-'-GT-Unds'{}()), hook{}("MAP.Map"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(218,3,218,29)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), unit{}(Lbl'Stop'Map{}())]
   sort SortKConfigVar{} [hasDomainValues{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(40,3,40,28)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/kast.md)"), token{}()]
@@ -125,6 +126,7 @@ module SUBK
   hooked-symbol Lbl'Unds'xorBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [function{}(), functional{}(), hook{}("BOOL.xor"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1112,19,1112,138)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), smt-hook{}("xor"), symbol'Kywd'{}("_xorBool_"), total{}()]
   hooked-symbol Lbl'UndsPipe'-'-GT-Unds'{}(SortKItem{}, SortKItem{}) : SortMap{} [function{}(), functional{}(), hook{}("MAP.element"), injective{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(257,18,257,119)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), symbol'Kywd'{}("_|->_"), total{}()]
   hooked-symbol Lbl'UndsPipe'Set'UndsUnds'SET'Unds'Set'Unds'Set'Unds'Set{}(SortSet{}, SortSet{}) : SortSet{} [function{}(), functional{}(), hook{}("SET.union"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(748,18,748,92)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), total{}()]
+  symbol Lblbong{}() : SortSubstate{} [constructor{}(), functional{}(), injective{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(32,23,32,46)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)"), symbol'Kywd'{}("bong")]
   symbol Lblf'LParUndsRParUnds'SUBK'Unds'State'Unds'State{}(SortState{}) : SortState{} [function{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(12,20,12,42)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
   hooked-symbol LblfillList'LParUndsCommUndsCommUndsCommUndsRParUnds'LIST'Unds'List'Unds'List'Unds'Int'Unds'Int'Unds'KItem{}(SortList{}, SortInt{}, SortInt{}, SortKItem{}) : SortList{} [function{}(), hook{}("LIST.fill"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1002,19,1002,100)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)")]
   symbol LblgetGeneratedCounterCell{}(SortGeneratedTopCell{}) : SortGeneratedCounterCell{} [function{}()]
@@ -134,6 +136,7 @@ module SUBK
   symbol LblinitKCell{}(SortMap{}) : SortKCell{} [function{}()]
   symbol LblinitXCell{}() : SortXCell{} [function{}(), functional{}(), total{}()]
   hooked-symbol LblintersectSet'LParUndsCommUndsRParUnds'SET'Unds'Set'Unds'Set'Unds'Set{}(SortSet{}, SortSet{}) : SortSet{} [function{}(), functional{}(), hook{}("SET.intersection"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(759,18,759,90)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), total{}()]
+  symbol LblisBong{}(SortState{}) : SortBool{} [function{}(), functional{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(34,19,34,71)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)"), symbol'Kywd'{}("isBong"), total{}()]
   symbol LblisBool{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   symbol LblisGeneratedCounterCell{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   symbol LblisGeneratedTopCell{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
@@ -148,6 +151,7 @@ module SUBK
   symbol LblisMap{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   symbol LblisSet{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   symbol LblisState{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
+  symbol LblisSubstate{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   symbol LblisXCell{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   symbol LblisXCellOpt{}(SortK{}) : SortBool{} [function{}(), functional{}(), total{}()]
   hooked-symbol Lblite{SortSort}(SortBool{}, SortSort, SortSort) : SortSort [function{}(), functional{}(), hook{}("KEQUAL.ite"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(2297,26,2297,132)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), smt-hook{}("ite"), symbol'Kywd'{}("ite"), total{}()]
@@ -173,6 +177,7 @@ module SUBK
   symbol Lblproject'Coln'Map{}(SortK{}) : SortMap{} [function{}()]
   symbol Lblproject'Coln'Set{}(SortK{}) : SortSet{} [function{}()]
   symbol Lblproject'Coln'State{}(SortK{}) : SortState{} [function{}()]
+  symbol Lblproject'Coln'Substate{}(SortK{}) : SortSubstate{} [function{}()]
   symbol Lblproject'Coln'XCell{}(SortK{}) : SortXCell{} [function{}()]
   symbol Lblproject'Coln'XCellOpt{}(SortK{}) : SortXCellOpt{} [function{}()]
   hooked-symbol LblpushList{}(SortKItem{}, SortList{}) : SortList{} [function{}(), functional{}(), hook{}("LIST.push"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(953,19,953,99)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), symbol'Kywd'{}("pushList"), total{}()]
@@ -190,6 +195,7 @@ module SUBK
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortMap{}, SortKItem{}} (From:SortMap{}))) [subsort{SortMap{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortKCell{}, SortKItem{}} (From:SortKCell{}))) [subsort{SortKCell{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortSet{}, SortKItem{}} (From:SortSet{}))) [subsort{SortSet{}, SortKItem{}}()] // subsort
+  axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortSubstate{}, SortKItem{}} (From:SortSubstate{}))) [subsort{SortSubstate{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortList{}, SortKItem{}} (From:SortList{}))) [subsort{SortList{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortGeneratedTopCell{}, SortKItem{}} (From:SortGeneratedTopCell{}))) [subsort{SortGeneratedTopCell{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortGeneratedCounterCell{}, SortKItem{}} (From:SortGeneratedCounterCell{}))) [subsort{SortGeneratedCounterCell{}, SortKItem{}}()] // subsort
@@ -200,6 +206,7 @@ module SUBK
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortGeneratedTopCellFragment{}, SortKItem{}} (From:SortGeneratedTopCellFragment{}))) [subsort{SortGeneratedTopCellFragment{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortXCell{}, SortKItem{}} (From:SortXCell{}))) [subsort{SortXCell{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortInt{}, SortKItem{}} (From:SortInt{}))) [subsort{SortInt{}, SortKItem{}}()] // subsort
+  axiom{R} \exists{R} (Val:SortState{}, \equals{SortState{}, R} (Val:SortState{}, inj{SortSubstate{}, SortState{}} (From:SortSubstate{}))) [subsort{SortSubstate{}, SortState{}}()] // subsort
   axiom{R} \exists{R} (Val:SortKItem{}, \equals{SortKItem{}, R} (Val:SortKItem{}, inj{SortKConfigVar{}, SortKItem{}} (From:SortKConfigVar{}))) [subsort{SortKConfigVar{}, SortKItem{}}()] // subsort
   axiom{R} \exists{R} (Val:SortList{}, \equals{SortList{}, R} (Val:SortList{}, Lbl'Stop'List{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortMap{}, \equals{SortMap{}, R} (Val:SortMap{}, Lbl'Stop'Map{}())) [functional{}()] // functional
@@ -249,10 +256,12 @@ module SUBK
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'xorBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortMap{}, \equals{SortMap{}, R} (Val:SortMap{}, Lbl'UndsPipe'-'-GT-Unds'{}(K0:SortKItem{}, K1:SortKItem{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortSet{}, \equals{SortSet{}, R} (Val:SortSet{}, Lbl'UndsPipe'Set'UndsUnds'SET'Unds'Set'Unds'Set'Unds'Set{}(K0:SortSet{}, K1:SortSet{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortSubstate{}, \equals{SortSubstate{}, R} (Val:SortSubstate{}, Lblbong{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, LblinK'LParUndsRParUnds'SUBK'Unds'K'Unds'State{}(K0:SortState{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortGeneratedCounterCell{}, \equals{SortGeneratedCounterCell{}, R} (Val:SortGeneratedCounterCell{}, LblinitGeneratedCounterCell{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortXCell{}, \equals{SortXCell{}, R} (Val:SortXCell{}, LblinitXCell{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortSet{}, \equals{SortSet{}, R} (Val:SortSet{}, LblintersectSet'LParUndsCommUndsRParUnds'SET'Unds'Set'Unds'Set'Unds'Set{}(K0:SortSet{}, K1:SortSet{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisBong{}(K0:SortState{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisBool{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisGeneratedCounterCell{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisGeneratedTopCell{}(K0:SortK{}))) [functional{}()] // functional
@@ -267,6 +276,7 @@ module SUBK
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisMap{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisSet{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisState{}(K0:SortK{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisSubstate{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisXCell{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblisXCellOpt{}(K0:SortK{}))) [functional{}()] // functional
   axiom{R, SortSort} \exists{R} (Val:SortSort, \equals{SortSort, R} (Val:SortSort, Lblite{SortSort}(K0:SortBool{}, K1:SortSort, K2:SortSort))) [functional{}()] // functional
@@ -294,8 +304,9 @@ module SUBK
   axiom{} \or{SortKCell{}} (\exists{SortKCell{}} (X0:SortK{}, Lbl'-LT-'k'-GT-'{}(X0:SortK{})), \bottom{SortKCell{}}()) [constructor{}()] // no junk
   axiom{} \or{SortKCellOpt{}} (LblnoKCell{}(), \exists{SortKCellOpt{}} (Val:SortKCell{}, inj{SortKCell{}, SortKCellOpt{}} (Val:SortKCell{})), \bottom{SortKCellOpt{}}()) [constructor{}()] // no junk
   axiom{} \or{SortKConfigVar{}} (\top{SortKConfigVar{}}(), \bottom{SortKConfigVar{}}()) [constructor{}()] // no junk (TODO: fix bug with \dv)
-  axiom{} \or{SortKItem{}} (\exists{SortKItem{}} (Val:SortBool{}, inj{SortBool{}, SortKItem{}} (Val:SortBool{})), \exists{SortKItem{}} (Val:SortGeneratedCounterCell{}, inj{SortGeneratedCounterCell{}, SortKItem{}} (Val:SortGeneratedCounterCell{})), \exists{SortKItem{}} (Val:SortGeneratedTopCell{}, inj{SortGeneratedTopCell{}, SortKItem{}} (Val:SortGeneratedTopCell{})), \exists{SortKItem{}} (Val:SortGeneratedTopCellFragment{}, inj{SortGeneratedTopCellFragment{}, SortKItem{}} (Val:SortGeneratedTopCellFragment{})), \exists{SortKItem{}} (Val:SortInt{}, inj{SortInt{}, SortKItem{}} (Val:SortInt{})), \exists{SortKItem{}} (Val:SortKCell{}, inj{SortKCell{}, SortKItem{}} (Val:SortKCell{})), \exists{SortKItem{}} (Val:SortKCellOpt{}, inj{SortKCellOpt{}, SortKItem{}} (Val:SortKCellOpt{})), \exists{SortKItem{}} (Val:SortKConfigVar{}, inj{SortKConfigVar{}, SortKItem{}} (Val:SortKConfigVar{})), \exists{SortKItem{}} (Val:SortList{}, inj{SortList{}, SortKItem{}} (Val:SortList{})), \exists{SortKItem{}} (Val:SortMap{}, inj{SortMap{}, SortKItem{}} (Val:SortMap{})), \exists{SortKItem{}} (Val:SortSet{}, inj{SortSet{}, SortKItem{}} (Val:SortSet{})), \exists{SortKItem{}} (Val:SortState{}, inj{SortState{}, SortKItem{}} (Val:SortState{})), \exists{SortKItem{}} (Val:SortXCell{}, inj{SortXCell{}, SortKItem{}} (Val:SortXCell{})), \exists{SortKItem{}} (Val:SortXCellOpt{}, inj{SortXCellOpt{}, SortKItem{}} (Val:SortXCellOpt{})), \bottom{SortKItem{}}()) [constructor{}()] // no junk
-  axiom{} \or{SortState{}} (Lblpeng{}(), Lblping{}(), Lblpong{}(), \bottom{SortState{}}()) [constructor{}()] // no junk
+  axiom{} \or{SortKItem{}} (\exists{SortKItem{}} (Val:SortBool{}, inj{SortBool{}, SortKItem{}} (Val:SortBool{})), \exists{SortKItem{}} (Val:SortGeneratedCounterCell{}, inj{SortGeneratedCounterCell{}, SortKItem{}} (Val:SortGeneratedCounterCell{})), \exists{SortKItem{}} (Val:SortGeneratedTopCell{}, inj{SortGeneratedTopCell{}, SortKItem{}} (Val:SortGeneratedTopCell{})), \exists{SortKItem{}} (Val:SortGeneratedTopCellFragment{}, inj{SortGeneratedTopCellFragment{}, SortKItem{}} (Val:SortGeneratedTopCellFragment{})), \exists{SortKItem{}} (Val:SortInt{}, inj{SortInt{}, SortKItem{}} (Val:SortInt{})), \exists{SortKItem{}} (Val:SortKCell{}, inj{SortKCell{}, SortKItem{}} (Val:SortKCell{})), \exists{SortKItem{}} (Val:SortKCellOpt{}, inj{SortKCellOpt{}, SortKItem{}} (Val:SortKCellOpt{})), \exists{SortKItem{}} (Val:SortKConfigVar{}, inj{SortKConfigVar{}, SortKItem{}} (Val:SortKConfigVar{})), \exists{SortKItem{}} (Val:SortList{}, inj{SortList{}, SortKItem{}} (Val:SortList{})), \exists{SortKItem{}} (Val:SortMap{}, inj{SortMap{}, SortKItem{}} (Val:SortMap{})), \exists{SortKItem{}} (Val:SortSet{}, inj{SortSet{}, SortKItem{}} (Val:SortSet{})), \exists{SortKItem{}} (Val:SortState{}, inj{SortState{}, SortKItem{}} (Val:SortState{})), \exists{SortKItem{}} (Val:SortSubstate{}, inj{SortSubstate{}, SortKItem{}} (Val:SortSubstate{})), \exists{SortKItem{}} (Val:SortXCell{}, inj{SortXCell{}, SortKItem{}} (Val:SortXCell{})), \exists{SortKItem{}} (Val:SortXCellOpt{}, inj{SortXCellOpt{}, SortKItem{}} (Val:SortXCellOpt{})), \bottom{SortKItem{}}()) [constructor{}()] // no junk
+  axiom{} \or{SortState{}} (Lblpeng{}(), Lblping{}(), Lblpong{}(), \exists{SortState{}} (Val:SortSubstate{}, inj{SortSubstate{}, SortState{}} (Val:SortSubstate{})), \bottom{SortState{}}()) [constructor{}()] // no junk
+  axiom{} \or{SortSubstate{}} (Lblbong{}(), \bottom{SortSubstate{}}()) [constructor{}()] // no junk
   axiom{} \or{SortXCell{}} (\exists{SortXCell{}} (X0:SortK{}, Lbl'-LT-'x'-GT-'{}(X0:SortK{})), \bottom{SortXCell{}}()) [constructor{}()] // no junk
   axiom{} \or{SortXCellOpt{}} (LblnoXCell{}(), \exists{SortXCellOpt{}} (Val:SortXCell{}, inj{SortXCell{}, SortXCellOpt{}} (Val:SortXCell{})), \bottom{SortXCellOpt{}}()) [constructor{}()] // no junk
 
@@ -1068,6 +1079,24 @@ module SUBK
         \top{SortXCell{}}())))
   [UNIQUE'Unds'ID{}("119714b103aacbf7cf4cae2ce465ee3971f1b861fc7c5adc99bdeaa2302a43d3")]
 
+// rule isBong(S)=>`_==K_`(inj{State,KItem}(S),inj{Substate,KItem}(bong(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(b4d3789b9d92bf86cc98b9c213f469f4615029fb39f64c4204077e0aff04b4da), org.kframework.attributes.Location(Location(36,8,36,31)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortState{}, R} (
+            X0:SortState{},
+            VarS:SortState{}
+          ),
+          \top{R} ()
+        )),
+    \equals{SortBool{},R} (
+      LblisBong{}(X0:SortState{}),
+     \and{SortBool{}} (
+       Lbl'UndsEqlsEqls'K'Unds'{}(kseq{}(inj{SortState{}, SortKItem{}}(VarS:SortState{}),dotk{}()),kseq{}(inj{SortSubstate{}, SortKItem{}}(Lblbong{}()),dotk{}())),
+        \top{SortBool{}}())))
+  [UNIQUE'Unds'ID{}("b4d3789b9d92bf86cc98b9c213f469f4615029fb39f64c4204077e0aff04b4da"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(36,8,36,31)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
+
 // rule isBool(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(495da551d13b205c8648618471ccfca028707f98eff21e6b11d591515ed6f29a), owise]
   axiom{R} \implies{R} (
     \and{R} (
@@ -1788,6 +1817,60 @@ module SUBK
         \top{SortBool{}}())))
   [UNIQUE'Unds'ID{}("ceb9d51d5c7c5b25ab9ccf22a73cd7052c451d3691001c59dcc1cd61e2836719")]
 
+// rule isSubstate(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(d603bdcc846279631a153f405ecf3ed449e3a5248eedac2aa4f8b74d578c9c34), owise]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \exists{R} (Var'Unds'Gen1:SortSubstate{},
+            \and{R} (
+              \top{R}(),
+              \and{R} (
+                \in{SortK{}, R} (
+                  X0:SortK{},
+                  kseq{}(inj{SortSubstate{}, SortKItem{}}(Var'Unds'Gen1:SortSubstate{}),dotk{}())
+                ),
+                \top{R} ()
+              )
+          )),
+          \bottom{R}()
+        )
+      ),
+      \and{R}(
+        \top{R}(),
+        \and{R} (
+          \in{SortK{}, R} (
+            X0:SortK{},
+            VarK:SortK{}
+          ),
+          \top{R} ()
+        )
+    )),
+    \equals{SortBool{},R} (
+      LblisSubstate{}(X0:SortK{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("false"),
+        \top{SortBool{}}())))
+  [UNIQUE'Unds'ID{}("d603bdcc846279631a153f405ecf3ed449e3a5248eedac2aa4f8b74d578c9c34"), owise{}()]
+
+// rule isSubstate(inj{Substate,KItem}(Substate))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(66e4fd5af3165f3aa70390117f82305c2d352f93fd7ab6ecce69a9bedc93794e)]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortK{}, R} (
+            X0:SortK{},
+            kseq{}(inj{SortSubstate{}, SortKItem{}}(VarSubstate:SortSubstate{}),dotk{}())
+          ),
+          \top{R} ()
+        )),
+    \equals{SortBool{},R} (
+      LblisSubstate{}(X0:SortK{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [UNIQUE'Unds'ID{}("66e4fd5af3165f3aa70390117f82305c2d352f93fd7ab6ecce69a9bedc93794e")]
+
 // rule isXCell(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(0089e3586d3cbb86cace345e8ff2f341155ba98e5544a3c0b8e65269211d35d4), owise]
   axiom{R} \implies{R} (
     \and{R} (
@@ -2222,6 +2305,24 @@ module SUBK
         \top{SortState{}}())))
   [UNIQUE'Unds'ID{}("9968995cc03f80d7d1a1b240f2de82b38e3967ff61d5479b20db6443a61ffcba")]
 
+// rule `project:Substate`(inj{Substate,KItem}(K))=>K requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(4ca9d192f9617bece616b232b295e05f7e94e2b2a11cdef6bc1e785a724563ed), projection]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortK{}, R} (
+            X0:SortK{},
+            kseq{}(inj{SortSubstate{}, SortKItem{}}(VarK:SortSubstate{}),dotk{}())
+          ),
+          \top{R} ()
+        )),
+    \equals{SortSubstate{},R} (
+      Lblproject'Coln'Substate{}(X0:SortK{}),
+     \and{SortSubstate{}} (
+       VarK:SortSubstate{},
+        \top{SortSubstate{}}())))
+  [UNIQUE'Unds'ID{}("4ca9d192f9617bece616b232b295e05f7e94e2b2a11cdef6bc1e785a724563ed")]
+
 // rule `project:XCell`(inj{XCell,KItem}(K))=>K requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(7f986a9dbee8e11412519863a47327e5b07d1e3e9613c84e5ee46e3051090cdb), projection]
   axiom{R} \implies{R} (
     \and{R}(
@@ -2290,4 +2391,4 @@ module SUBK
         \top{Q0}())))
   [simplification{}()]
 
-endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1,1,30,10)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
+endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1,1,38,10)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]

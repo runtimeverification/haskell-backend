@@ -27,4 +27,12 @@ module SUBK
                <x> X </x>
     requires notBool (X ==K inK(pong))
 
+  syntax State ::= Substate
+
+  syntax Substate ::= "bong" [symbol("bong")]
+
+  syntax Bool ::= isBong ( State ) [function, total, symbol("isBong")]
+
+  rule isBong(S) => S ==K bong
+
 endmodule

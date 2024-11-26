@@ -1,0 +1,9 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 2,
+        "data": "THIS TEST IS STILL BROKEN",
+        "message": "THIS TEST IS STILL BROKEN"
+    }
+}
