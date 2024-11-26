@@ -184,7 +184,7 @@ parseLogOptions =
             ( metavar "PRETTY_PRINT"
                 <> value [Decoded, Truncated]
                 <> long "pretty-print"
-                <> help "Pretty print options for kore terms: decode, infix, truncated, with-injections"
+                <> help "Pretty print options for kore terms: decoded, infix, truncated, with-injections"
                 <> showDefault
             )
   where
