@@ -80,7 +80,7 @@ module SUBK
   sort SortGeneratedCounterCell{} []
   hooked-sort SortSet{} [concat{}(Lbl'Unds'Set'Unds'{}()), element{}(LblSetItem{}()), hook{}("SET.Set"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(700,3,700,29)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), unit{}(Lbl'Stop'Set{}())]
   sort SortXCellOpt{} []
-  sort SortState{} [hasDomainValues{}()]
+  sort SortState{} []
   hooked-sort SortBool{} [hasDomainValues{}(), hook{}("BOOL.Bool"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1077,3,1077,32)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)")]
 
 // symbols
@@ -157,6 +157,9 @@ module SUBK
   symbol LblnoKCell{}() : SortKCellOpt{} [constructor{}(), functional{}(), injective{}()]
   symbol LblnoXCell{}() : SortXCellOpt{} [constructor{}(), functional{}(), injective{}()]
   hooked-symbol LblnotBool'Unds'{}(SortBool{}) : SortBool{} [function{}(), functional{}(), hook{}("BOOL.not"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1109,19,1109,131)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), smt-hook{}("not"), symbol'Kywd'{}("notBool_"), total{}()]
+  symbol Lblpeng{}() : SortState{} [constructor{}(), functional{}(), injective{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(7,20,7,43)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)"), symbol'Kywd'{}("peng")]
+  symbol Lblping{}() : SortState{} [constructor{}(), functional{}(), injective{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(5,20,5,43)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)"), symbol'Kywd'{}("ping")]
+  symbol Lblpong{}() : SortState{} [constructor{}(), functional{}(), injective{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(6,20,6,43)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)"), symbol'Kywd'{}("pong")]
   symbol Lblproject'Coln'Bool{}(SortK{}) : SortBool{} [function{}()]
   symbol Lblproject'Coln'GeneratedCounterCell{}(SortK{}) : SortGeneratedCounterCell{} [function{}()]
   symbol Lblproject'Coln'GeneratedTopCell{}(SortK{}) : SortGeneratedTopCell{} [function{}()]
@@ -271,6 +274,12 @@ module SUBK
   axiom{R} \exists{R} (Val:SortKCellOpt{}, \equals{SortKCellOpt{}, R} (Val:SortKCellOpt{}, LblnoKCell{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortXCellOpt{}, \equals{SortXCellOpt{}, R} (Val:SortXCellOpt{}, LblnoXCell{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblnotBool'Unds'{}(K0:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortState{}, \equals{SortState{}, R} (Val:SortState{}, Lblpeng{}())) [functional{}()] // functional
+  axiom{}\not{SortState{}} (\and{SortState{}} (Lblpeng{}(), Lblping{}())) [constructor{}()] // no confusion different constructors
+  axiom{}\not{SortState{}} (\and{SortState{}} (Lblpeng{}(), Lblpong{}())) [constructor{}()] // no confusion different constructors
+  axiom{R} \exists{R} (Val:SortState{}, \equals{SortState{}, R} (Val:SortState{}, Lblping{}())) [functional{}()] // functional
+  axiom{}\not{SortState{}} (\and{SortState{}} (Lblping{}(), Lblpong{}())) [constructor{}()] // no confusion different constructors
+  axiom{R} \exists{R} (Val:SortState{}, \equals{SortState{}, R} (Val:SortState{}, Lblpong{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortList{}, \equals{SortList{}, R} (Val:SortList{}, LblpushList{}(K0:SortKItem{}, K1:SortList{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortMap{}, \equals{SortMap{}, R} (Val:SortMap{}, LblremoveAll'LParUndsCommUndsRParUnds'MAP'Unds'Map'Unds'Map'Unds'Set{}(K0:SortMap{}, K1:SortSet{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortInt{}, \equals{SortInt{}, R} (Val:SortInt{}, Lblsize'LParUndsRParUnds'SET'Unds'Int'Unds'Set{}(K0:SortSet{}))) [functional{}()] // functional
@@ -286,7 +295,7 @@ module SUBK
   axiom{} \or{SortKCellOpt{}} (LblnoKCell{}(), \exists{SortKCellOpt{}} (Val:SortKCell{}, inj{SortKCell{}, SortKCellOpt{}} (Val:SortKCell{})), \bottom{SortKCellOpt{}}()) [constructor{}()] // no junk
   axiom{} \or{SortKConfigVar{}} (\top{SortKConfigVar{}}(), \bottom{SortKConfigVar{}}()) [constructor{}()] // no junk (TODO: fix bug with \dv)
   axiom{} \or{SortKItem{}} (\exists{SortKItem{}} (Val:SortBool{}, inj{SortBool{}, SortKItem{}} (Val:SortBool{})), \exists{SortKItem{}} (Val:SortGeneratedCounterCell{}, inj{SortGeneratedCounterCell{}, SortKItem{}} (Val:SortGeneratedCounterCell{})), \exists{SortKItem{}} (Val:SortGeneratedTopCell{}, inj{SortGeneratedTopCell{}, SortKItem{}} (Val:SortGeneratedTopCell{})), \exists{SortKItem{}} (Val:SortGeneratedTopCellFragment{}, inj{SortGeneratedTopCellFragment{}, SortKItem{}} (Val:SortGeneratedTopCellFragment{})), \exists{SortKItem{}} (Val:SortInt{}, inj{SortInt{}, SortKItem{}} (Val:SortInt{})), \exists{SortKItem{}} (Val:SortKCell{}, inj{SortKCell{}, SortKItem{}} (Val:SortKCell{})), \exists{SortKItem{}} (Val:SortKCellOpt{}, inj{SortKCellOpt{}, SortKItem{}} (Val:SortKCellOpt{})), \exists{SortKItem{}} (Val:SortKConfigVar{}, inj{SortKConfigVar{}, SortKItem{}} (Val:SortKConfigVar{})), \exists{SortKItem{}} (Val:SortList{}, inj{SortList{}, SortKItem{}} (Val:SortList{})), \exists{SortKItem{}} (Val:SortMap{}, inj{SortMap{}, SortKItem{}} (Val:SortMap{})), \exists{SortKItem{}} (Val:SortSet{}, inj{SortSet{}, SortKItem{}} (Val:SortSet{})), \exists{SortKItem{}} (Val:SortState{}, inj{SortState{}, SortKItem{}} (Val:SortState{})), \exists{SortKItem{}} (Val:SortXCell{}, inj{SortXCell{}, SortKItem{}} (Val:SortXCell{})), \exists{SortKItem{}} (Val:SortXCellOpt{}, inj{SortXCellOpt{}, SortKItem{}} (Val:SortXCellOpt{})), \bottom{SortKItem{}}()) [constructor{}()] // no junk
-  axiom{} \or{SortState{}} (\top{SortState{}}(), \bottom{SortState{}}()) [constructor{}()] // no junk (TODO: fix bug with \dv)
+  axiom{} \or{SortState{}} (Lblpeng{}(), Lblping{}(), Lblpong{}(), \bottom{SortState{}}()) [constructor{}()] // no junk
   axiom{} \or{SortXCell{}} (\exists{SortXCell{}} (X0:SortK{}, Lbl'-LT-'x'-GT-'{}(X0:SortK{})), \bottom{SortXCell{}}()) [constructor{}()] // no junk
   axiom{} \or{SortXCellOpt{}} (LblnoXCell{}(), \exists{SortXCellOpt{}} (Val:SortXCell{}, inj{SortXCell{}, SortXCellOpt{}} (Val:SortXCell{})), \bottom{SortXCellOpt{}}()) [constructor{}()] // no junk
 
@@ -451,27 +460,27 @@ module SUBK
         \top{Q0}())))
   [UNIQUE'Unds'ID{}("88327456f82448e5a8387e1b180240db11201dd91cad6b2086350a57ec6598c4"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1165,8,1165,55)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)"), simplification{}()]
 
-// rule `<generatedTop>`(`<k>`(inj{State,KItem}(#token("ping","State") #as _Gen3)~>_DotVar1),`<x>`(X) #as _Gen4,_DotVar0)=>`<generatedTop>`(`<k>`(inj{State,KItem}(`f(_)_SUBK_State_State`(#token("pong","State")))~>_DotVar1),_Gen4,_DotVar0) requires `notBool_`(`_==K_`(X,`inK(_)_SUBK_K_State`(_Gen3))) ensures #token("true","Bool") [UNIQUE_ID(ebda4896497b973d6d9835b7cbcd8d4b0b7b20387e9aefe2997bd14315afffb1), label(SUBK.ping), org.kframework.attributes.Location(Location(22,16,24,39)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody "requires" Bool [symbol(#ruleRequires)])]
+// rule `<generatedTop>`(`<k>`(inj{State,KItem}(ping(.KList) #as _Gen3)~>_DotVar1),`<x>`(X) #as _Gen4,_DotVar0)=>`<generatedTop>`(`<k>`(inj{State,KItem}(`f(_)_SUBK_State_State`(pong(.KList)))~>_DotVar1),_Gen4,_DotVar0) requires `notBool_`(`_==K_`(X,`inK(_)_SUBK_K_State`(_Gen3))) ensures #token("true","Bool") [UNIQUE_ID(98cad7ddbeaf48ca58dc43dc06831fb83c00e1d084edc7effc96fa9999860641), label(SUBK.ping), org.kframework.attributes.Location(Location(22,16,24,39)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody "requires" Bool [symbol(#ruleRequires)])]
   axiom{} \rewrites{SortGeneratedTopCell{}} (
       \and{SortGeneratedTopCell{}} (
-        Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\and{SortState{}}(\dv{SortState{}}("ping"),Var'Unds'Gen3:SortState{})),Var'Unds'DotVar1:SortK{})),\and{SortXCell{}}(Lbl'-LT-'x'-GT-'{}(VarX:SortK{}),Var'Unds'Gen4:SortXCell{}),Var'Unds'DotVar0:SortGeneratedCounterCell{}),
+        Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\and{SortState{}}(Lblping{}(),Var'Unds'Gen3:SortState{})),Var'Unds'DotVar1:SortK{})),\and{SortXCell{}}(Lbl'-LT-'x'-GT-'{}(VarX:SortK{}),Var'Unds'Gen4:SortXCell{}),Var'Unds'DotVar0:SortGeneratedCounterCell{}),
         \equals{SortBool{},SortGeneratedTopCell{}}(
         LblnotBool'Unds'{}(Lbl'UndsEqlsEqls'K'Unds'{}(VarX:SortK{},LblinK'LParUndsRParUnds'SUBK'Unds'K'Unds'State{}(Var'Unds'Gen3:SortState{}))),
         \dv{SortBool{}}("true"))),
       \and{SortGeneratedTopCell{}} (
-      Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(Lblf'LParUndsRParUnds'SUBK'Unds'State'Unds'State{}(\dv{SortState{}}("pong"))),Var'Unds'DotVar1:SortK{})),Var'Unds'Gen4:SortXCell{},Var'Unds'DotVar0:SortGeneratedCounterCell{}), \top{SortGeneratedTopCell{}}()))
-  [UNIQUE'Unds'ID{}("ebda4896497b973d6d9835b7cbcd8d4b0b7b20387e9aefe2997bd14315afffb1"), label{}("SUBK.ping"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(22,16,24,39)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
+      Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(Lblf'LParUndsRParUnds'SUBK'Unds'State'Unds'State{}(Lblpong{}())),Var'Unds'DotVar1:SortK{})),Var'Unds'Gen4:SortXCell{},Var'Unds'DotVar0:SortGeneratedCounterCell{}), \top{SortGeneratedTopCell{}}()))
+  [UNIQUE'Unds'ID{}("98cad7ddbeaf48ca58dc43dc06831fb83c00e1d084edc7effc96fa9999860641"), label{}("SUBK.ping"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(22,16,24,39)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
 
-// rule `<generatedTop>`(`<k>`(inj{State,KItem}(#token("pong","State") #as _Gen3)~>_DotVar1),`<x>`(X) #as _Gen4,_DotVar0)=>`<generatedTop>`(`<k>`(inj{State,KItem}(`f(_)_SUBK_State_State`(#token("ping","State")))~>_DotVar1),_Gen4,_DotVar0) requires `notBool_`(`_==K_`(X,`inK(_)_SUBK_K_State`(_Gen3))) ensures #token("true","Bool") [UNIQUE_ID(26d0e9f74bb1eb8489f9f36643e83db57af73fa4ac00d85ef3d548d9b1dd98d7), label(SUBK.pong), org.kframework.attributes.Location(Location(26,16,28,39)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody "requires" Bool [symbol(#ruleRequires)])]
+// rule `<generatedTop>`(`<k>`(inj{State,KItem}(pong(.KList) #as _Gen3)~>_DotVar1),`<x>`(X) #as _Gen4,_DotVar0)=>`<generatedTop>`(`<k>`(inj{State,KItem}(`f(_)_SUBK_State_State`(ping(.KList)))~>_DotVar1),_Gen4,_DotVar0) requires `notBool_`(`_==K_`(X,`inK(_)_SUBK_K_State`(_Gen3))) ensures #token("true","Bool") [UNIQUE_ID(54c365599f353c1e404daa27459cc43de0ac4d3b0bab81c66c518024e86d01f8), label(SUBK.pong), org.kframework.attributes.Location(Location(26,16,28,39)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody "requires" Bool [symbol(#ruleRequires)])]
   axiom{} \rewrites{SortGeneratedTopCell{}} (
       \and{SortGeneratedTopCell{}} (
-        Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\and{SortState{}}(\dv{SortState{}}("pong"),Var'Unds'Gen3:SortState{})),Var'Unds'DotVar1:SortK{})),\and{SortXCell{}}(Lbl'-LT-'x'-GT-'{}(VarX:SortK{}),Var'Unds'Gen4:SortXCell{}),Var'Unds'DotVar0:SortGeneratedCounterCell{}),
+        Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\and{SortState{}}(Lblpong{}(),Var'Unds'Gen3:SortState{})),Var'Unds'DotVar1:SortK{})),\and{SortXCell{}}(Lbl'-LT-'x'-GT-'{}(VarX:SortK{}),Var'Unds'Gen4:SortXCell{}),Var'Unds'DotVar0:SortGeneratedCounterCell{}),
         \equals{SortBool{},SortGeneratedTopCell{}}(
         LblnotBool'Unds'{}(Lbl'UndsEqlsEqls'K'Unds'{}(VarX:SortK{},LblinK'LParUndsRParUnds'SUBK'Unds'K'Unds'State{}(Var'Unds'Gen3:SortState{}))),
         \dv{SortBool{}}("true"))),
       \and{SortGeneratedTopCell{}} (
-      Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(Lblf'LParUndsRParUnds'SUBK'Unds'State'Unds'State{}(\dv{SortState{}}("ping"))),Var'Unds'DotVar1:SortK{})),Var'Unds'Gen4:SortXCell{},Var'Unds'DotVar0:SortGeneratedCounterCell{}), \top{SortGeneratedTopCell{}}()))
-  [UNIQUE'Unds'ID{}("26d0e9f74bb1eb8489f9f36643e83db57af73fa4ac00d85ef3d548d9b1dd98d7"), label{}("SUBK.pong"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(26,16,28,39)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
+      Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(Lblf'LParUndsRParUnds'SUBK'Unds'State'Unds'State{}(Lblping{}())),Var'Unds'DotVar1:SortK{})),Var'Unds'Gen4:SortXCell{},Var'Unds'DotVar0:SortGeneratedCounterCell{}), \top{SortGeneratedTopCell{}}()))
+  [UNIQUE'Unds'ID{}("54c365599f353c1e404daa27459cc43de0ac4d3b0bab81c66c518024e86d01f8"), label{}("SUBK.pong"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(26,16,28,39)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
 
 // rule `_=/=Bool_`(B1,B2)=>`notBool_`(`_==Bool_`(B1,B2)) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(31fe72efcfddcd8588a11d9d10c1b1a9f96ae3da46b647d4cb9d1e8b1bd1654f), org.kframework.attributes.Location(Location(1159,8,1159,57)), org.kframework.attributes.Source(Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
   axiom{R} \implies{R} (
@@ -923,14 +932,14 @@ module SUBK
         \top{SortSet{}}())))
   [UNIQUE'Unds'ID{}("c384edb8f3875244a593dda6163c3dee1bce5485e4e1848892aebc2bab67d2e9"), concrete{}(), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(749,8,749,45)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/xmmswds1pgn07d8xn8gcz8vd4a0apjxa-k-7.1.170-5c84d48f697b73ad779395c53b7edc934ed4e8f5/include/kframework/builtin/domains.md)")]
 
-// rule `f(_)_SUBK_State_State`(#token("ping","State") #as _Gen0)=>_Gen0 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(5b3666dce1231f1e1db100b09104277a13ac69574ffa5e7c65dc4078189aa197), org.kframework.attributes.Location(Location(16,8,16,23)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
+// rule `f(_)_SUBK_State_State`(ping(.KList) #as _Gen0)=>_Gen0 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(5d39adc858d68fb6625619e8c052536c61ae70e5da58c565b873e2ff051bf0cc), org.kframework.attributes.Location(Location(16,8,16,23)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
   axiom{R} \implies{R} (
     \and{R}(
       \top{R}(),
       \and{R} (
           \in{SortState{}, R} (
             X0:SortState{},
-            \and{SortState{}}(\dv{SortState{}}("ping"),Var'Unds'Gen0:SortState{})
+            \and{SortState{}}(Lblping{}(),Var'Unds'Gen0:SortState{})
           ),
           \top{R} ()
         )),
@@ -939,16 +948,16 @@ module SUBK
      \and{SortState{}} (
        Var'Unds'Gen0:SortState{},
         \top{SortState{}}())))
-  [UNIQUE'Unds'ID{}("5b3666dce1231f1e1db100b09104277a13ac69574ffa5e7c65dc4078189aa197"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(16,8,16,23)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
+  [UNIQUE'Unds'ID{}("5d39adc858d68fb6625619e8c052536c61ae70e5da58c565b873e2ff051bf0cc"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(16,8,16,23)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
 
-// rule `f(_)_SUBK_State_State`(#token("pong","State") #as _Gen0)=>_Gen0 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(9948640b8b12a9343a8f9f2b9c38419e77e201820dc5cac30385cacd99f9f0b1), org.kframework.attributes.Location(Location(17,8,17,23)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
+// rule `f(_)_SUBK_State_State`(pong(.KList) #as _Gen0)=>_Gen0 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(32a45e2529064b5fdf0f178b1b852298c2b80bbd96a18a2d8767a37feab1eaed), org.kframework.attributes.Location(Location(17,8,17,23)), org.kframework.attributes.Source(Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [symbol(#ruleNoConditions)])]
   axiom{R} \implies{R} (
     \and{R}(
       \top{R}(),
       \and{R} (
           \in{SortState{}, R} (
             X0:SortState{},
-            \and{SortState{}}(\dv{SortState{}}("pong"),Var'Unds'Gen0:SortState{})
+            \and{SortState{}}(Lblpong{}(),Var'Unds'Gen0:SortState{})
           ),
           \top{R} ()
         )),
@@ -957,7 +966,7 @@ module SUBK
      \and{SortState{}} (
        Var'Unds'Gen0:SortState{},
         \top{SortState{}}())))
-  [UNIQUE'Unds'ID{}("9948640b8b12a9343a8f9f2b9c38419e77e201820dc5cac30385cacd99f9f0b1"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(17,8,17,23)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
+  [UNIQUE'Unds'ID{}("32a45e2529064b5fdf0f178b1b852298c2b80bbd96a18a2d8767a37feab1eaed"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(17,8,17,23)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/booster/test/rpc-integration/resources/subk.k)")]
 
 // rule getGeneratedCounterCell(`<generatedTop>`(_Gen0,_Gen1,Cell))=>Cell requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(6aaa6e2dcc27f3f1c36a11a988ed5674f7b6892c35cde7937bcb682488aaf8e1)]
   axiom{R} \implies{R} (

@@ -2,9 +2,9 @@ module SUBK
   imports BOOL
   imports K-EQUAL
 
-  syntax State ::= "ping" [token]
-                 | "pong" [token]
-                 | "peng" [token]
+  syntax State ::= "ping" [symbol("ping")]
+                 | "pong" [symbol("pong")]
+                 | "peng" [symbol("peng")]
 
   configuration <k> $PGM:State ~> .K </k>
                 <x> .K </x>

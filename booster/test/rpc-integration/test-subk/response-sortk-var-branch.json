@@ -40,13 +40,10 @@
                                             ],
                                             "args": [
                                                 {
-                                                    "tag": "DV",
-                                                    "sort": {
-                                                        "tag": "SortApp",
-                                                        "name": "SortState",
-                                                        "args": []
-                                                    },
-                                                    "value": "ping"
+                                                    "tag": "App",
+                                                    "name": "Lblping",
+                                                    "sorts": [],
+                                                    "args": []
                                                 }
                                             ]
                                         },
@@ -133,13 +130,10 @@
                                                 ],
                                                 "args": [
                                                     {
-                                                        "tag": "DV",
-                                                        "sort": {
-                                                            "tag": "SortApp",
-                                                            "name": "SortState",
-                                                            "args": []
-                                                        },
-                                                        "value": "pong"
+                                                        "tag": "App",
+                                                        "name": "Lblpong",
+                                                        "sorts": [],
+                                                        "args": []
                                                     }
                                                 ]
                                             },
@@ -253,13 +247,10 @@
                                                     ],
                                                     "args": [
                                                         {
-                                                            "tag": "DV",
-                                                            "sort": {
-                                                                "tag": "SortApp",
-                                                                "name": "SortState",
-                                                                "args": []
-                                                            },
-                                                            "value": "ping"
+                                                            "tag": "App",
+                                                            "name": "Lblping",
+                                                            "sorts": [],
+                                                            "args": []
                                                         }
                                                     ]
                                                 },
@@ -277,7 +268,7 @@
                         }
                     }
                 },
-                "rule-id": "ebda4896497b973d6d9835b7cbcd8d4b0b7b20387e9aefe2997bd14315afffb1",
+                "rule-id": "98cad7ddbeaf48ca58dc43dc06831fb83c00e1d084edc7effc96fa9999860641",
                 "rule-predicate": {
                     "format": "KORE",
                     "version": 1,
@@ -331,13 +322,10 @@
                                         ],
                                         "args": [
                                             {
-                                                "tag": "DV",
-                                                "sort": {
-                                                    "tag": "SortApp",
-                                                    "name": "SortState",
-                                                    "args": []
-                                                },
-                                                "value": "ping"
+                                                "tag": "App",
+                                                "name": "Lblping",
+                                                "sorts": [],
+                                                "args": []
                                             }
                                         ]
                                     },
@@ -510,13 +498,10 @@
                                                 ],
                                                 "args": [
                                                     {
-                                                        "tag": "DV",
-                                                        "sort": {
-                                                            "tag": "SortApp",
-                                                            "name": "SortState",
-                                                            "args": []
-                                                        },
-                                                        "value": "ping"
+                                                        "tag": "App",
+                                                        "name": "Lblping",
+                                                        "sorts": [],
+                                                        "args": []
                                                     }
                                                 ]
                                             },
@@ -557,13 +542,10 @@
                                                 ],
                                                 "args": [
                                                     {
-                                                        "tag": "DV",
-                                                        "sort": {
-                                                            "tag": "SortApp",
-                                                            "name": "SortState",
-                                                            "args": []
-                                                        },
-                                                        "value": "ping"
+                                                        "tag": "App",
+                                                        "name": "Lblping",
+                                                        "sorts": [],
+                                                        "args": []
                                                     }
                                                 ]
                                             },
@@ -642,13 +624,10 @@
                                     ],
                                     "args": [
                                         {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortState",
-                                                "args": []
-                                            },
-                                            "value": "ping"
+                                            "tag": "App",
+                                            "name": "Lblping",
+                                            "sorts": [],
+                                            "args": []
                                         }
                                     ]
                                 },
