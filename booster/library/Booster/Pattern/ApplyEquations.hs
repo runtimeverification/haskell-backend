@@ -518,6 +518,15 @@ simplifyAssumedPredicate p = do
     newP <- simplifyConstraint' True $ coerce p
     pushConstraints $ Set.singleton $ coerce newP
 
+{- | Evaluate a set of predicates, assuming another given set of
+   predicats as a ground truth. Each predicate is checked assuming the
+   other predicates that haven't been checked are true, to remove
+   redundant ones.
+
+   Returns the set of remaining predicates after evaluating each
+   predicate once as described (including @TrueBool@ for predicates
+   that held true).
+-}
 evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
@@ -525,20 +534,23 @@ evaluateConstraints ::
     SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
+    Set Predicate ->
     io (Either EquationFailure (Set Predicate), SimplifierCache)
-evaluateConstraints def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache mempty . evaluateConstraints'
+evaluateConstraints def mLlvmLibrary smtSolver cache known =
+    runEquationT def mLlvmLibrary smtSolver cache known . evaluateConstraints'
 
 evaluateConstraints' ::
     LoggerMIO io =>
     Set Predicate ->
     EquationT io (Set Predicate)
 evaluateConstraints' constraints = do
+    initialPredicates <- predicates <$> getState
     pushConstraints constraints
-    -- evaluate all existing constraints, once
-    traverse_ simplifyAssumedPredicate . predicates =<< getState
+    -- evaluate all provided constraints, once
+    traverse_ simplifyAssumedPredicate constraints
     -- this may yield additional new constraints, left unevaluated
-    predicates <$> getState
+    finalPredicates <- predicates <$> getState
+    pure $ finalPredicates `Set.difference` initialPredicates
 
 ----------------------------------------
 

@@ -159,9 +159,15 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         (externaliseExistTerm existsL patL.term)
                                         (externaliseExistTerm existsR patR.term)
                                         subst
-                                else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
+                                else -- providing constraintsL as ground truth, check constraintsR (unless already included)
 
-                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+                                    ApplyEquations.evaluateConstraints
+                                        def
+                                        mLlvmLibrary
+                                        solver
+                                        mempty
+                                        constraintsL
+                                        filteredConsequentPreds >>= \case
                                         (Right newPreds, _) ->
                                             if all (== Predicate TrueBool) newPreds
                                                 then
