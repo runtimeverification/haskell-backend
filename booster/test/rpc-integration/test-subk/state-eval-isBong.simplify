@@ -1,0 +1,42 @@
+{
+    "format": "KORE",
+    "version": 1,
+    "term": {
+        "tag": "Equals",
+        "argSort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+        },
+        "sort": {
+            "tag": "SortApp",
+            "name": "SortGeneratedTopCell",
+            "args": []
+        },
+        "first": {
+            "tag": "DV",
+            "sort": {
+                "tag": "SortApp",
+                "name": "SortBool",
+                "args": []
+            },
+            "value": "true"
+        },
+        "second": {
+            "tag": "App",
+            "name": "LblisBong",
+            "sorts": [],
+            "args": [
+                {
+                    "tag": "EVar",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortState",
+                        "args": []
+                    },
+                    "name": "STATE"
+                }
+            ]
+        }
+    }
+}

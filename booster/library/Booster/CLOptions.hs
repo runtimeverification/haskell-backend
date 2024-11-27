@@ -184,7 +184,7 @@ parseLogOptions =
             ( metavar "PRETTY_PRINT"
                 <> value [Decoded, Truncated]
                 <> long "pretty-print"
-                <> help "Prety print options for kore terms: decode, infix, truncated"
+                <> help "Pretty print options for kore terms: decoded, infix, truncated, with-injections"
                 <> showDefault
             )
   where
@@ -210,7 +210,8 @@ parseLogOptions =
         "truncated" -> Right Truncated
         "infix" -> Right Infix
         "decoded" -> Right Decoded
-        other -> Left $ other <> ": Unsupported prettry printer option"
+        "with-injections" -> Right WithInjections
+        other -> Left $ other <> ": Unsupported pretty printer option"
 
     readTimeStampFormat :: String -> Either String TimestampFormat
     readTimeStampFormat = \case
