@@ -7,6 +7,8 @@ module Booster.Pattern.Implies (runImplies) where
 import Control.Monad (unless)
 import Control.Monad.Extra (void)
 import Control.Monad.Trans.Except (runExcept)
+import Data.Aeson (object, (.=))
+import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
 import Data.Data (Proxy)
 import Data.List.NonEmpty qualified as NonEmpty
@@ -19,22 +21,23 @@ import Prettyprinter (comma, hsep, punctuate, (<+>))
 
 import Booster.Definition.Base (KoreDefinition)
 import Booster.LLVM qualified
-import Booster.Log (getPrettyModifiers)
-import Booster.Log qualified
+import Booster.Log (getPrettyModifiers, logMessage, withContext, withContexts)
+import Booster.Log qualified as Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Predicate (..))
+import Booster.Pattern.Base (Pattern (..), Predicate (..), pattern Var)
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (Implies), matchTerms)
 import Booster.Pattern.Pretty (FromModifiersT, ModifiersRep (..), pretty')
 import Booster.Pattern.Substitution (asEquations, substituteInPredicate)
 import Booster.Pattern.Util (freeVariables, sortOfPattern)
-import Booster.Prettyprinter (renderDefault)
+import Booster.Prettyprinter (renderDefault, renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (addHeader, prettyPattern)
 import Booster.Syntax.Json.Externalise (
     externaliseExistTerm,
     externaliseSort,
     externaliseSubstitution,
+    externaliseTerm,
  )
 import Booster.Syntax.Json.Internalise (
     PatternOrTopOrBottom (..),
@@ -52,7 +55,7 @@ import Kore.JsonRpc.Types qualified as RpcTypes
 import Kore.Syntax.Json.Types qualified as Kore.Syntax
 
 runImplies ::
-    Booster.Log.LoggerMIO m =>
+    Log.LoggerMIO m =>
     KoreDefinition ->
     Maybe Booster.LLVM.API ->
     Maybe SMT.SMTOptions ->
@@ -61,7 +64,7 @@ runImplies ::
     m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
 runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
     getPrettyModifiers >>= \case
-        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> Booster.Log.withContext Booster.Log.CtxImplies $ do
+        ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> withContext Log.CtxImplies $ do
             solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
             -- internalise given constrained term
             let internalised korePat' =
@@ -92,15 +95,15 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     map (pack . renderDefault . pretty' @mods) $
                                         Set.toList freeVarsRminusL
                         | not (null unsupportedL) || not (null unsupportedR) -> do
-                            Booster.Log.logMessage
+                            logMessage
                                 ("aborting due to unsupported predicate parts" :: Text)
                             unless (null unsupportedL) $
-                                Booster.Log.withContext Booster.Log.CtxDetail $
-                                    Booster.Log.logMessage
+                                withContext Log.CtxDetail $
+                                    logMessage
                                         (Text.unwords $ map prettyPattern unsupportedL)
                             unless (null unsupportedR) $
-                                Booster.Log.withContext Booster.Log.CtxDetail $
-                                    Booster.Log.logMessage
+                                withContext Log.CtxDetail $
+                                    logMessage
                                         (Text.unwords $ map prettyPattern unsupportedR)
                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError $
                                 RpcError.ErrorWithContext "Could not internalise part of the configuration" $
@@ -118,12 +121,22 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         MatchFailed (SubsortingError sortError) ->
                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
                                 show sortError
-                        MatchFailed{} ->
+                        MatchFailed reason -> do
+                            withContexts [Log.CtxMatch, Log.CtxFailure] $ Log.logPretty' @mods reason
                             doesNotImply
                                 (sortOfPattern patL)
                                 (externaliseExistTerm existsL patL.term)
                                 (externaliseExistTerm existsR patR.term)
-                        MatchIndeterminate remainder ->
+                        MatchIndeterminate remainder -> do
+                            withContexts [Log.CtxMatch, Log.CtxIndeterminate] . logMessage $
+                                Log.WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
+                                    renderDefault $
+                                        "Uncertain about match with rule. Remainder:"
+                                        <+> ( hsep
+                                              $ punctuate comma
+                                              $ map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2)
+                                              $ NonEmpty.toList remainder
+                                            )
                             ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
@@ -143,6 +156,23 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
+                            withContexts [Log.CtxMatch, Log.CtxSuccess] $ logMessage ("Antecedent and Consequent are matching" :: Text)
+                            withContexts [Log.CtxMatch, Log.CtxSubstitution] . logMessage
+                                    $ Log.WithJsonMessage
+                                        ( object
+                                            [ "substitution"
+                                                .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)
+                                            ]
+                                        )
+                                    $ renderOneLineText
+                                    $ "Substitution:"
+                                        <+> ( hsep $
+                                                punctuate comma $
+                                                    map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
+                                                        Map.toList subst
+                                            )
+
+
                             let constraintsL =
                                     Set.map (substituteInPredicate subst) $
                                         patL.constraints <> (Set.fromList $ asEquations patL.substitution)
@@ -180,8 +210,8 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                                     -- here we conservatively abort (incomplete)
                                                     -- print all unclear predicates
                                                     let unclear = Set.toList $ Set.filter (/= Predicate TrueBool) newPreds
-                                                    Booster.Log.withContext Booster.Log.CtxDetail
-                                                        . Booster.Log.logMessage
+                                                    withContext Log.CtxDetail
+                                                        . logMessage
                                                         . renderDefault
                                                         . hsep
                                                         . punctuate comma
@@ -192,7 +222,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
 
             case (internalised antecedent.term, internalised consequent.term) of
                 (Left patternError, _) -> do
-                    void $ Booster.Log.withContext Booster.Log.CtxInternalise $ logPatternError patternError
+                    void $ withContext Log.CtxInternalise $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -200,7 +230,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                     [ patternErrorToRpcError patternError
                                     ]
                 (_, Left patternError) -> do
-                    void $ Booster.Log.withContext Booster.Log.CtxInternalise $ logPatternError patternError
+                    void $ withContext Log.CtxInternalise $ logPatternError patternError
                     pure $
                         Left $
                             RpcError.backendError $
@@ -242,6 +272,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         }
 
     doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
+
     implies' predicate s l r subst =
         pure $
             Right $
