@@ -99,7 +99,7 @@ externaliseExistTerm vars t = exist vars
 externalisePredicate :: Syntax.Sort -> Internal.Predicate -> Syntax.KorePattern
 externalisePredicate sort (Internal.Predicate t) =
     Syntax.KJEquals
-        { argSort = externaliseSort $ sortOfTerm t
+        { argSort = externaliseSort $ sortOfTerm t -- must actually be SortBool
         , sort
         , first = externaliseTerm Internal.TrueBool
         , second = externaliseTerm t
@@ -116,11 +116,20 @@ externaliseCeil sort (Internal.Ceil term) =
 externaliseSubstitution :: Syntax.Sort -> Internal.Variable -> Internal.Term -> Syntax.KorePattern
 externaliseSubstitution sort Internal.Variable{variableSort = iSort, variableName = iName} t =
     Syntax.KJEquals
-        { argSort = externaliseSort $ sortOfTerm t
+        { argSort = extISort
         , sort
-        , first = Syntax.KJEVar (varNameToId iName) (externaliseSort iSort)
-        , second = externaliseTerm t
+        , first = Syntax.KJEVar (varNameToId iName) extISort
+        , second = target
         }
+  where
+    extISort = externaliseSort iSort
+    -- The sort of the term not be iSort but must be a subsort of it.
+    -- We assume termSort < iSort but cannot check it.
+    termSort = sortOfTerm t
+    target
+        | termSort == iSort = externaliseTerm t
+        | otherwise =
+            externaliseTerm $ Internal.Injection termSort iSort t
 
 varNameToId :: Internal.VarName -> Syntax.Id
 varNameToId = Syntax.Id . Text.decodeLatin1

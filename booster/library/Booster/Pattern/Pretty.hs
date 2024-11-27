@@ -23,17 +23,20 @@ import Data.Data (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 
-data ModifierT = Truncated | Infix | Decoded deriving (Show)
+data ModifierT = WithInjections | Truncated | Infix | Decoded deriving (Show)
 
 data Modifiers = Modifiers
-    { isTruncated, isInfix, isDecoded :: Bool
+    { isWithInjections, isTruncated, isInfix, isDecoded :: Bool
     }
 
 defaultModifiers :: Modifiers
-defaultModifiers = Modifiers False False False
+defaultModifiers = Modifiers False False False False
 
 class FromModifierT (m :: ModifierT) where
     modifiers' :: Modifiers -> Modifiers
+
+instance FromModifierT 'WithInjections where
+    modifiers' m = m{isWithInjections = True}
 
 instance FromModifierT 'Truncated where
     modifiers' m = m{isTruncated = True}
@@ -60,6 +63,7 @@ toModifiersRep = go (ModifiersRep @'[] Proxy)
   where
     go rep@(ModifiersRep (Proxy :: Proxy mods)) = \case
         [] -> rep
+        (WithInjections : xs) -> go (ModifiersRep @('WithInjections ': mods) Proxy) xs
         (Truncated : xs) -> go (ModifiersRep @('Truncated ': mods) Proxy) xs
         (Infix : xs) -> go (ModifiersRep @('Infix ': mods) Proxy) xs
         (Decoded : xs) -> go (ModifiersRep @('Decoded ': mods) Proxy) xs
@@ -89,7 +93,13 @@ instance Pretty (PrettyWithModifiers mods Term) where
         DotDotDot -> "..."
         DomainValue _sort bs -> pretty . show . Text.decodeLatin1 . shortenBS $ bs
         Var var -> pretty' @mods var
-        Injection _source _target t' -> pretty' @mods t'
+        Injection source target t'
+            | isWithInjections ->
+                "inj"
+                    <> Pretty.braces
+                        (Pretty.hsep $ Pretty.punctuate Pretty.comma [pretty' @mods source, pretty' @mods target])
+                    <> KPretty.arguments' [pretty' @mods t']
+            | otherwise -> pretty' @mods t'
         KMap _attrs keyVals rest ->
             Pretty.braces . Pretty.hsep . Pretty.punctuate Pretty.comma $
                 [pretty' @mods k <+> "->" <+> pretty' @mods v | (k, v) <- keyVals]
@@ -110,7 +120,8 @@ instance Pretty (PrettyWithModifiers mods Term) where
                 Pretty.<+> maybe mempty ((" ++ " <>) . pretty' @mods) rest
       where
         Modifiers
-            { isTruncated
+            { isWithInjections
+            , isTruncated
             , isInfix
             , isDecoded
             } = modifiers @mods defaultModifiers
