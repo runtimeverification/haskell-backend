@@ -26,7 +26,7 @@ import Booster.Pattern.Base (Pattern (..), Predicate (..))
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (Implies), matchTerms)
 import Booster.Pattern.Pretty (FromModifiersT, ModifiersRep (..), pretty')
-import Booster.Pattern.Substitution (asEquations)
+import Booster.Pattern.Substitution (asEquations, substituteInPredicate)
 import Booster.Pattern.Util (freeVariables, sortOfPattern)
 import Booster.Prettyprinter (renderDefault)
 import Booster.SMT.Interface qualified as SMT
@@ -143,9 +143,14 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
-                            let filteredConsequentPreds =
-                                    (patR.constraints <> (Set.fromList $ asEquations patR.substitution))
-                                        `Set.difference` (patL.constraints <> (Set.fromList $ asEquations patL.substitution))
+                            let constraintsL =
+                                    Set.map (substituteInPredicate subst) $
+                                        patL.constraints <> (Set.fromList $ asEquations patL.substitution)
+                                constraintsR =
+                                    Set.map (substituteInPredicate subst) $
+                                        patR.constraints <> (Set.fromList $ asEquations patR.substitution)
+
+                            let filteredConsequentPreds = constraintsR `Set.difference` constraintsL
 
                             if null filteredConsequentPreds
                                 then
