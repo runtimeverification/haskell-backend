@@ -82,13 +82,10 @@
                         ],
                         "args": [
                             {
-                                "tag": "DV",
-                                "value": "init",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortState",
-                                    "args": []
-                                }
+                                "tag": "App",
+                                "name": "Lblpeng",
+                                "sorts": [],
+                                "args": []
                             }
                         ]
                     },

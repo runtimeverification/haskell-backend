@@ -1,0 +1,56 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "state": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "Equals",
+                "argSort": {
+                    "tag": "SortApp",
+                    "name": "SortState",
+                    "args": []
+                },
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortGeneratedTopCell",
+                    "args": []
+                },
+                "first": {
+                    "tag": "EVar",
+                    "name": "STATE",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortState",
+                        "args": []
+                    }
+                },
+                "second": {
+                    "tag": "App",
+                    "name": "inj",
+                    "sorts": [
+                        {
+                            "tag": "SortApp",
+                            "name": "SortSubstate",
+                            "args": []
+                        },
+                        {
+                            "tag": "SortApp",
+                            "name": "SortState",
+                            "args": []
+                        }
+                    ],
+                    "args": [
+                        {
+                            "tag": "App",
+                            "name": "Lblbong",
+                            "sorts": [],
+                            "args": []
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
