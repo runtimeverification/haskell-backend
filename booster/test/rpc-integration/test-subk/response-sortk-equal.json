@@ -47,12 +47,12 @@
                                 "args": [
                                     {
                                         "tag": "EVar",
+                                        "name": "STATE1",
                                         "sort": {
                                             "tag": "SortApp",
                                             "name": "SortState",
                                             "args": []
-                                        },
-                                        "name": "STATE1"
+                                        }
                                     }
                                 ]
                             },
@@ -86,13 +86,10 @@
                                 ],
                                 "args": [
                                     {
-                                        "tag": "DV",
-                                        "value": "init",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortState",
-                                            "args": []
-                                        }
+                                        "tag": "App",
+                                        "name": "Lblpeng",
+                                        "sorts": [],
+                                        "args": []
                                     }
                                 ]
                             },

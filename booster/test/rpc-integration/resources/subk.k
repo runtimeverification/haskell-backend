@@ -2,9 +2,9 @@ module SUBK
   imports BOOL
   imports K-EQUAL
 
-  syntax State ::= "ping" [token]
-                 | "pong" [token]
-                 | "peng" [token]
+  syntax State ::= "ping" [symbol("ping")]
+                 | "pong" [symbol("pong")]
+                 | "peng" [symbol("peng")]
 
   configuration <k> $PGM:State ~> .K </k>
                 <x> .K </x>
@@ -26,5 +26,13 @@ module SUBK
   rule [pong]: <k> pong => f(ping) ... </k>
                <x> X </x>
     requires notBool (X ==K inK(pong))
+
+  syntax State ::= Substate
+
+  syntax Substate ::= "bong" [symbol("bong")]
+
+  syntax Bool ::= isBong ( State ) [function, total, symbol("isBong")]
+
+  rule isBong(S) => S ==K bong
 
 endmodule

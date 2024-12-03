@@ -40,13 +40,10 @@
                                             ],
                                             "args": [
                                                 {
-                                                    "tag": "DV",
-                                                    "sort": {
-                                                        "tag": "SortApp",
-                                                        "name": "SortState",
-                                                        "args": []
-                                                    },
-                                                    "value": "pong"
+                                                    "tag": "App",
+                                                    "name": "Lblpong",
+                                                    "sorts": [],
+                                                    "args": []
                                                 }
                                             ]
                                         },
@@ -87,13 +84,10 @@
                                             ],
                                             "args": [
                                                 {
-                                                    "tag": "DV",
-                                                    "sort": {
-                                                        "tag": "SortApp",
-                                                        "name": "SortState",
-                                                        "args": []
-                                                    },
-                                                    "value": "pong"
+                                                    "tag": "App",
+                                                    "name": "Lblpong",
+                                                    "sorts": [],
+                                                    "args": []
                                                 }
                                             ]
                                         },

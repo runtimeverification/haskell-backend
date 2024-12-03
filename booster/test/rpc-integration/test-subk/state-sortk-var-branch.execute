@@ -33,13 +33,10 @@
                                 ],
                                 "args": [
                                     {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortState",
-                                            "args": []
-                                        },
-                                        "value": "ping"
+                                        "tag": "App",
+                                        "name": "Lblping",
+                                        "sorts": [],
+                                        "args": []
                                     }
                                 ]
                             },
