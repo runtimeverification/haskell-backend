@@ -590,15 +590,18 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
         SMT.checkPredicates solver pat.constraints pat.substitution (Set.fromList stillUnclear) >>= \case
-            SMT.IsUnknown reason -> do
-                withContext CtxWarn $ logMessage reason
-                -- return unclear rewrite rule condition if the condition is indeterminate
-                withContext CtxConstraint . withContext CtxWarn . logMessage $
+            SMT.IsUnknown SMT.ImplicationIndeterminate -> do
+                -- return unclear conditions if SMT solver reports the condition indeterminate
+                withContexts [CtxConstraint, CtxSMT] . logMessage $
                     WithJsonMessage (object ["conditions" .= (externaliseTerm . coerce <$> stillUnclear)]) $
                         renderOneLineText $
-                            "Uncertain about condition(s) in a rule:"
+                            "Indeterminate condition(s) after SMT solver:"
                                 <+> (hsep . punctuate comma . map (pretty' @mods) $ stillUnclear)
-                pure unclearRequires
+                pure stillUnclear
+            SMT.IsUnknown reason -> do
+                -- abort on unclear predicates due to SMT solver timeout or inconsistent ground truth
+                withContexts [CtxConstraint, CtxSMT, CtxWarn] $ logMessage reason
+                smtUnclear stillUnclear
             SMT.IsInvalid -> do
                 -- requires is actually false given the prior
                 withContext CtxFailure $ logMessage ("Required clauses evaluated to #Bottom." :: Text)
@@ -649,7 +652,7 @@ applyRule pat@Pattern{ceilConditions} rule =
 
         pure newConstraints
 
-    smtUnclear :: [Predicate] -> RewriteRuleAppT (RewriteT io) ()
+    smtUnclear :: [Predicate] -> RewriteRuleAppT (RewriteT io) a
     smtUnclear predicates = do
         ModifiersRep (_ :: FromModifiersT mods => Proxy mods) <- getPrettyModifiers
         withContext CtxConstraint . withContext CtxAbort . logMessage $
