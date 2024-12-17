@@ -17,7 +17,7 @@ import Control.Monad.Trans.Reader (runReaderT)
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text (Text, unpack)
 import Data.Text.Encoding qualified as Text
 import Options.Applicative
@@ -163,6 +163,7 @@ runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOpti
                         }
             jsonRpcServer
                 (serverSettings port "*")
+                (isJust mLlvmLibrary) -- run in bound threads if LLVM library in use
                 ( \rawReq req ->
                     flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                         . Booster.Log.unLoggerT
