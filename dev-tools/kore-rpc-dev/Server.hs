@@ -240,6 +240,7 @@ main = do
                     server =
                         jsonRpcServer
                             srvSettings
+                            False -- no bound threads
                             (\rawReq -> runBoosterLogger . respond (koreRespond $ getReqId rawReq))
                             [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
                     interruptHandler _ = do
