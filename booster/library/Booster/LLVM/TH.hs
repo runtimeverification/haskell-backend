@@ -89,9 +89,9 @@ foreignImport name' ty' = do
     libHandle <- TH.newName "libHandle"
 
     pure
-        [ -- foreign import ccall unsafe "dynamic"  <camel_name>Unwrap :: FunPtr <ty> -> <ty>
+        [ -- foreign import ccall "dynamic" <camel_name>Unwrap :: FunPtr <ty> -> <ty>
           TH.ForeignD $
-            TH.ImportF TH.CCall TH.Unsafe "dynamic" nameUnwrap $
+            TH.ImportF TH.CCall TH.Safe "dynamic" nameUnwrap $
                 TH.AppT (TH.AppT TH.ArrowT $ TH.AppT (TH.ConT ''FunPtr) ty) ty
         , -- <camel_name>FunPtr :: ReaderT DL IO (FunPtr <ty>)
           TH.SigD
