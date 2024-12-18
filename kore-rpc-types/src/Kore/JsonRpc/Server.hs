@@ -14,7 +14,7 @@ module Kore.JsonRpc.Server (
     JsonRpcHandler (..),
 ) where
 
-import Control.Concurrent (forkIO, forkOS, throwTo)
+import Control.Concurrent (forkIO, runInBoundThread, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
 import Control.Monad (forever)
@@ -135,7 +135,10 @@ srv runBound respond handlers = do
             sendResponses r = Log.runNoLoggingT $ flip runReaderT rpcSession $ sendBatchResponse r
 
             respondTo :: Request -> IO (Maybe Response)
-            respondTo req = buildResponse (respond req) req
+            respondTo req
+                | runBound = runInBoundThread $ buildResponse (respond req) req
+                | otherwise = buildResponse (respond req) req
+            -- workers should run in bound threads (to secure foreign calls) when flagged
 
             cancelReq :: ErrorObj -> BatchRequest -> IO ()
             cancelReq err = \case
@@ -174,8 +177,7 @@ srv runBound respond handlers = do
                     restore (thing a) `catch` catchesHandler a
 
         liftIO $
-            -- workers should run in bound threads (to secure foreign calls) when flagged
-            (if runBound then forkOS else forkIO) $
+            forkIO $
                 forever $
                     bracketOnReqException
                         (atomically $ readTChan reqQueue)
