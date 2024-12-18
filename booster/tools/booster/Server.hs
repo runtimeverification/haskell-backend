@@ -334,6 +334,7 @@ main = do
                     server =
                         jsonRpcServer
                             srvSettings
+                            (isJust mLlvmLibrary) -- run with bound threads if LLVM API in use
                             ( \rawReq req ->
                                 let reqId = getReqId rawReq
                                  in runBoosterLogger $ do
