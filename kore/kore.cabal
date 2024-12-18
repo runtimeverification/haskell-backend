@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name:           kore
-version:        0.1.105
+version:        0.1.106
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/runtimeverification/haskell-backend#readme
