@@ -14,7 +14,7 @@ module Kore.JsonRpc.Server (
     JsonRpcHandler (..),
 ) where
 
-import Control.Concurrent (forkIO, throwTo)
+import Control.Concurrent (forkIO, forkOS, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
 import Control.Monad (forever)
@@ -78,11 +78,14 @@ jsonRpcServer ::
     (MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
     -- | Connection settings
     ServerSettings ->
+    -- | run workers in bound threads (required if worker below uses
+    -- foreign calls with thread-local state)
+    Bool ->
     -- | Action to perform on connecting client thread
     (Request -> Respond q IO r) ->
     [JsonRpcHandler] ->
     m a
-jsonRpcServer serverSettings respond handlers =
+jsonRpcServer serverSettings runBound respond handlers =
     runGeneralTCPServer serverSettings $ \cl ->
         Log.runNoLoggingT $
             runJSONRPCT
@@ -93,17 +96,18 @@ jsonRpcServer serverSettings respond handlers =
                 False
                 (appSink cl)
                 (appSource cl)
-                (srv respond handlers)
+                (srv runBound respond handlers)
 
 data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> IO ErrorObj)
 
 srv ::
     forall m q r.
     (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) =>
+    Bool ->
     (Request -> Respond q IO r) ->
     [JsonRpcHandler] ->
     JSONRPCT m ()
-srv respond handlers = do
+srv runBound respond handlers = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             let loop =
@@ -170,7 +174,8 @@ srv respond handlers = do
                     restore (thing a) `catch` catchesHandler a
 
         liftIO $
-            forkIO $
+            -- workers should run in bound threads (to secure foreign calls) when flagged
+            (if runBound then forkOS else forkIO) $
                 forever $
                     bracketOnReqException
                         (atomically $ readTChan reqQueue)
