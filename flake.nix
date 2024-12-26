@@ -5,7 +5,7 @@
     nixpkgs.follows = "rv-utils/nixpkgs";
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
-      url = "github:Z3Prover/z3/z3-4.13.0";
+      url = "github:Z3Prover/z3/z3-4.13.4";
       flake = false;
     };
   };
