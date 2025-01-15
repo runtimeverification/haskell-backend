@@ -187,8 +187,8 @@ A sort is either a _sort variable_ or a _sort constructor_ applied to a list of 
       "\top" "{" <sort> "}" "(" ")"
     | "\bottom" "{" <sort> "}" "(" ")"
     | "\not" "{" <sort> "}" "(" <pattern> ")"
-    | "\and" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
-    | "\or" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
+    | "\and" "{" <sort> "}" "(" <patterns> ")"
+    | "\or" "{" <sort> "}" "(" <patterns> ")"
     | "\implies" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
     | "\iff" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
     // Quantifiers
@@ -213,10 +213,10 @@ A sort is either a _sort variable_ or a _sort constructor_ applied to a list of 
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
 ```
 
-The left-assoc (resp. right-assoc) construct allows a chain of applications of
+The `left-assoc` (resp. `right-assoc`) construct allows a chain of applications of
 left associative (resp. right associative) binary symbols to be flattened.
-For example (simplified), `\and(\and(P1, P2), P3)` can be represented as
-`\left-assoc(\and(P1, P2, P3))`.
+For example, `foo(foo(P1, P2), P3)` can be represented as
+`\left-assoc(foo(P1, P2, P3))`.
 
 ### Attributes
 
