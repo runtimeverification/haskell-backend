@@ -55,10 +55,20 @@ jobs:
         uses: cachix/cachix-action@v14
         with:
           name: k-framework
+          extraPullNames: k-framework-binary
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
-      - name: Build
-        run: nix build .#kore-exec .#kore-rpc-booster
+      - name: 'Build and Cache'
+        uses: workflow/nix-shell-action@v3
+        env:
+          GC_DONT_GC: 1
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_PUBLIC_TOKEN }}
+        with:
+          packages: jq
+          script: |
+            HASKELL_BACKEND=$(nix build --extra-experimental-features 'nix-command flakes' .#kore-exec .#kore-rpc-booster --json | jq -r '.[].outputs | to_entries[].value')
+            DRV=$(nix-store --query --deriver ${HASKELL_BACKEND})
+            nix-store --query --requisites --include-outputs ${DRV} | cachix push k-framework-binary
 
   ubuntu-package:
     name: 'Build Ubuntu package'
