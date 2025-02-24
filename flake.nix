@@ -2,7 +2,8 @@
   description = "K Kore Language Haskell Backend";
   inputs = {
     rv-utils.url = "github:runtimeverification/rv-nix-tools";
-    nixpkgs.follows = "rv-utils/nixpkgs";
+    # nixpkgs.follows = "rv-utils/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable"; # FIXME!
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
@@ -28,13 +29,12 @@
             makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
           '';
         };
-      # This should based on the compiler version from the resolver in stack.yaml.
-      ghcVersion = pkgs: pkgs.haskell.packages.ghc965;
+      # This should match the compiler version from the resolver in stack.yaml.
+      ghcVersion = pkgs: pkgs.haskell.packages.ghc984;
     in {
       overlay = final: prev: {
         haskell-backend = final.stacklock2nix {
           stackYaml = ./stack.yaml;
-          # This should based on the compiler version from the resolver in stack.yaml.
           baseHaskellPkgSet = ghcVersion final;
           cabal2nixArgsOverrides = args:
             args // {
@@ -47,7 +47,6 @@
           additionalHaskellPkgSetOverrides = hfinal: hprev:
             with final.haskell.lib; {
               crypton-x509 = dontCheck hprev.crypton-x509;
-              data-fix = doJailbreak hprev.data-fix;
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
               fgl-arbitrary = dontCheck hprev.fgl-arbitrary;
@@ -55,12 +54,8 @@
               json-rpc = dontCheck hprev.json-rpc;
               lifted-base = dontCheck hprev.lifted-base;
               prettyprinter = dontCheck hprev.prettyprinter;
-              semialign = doJailbreak hprev.semialign;
+              primitive-unlifted = dontCheck hprev.primitive-unlifted;
               smtlib-backends-process = dontCheck hprev.smtlib-backends-process;
-              tar = dontCheck hprev.tar;
-              text-short = doJailbreak hprev.text-short;
-              these = doJailbreak hprev.these;
-              ghc-prof = doJailbreak hprev.ghc-prof;
               hs-backend-booster = overrideCabal hprev.hs-backend-booster
                 (drv: {
                   doCheck = false;
@@ -104,8 +99,8 @@
           # this need to be bumped if changing the stack resolver
           all-cabal-hashes = final.fetchurl {
             url =
-              "https://github.com/commercialhaskell/all-cabal-hashes/archive/ce857734d7d4c0fad3f6dda3a4db052836ed4619.tar.gz";
-            sha256 = "sha256-Q7Zg32v5ubjVJMQXGiyyMmeFg08jTzVRKC18laiHCPE=";
+              "https://github.com/commercialhaskell/all-cabal-hashes/archive/7a0542e6f0122602fcc0bdba41dea0febfd2df6d.tar.gz";
+            sha256 = "sha256-TIwCyv9+COsTA9YYTnwj2M7jZb5PdisJfWoLjpi7UY0=";
           };
         };
       };
