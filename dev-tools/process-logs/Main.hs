@@ -271,11 +271,12 @@ ruleStats = Map.fromListWith (<>) . collect
     interesting (CLWithId c') = isRuleCtx c'
 
     fromCtxSpan :: Seq CLContext -> [LogLine] -> (RuleStats, [LogLine])
-    fromCtxSpan prefix ls
-        | null prefixLines =
-            error "Should have at least one line with the prefix" -- see above
-        | otherwise =
-            (mkOutcome (head prefixLines) (last prefixLines), rest)
+    fromCtxSpan prefix ls =
+        case prefixLines of
+            [] ->
+                error "Should have at least one line with the prefix" -- see above
+            hd : _ ->
+                (mkOutcome hd (last prefixLines), rest)
       where
         len = Seq.length prefix
 
