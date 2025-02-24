@@ -488,7 +488,7 @@ mkSubstitution initialSubst =
                 Map.fromListWith (<>) [(v, [t]) | SubstitutionPred v t <- initialSubst]
         equations =
             [Internal.mkEq v t | (v, ts) <- Map.assocs duplicates, t <- ts]
-     in execState breakCycles (Map.map (!!0) substMap, equations)
+     in execState breakCycles (Map.map (!! 0) substMap, equations)
   where
     breakCycles :: State (Map Internal.Variable Internal.Term, [Internal.Predicate]) ()
     breakCycles = do

@@ -1016,8 +1016,9 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
             DefinitionPatternError (sourceRef attrs) CeilNotAllowed
     case unsupported of
         [] -> pure ()
-        x : _ -> throwE $
-            DefinitionPatternError (sourceRef attrs) (NotSupported x)
+        x : _ ->
+            throwE $
+                DefinitionPatternError (sourceRef attrs) (NotSupported x)
     -- extract argument binders from predicates and inline in to LHS term
     argPairs <- mapM internaliseArg args
     let lhs =

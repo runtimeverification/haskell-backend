@@ -223,7 +223,7 @@ debugConstr (SOP.Constructor name) args =
   where
     name' = parens needsParens (Pretty.pretty name)
       where
-        initial = name!!0
+        initial = name !! 0
         needsParens = (not . Char.isLetter) initial && initial /= '('
     args' = map ($ precConstr) (SOP.hcollapse args)
 debugConstr (SOP.Infix name _ precInfix) (K x :* K y :* Nil) =
