@@ -57,6 +57,7 @@
               lifted-base = dontCheck hprev.lifted-base;
               prettyprinter = dontCheck hprev.prettyprinter;
               primitive-unlifted = dontCheck hprev.primitive-unlifted;
+              serialise = dontCheck hprev.serialise;
               smtlib-backends-process = dontCheck hprev.smtlib-backends-process;
               hs-backend-booster = overrideCabal hprev.hs-backend-booster
                 (drv: {
