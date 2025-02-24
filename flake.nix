@@ -47,6 +47,7 @@
           additionalHaskellPkgSetOverrides = hfinal: hprev:
             with final.haskell.lib; {
               bytebuild = dontCheck hprev.bytebuild;
+              cborg = dontCheck hprev.cborg;
               crypton-x509 = dontCheck hprev.crypton-x509;
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
