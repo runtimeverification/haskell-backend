@@ -3,7 +3,7 @@
   inputs = {
     rv-utils.url = "github:runtimeverification/rv-nix-tools";
     # nixpkgs.follows = "rv-utils/nixpkgs";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable"; # FIXME!
+    nixpkgs.url = "github:NixOS/nixpkgs/410fedb0b2521255efe3ab79010add3580410ee0"; # FIXME!
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
