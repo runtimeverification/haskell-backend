@@ -20,6 +20,9 @@
 # applied to Data.List.unzip
 - ignore: {name: "Avoid NonEmpty.unzip", within: [Booster.Pattern.Rewrite]}
 
+# This suggestion is invalid since ghc-9.8.4 decided to emit a warning about partial functions
+- ignore: {name: "Use head"}
+
 # Corporate style
 - ignore: {name: "Move brackets to avoid $" }
 - ignore: {name: "Use tuple-section"}
