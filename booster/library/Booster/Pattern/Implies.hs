@@ -128,7 +128,6 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         then -- we are being conservative here for now and returning "not-implied".
                                         -- We could return implies, but the condition will contain the remainder
                                         -- as an equality contraint, predicating the implication on that equality being true.
-
                                             doesNotImply
                                                 (sortOfPattern patL)
                                                 (externaliseExistTerm existsL patL.term)
@@ -149,7 +148,6 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         (externaliseExistTerm existsR patR.term)
                                         subst
                                 else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
-
                                     ApplyEquations.evaluateConstraints def mLlvmLibrary solver filteredConsequentPreds >>= \case
                                         Right newPreds ->
                                             if all (== Predicate TrueBool) newPreds

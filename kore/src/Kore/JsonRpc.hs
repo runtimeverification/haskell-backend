@@ -541,7 +541,6 @@ respond reqId serverState moduleName runSMT =
                             MVar.putMVar serverState $
                                 if nameAsId
                                     then -- the module already exists, but re-adding with name because name-as-id is true
-
                                         ServerState
                                             { serializedModules =
                                                 Map.insert (coerce name) foundSerModule serializedModules

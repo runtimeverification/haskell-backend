@@ -621,18 +621,19 @@ traverseTerm direction onRecurse onEval trm = do
                     rest' <- traverse onRecurse rest
                     -- then try to apply equations
                     onEval $ KMap def keyVals' rest'
-                else {- direction == TopDown -} do
-                    -- try to apply equations
-                    kmap' <- onEval kmap
-                    case kmap' of
-                        -- the result should be another internal KMap
-                        KMap _ keyVals' rest' ->
-                            KMap def
-                                <$> handlePairs keyVals'
-                                <*> traverse onRecurse rest'
-                        other ->
-                            -- unlikely to occur, but won't loop
-                            onRecurse other
+                else {- direction == TopDown -}
+                    do
+                        -- try to apply equations
+                        kmap' <- onEval kmap
+                        case kmap' of
+                            -- the result should be another internal KMap
+                            KMap _ keyVals' rest' ->
+                                KMap def
+                                    <$> handlePairs keyVals'
+                                    <*> traverse onRecurse rest'
+                            other ->
+                                -- unlikely to occur, but won't loop
+                                onRecurse other
         klist@(KList def heads rest) -> do
             let handleRest =
                     traverse $ \(mid, tails) -> (,) <$> onRecurse mid <*> mapM onRecurse tails
@@ -641,16 +642,17 @@ traverseTerm direction onRecurse onEval trm = do
                     heads' <- mapM onRecurse heads
                     rest' <- handleRest rest
                     onEval (KList def heads' rest')
-                else {- direction == TopDown -} do
-                    klist' <- onEval klist
-                    case klist' of
-                        -- the result should be another internal KList
-                        KList _ heads' rest' ->
-                            KList def
-                                <$> mapM onRecurse heads'
-                                <*> handleRest rest'
-                        other ->
-                            onRecurse other
+                else {- direction == TopDown -}
+                    do
+                        klist' <- onEval klist
+                        case klist' of
+                            -- the result should be another internal KList
+                            KList _ heads' rest' ->
+                                KList def
+                                    <$> mapM onRecurse heads'
+                                    <*> handleRest rest'
+                            other ->
+                                onRecurse other
         kset@(KSet def elems rest)
             | direction == BottomUp -> do
                 elems' <- mapM onRecurse elems
