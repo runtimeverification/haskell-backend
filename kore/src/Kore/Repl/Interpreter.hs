@@ -882,11 +882,13 @@ showPrecBranch maybeNode = do
     -- "Right n" means "stop and return n"
     loopCond gph n
         | isNotBranch gph n
-        , (hd : _) <- Graph.pre gph n {- isNotRoot gph n -} = Left hd
+        , (hd : _) <- Graph.pre gph n {- isNotRoot gph n -} =
+            Left hd
         | otherwise = Right n
 
     isNotBranch gph n = Graph.outdeg gph n <= 1
-    -- isNotRoot gph n = not . null . Graph.pre gph $ n
+
+-- isNotRoot gph n = not . null . Graph.pre gph $ n
 
 -- | Shows the next node(s) for the selected node.
 showChildren ::

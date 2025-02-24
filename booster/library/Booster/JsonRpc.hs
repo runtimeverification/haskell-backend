@@ -469,7 +469,7 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
         innerSorts = mapMaybe sortOfJson $ KoreJson.term t : subAndPred
         topLevelSort = case innerSorts of
             [] -> KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []
-            x:xs ->
+            x : xs ->
                 if all (== x) xs
                     then KoreJson.SortApp x.name []
                     else KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []

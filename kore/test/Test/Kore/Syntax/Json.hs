@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-x-partial #-} -- no head/tail warnings
+-- no head/tail warnings
+{-# OPTIONS_GHC -Wno-x-partial #-}
 
 module Test.Kore.Syntax.Json (
     -- Tasty wrappers
