@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.6.5"
+  ghc_version: "9.8.4"
   stack_version: "2.15.1"
   hpack_version: '0.36'
 
