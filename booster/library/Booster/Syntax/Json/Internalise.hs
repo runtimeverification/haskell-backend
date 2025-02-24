@@ -488,7 +488,7 @@ mkSubstitution initialSubst =
                 Map.fromListWith (<>) [(v, [t]) | SubstitutionPred v t <- initialSubst]
         equations =
             [Internal.mkEq v t | (v, ts) <- Map.assocs duplicates, t <- ts]
-     in execState breakCycles (Map.map head substMap, equations)
+     in execState breakCycles (Map.map (!!0) substMap, equations)
   where
     breakCycles :: State (Map Internal.Variable Internal.Term, [Internal.Predicate]) ()
     breakCycles = do
@@ -734,8 +734,10 @@ isTermM pat = case pat of
     Syntax.KJNot{} -> pure False
     Syntax.KJAnd{patterns} -> do
         terms <- mapM isTermM patterns
-        when (length (nub terms) /= 1) $ throwE (InconsistentPattern pat)
-        pure $ head terms
+        case nub terms of
+            [] -> throwE (InconsistentPattern pat) -- empty and not allowed
+            [x] -> pure x
+            _more -> throwE (InconsistentPattern pat)
     Syntax.KJOr{} -> pure False
     Syntax.KJImplies{} -> pure False
     Syntax.KJIff{} -> pure False

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-x-partial #-} -- no head/tail warnings
+
 module Test.Kore.Repl.Interpreter (
     test_replInterpreter,
 ) where

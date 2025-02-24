@@ -601,12 +601,11 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                             , nextStates = Nothing
                                             , logs = combineLogs $ res.logs : simplifiedStateLogs : logsOnly
                                             }
-                            | length filteredNexts == 1 -> do
+                            | [onlyNext] <- filteredNexts -> do
                                 -- all but one next states are bottom, execution should proceed
                                 -- Note that we've effectively made a rewrite step here, so we need to
                                 -- extract the rule-id information from the result we proceed with
-                                let onlyNext = head filteredNexts
-                                    rewriteRuleId = fromMaybe "UNKNOWN" onlyNext.ruleId
+                                let rewriteRuleId = fromMaybe "UNKNOWN" onlyNext.ruleId
                                     proxyRewriteStepLogs
                                         | Just True <- logSettings.logSuccessfulRewrites =
                                             Just . (: []) $
