@@ -67,6 +67,7 @@
                     substituteInPlace library/Booster/VersionInfo.hs \
                       --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
                   '';
+                  disallowGhcReference = false; # FIXME remove after MacOS debugging on CI
                 });
               kore = (overrideCabal hprev.kore (drv: {
                 doCheck = false;
