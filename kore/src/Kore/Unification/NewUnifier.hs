@@ -1186,8 +1186,10 @@ remakeMapTerms _ AcTerm{acElements = [var]} =
     mkElemVar $ fromJust $ retract var
 remakeMapTerms tools AcTerm{acElements, acSort} =
     if fromJust $ isMapSort tools acSort
-        then Ac.asInternal tools acSort $ NormalizedMap{getNormalizedMap = normalizedAc $ map mkVar acElements}
-        else Ac.asInternal tools acSort $ NormalizedSet{getNormalizedSet = normalizedAc $ map mkVar acElements}
+        then
+            Ac.asInternal tools acSort $ NormalizedMap{getNormalizedMap = normalizedAc $ map mkVar acElements}
+        else
+            Ac.asInternal tools acSort $ NormalizedSet{getNormalizedSet = normalizedAc $ map mkVar acElements}
   where
     normalizedAc opaque = NormalizedAc{elementsWithVariables = [], concreteElements = HashMap.empty, opaque}
 

@@ -44,12 +44,12 @@ listGetHook [KList _ heads mbRest, intArg] =
                     if i < headLen
                         then pure $ Just $ heads !! i -- positive index in range
                         else -- headLen <= i
-                        case mbRest of
-                            Nothing ->
-                                -- index too large
-                                pure Nothing -- actually #Bottom
-                            Just _ ->
-                                pure Nothing
+                            case mbRest of
+                                Nothing ->
+                                    -- index too large
+                                    pure Nothing -- actually #Bottom
+                                Just _ ->
+                                    pure Nothing
                 | otherwise -> -- i < 0, negative index, consider rest
                     case mbRest of
                         Nothing

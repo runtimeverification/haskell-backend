@@ -27,7 +27,7 @@ import Data.Foldable
 import Data.List (singleton)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust, listToMaybe, mapMaybe)
 import Data.Proxy qualified
 import Data.Sequence (Seq)
 import Data.Set qualified as Set
@@ -469,9 +469,9 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
         innerSorts = mapMaybe sortOfJson $ KoreJson.term t : subAndPred
         topLevelSort = case innerSorts of
             [] -> KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []
-            xs ->
-                if all (== head xs) (tail xs) -- we know xs is non-empty, hence `head` is safe here
-                    then KoreJson.SortApp (head xs).name []
+            x : xs ->
+                if all (== x) xs
+                    then KoreJson.SortApp x.name []
                     else KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []
      in t
             { KoreJson.term =
@@ -667,10 +667,10 @@ mkLogRewriteTrace
                                             { reason = "Uncertain about a condition in rule"
                                             , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes r)
                                             }
-                                    RewriteRemainderPredicate rs _ _ ->
+                                    RewriteRemainderPredicate rules _ _ ->
                                         Failure
                                             { reason = "Uncertain about the remainder after applying a rule"
-                                            , _ruleId = Just $ getUniqueId (uniqueId $ Definition.attributes (head rs))
+                                            , _ruleId = fmap (getUniqueId . uniqueId . Definition.attributes) $ listToMaybe rules
                                             }
                                     DefinednessUnclear r _ undefReasons ->
                                         Failure

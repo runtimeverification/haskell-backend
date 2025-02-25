@@ -1,3 +1,6 @@
+-- no head/tail warnings
+{-# OPTIONS_GHC -Wno-x-partial #-}
+
 module Test.Kore.Validate.DefinitionVerifier.PatternVerifier (
     test_patternVerifier,
     test_verifyBinder,

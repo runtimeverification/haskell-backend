@@ -16,6 +16,13 @@
 # applied to Kore.Rewrite.SMT.Evaluator.evaluate.
 - ignore: {name: "Redundant evaluate"}
 
+# This warning should apply to Data.NonEmpty.unzip but is mistakenly
+# applied to Data.List.unzip
+- ignore: {name: "Avoid NonEmpty.unzip", within: [Booster.Pattern.Rewrite]}
+
+# This suggestion is invalid since ghc-9.8.4 decided to emit a warning about partial functions
+- ignore: {name: "Use head"}
+
 # Corporate style
 - ignore: {name: "Move brackets to avoid $" }
 - ignore: {name: "Use tuple-section"}
@@ -94,6 +101,10 @@
     name: "Redundant bracket"
     within:
       - Kore.Internal.TermLike.TermLike
+# decreases readability
+- ignore: {name: "Functor law"}
+- ignore: {name: "Move filter"}
+- ignore: {name: "Move mapMaybe"}
 
 
 # Haskell names match K names

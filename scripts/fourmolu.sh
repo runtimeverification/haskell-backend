@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euxo pipefail
-expected_fourmolu_version="0.14.0.0"
+expected_fourmolu_version="0.15.0.0"
 fourmolu=${FOURMOLU:-$(which fourmolu)} || { echo 'No fourmolu!' ; exit 1 ; }
 fourmolu_version=$(${fourmolu} --version | head -n1)
 # drop the prefix 'fourmolu ' which is 9 letters long

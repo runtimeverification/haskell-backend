@@ -130,7 +130,6 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         then -- we are being conservative here for now and returning an error.
                                         -- since we have already simplified the LHS, we may want to eventually return implise, but the condition
                                         -- will contain the remainder as an equality contraint, predicating the implication on that equality being true.
-
                                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
                                                 "match remainder: "
                                                     <> renderDefault
@@ -155,7 +154,6 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         (externaliseExistTerm existsR patR.term)
                                         subst
                                 else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
-
                                     ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
                                         (Right newPreds, _) ->
                                             if all (== Predicate TrueBool) newPreds
