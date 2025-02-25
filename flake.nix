@@ -67,7 +67,6 @@
                     substituteInPlace library/Booster/VersionInfo.hs \
                       --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
                   '';
-                  disallowGhcReference = false; # FIXME remove after MacOS debugging on CI
                 });
               kore = (overrideCabal hprev.kore (drv: {
                 doCheck = false;
@@ -117,7 +116,10 @@
           kore = with pkgs;
             haskell.lib.justStaticExecutables haskell-backend.pkgSet.kore;
           hs-backend-booster = with pkgs;
-            haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster;
+                            # FIXME remove after MacOS debugging on CI
+                            haskell.lib.overrideCabal
+                            (haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster)
+                            (drv: { disallowGhcReference = false; });
           hs-backend-booster-dev-tools = with pkgs;
             haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster-dev-tools;
         in {
