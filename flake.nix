@@ -159,6 +159,7 @@
               pkgs.nix
               pkgs.z3
               pkgs.lsof
+              pkgs.git
           ];
           shellHook = ''
             hpack booster && hpack dev-tools
