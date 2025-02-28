@@ -339,9 +339,11 @@ addModule
         things `mappedBy` getKey =
             let sorted :: [[a]]
                 sorted = groupBy ((==) `on` getKey) $ sortOn getKey things
-                (good, dups) = partition (null . tail) sorted
+                isGood [_] = True
+                isGood _ = False
+                (good, dups) = partition isGood sorted
              in ( Map.fromAscList [(getKey a, a) | [a] <- good]
-                , [(getKey $ head d, d) | d <- dups]
+                , [(getKey d', d) | d@(d' : _) <- dups]
                 )
 
         -- if two symbols have the same smtlib attribute, they get renamed
@@ -786,9 +788,9 @@ internaliseRulePattern partialDefinition ref maybeVars f t = do
     unless (null ceilConditions) $
         throwE $
             DefinitionPatternError ref CeilNotAllowed
-    unless (null unsupported) $
-        throwE $
-            DefinitionPatternError ref (NotSupported (head unsupported))
+    case unsupported of
+        [] -> pure ()
+        x : _ -> throwE $ DefinitionPatternError ref (NotSupported x)
     pure
         ( Util.modifyVariablesInT f term
         , map (Util.modifyVariablesInP f) (preds <> Substitution.asEquations substitution)
@@ -975,10 +977,9 @@ internaliseCeil partialDef left right sortVars attrs = do
             -- turn substitution-like predicates back into equations
             constraints = internalPs.boolPredicates <> Substitution.asEquations internalPs.substitution
             unsupported = internalPs.unsupported
-        unless (null unsupported) $
-            throwE $
-                DefinitionPatternError (sourceRef attrs) $
-                    NotSupported (head unsupported)
+        case unsupported of
+            [] -> pure ()
+            x : _ -> throwE $ DefinitionPatternError (sourceRef attrs) $ NotSupported x
         pure $
             map (Util.modifyVariablesInT (Util.modifyVarName ("Eq#" <>)) . coerce) constraints
 
@@ -1013,9 +1014,11 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
     unless (null ceils) $
         throwE $
             DefinitionPatternError (sourceRef attrs) CeilNotAllowed
-    unless (null unsupported) $
-        throwE $
-            DefinitionPatternError (sourceRef attrs) (NotSupported (head unsupported))
+    case unsupported of
+        [] -> pure ()
+        x : _ ->
+            throwE $
+                DefinitionPatternError (sourceRef attrs) (NotSupported x)
     -- extract argument binders from predicates and inline in to LHS term
     argPairs <- mapM internaliseArg args
     let lhs =

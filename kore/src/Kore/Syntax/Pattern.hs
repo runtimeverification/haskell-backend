@@ -96,7 +96,8 @@ annotations.
 newtype
     Pattern
         (variable :: Type)
-        (annotation :: Type) = Pattern
+        (annotation :: Type)
+    = Pattern
     {getPattern :: Cofree (PatternF variable) annotation}
     deriving stock (Show)
     deriving stock (GHC.Generic)
