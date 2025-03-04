@@ -456,8 +456,8 @@ It returns the result of simplifying the pattern with builtins and
 axioms, together with a proof certifying that it was simplified correctly
 (which is only a placeholder right now).
 -}
-newtype BuiltinAndAxiomSimplifier =
-    -- TODO (thomas.tuegel): Rename me!
+newtype BuiltinAndAxiomSimplifier
+    = -- TODO (thomas.tuegel): Rename me!
     BuiltinAndAxiomSimplifier
     { runBuiltinAndAxiomSimplifier ::
         TermLike RewritingVariableName ->

@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.6.5"
+  ghc_version: "9.8.4"
   stack_version: "2.15.1"
   hpack_version: '0.36'
 
@@ -117,6 +117,16 @@ jobs:
         
       - name: Test
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
+
+      - name: 'DEBUG MacOS build error'
+        if: ${{ contains(matrix.os, 'macos') }}
+        run: |
+          ls result/bin
+          for file in result/bin/*; do
+              echo $file;
+              strings $file | grep -e "/nix/store"
+          done
+
 
   nix-integration:
     name: 'Nix / Integration'

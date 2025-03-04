@@ -229,12 +229,13 @@ pushRecursion t = eqState $ do
 popRecursion :: LoggerMIO io => EquationT io ()
 popRecursion = do
     s <- getState
-    if null s.recursionStack
-        then do
+    case s.recursionStack of
+        [] -> do
             withContext CtxAbort $
                 logMessage ("Trying to pop an empty recursion stack" :: Text)
             throw $ InternalError "Trying to pop an empty recursion stack"
-        else eqState $ put s{recursionStack = tail s.recursionStack}
+        _hd : rest ->
+            eqState $ put s{recursionStack = rest}
 
 toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
 toCache LLVM orig result = eqState . modify $

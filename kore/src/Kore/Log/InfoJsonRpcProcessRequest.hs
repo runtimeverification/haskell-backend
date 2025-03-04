@@ -19,7 +19,8 @@ import Pretty (
  )
 import Pretty qualified
 
-data InfoJsonRpcProcessRequest = forall a.
+data InfoJsonRpcProcessRequest
+    = forall a.
       (Show a, Pretty a, Typeable a) =>
     InfoJsonRpcProcessRequest
     { requestId :: Id

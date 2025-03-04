@@ -238,9 +238,11 @@ internalizeAnd ::
 internalizeAnd And{andSort, andChildren = [andFirst, andSecond]} =
     BinaryAnd{andSort, andFirst, andSecond}
 internalizeAnd And{andSort, andChildren} =
-    let first = head andChildren
-     in let second = internalizeAnd And{andSort, andChildren = tail andChildren}
-         in BinaryAnd{andSort, andFirst = first, andSecond = synthesize (Internal.AndF second)}
+    case andChildren of
+        [] -> error "Empty And-node in verified pattern"
+        first : rest ->
+            let second = internalizeAnd And{andSort, andChildren = rest}
+             in BinaryAnd{andSort, andFirst = first, andSecond = synthesize (Internal.AndF second)}
 
 internalizeOr ::
     Or Sort Verified.Pattern ->
@@ -248,9 +250,11 @@ internalizeOr ::
 internalizeOr Or{orSort, orChildren = [orFirst, orSecond]} =
     BinaryOr{orSort, orFirst, orSecond}
 internalizeOr Or{orSort, orChildren} =
-    let first = head orChildren
-     in let second = internalizeOr Or{orSort, orChildren = tail orChildren}
-         in BinaryOr{orSort, orFirst = first, orSecond = synthesize (Internal.OrF second)}
+    case orChildren of
+        [] -> error "Empty Or-node in verified pattern"
+        first : rest ->
+            let second = internalizeOr Or{orSort, orChildren = rest}
+             in BinaryOr{orSort, orFirst = first, orSecond = synthesize (Internal.OrF second)}
 
 verifyAnd ::
     And Sort (PatternVerifier Verified.Pattern) ->
