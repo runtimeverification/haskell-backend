@@ -599,21 +599,23 @@ testBadEvaluation testName hook term =
                 assertEqual "" expectedErrMsg errMsg
 
 int2bytesData ::
-    -- | (integer, big endian?, bytes)
-    [(Integer, Bool, ByteString)]
+    -- | (unsigned integer, signed integer, big endian?, bytes)
+    [(Integer, Integer, Bool, ByteString)]
 int2bytesData =
-    [ (0, True, "\x00\x00\x00\x00")
-    , (128, True, "\x80")
-    , (-128, True, "\x80")
-    , (2, True, "\x02")
-    , (-2, True, "\xfe")
-    , (16, True, "\x10")
-    , (-16, True, "\xf0")
-    , (128, True, "\x00\x80")
-    , (-128, True, "\xff\x80")
-    , (128, False, "\x80\x00")
-    , (-128, False, "\x80\xff")
-    , (0, True, "")
+    [ (0, 0, True, "\x00\x00\x00\x00")
+    , (128, -128, True, "\x80")
+    , (2, 2, True, "\x02")
+    , (254, -2, True, "\xfe")
+    , (255, -1, True, "\xff")
+    , (16, 16, True, "\x10")
+    , (240, -16, True, "\xf0")
+    , (128, 128, True, "\x00\x80")
+    , (65408, -128, True, "\xff\x80")
+    , (32768, -32768, True, "\x80\x00")
+    , (128, 128, False, "\x80\x00")
+    , (65408, -128, False, "\x80\xff")
+    , (32768, -32768, False, "\x00\x80")
+    , (0, 0, True, "")
     ]
 
 test_int2bytes :: [TestTree]
@@ -622,9 +624,9 @@ test_int2bytes =
   where
     test ::
         HasCallStack =>
-        (Integer, Bool, ByteString) ->
+        (Integer, Integer, Bool, ByteString) ->
         TestTree
-    test (integer, bigEndian, bytes) =
+    test (integer, signed, bigEndian, bytes) =
         testCase name $ do
             let input =
                     int2bytes
@@ -634,6 +636,14 @@ test_int2bytes =
                 expect = [asPattern bytes]
             actual <- simplify input
             assertEqual "" expect actual
+            -- converting a signed integer should have the same result
+            let signedInput =
+                    int2bytes
+                        (Test.Int.asInternal len)
+                        (Test.Int.asInternal signed)
+                        end
+            signedActual <- simplify signedInput
+            assertEqual "" expect signedActual
       where
         name =
             let args =
@@ -653,23 +663,20 @@ test_bytes2int =
   where
     test ::
         HasCallStack =>
-        (Integer, Bool, ByteString) ->
+        (Integer, Integer, Bool, ByteString) ->
         TestTree
-    test (integer, bigEndian, bytes) =
+    test (unsigned, signed, bigEndian, bytes) =
         testGroup name (mkCase <$> [True, False])
       where
-        mkCase signed =
-            testCase (if signed then "signed" else "unsigned") $ do
+        mkCase testSigned =
+            testCase (if testSigned then "signed" else "unsigned") $ do
                 let sign
-                        | signed = signedBytes
+                        | testSigned = signedBytes
                         | otherwise = unsignedBytes
-                    underflow = (-2) * integer >= modulus
-                    int
-                        | not signed, integer < 0 = integer + modulus
-                        | signed, underflow = integer + modulus
-                        | otherwise = integer
-                    modulus = 0x100 ^ ByteString.length bytes
                     input = bytes2int (asInternal bytes) end sign
+                    int
+                        | testSigned = signed
+                        | otherwise = unsigned
                     expect =
                         [ Test.Int.asPattern int
                             & Pattern.mapVariables (pure mkConfigVariable)
