@@ -529,7 +529,7 @@ bytes2int bytes end sign =
     case sign of
         Unsigned _ -> unsigned
         Signed _
-            | 2 * unsigned > modulus -> unsigned - modulus
+            | 2 * unsigned >= modulus -> unsigned - modulus
             | otherwise -> unsigned
   where
     (modulus, unsigned) = ByteString.foldl' go (1, 0) littleEndian
