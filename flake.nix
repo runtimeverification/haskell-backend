@@ -1,7 +1,8 @@
 {
   description = "K Kore Language Haskell Backend";
   inputs = {
-    rv-utils.url = "github:runtimeverification/rv-nix-tools";
+    # pin rv-utils to a fixed version
+    rv-utils.url = "github:runtimeverification/rv-nix-tools/854d4f0";
     nixpkgs.follows = "rv-utils/nixpkgs";
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
