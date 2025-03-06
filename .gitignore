@@ -53,8 +53,6 @@ hie.yaml
 /.vscode
 .DS_Store
 *~
-dev-tools/*.cabal
-booster/*.cabal
 /scripts/logs
 /scripts/bug-reports
 /booster/test/rpc-integration/resources/*.dylib

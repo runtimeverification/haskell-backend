@@ -1,0 +1,255 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hs-backend-booster-dev-tools
+version:        0.1.0
+synopsis:       Dev-tools for hs-backend-booster
+category:       Language
+homepage:       https://github.com/runtimeverification/hs-backend-booster#readme
+bug-reports:    https://github.com/runtimeverification/hs-backend-booster/issues
+author:         Runtime Verification Inc
+maintainer:     jost.berthold@runtimeverification.com
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    LICENSE
+    package.yaml
+
+source-repository head
+  type: git
+  location: https://github.com/runtimeverification/hs-backend-booster
+
+executable booster-dev
+  main-is: Server.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      booster-dev
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
+  build-depends:
+      base
+    , conduit-extra
+    , containers
+    , deepseq
+    , directory
+    , fast-logger
+    , hs-backend-booster
+    , kore-rpc-types
+    , monad-logger
+    , optparse-applicative
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable count-aborts
+  main-is: Main.hs
+  other-modules:
+      Types
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      count-aborts
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , kore-rpc-types
+    , text
+  default-language: Haskell2010
+
+executable kore-json-differ
+  main-is: Main.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      kore-json-differ
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , hs-backend-booster
+  default-language: Haskell2010
+
+executable kore-match-disjunction
+  main-is: Main.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      kore-match-disjunction
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      base
+    , clock
+    , kore
+    , optparse-applicative
+    , transformers
+  default-language: Haskell2010
+
+executable kore-parser
+  main-is: Main.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      kore-parser
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , exceptions
+    , kore
+  default-language: Haskell2010
+
+executable kore-rpc-dev
+  main-is: Server.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      kore-rpc-dev
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , clock
+    , conduit-extra
+    , containers
+    , exceptions
+    , fast-logger
+    , hs-backend-booster
+    , json-rpc
+    , kore
+    , kore-rpc-types
+    , monad-logger
+    , optparse-applicative
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable parsetest
+  main-is: Parsetest.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      parsetest
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      base
+    , containers
+    , deepseq
+    , directory
+    , filepath
+    , hs-backend-booster
+    , monad-logger
+    , prettyprinter
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable parsetest-binary
+  main-is: ParsetestBinary.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      parsetest-binary
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      base
+    , binary
+    , bytestring
+    , containers
+    , hs-backend-booster
+    , text
+  default-language: Haskell2010
+
+executable pretty
+  main-is: Pretty.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      pretty
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , hs-backend-booster
+    , prettyprinter
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable process-logs
+  main-is: Main.hs
+  other-modules:
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      process-logs
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      aeson
+    , aeson-pretty
+    , base
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , hs-backend-booster
+    , kore-rpc-types
+    , optparse-applicative
+    , text
+    , time
+  default-language: Haskell2010
+
+executable time-profile
+  main-is: Main.hs
+  other-modules:
+      Profiteur
+      Paths_hs_backend_booster_dev_tools
+  hs-source-dirs:
+      time-profile
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , kore-rpc-types
+    , profiteur
+    , text
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
