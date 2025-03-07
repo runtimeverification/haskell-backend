@@ -1,23 +1,28 @@
 {
   description = "K Kore Language Haskell Backend";
+
   inputs = {
     # pin rv-utils to a fixed version
     rv-utils.url = "github:runtimeverification/rv-nix-tools/854d4f0";
     nixpkgs.follows = "rv-utils/nixpkgs";
-    stacklock2nix.url = "github:cdepillabout/stacklock2nix";
+    some-cabal-hashes = builtins.fetchGit {
+	    url = "https://github.com/lf-/nix-lib.git";
+	    rev = "c46b62b650fb4edaccaedbeb5050236901fe385e";
+    };
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, stacklock2nix, z3, rv-utils }:
+
+  outputs = { self, nixpkgs, some-cabal-hashes, z3, rv-utils }:
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsCleanFor = system: import nixpkgs { inherit system; };
       nixpkgsFor = system:
         import nixpkgs {
           inherit system;
-          overlays = [ stacklock2nix.overlay self.overlay self.overlays.z3 ];
+          overlays = [ self.overlays.haskell-versions self.overlays.z3 ];
         };
       withZ3 = pkgs: pkg: exe:
         pkgs.stdenv.mkDerivation {
@@ -29,9 +34,42 @@
             makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
           '';
         };
-      # This should based on the compiler version from the resolver in stack.yaml.
+      # This should be the compiler version for the resolver in stack.yaml.
       ghcVersion = pkgs: pkgs.haskell.packages.ghc965;
+
+      # see https://github.com/lf-/nix-lib/blob/main/examples/some-cabal-hashes/flake.nix
+      makeHaskellOverlay = overlay: final: prev: {
+        haskell = prev.haskell // {
+          pacakges = prev.haskell.packages // {
+            ${ghcVersion} = prev.haskell.packages."${ghcVersion}".override (oldArgs: {
+              overrides =
+                prev.lib.composeExtensions (oldArgs.overrides or (_: _: {}))
+                  (overlay final prev)
+            });
+          };
+        };
+      };
+
+
+
     in {
+      overlays = {
+        # see https://github.com/lf-/nix-lib/blob/main/examples/some-cabal-hashes/flake.nix
+        haskell-versions = makeHaskellOverlay (final: prev:
+          import ${some-cabal-hashes}/lib/some-cabal-hashes.nix {
+            self = final;
+
+            overrides = {
+
+            };
+          });
+        default = makeHaskellOverlay
+          (final: prev: hfinal: hprev:
+            let hlib = prev.haskell.lib;
+            in {
+              haskell-backend = hfinal.callCabal2nix "haskell-backend" ./. { };
+            });
+      };
       overlay = final: prev: {
         haskell-backend = final.stacklock2nix {
           stackYaml = ./stack.yaml;
