@@ -5,241 +5,100 @@
     # pin rv-utils to a fixed version
     rv-utils.url = "github:runtimeverification/rv-nix-tools/854d4f0";
     nixpkgs.follows = "rv-utils/nixpkgs";
-    some-cabal-hashes = builtins.fetchGit {
-	    url = "https://github.com/lf-/nix-lib.git";
-	    rev = "c46b62b650fb4edaccaedbeb5050236901fe385e";
-    };
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
       flake = false;
     };
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, some-cabal-hashes, z3, rv-utils }:
+  # see https://github.com/lf-/nix-lib/blob/main/examples/some-cabal-hashes/flake.nix
+  outputs = { self, rv-utils, nixpkgs, z3, flake-utils }:
     let
-      perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
-      nixpkgsCleanFor = system: import nixpkgs { inherit system; };
-      nixpkgsFor = system:
-        import nixpkgs {
-          inherit system;
-          overlays = [ self.overlays.haskell-versions self.overlays.z3 ];
-        };
-      withZ3 = pkgs: pkg: exe:
-        pkgs.stdenv.mkDerivation {
-          name = exe;
-          phases = [ "installPhase" ];
-          buildInputs = with pkgs; [ makeWrapper ];
-          installPhase = ''
-            mkdir -p $out/bin
-            makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
-          '';
-        };
-      # This should be the compiler version for the resolver in stack.yaml.
-      ghcVersion = pkgs: pkgs.haskell.packages.ghc965;
-
-      # see https://github.com/lf-/nix-lib/blob/main/examples/some-cabal-hashes/flake.nix
+      ghcVer = "ghc965";
       makeHaskellOverlay = overlay: final: prev: {
         haskell = prev.haskell // {
-          pacakges = prev.haskell.packages // {
-            ${ghcVersion} = prev.haskell.packages."${ghcVersion}".override (oldArgs: {
+          packages = prev.haskell.packages // {
+            ${ghcVer} = prev.haskell.packages."${ghcVer}".override (oldArgs: {
               overrides =
-                prev.lib.composeExtensions (oldArgs.overrides or (_: _: {}))
-                  (overlay final prev)
+                prev.lib.composeExtensions (oldArgs.overrides or (_: _: { }))
+                  (overlay final prev);
             });
           };
         };
       };
 
+      out = system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ self.overlays.haskell-versions self.overlays.default ];
+          };
+        in
+        {
+          packages = rec {
+            default = hs-backend-booster;
+            kore-rpc-types = pkgs.haskell.packages.${ghcVer}.kore-rpc-types;
+            kore = pkgs.haskell.packages.${ghcVer}.kore;
+            hs-backend-booster = pkgs.haskell.packages.${ghcVer}.hs-backend-booster;
+            hs-backend-booster-dev-tools = pkgs.haskell.packages.${ghcVer}.hs-backend-booster-dev-tools;
+          };
 
-
-    in {
+          devShells.default =
+            let haskellPackages = pkgs.haskell.packages.${ghcVer};
+            in
+            haskellPackages.shellFor {
+              packages = p: [ self.packages.${system}.sample ];
+              withHoogle = false;
+              buildInputs = with haskellPackages; [
+                cabal-install
+              ];
+            };
+        };
+    in
+    flake-utils.lib.eachDefaultSystem out // {
       overlays = {
-        # see https://github.com/lf-/nix-lib/blob/main/examples/some-cabal-hashes/flake.nix
         haskell-versions = makeHaskellOverlay (final: prev:
-          import ${some-cabal-hashes}/lib/some-cabal-hashes.nix {
+          import ./nix/some-cabal-hashes.nix {
             self = final;
 
-            overrides = {
+            overrides = 
+              let 
+                hprev = prev.haskell.packages;
+                hfinal = final.haskell.packages;
+              in {
+                # FIXME these two overrides cause an error in some-cabal-hashes.nix
+                # tasty-test-reporter = 
+                #     final.fetchFromGitHub {
+                #       owner = "goodlyrottenapple";
+                #       repo = "tasty-test-reporter";
+                #       rev = "b704130545aa3925a8487bd3e92f1dd5ce0512e2";
+                #       sha256 = "sha256-9CN59Im0BC3vSVhL85v5eXPYYoPbV3NAuv893tXpr/U=";
+                #     };
+                # profiteur =
+                #     final.fetchFromGitHub {
+                #       owner = "goodlyrottenapple";
+                #       repo = "profiteur";
+                #       rev = "7b30bbe6b2a6b72a5b4896f3a0eed5587a5bf465";
+                #       sha256 = "sha256-9CN59Im0BC3vSVhL85v5eXPYYoPbV3NAuv893tXpr/U=";
+                #     };
 
-            };
+                # FIXME a jailbreak does not work either (Problem is the ansi-terminal version)
+                # hfinal.tasty-test-reporter = hfinal.doJailbreak hprev.tasty-test-reporter;
+
+                hfinal.json-rpc = final.haskell.packages.dontCheck hprev.json-rpc; # 1.0.4 marked as broken!
+                hfinal.decision-diagrams = hfinal.dontCheck hprev.decision-diagrams; # build runs failing tests
+              };
           });
         default = makeHaskellOverlay
           (final: prev: hfinal: hprev:
-            let hlib = prev.haskell.lib;
-            in {
-              haskell-backend = hfinal.callCabal2nix "haskell-backend" ./. { };
+            let hlib = prev.haskell.lib; in
+            {
+              kore-rpc-types               = hfinal.callCabal2nix "kore-rpc-types" ./kore-rpc-types { };
+              kore                         = hfinal.callCabal2nix "kore" ./kore { };
+              hs-backend-booster           = hfinal.callCabal2nix "hs-backend-booster" ./booster { };
+              hs-backend-booster-dev-tools = hfinal.callCabal2nix "hs-backend-booster-dev-tools" ./dev-tools { };
             });
-      };
-      overlay = final: prev: {
-        haskell-backend = final.stacklock2nix {
-          stackYaml = ./stack.yaml;
-          # This should based on the compiler version from the resolver in stack.yaml.
-          baseHaskellPkgSet = ghcVersion final;
-          cabal2nixArgsOverrides = args:
-            args // {
-              # The Haskell package `"graphviz"` depends on the _system_
-              # package `graphviz`, and takes the system package `graphviz` as one of its build
-              # inputs, but it is actually getting passed _itself_ (not the system package
-              # `graphviz`), which causes the infinite recursion.
-              "graphviz" = _: { graphviz = final.graphviz; };
-            };
-          additionalHaskellPkgSetOverrides = hfinal: hprev:
-            with final.haskell.lib; {
-              crypton-x509 = dontCheck hprev.crypton-x509;
-              data-fix = doJailbreak hprev.data-fix;
-              decision-diagrams = dontCheck hprev.decision-diagrams;
-              fgl = dontCheck hprev.fgl;
-              fgl-arbitrary = dontCheck hprev.fgl-arbitrary;
-              graphviz = dontCheck hprev.graphviz;
-              json-rpc = dontCheck hprev.json-rpc;
-              lifted-base = dontCheck hprev.lifted-base;
-              prettyprinter = dontCheck hprev.prettyprinter;
-              semialign = doJailbreak hprev.semialign;
-              smtlib-backends-process = dontCheck hprev.smtlib-backends-process;
-              tar = dontCheck hprev.tar;
-              text-short = doJailbreak hprev.text-short;
-              these = doJailbreak hprev.these;
-              ghc-prof = doJailbreak hprev.ghc-prof;
-              hs-backend-booster = overrideCabal hprev.hs-backend-booster
-                (drv: {
-                  doCheck = false;
-                  postPatch = ''
-                    ${drv.postPatch or ""}
-                    substituteInPlace library/Booster/VersionInfo.hs \
-                      --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
-                  '';
-                });
-              kore = (overrideCabal hprev.kore (drv: {
-                doCheck = false;
-                postPatch = ''
-                  ${drv.postPatch or ""}
-                  substituteInPlace src/Kore/VersionInfo.hs \
-                    --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
-                '';
-                postInstall = ''
-                  ${drv.postInstall or ""}
-                '';
-              })).override {
-                # bit pathological, but ghc-compact is already included with the ghc compiler
-                # and depending on another copy of ghc-compact breaks HLS in the dev shell.
-                ghc-compact = null;
-              };
-
-            };
-
-          # Additional packages that should be available for development.
-          additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
-            with ghcVersion final; [
-              cabal-install
-              hpack
-              fourmolu
-              hlint
-              final.haskell-language-server
-              final.z3
-              final.secp256k1
-            ];
-          # nix expects all inputs downloaded from the internet to have a hash,
-          # so hackage is periodically downloaded, hashed and the hashes stored in a map.
-          # this need to be bumped if changing the stack resolver
-          all-cabal-hashes = final.fetchurl {
-            url =
-              "https://github.com/commercialhaskell/all-cabal-hashes/archive/ce857734d7d4c0fad3f6dda3a4db052836ed4619.tar.gz";
-            sha256 = "sha256-Q7Zg32v5ubjVJMQXGiyyMmeFg08jTzVRKC18laiHCPE=";
-          };
-        };
-      };
-
-      prelude-kore = ./src/main/kore/prelude.kore;
-
-      packages = perSystem (system:
-        let
-          pkgs = nixpkgsFor system;
-          kore = with pkgs;
-            haskell.lib.justStaticExecutables haskell-backend.pkgSet.kore;
-          hs-backend-booster = with pkgs;
-            haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster;
-          hs-backend-booster-dev-tools = with pkgs;
-            haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster-dev-tools;
-        in {
-          kore-exec = withZ3 pkgs kore "kore-exec";
-          kore-match-disjunction = withZ3 pkgs hs-backend-booster-dev-tools "kore-match-disjunction";
-          kore-parser = withZ3 pkgs hs-backend-booster-dev-tools "kore-parser";
-          kore-repl = withZ3 pkgs kore "kore-repl";
-          kore-rpc = withZ3 pkgs kore "kore-rpc";
-          kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";
-          kore-rpc-client = withZ3 pkgs hs-backend-booster "kore-rpc-client";
-          booster-dev = withZ3 pkgs hs-backend-booster-dev-tools "booster-dev";
-          inherit (pkgs.haskell-backend.pkgSet) haskell-language-server;
-        });
-
-      devShells = perSystem (system: {
-        # Separate fourmolu and cabal shells just for CI
-        style = with nixpkgsCleanFor system;
-          mkShell {
-            nativeBuildInputs = [
-              (haskell.lib.justStaticExecutables
-               (ghcVersion pkgs).fourmolu)
-              (haskell.lib.justStaticExecutables
-               (ghcVersion pkgs).hlint)
-              pkgs.hpack
-            ];
-            shellHook = ''
-              hpack booster && hpack dev-tools
-            '';
-          };
-        cabal = let pkgs = nixpkgsFor system;
-        in pkgs.haskell-backend.pkgSet.shellFor {
-          packages = pkgs.haskell-backend.localPkgsSelector;
-          nativeBuildInputs = [
-              (ghcVersion pkgs).cabal-install
-              pkgs.hpack
-              pkgs.jq
-              pkgs.nix
-              pkgs.z3
-              pkgs.lsof
-          ];
-          shellHook = ''
-            hpack booster && hpack dev-tools
-          '';
-        };
-      });
-
-      devShell =
-        perSystem (system: (nixpkgsFor system).haskell-backend.devShell);
-
-      overlays = {
-        z3 = (final: prev: {
-          z3 = prev.z3.overrideAttrs (_: {
-            src = z3;
-            version = let
-              release = builtins.readFile "${z3}/scripts/release.yml";
-              # Read the release version from scripts/release.yml
-            in builtins.head
-            (builtins.match ".+ReleaseVersion: '([^']+).+" release);
-          });
-        });
-        integration-tests = (final: prev: {
-          kore-tests = final.callPackage ./nix/integration-shell.nix {
-            python = final.python3.withPackages (ps:
-              with ps;
-              [
-                (buildPythonPackage rec {
-                  pname = "jsonrpcclient";
-                  version = "4.0.3";
-                  src = prev.fetchFromGitHub {
-                    owner = "explodinglabs";
-                    repo = pname;
-                    rev = version;
-                    sha256 =
-                      "sha256-xqQwqNFXatGzc4JprZY1OpdPPGgpP5/ucG/qyV/n8hw=";
-                  };
-                  doCheck = false;
-                  format = "pyproject";
-                  buildInputs = [ setuptools ];
-                })
-              ]);
-          };
-        });
       };
     };
 }

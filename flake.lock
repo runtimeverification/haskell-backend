@@ -1,5 +1,23 @@
 {
   "nodes": {
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1716457947,
@@ -18,12 +36,12 @@
     },
     "root": {
       "inputs": {
+        "flake-utils": "flake-utils",
         "nixpkgs": [
           "rv-utils",
           "nixpkgs"
         ],
         "rv-utils": "rv-utils",
-        "stacklock2nix": "stacklock2nix",
         "z3": "z3"
       }
     },
@@ -32,31 +50,32 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1716459074,
-        "narHash": "sha256-IpahO+EkWdGl9QP7B2YXfJWpSfghjxgpz4ab47nRJY4=",
+        "lastModified": 1726497185,
+        "narHash": "sha256-iN+5eLmDm/rLuIZezS5ZqiW1BtBpwrrM9CPPP7Z5Tog=",
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
-        "rev": "a65058865cda201de504f5546271b8e997a0be9c",
+        "rev": "854d4f05ea78547d46e807b414faad64cea10ae4",
         "type": "github"
       },
       "original": {
         "owner": "runtimeverification",
+        "ref": "854d4f0",
         "repo": "rv-nix-tools",
         "type": "github"
       }
     },
-    "stacklock2nix": {
+    "systems": {
       "locked": {
-        "lastModified": 1705051190,
-        "narHash": "sha256-xgH0gaD3dNtOzZzX3A40hZTiHJP5cIGmifbmfcS2OGI=",
-        "owner": "cdepillabout",
-        "repo": "stacklock2nix",
-        "rev": "22676dfc45fa1c33899ba1da1a23665172a18ba7",
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
         "type": "github"
       },
       "original": {
-        "owner": "cdepillabout",
-        "repo": "stacklock2nix",
+        "owner": "nix-systems",
+        "repo": "default",
         "type": "github"
       }
     },
