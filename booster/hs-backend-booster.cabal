@@ -452,7 +452,6 @@ test-suite predicates-integration
     , tasty
     , tasty-golden
     , tasty-hunit
-    , tasty-test-reporter
     , text
     , transformers
   default-language: Haskell2010
@@ -504,7 +503,6 @@ test-suite unit-tests
     , tasty-golden
     , tasty-hedgehog
     , tasty-hunit
-    , tasty-test-reporter
     , text
     , transformers
   default-language: Haskell2010
