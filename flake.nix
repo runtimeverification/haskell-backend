@@ -86,8 +86,10 @@
                 # FIXME a jailbreak does not work either (Problem is the ansi-terminal version)
                 # hfinal.tasty-test-reporter = hfinal.doJailbreak hprev.tasty-test-reporter;
 
+                # FIXME likewise, these two `dontCheck` (one inlined) are seemingly ignored.
+                hfinal.decision-diagrams = hfinal.overrideCabal hprev.decision-diagrams 
+                    (drv: { doCheck = false; }); # build runs failing tests
                 hfinal.json-rpc = final.haskell.packages.dontCheck hprev.json-rpc; # 1.0.4 marked as broken!
-                hfinal.decision-diagrams = hfinal.dontCheck hprev.decision-diagrams; # build runs failing tests
               };
           });
         default = makeHaskellOverlay
