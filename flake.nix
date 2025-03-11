@@ -32,6 +32,7 @@
         let
           pkgs = import nixpkgs {
             inherit system;
+            config.allowBroken = true; # for json-rpc
             overlays = [ self.overlays.haskell-versions self.overlays.default ];
           };
         in
@@ -62,13 +63,13 @@
           import ./nix/some-cabal-hashes.nix {
             self = final;
 
-            overrides = 
-              let 
-                hprev = prev.haskell.packages;
-                hfinal = final.haskell.packages;
+            overrides =
+              let
+                hprev = prev.haskell.packages.${ghcVer};
+                hfinal = final.haskell.packages.${ghcVer};
               in {
                 # FIXME these two overrides cause an error in some-cabal-hashes.nix
-                # tasty-test-reporter = 
+                # tasty-test-reporter =
                 #     final.fetchFromGitHub {
                 #       owner = "goodlyrottenapple";
                 #       repo = "tasty-test-reporter";
@@ -87,9 +88,9 @@
                 # hfinal.tasty-test-reporter = hfinal.doJailbreak hprev.tasty-test-reporter;
 
                 # FIXME likewise, these two `dontCheck` (one inlined) are seemingly ignored.
-                hfinal.decision-diagrams = hfinal.overrideCabal hprev.decision-diagrams 
+                decision-diagrams = prev.haskell.lib.overrideCabal hprev.decision-diagrams
                     (drv: { doCheck = false; }); # build runs failing tests
-                hfinal.json-rpc = final.haskell.packages.dontCheck hprev.json-rpc; # 1.0.4 marked as broken!
+                json-rpc = prev.haskell.lib.dontCheck hprev.json-rpc; # 1.0.4 marked as broken!
               };
           });
         default = makeHaskellOverlay
