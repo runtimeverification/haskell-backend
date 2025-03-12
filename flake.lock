@@ -42,6 +42,7 @@
           "nixpkgs"
         ],
         "rv-utils": "rv-utils",
+        "some-cabal-hashes-lib": "some-cabal-hashes-lib",
         "z3": "z3"
       }
     },
@@ -60,6 +61,22 @@
       "original": {
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
+        "type": "github"
+      }
+    },
+    "some-cabal-hashes-lib": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1680222726,
+        "narHash": "sha256-EkXjFG2Vw2/vWCnX4oB7jQeLxEpXFXf/WSpRCUpEvbc=",
+        "owner": "lf-",
+        "repo": "nix-lib",
+        "rev": "c46b62b650fb4edaccaedbeb5050236901fe385e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lf-",
+        "repo": "nix-lib",
         "type": "github"
       }
     },

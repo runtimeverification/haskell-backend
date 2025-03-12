@@ -9,9 +9,13 @@
       flake = false;
     };
     flake-utils.url = "github:numtide/flake-utils";
+    some-cabal-hashes-lib = {
+      url = "github:lf-/nix-lib";
+      flake = false;
+    };
   };
 
-  outputs = { self, rv-utils, nixpkgs, z3, flake-utils }:
+  outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       z3Overlay = final: prev: {
@@ -84,6 +88,29 @@
         json-rpc = hlib.markUnbroken hprev.json-rpc;
         smtlib-backends-process = hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process);
         decision-diagrams = hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams);
+        # when overriding haskell package sources that are dependencies of cabal2nix, an infinite recursion occurs
+        # as we instantiate nixpkgs a second time already anyway, we can just force cabal2nix to not use overriden dependencies, thereby completely bypassing this edgecase
+        cabal2nix = pkgsClean.haskell.packages."${ghcVer}".cabal2nix;
+      });
+      some-cabal-hashes = import "${some-cabal-hashes-lib}/lib/some-cabal-hashes.nix";
+      someCabalHashesOverlay = makeOverlayForHaskell (final: prev: some-cabal-hashes {
+        self = final;
+        # note: fetchFromGitHub should be replaced by a flake input
+        # note: when overriding the package source, `hlib.markUnbroken` becomes unnecessary
+        # example for package source overrides:
+        overrides = {
+          # json-rpc = "1.1.0";
+          # aeson = "2.2.0.0";
+          # attoparsec-aeson = "2.2.0.0";
+
+          
+          # tasty-test-reporter = final.fetchFromGitHub {
+          #   owner = "goodlyrottenapple";
+          #   repo = "tasty-test-reporter";
+          #   rev = "b704130545aa3925a8487bd3e92f1dd5ce0512e2";
+          #   sha256 = "sha256-uOQYsTecYgAKhL+DIgHLAfh2DAv+ye1JWqcQGRdpiMA=";
+          # };
+        };
       });
       pkgs = import nixpkgs {
         inherit system;
@@ -93,6 +120,7 @@
           haskellBackendOverlay
           haskellBackendVersionInfoOverlay
           haskellDependenciesOverlay
+          someCabalHashesOverlay
         ];
       };
       pkgsClean = import nixpkgs {
