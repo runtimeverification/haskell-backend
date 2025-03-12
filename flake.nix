@@ -14,6 +14,17 @@
   outputs = { self, rv-utils, nixpkgs, z3, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
     let
+      z3Overlay = final: prev: {
+        z3 = prev.z3.overrideAttrs (_: {
+          src = z3;
+          version =
+          let
+            release = builtins.readFile "${z3}/scripts/release.yml";
+          in
+            # Read the release version from scripts/release.yml
+            builtins.head (builtins.match ".+ReleaseVersion: '([^']+).+" release);
+        });
+      };
       allCabalHashesOverlay = final: prev: {
         all-cabal-hashes = final.fetchurl {
           url = "https://github.com/commercialhaskell/all-cabal-hashes/archive/ce857734d7d4c0fad3f6dda3a4db052836ed4619.tar.gz";
@@ -77,6 +88,7 @@
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
+          z3Overlay
           allCabalHashesOverlay
           haskellBackendOverlay
           haskellBackendVersionInfoOverlay
