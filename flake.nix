@@ -13,9 +13,13 @@
       url = "github:lf-/nix-lib";
       flake = false;
     };
+    all-cabal-hashes = {
+      url = "github:commercialhaskell/all-cabal-hashes/ce857734d7d4c0fad3f6dda3a4db052836ed4619";
+      flake = false;
+    };
   };
 
-  outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib }:
+  outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib, all-cabal-hashes }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       z3Overlay = final: prev: {
@@ -30,10 +34,7 @@
         });
       };
       allCabalHashesOverlay = final: prev: {
-        all-cabal-hashes = final.fetchurl {
-          url = "https://github.com/commercialhaskell/all-cabal-hashes/archive/ce857734d7d4c0fad3f6dda3a4db052836ed4619.tar.gz";
-          sha256 = "sha256-Q7Zg32v5ubjVJMQXGiyyMmeFg08jTzVRKC18laiHCPE=";
-        };
+        inherit all-cabal-hashes;
       };
       makeOverlayForHaskell = overlay: final: prev: {
         haskell = prev.haskell // {
