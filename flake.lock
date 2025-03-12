@@ -50,16 +50,15 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1726497185,
-        "narHash": "sha256-iN+5eLmDm/rLuIZezS5ZqiW1BtBpwrrM9CPPP7Z5Tog=",
+        "lastModified": 1716459074,
+        "narHash": "sha256-IpahO+EkWdGl9QP7B2YXfJWpSfghjxgpz4ab47nRJY4=",
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
-        "rev": "854d4f05ea78547d46e807b414faad64cea10ae4",
+        "rev": "a65058865cda201de504f5546271b8e997a0be9c",
         "type": "github"
       },
       "original": {
         "owner": "runtimeverification",
-        "ref": "854d4f0",
         "repo": "rv-nix-tools",
         "type": "github"
       }

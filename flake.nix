@@ -2,8 +2,7 @@
   description = "K Kore Language Haskell Backend";
 
   inputs = {
-    # pin rv-utils to a fixed version
-    rv-utils.url = "github:runtimeverification/rv-nix-tools/854d4f0";
+    rv-utils.url = "github:runtimeverification/rv-nix-tools";
     nixpkgs.follows = "rv-utils/nixpkgs";
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
