@@ -79,9 +79,9 @@
       let
         hlib = final.haskell.lib;
       in {
-        json-rpc = hlib.dontCheck hlib.markUnbroken hprev.json-rpc;
-        smtlib-backends-process = hlib.dontCheck hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process);
-        decision-diagrams = hlib.dontCheck hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams);
+        json-rpc = hlib.dontCheck (hlib.markUnbroken hprev.json-rpc);
+        smtlib-backends-process = hlib.dontCheck (hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process));
+        decision-diagrams = hlib.dontCheck (hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams));
 
         # dependencies on the "wrong" version of hashable
         data-fix = hlib.doJailbreak hprev.data-fix;
