@@ -162,7 +162,7 @@
         kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";
         kore-rpc-client = withZ3 pkgs hs-backend-booster "kore-rpc-client";
         booster-dev = withZ3 pkgs hs-backend-booster-dev-tools "booster-dev";
-
+        inherit (pkgs.haskell.packages."${ghcVer}") haskell-language-server;
       };
 
       # TODO: replicate style devshell
