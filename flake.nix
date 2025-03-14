@@ -90,18 +90,6 @@
         smtlib-backends-process = hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process);
         decision-diagrams = hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams);
 
-        # attempt to bring in a non-standard hashable package
-        # this package fails to build because of a name conflict in its dependencies
-        hashable = hlib.doJailbreak ( # needs a base library version bump
-          (hprev.hashable.overrideAttrs (oldAttrs: {
-            src = final.fetchFromGitHub {
-              owner = "haskell-unordered-containers";
-              repo = "hashable";
-              rev = "v1.4.2.0";
-              sha256 = "sha256-7NwqFAr/m+54PyNo7QCcfTFAELMG7uCw13NALDEJ31E=";
-            };
-          })));
-
         # when overriding haskell package sources that are dependencies of cabal2nix, an infinite recursion occurs
         # as we instantiate nixpkgs a second time already anyway, we can just force cabal2nix to not use overriden dependencies, thereby completely bypassing this edgecase
         cabal2nix = pkgsClean.haskell.packages."${ghcVer}".cabal2nix;
@@ -113,7 +101,7 @@
         # note: when overriding the package source, `hlib.markUnbroken` becomes unnecessary
         # example for package source overrides:
         overrides = {
-          json-rpc = "1.0.4"; # which we actually want
+          # json-rpc = "1.0.4"; # which we actually want
           # this causes a "tape error", it seems the cabal hashes get untarred in the store.
 
 
