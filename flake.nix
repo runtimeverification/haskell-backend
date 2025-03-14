@@ -244,5 +244,8 @@
           };
         });
       };
+
+      # is required by at least https://github.com/runtimeverification/k/blob/master/flake.nix
+      prelude-kore = ./src/main/kore/prelude.kore;
     });
 }
