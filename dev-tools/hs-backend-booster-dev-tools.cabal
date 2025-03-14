@@ -13,10 +13,8 @@ bug-reports:    https://github.com/runtimeverification/hs-backend-booster/issues
 author:         Runtime Verification Inc
 maintainer:     jost.berthold@runtimeverification.com
 license:        BSD3
-license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    LICENSE
     package.yaml
 
 source-repository head
@@ -228,28 +226,4 @@ executable process-logs
     , optparse-applicative
     , text
     , time
-  default-language: Haskell2010
-
-executable time-profile
-  main-is: Main.hs
-  other-modules:
-      Profiteur
-      Paths_hs_backend_booster_dev_tools
-  hs-source-dirs:
-      time-profile
-  default-extensions:
-      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts
-  build-depends:
-      aeson
-    , base
-    , bytestring
-    , containers
-    , directory
-    , filepath
-    , kore-rpc-types
-    , profiteur
-    , text
-    , unordered-containers
-    , vector
   default-language: Haskell2010

@@ -23,13 +23,11 @@ extra-deps:
   - monad-validate-1.3.0.0
   - github: goodlyrottenapple/tasty-test-reporter
     commit: b704130545aa3925a8487bd3e92f1dd5ce0512e2
-  - github: goodlyrottenapple/profiteur
-    commit: 7b30bbe6b2a6b72a5b4896f3a0eed5587a5bf465
   - ghc-prof-1.4.1.12@sha256:0146d3324470db81f6ed1d84b445f1d1aadaeb2e4e045876f5cd231a0946b713,2117
-  
+
 allow-newer: true
 
-allow-newer-deps: 
+allow-newer-deps:
   - data-fix
   - semialign
   - text-short
