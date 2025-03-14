@@ -103,9 +103,8 @@
       some-cabal-hashes = import "${some-cabal-hashes-lib}/lib/some-cabal-hashes.nix";
       someCabalHashesOverlay = makeOverlayForHaskell (final: prev: some-cabal-hashes {
         self = final;
-        # note: fetchFromGitHub should be replaced by a flake input
         overrides = {
-
+          # note: fetchFromGitHub should be replaced by a flake input
           # tasty-test-reporter = final.fetchFromGitHub {
           #   owner = "goodlyrottenapple";
           #   repo = "tasty-test-reporter";
@@ -134,19 +133,18 @@
       pkgsClean = import nixpkgs {
         inherit system;
       };
-      # This should based on the compiler version from the resolver in stack.yaml.
+      # ghc compiler revision
       ghcVer = "ghc965";
 
-      withZ3 = pkgs: pkg: exe:
-        pkgs.stdenv.mkDerivation {
-          name = exe;
-          phases = [ "installPhase" ];
-          buildInputs = with pkgs; [ makeWrapper ];
-          installPhase = ''
-            mkdir -p $out/bin
-            makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
-          '';
-        };
+      withZ3 = pkgs: pkg: exe: pkgs.stdenv.mkDerivation {
+        name = exe;
+        phases = [ "installPhase" ];
+        buildInputs = with pkgs; [ makeWrapper ];
+        installPhase = ''
+          mkdir -p $out/bin
+          makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
+        '';
+      };
     in {
       packages = rec {
         default = hs-backend-booster;
