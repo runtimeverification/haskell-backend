@@ -16,19 +16,20 @@
   };
 
   outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib }:
-    flake-utils.lib.eachDefaultSystem (system:
+  let
+    z3Overlay = final: prev: {
+      z3 = prev.z3.overrideAttrs (_: {
+        src = z3;
+        version =
+        let
+          release = builtins.readFile "${z3}/scripts/release.yml";
+        in
+          # Read the release version from scripts/release.yml
+          builtins.head (builtins.match ".+ReleaseVersion: '([^']+).+" release);
+      });
+    };
+  in flake-utils.lib.eachDefaultSystem (system:
     let
-      z3Overlay = final: prev: {
-        z3 = prev.z3.overrideAttrs (_: {
-          src = z3;
-          version =
-          let
-            release = builtins.readFile "${z3}/scripts/release.yml";
-          in
-            # Read the release version from scripts/release.yml
-            builtins.head (builtins.match ".+ReleaseVersion: '([^']+).+" release);
-        });
-      };
       makeOverlayForHaskell = overlay: final: prev: {
         haskell = prev.haskell // {
           packages = prev.haskell.packages // {
@@ -219,9 +220,9 @@
           ];
         };
       };
-
+    }) // {
       overlays = {
-        inherit z3Overlay;
+        z3 = z3Overlay;
         integration-tests = (final: prev: {
           kore-tests = final.callPackage ./nix/integration-shell.nix {
             python = final.python3.withPackages (ps:
@@ -247,5 +248,5 @@
 
       # is required by at least https://github.com/runtimeverification/k/blob/master/flake.nix
       prelude-kore = ./src/main/kore/prelude.kore;
-    });
+    };
 }
