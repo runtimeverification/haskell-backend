@@ -146,14 +146,12 @@
         '';
       };
     in {
-      packages = rec {
-        default = hs-backend-booster;
-        kore-rpc-types = pkgs.haskell.packages.${ghcVer}.kore-rpc-types;
+      packages =
+      let
         kore = pkgs.haskell.packages.${ghcVer}.kore;
         hs-backend-booster = pkgs.haskell.packages.${ghcVer}.hs-backend-booster;
         hs-backend-booster-dev-tools = pkgs.haskell.packages.${ghcVer}.hs-backend-booster-dev-tools;
-
-        # executables as separate build targets
+      in {
         kore-exec = withZ3 pkgs kore "kore-exec";
         kore-match-disjunction = withZ3 pkgs hs-backend-booster-dev-tools "kore-match-disjunction";
         kore-parser = withZ3 pkgs hs-backend-booster-dev-tools "kore-parser";
