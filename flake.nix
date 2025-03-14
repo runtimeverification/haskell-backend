@@ -219,5 +219,30 @@
           ];
         };
       };
+
+      overlays = {
+        inherit z3Overlay;
+        integration-tests = (final: prev: {
+          kore-tests = final.callPackage ./nix/integration-shell.nix {
+            python = final.python3.withPackages (ps:
+              with ps; [
+                (buildPythonPackage rec {
+                  pname = "jsonrpcclient";
+                  version = "4.0.3";
+                  src = prev.fetchFromGitHub {
+                    owner = "explodinglabs";
+                    repo = pname;
+                    rev = version;
+                    sha256 = "sha256-xqQwqNFXatGzc4JprZY1OpdPPGgpP5/ucG/qyV/n8hw=";
+                  };
+                  doCheck = false;
+                  format = "pyproject";
+                  buildInputs = [ setuptools ];
+                })
+              ]
+            );
+          };
+        });
+      };
     });
 }
