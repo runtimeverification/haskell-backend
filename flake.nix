@@ -83,6 +83,10 @@
         smtlib-backends-process = hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process);
         decision-diagrams = hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams);
 
+        # dependencies on the "wrong" version of hashable
+        data-fix = hlib.doJailbreak hprev.data-fix;
+        text-short = hlib.doJailbreak hprev.text-short;
+
         # when overriding haskell package sources that are dependencies of cabal2nix, an infinite recursion occurs
         # as we instantiate nixpkgs a second time already anyway, we can just force cabal2nix to not use overriden dependencies, thereby completely bypassing this edgecase
         cabal2nix = pkgsClean.haskell.packages."${ghcVer}".cabal2nix;
@@ -91,8 +95,6 @@
       someCabalHashesOverlay = makeOverlayForHaskell (final: prev: some-cabal-hashes {
         self = final;
         # note: fetchFromGitHub should be replaced by a flake input
-        # note: when overriding the package source, `hlib.markUnbroken` becomes unnecessary
-        # example for package source overrides:
         overrides = {
 
           # tasty-test-reporter = final.fetchFromGitHub {
