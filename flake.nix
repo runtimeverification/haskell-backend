@@ -107,6 +107,9 @@
           # a custom older version of hashable
           hashable = "1.4.2.0";
 
+          # custom version of tar. We would want 0.6.3.0 but the
+          # currently-used nixpkgs cabal hashes don't provide that
+          tar = "0.6.2.0";
         };
       });
       pkgs = import nixpkgs {
