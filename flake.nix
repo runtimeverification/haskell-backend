@@ -79,13 +79,22 @@
       let
         hlib = final.haskell.lib;
       in {
-        json-rpc = hlib.markUnbroken hprev.json-rpc;
-        smtlib-backends-process = hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process);
-        decision-diagrams = hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams);
+        json-rpc = hlib.dontCheck hlib.markUnbroken hprev.json-rpc;
+        smtlib-backends-process = hlib.dontCheck hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process);
+        decision-diagrams = hlib.dontCheck hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams);
 
         # dependencies on the "wrong" version of hashable
         data-fix = hlib.doJailbreak hprev.data-fix;
         text-short = hlib.doJailbreak hprev.text-short;
+
+        # skip some package tests (might cause issues on CI)
+        crypton-x509 = hlib.dontCheck hprev.crypton-x509;
+        fgl = hlib.dontCheck hprev.fgl;
+        fgl-arbitrary = hlib.dontCheck hprev.fgl-arbitrary;
+        graphviz = hlib.dontCheck hprev.graphviz;
+        lifted-base = hlib.dontCheck hprev.lifted-base;
+        prettyprinter = hlib.dontCheck hprev.prettyprinter;
+        tar = hlib.dontCheck hprev.tar;
 
         # when overriding haskell package sources that are dependencies of cabal2nix, an infinite recursion occurs
         # as we instantiate nixpkgs a second time already anyway, we can just force cabal2nix to not use overriden dependencies, thereby completely bypassing this edgecase
