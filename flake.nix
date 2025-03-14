@@ -178,7 +178,13 @@
           cabal = pkgs.mkShell {
             name = "haskell cabal shell";
             packages = [
-
+              pkgsClean.hpack
+              hpkgs.cabal-install
+              pkgsClean.hpack
+              pkgsClean.jq
+              pkgsClean.nix
+              pkgsClean.z3
+              pkgsClean.lsof
             ];
           };
           default = pkgs.mkShell {
