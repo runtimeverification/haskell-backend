@@ -1,22 +1,5 @@
 {
   "nodes": {
-    "all-cabal-hashes": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1721832933,
-        "narHash": "sha256-y3R2pQRB0XQm3wgW2jngETB2bktQsOkcmaZ+eYBsbc8=",
-        "owner": "commercialhaskell",
-        "repo": "all-cabal-hashes",
-        "rev": "ce857734d7d4c0fad3f6dda3a4db052836ed4619",
-        "type": "github"
-      },
-      "original": {
-        "owner": "commercialhaskell",
-        "repo": "all-cabal-hashes",
-        "rev": "ce857734d7d4c0fad3f6dda3a4db052836ed4619",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -53,7 +36,6 @@
     },
     "root": {
       "inputs": {
-        "all-cabal-hashes": "all-cabal-hashes",
         "flake-utils": "flake-utils",
         "nixpkgs": [
           "rv-utils",

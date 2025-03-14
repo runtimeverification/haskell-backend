@@ -13,13 +13,9 @@
       url = "github:lf-/nix-lib";
       flake = false;
     };
-    all-cabal-hashes = {
-      url = "github:commercialhaskell/all-cabal-hashes/ce857734d7d4c0fad3f6dda3a4db052836ed4619";
-      flake = false;
-    };
   };
 
-  outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib, all-cabal-hashes }:
+  outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       z3Overlay = final: prev: {
@@ -32,9 +28,6 @@
             # Read the release version from scripts/release.yml
             builtins.head (builtins.match ".+ReleaseVersion: '([^']+).+" release);
         });
-      };
-      allCabalHashesOverlay = final: prev: {
-        inherit all-cabal-hashes;
       };
       makeOverlayForHaskell = overlay: final: prev: {
         haskell = prev.haskell // {
@@ -101,9 +94,6 @@
         # note: when overriding the package source, `hlib.markUnbroken` becomes unnecessary
         # example for package source overrides:
         overrides = {
-          # json-rpc = "1.0.4"; # which we actually want
-          # this causes a "tape error", it seems the cabal hashes get untarred in the store.
-
 
           # tasty-test-reporter = final.fetchFromGitHub {
           #   owner = "goodlyrottenapple";
@@ -112,17 +102,8 @@
           #   sha256 = "sha256-uOQYsTecYgAKhL+DIgHLAfh2DAv+ye1JWqcQGRdpiMA=";
           # };
 
-          # trying to insert a custom version of hashable
-          # hashable = "1.4.2.0"; # causes a "tape error"
-
-          # explicit download from https://github.com/haskell-unordered-containers/hashable/tree/v1.4.2.0
-          # fails to build because it needs a base library version bump for ghc-9.6.5
-          # hashable = final.fetchFromGitHub {
-          #   owner = "haskell-unordered-containers";
-          #   repo = "hashable";
-          #   rev = "v1.4.2.0";
-          #   sha256 = "sha256-7NwqFAr/m+54PyNo7QCcfTFAELMG7uCw13NALDEJ31E=";
-          # };
+          # a custom older version of hashable
+          hashable = "1.4.2.0";
 
         };
       });
@@ -130,7 +111,6 @@
         inherit system;
         overlays = [
           z3Overlay
-          allCabalHashesOverlay
           haskellBackendOverlay
           haskellBackendVersionInfoOverlay
           haskellDependenciesOverlay
