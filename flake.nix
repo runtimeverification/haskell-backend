@@ -140,26 +140,31 @@
       # TODO: replicate cabal devshell
       # TODO: replicate default devshell
       # note: consider using haskellPackages.shellFor
-      devShells = {
-        # Separate fourmolu and cabal shells just for CI
-        style = pkgsClean.mkShell {
-          name = "haskell style check shell";
-          packages = [
+      devShells =
+        let hlib = pkgsClean.haskell.lib;
+            hpkgs = pkgsClean.haskell.packages."${ghcVer}";
+        in {
+          # Separate fourmolu and cabal shells just for CI
+          style = pkgsClean.mkShell {
+            name = "haskell style check shell";
+            nativeBuildInputs = [
+              (hlib.justStaticExecutables hpkgs.fourmolu)
+              (hlib.justStaticExecutables hpkgs.hlint)
+              pkgsClean.hpack
+            ];
+          };
+          cabal = pkgs.mkShell {
+            name = "haskell cabal shell";
+            packages = [
 
-          ];
-        };
-        cabal = pkgs.mkShell {
-          name = "haskell cabal shell";
-          packages = [
+            ];
+          };
+          default = pkgs.mkShell {
+            name = "haskell default shell";
+            packages = [
 
-          ];
+            ];
+          };
         };
-        default = pkgs.mkShell {
-          name = "haskell default shell";
-          packages = [
-
-          ];
-        };
-      };
     });
 }
