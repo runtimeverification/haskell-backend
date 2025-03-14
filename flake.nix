@@ -163,41 +163,61 @@
         inherit (pkgs.haskell.packages."${ghcVer}") haskell-language-server;
       };
 
-      # TODO: replicate style devshell
-      # TODO: replicate cabal devshell
-      # TODO: replicate default devshell
-      # note: consider using haskellPackages.shellFor
       devShells =
-        let hlib = pkgsClean.haskell.lib;
-            hpkgs = pkgsClean.haskell.packages."${ghcVer}";
-        in {
-          # Separate fourmolu and cabal shells just for CI
-          style = pkgsClean.mkShell {
-            name = "haskell style check shell";
-            nativeBuildInputs = [
-              (hlib.justStaticExecutables hpkgs.fourmolu)
-              (hlib.justStaticExecutables hpkgs.hlint)
-              pkgsClean.hpack
-            ];
-          };
-          cabal = pkgs.mkShell {
-            name = "haskell cabal shell";
-            packages = [
-              pkgsClean.hpack
-              hpkgs.cabal-install
-              pkgsClean.hpack
-              pkgsClean.jq
-              pkgsClean.nix
-              pkgsClean.z3
-              pkgsClean.lsof
-            ];
-          };
-          default = pkgs.mkShell {
-            name = "haskell default shell";
-            packages = [
-
-            ];
-          };
+      let
+        hlib = pkgs.haskell.lib;
+        hpkgs = pkgs.haskell.packages."${ghcVer}";
+        shellForPackages = p: [
+          p.kore-rpc-types
+          p.kore
+          p.hs-backend-booster
+          p.hs-backend-booster-dev-tools
+        ];
+      in {
+        # separate fourmolu and cabal shells just for CI
+        style =
+        let
+          hlibClean = pkgsClean.haskell.lib;
+          hpkgsClean = pkgsClean.haskell.packages."${ghcVer}";
+        in pkgsClean.mkShell {
+          name = "haskell style check shell";
+          nativeBuildInputs = [
+            (hlib.justStaticExecutables hpkgs.fourmolu)
+            (hlib.justStaticExecutables hpkgs.hlint)
+            pkgsClean.hpack
+          ];
+          shellHook = ''
+            hpack booster && hpack dev-tools
+          '';
         };
+        cabal = hpkgs.shellFor {
+          name = "haskell cabal shell";
+          packages = shellForPackages;
+          nativeBuildInputs = [
+            hpkgs.cabal-install
+            pkgs.hpack
+            pkgs.jq
+            pkgs.nix
+            pkgs.z3
+            pkgs.lsof
+          ];
+          shellHook = ''
+            hpack booster && hpack dev-tools
+          '';
+        };
+        default = hpkgs.shellFor {
+          name = "haskell default shell";
+          packages = shellForPackages;
+          nativeBuildInputs = [
+            hpkgs.cabal-install
+            hpkgs.hpack
+            hpkgs.fourmolu
+            hpkgs.hlint
+            pkgs.haskell-language-server
+            pkgs.z3
+            pkgs.secp256k1
+          ];
+        };
+      };
     });
 }
