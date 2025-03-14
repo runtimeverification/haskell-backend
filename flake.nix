@@ -127,6 +127,17 @@
       };
       # This should based on the compiler version from the resolver in stack.yaml.
       ghcVer = "ghc965";
+
+      withZ3 = pkgs: pkg: exe:
+        pkgs.stdenv.mkDerivation {
+          name = exe;
+          phases = [ "installPhase" ];
+          buildInputs = with pkgs; [ makeWrapper ];
+          installPhase = ''
+            mkdir -p $out/bin
+            makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
+          '';
+        };
     in {
       packages = rec {
         default = hs-backend-booster;
@@ -134,6 +145,17 @@
         kore = pkgs.haskell.packages.${ghcVer}.kore;
         hs-backend-booster = pkgs.haskell.packages.${ghcVer}.hs-backend-booster;
         hs-backend-booster-dev-tools = pkgs.haskell.packages.${ghcVer}.hs-backend-booster-dev-tools;
+
+        # executables as separate build targets
+        kore-exec = withZ3 pkgs kore "kore-exec";
+        kore-match-disjunction = withZ3 pkgs hs-backend-booster-dev-tools "kore-match-disjunction";
+        kore-parser = withZ3 pkgs hs-backend-booster-dev-tools "kore-parser";
+        kore-repl = withZ3 pkgs kore "kore-repl";
+        kore-rpc = withZ3 pkgs kore "kore-rpc";
+        kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";
+        kore-rpc-client = withZ3 pkgs hs-backend-booster "kore-rpc-client";
+        booster-dev = withZ3 pkgs hs-backend-booster-dev-tools "booster-dev";
+
       };
 
       # TODO: replicate style devshell
