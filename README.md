@@ -170,9 +170,9 @@ Note that only `cabal` currently works within the nix shell and since it does no
 
 ### Upgrading dependencies
 
-We use `stack.yaml` (and hence `stack.yaml.lock`) as the source of truth about the Haskell package set the project is built with. The Nix flake uses [stacklock2nix](https://github.com/cdepillabout/stacklock2nix) to make the packages specified by the lock file available to `cabal-install` inside Nix.
+We use `stack.yaml` (and hence `stack.yaml.lock`) as the source of truth about the Haskell package set the project is built with. The nix flake uses `cabal2nix` to build cabal projects. Haskell package dependencies are taken from nixpkgs and overriden with packages from Hackage with source overrides. To optimize the build time of overriden packages, [some-cabal-hashes](https://github.com/lf-/nix-lib/blob/main/lib/some-cabal-hashes.nix) is utilized when overriding sources.
 
-Any GHC or resolver upgrades must double-check the `ghcVersion` value in the [`flake.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L32) file.
+The GHC version is also specified in the nix flake with the attribute `ghcVer` and corresponds to the respective GHC derivation in nixpkgs.
 
 It may also be required to update [`all-cabal-hashes`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L101).
 
