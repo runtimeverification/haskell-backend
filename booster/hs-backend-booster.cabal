@@ -1,0 +1,508 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hs-backend-booster
+version:        0.1.0
+synopsis:       A simple rewrite engine to accelerate K Framework's Haskell backend
+description:    See [README](README.md)
+category:       Language
+homepage:       https://github.com/runtimeverification/hs-backend-booster#readme
+bug-reports:    https://github.com/runtimeverification/hs-backend-booster/issues
+author:         Runtime Verification Inc
+maintainer:     jost.berthold@runtimeverification.com
+license:        BSD3
+build-type:     Simple
+extra-source-files:
+    package.yaml
+    README.md
+    test/parser/bool.kore
+    test/parser/bool.kore.json
+    test/parser/list.kore
+    test/parser/list.kore.json
+    test/parser/nat.kore
+    test/parser/nat.kore.json
+    test/parser/test-alias-1.kore
+    test/parser/test-alias-1.kore.json
+    test/parser/test-alias-10.kore
+    test/parser/test-alias-10.kore.json
+    test/parser/test-alias-11.kore
+    test/parser/test-alias-11.kore.json
+    test/parser/test-alias-12.kore
+    test/parser/test-alias-12.kore.json
+    test/parser/test-alias-2.kore
+    test/parser/test-alias-2.kore.json
+    test/parser/test-alias-3.kore
+    test/parser/test-alias-3.kore.json
+    test/parser/test-alias-4.kore
+    test/parser/test-alias-4.kore.json
+    test/parser/test-alias-5.kore
+    test/parser/test-alias-5.kore.json
+    test/parser/test-alias-6.kore
+    test/parser/test-alias-6.kore.json
+    test/parser/test-alias-7.kore
+    test/parser/test-alias-7.kore.json
+    test/parser/test-alias-8.kore
+    test/parser/test-alias-8.kore.json
+    test/parser/test-alias-9.kore
+    test/parser/test-alias-9.kore.json
+    test/parser/test-attribute-1.kore
+    test/parser/test-attribute-1.kore.json
+    test/parser/test-attribute-2.kore
+    test/parser/test-attribute-2.kore.json
+    test/parser/test-bool-1.kore
+    test/parser/test-bool-1.kore.json
+    test/parser/test-bool-2.kore
+    test/parser/test-bool-2.kore.json
+    test/parser/test-bool-3.kore
+    test/parser/test-bool-3.kore.json
+    test/parser/test-bool-4.kore
+    test/parser/test-bool-4.kore.json
+    test/parser/test-comment-1.kore
+    test/parser/test-comment-1.kore.json
+    test/parser/test-comment-2.kore
+    test/parser/test-comment-2.kore.json
+    test/parser/test-comment-3.kore
+    test/parser/test-comment-3.kore.json
+    test/parser/test-comment-4.kore
+    test/parser/test-comment-4.kore.json
+    test/parser/test-comment-5.kore
+    test/parser/test-comment-5.kore.json
+    test/parser/test-comment-6.kore
+    test/parser/test-comment-6.kore.json
+    test/parser/test-comment-7.kore
+    test/parser/test-comment-7.kore.json
+    test/parser/test-dv-1.kore
+    test/parser/test-dv-1.kore.json
+    test/parser/test-dv-2.kore
+    test/parser/test-dv-2.kore.parse-error
+    test/parser/test-dv-3.kore
+    test/parser/test-dv-3.kore.json
+    test/parser/test-exception-14.kore
+    test/parser/test-exception-14.kore.json
+    test/parser/test-exception-2.kore
+    test/parser/test-exception-2.kore.parse-error
+    test/parser/test-exception-21.kore
+    test/parser/test-exception-21.kore.parse-error
+    test/parser/test-exception-27.kore
+    test/parser/test-exception-27.kore.parse-error
+    test/parser/test-exception-3.kore
+    test/parser/test-exception-3.kore.parse-error
+    test/parser/test-exception-4.kore
+    test/parser/test-exception-4.kore.parse-error
+    test/parser/test-exception-5.kore
+    test/parser/test-exception-5.kore.parse-error
+    test/parser/test-exception-6.kore
+    test/parser/test-exception-6.kore.parse-error
+    test/parser/test-exception-7.kore
+    test/parser/test-exception-7.kore.parse-error
+    test/parser/test-hooks-1.kore
+    test/parser/test-hooks-1.kore.json
+    test/parser/test-hooks-10.kore
+    test/parser/test-hooks-10.kore.json
+    test/parser/test-hooks-2.kore
+    test/parser/test-hooks-2.kore.json
+    test/parser/test-hooks-3.kore
+    test/parser/test-hooks-3.kore.json
+    test/parser/test-hooks-4.kore
+    test/parser/test-hooks-4.kore.json
+    test/parser/test-hooks-5.kore
+    test/parser/test-hooks-5.kore.json
+    test/parser/test-hooks-6.kore
+    test/parser/test-hooks-6.kore.json
+    test/parser/test-hooks-7.kore
+    test/parser/test-hooks-7.kore.json
+    test/parser/test-hooks-8.kore
+    test/parser/test-hooks-8.kore.json
+    test/parser/test-hooks-9.kore
+    test/parser/test-hooks-9.kore.json
+    test/parser/test-hooks-ctor.kore
+    test/parser/test-hooks-ctor.kore.json
+    test/parser/test-import-1.kore
+    test/parser/test-import-1.kore.json
+    test/parser/test-int-1.kore
+    test/parser/test-int-1.kore.json
+    test/parser/test-int-2.kore
+    test/parser/test-int-2.kore.json
+    test/parser/test-int-3.kore
+    test/parser/test-int-3.kore.json
+    test/parser/test-int-4.kore
+    test/parser/test-int-4.kore.json
+    test/parser/test-int-5.kore
+    test/parser/test-int-5.kore.json
+    test/parser/test-issue-94-1.kore
+    test/parser/test-issue-94-1.kore.json
+    test/parser/test-issue-94-2.kore
+    test/parser/test-issue-94-2.kore.json
+    test/parser/test-modules-1.kore
+    test/parser/test-modules-1.kore.json
+    test/parser/test-pattern-1.kore
+    test/parser/test-pattern-1.kore.json
+    test/parser/test-pattern-10.kore
+    test/parser/test-pattern-10.kore.json
+    test/parser/test-pattern-11.kore
+    test/parser/test-pattern-11.kore.json
+    test/parser/test-pattern-12.kore
+    test/parser/test-pattern-12.kore.json
+    test/parser/test-pattern-13.kore
+    test/parser/test-pattern-13.kore.json
+    test/parser/test-pattern-14.kore
+    test/parser/test-pattern-14.kore.json
+    test/parser/test-pattern-15.kore
+    test/parser/test-pattern-15.kore.json
+    test/parser/test-pattern-2.kore
+    test/parser/test-pattern-2.kore.json
+    test/parser/test-pattern-3.kore
+    test/parser/test-pattern-3.kore.json
+    test/parser/test-pattern-4.kore
+    test/parser/test-pattern-4.kore.json
+    test/parser/test-pattern-5.kore
+    test/parser/test-pattern-5.kore.json
+    test/parser/test-pattern-6.kore
+    test/parser/test-pattern-6.kore.json
+    test/parser/test-pattern-7.kore
+    test/parser/test-pattern-7.kore.json
+    test/parser/test-pattern-8.kore
+    test/parser/test-pattern-8.kore.json
+    test/parser/test-pattern-9.kore
+    test/parser/test-pattern-9.kore.json
+    test/parser/test-scanner-1.kore
+    test/parser/test-scanner-1.kore.json
+    test/parser/test-sort-1.kore
+    test/parser/test-sort-1.kore.json
+    test/parser/test-sort-2.kore
+    test/parser/test-sort-2.kore.json
+    test/parser/test-sort-3.kore
+    test/parser/test-sort-3.kore.json
+    test/parser/test-sort-4.kore
+    test/parser/test-sort-4.kore.json
+    test/parser/test-sort-5.kore
+    test/parser/test-sort-5.kore.json
+    test/parser/test-sort-6.kore
+    test/parser/test-sort-6.kore.json
+    test/parser/test-string-1.kore
+    test/parser/test-string-1.kore.json
+    test/parser/test-string-2.kore
+    test/parser/test-string-2.kore.json
+    test/parser/test-string-3.kore
+    test/parser/test-string-3.kore.json
+    test/parser/test-string-4.kore
+    test/parser/test-string-4.kore.parse-error
+    test/parser/test-string-5.kore
+    test/parser/test-string-5.kore.json
+    test/parser/test-string-6.kore
+    test/parser/test-string-6.kore.json
+    test/parser/test-string-7.kore
+    test/parser/test-string-7.kore.json
+    test/parser/test-symbol-1.kore
+    test/parser/test-symbol-1.kore.json
+    test/parser/test-symbol-2.kore
+    test/parser/test-symbol-2.kore.json
+    test/parser/test-symbol-3.kore
+    test/parser/test-symbol-3.kore.json
+    test/parser/test-symbol-4.kore
+    test/parser/test-symbol-4.kore.json
+    test/parser/test-symbol-5.kore
+    test/parser/test-symbol-5.kore.json
+    test/parser/test-symbol-6.kore
+    test/parser/test-symbol-6.kore.json
+    test/parser/test-symbol-7.kore
+    test/parser/test-symbol-7.kore.json
+    test/parser/test-symbol-8.kore
+    test/parser/test-symbol-8.kore.json
+    test/parser/user-nat.kore
+    test/parser/user-nat.kore.json
+    cbits/kllvm-c.h
+    cbits/stdbool.h
+    cbits/stddef.h
+
+source-repository head
+  type: git
+  location: https://github.com/runtimeverification/hs-backend-booster
+
+library
+  exposed-modules:
+      Booster.Builtin
+      Booster.Builtin.Base
+      Booster.Builtin.BOOL
+      Booster.Builtin.INT
+      Booster.Builtin.KEQUAL
+      Booster.Builtin.LIST
+      Booster.Builtin.MAP
+      Booster.CLOptions
+      Booster.Definition.Attributes.Base
+      Booster.Definition.Attributes.Reader
+      Booster.Definition.Base
+      Booster.Definition.Ceil
+      Booster.Definition.Util
+      Booster.GlobalState
+      Booster.JsonRpc
+      Booster.JsonRpc.Utils
+      Booster.LLVM
+      Booster.LLVM.Internal
+      Booster.LLVM.TH
+      Booster.Log
+      Booster.Log.Context
+      Booster.Pattern.ApplyEquations
+      Booster.Pattern.Base
+      Booster.Pattern.Binary
+      Booster.Pattern.Bool
+      Booster.Pattern.Implies
+      Booster.Pattern.Index
+      Booster.Pattern.Match
+      Booster.Pattern.Pretty
+      Booster.Pattern.Rewrite
+      Booster.Pattern.Substitution
+      Booster.Pattern.Util
+      Booster.Prettyprinter
+      Booster.SMT.Base
+      Booster.SMT.Interface
+      Booster.SMT.LowLevelCodec
+      Booster.SMT.Runner
+      Booster.SMT.Translate
+      Booster.Syntax.Json
+      Booster.Syntax.Json.Externalise
+      Booster.Syntax.Json.Internalise
+      Booster.Syntax.ParsedKore
+      Booster.Syntax.ParsedKore.Base
+      Booster.Syntax.ParsedKore.Internalise
+      Booster.Syntax.ParsedKore.Lexer
+      Booster.Syntax.ParsedKore.LexerWrapper
+      Booster.Syntax.ParsedKore.Parser
+      Booster.Util
+      Booster.VersionInfo
+  other-modules:
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      library
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      aeson
+    , aeson-pretty
+    , array
+    , attoparsec
+    , auto-update
+    , base
+    , binary
+    , bytestring
+    , casing
+    , clock
+    , conduit
+    , containers
+    , cryptonite
+    , deepseq
+    , deriving-aeson
+    , directory
+    , exceptions
+    , extra
+    , fast-logger
+    , filepath
+    , gitrev
+    , hashable
+    , hpp
+    , json-rpc
+    , kore-rpc-types
+    , language-c
+    , monad-logger
+    , optparse-applicative
+    , prettyprinter
+    , process
+    , recursion-schemes >=5.2.2.3
+    , regex-base
+    , regex-pcre-builtin
+    , smtlib-backends
+    , smtlib-backends-process
+    , stm
+    , stm-conduit
+    , syb
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , unix
+    , unliftio
+    , unordered-containers
+  default-language: Haskell2010
+
+executable kore-rpc-booster
+  main-is: Server.hs
+  other-modules:
+      Proxy
+      Stats
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      tools/booster
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded
+  build-depends:
+      aeson
+    , aeson-pretty
+    , base
+    , bytestring
+    , casing
+    , clock
+    , conduit-extra
+    , containers
+    , deepseq
+    , deriving-aeson
+    , exceptions
+    , extra
+    , fast-logger
+    , hs-backend-booster
+    , json-rpc
+    , kore
+    , kore-rpc-types
+    , monad-logger
+    , optparse-applicative
+    , prettyprinter
+    , recursion-schemes
+    , stm
+    , text
+    , transformers
+  default-language: Haskell2010
+
+executable kore-rpc-client
+  main-is: RpcClient.hs
+  other-modules:
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      tools/rpc-client
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -main-is RpcClient
+  build-depends:
+      aeson
+    , aeson-pretty
+    , base
+    , bytestring
+    , bz2
+    , casing
+    , clock
+    , containers
+    , directory
+    , extra
+    , filepath
+    , hs-backend-booster
+    , kore-rpc-types
+    , monad-logger
+    , network
+    , network-run
+    , optparse-applicative
+    , prettyprinter
+    , tar
+    , text
+    , vector
+    , zlib
+  default-language: Haskell2010
+
+test-suite llvm-integration
+  type: exitcode-stdio-1.0
+  main-is: LLVM.hs
+  other-modules:
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      test/llvm-integration
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , filepath
+    , hedgehog
+    , hs-backend-booster
+    , hspec
+    , hspec-hedgehog
+    , kore-rpc-types
+    , process
+    , tasty
+    , tasty-hspec
+    , text
+    , transformers
+  default-language: Haskell2010
+
+test-suite predicates-integration
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      test/predicates-integration
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , filepath
+    , hs-backend-booster
+    , hspec-hedgehog
+    , kore-rpc-types
+    , process
+    , tasty
+    , tasty-golden
+    , tasty-hunit
+    , text
+    , transformers
+  default-language: Haskell2010
+
+test-suite unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Driver.hs
+  other-modules:
+      Test.Booster.Builtin
+      Test.Booster.Definition.Internalise
+      Test.Booster.Fixture
+      Test.Booster.JsonRpc.DiffTest
+      Test.Booster.Pattern.ApplyEquations
+      Test.Booster.Pattern.Binary
+      Test.Booster.Pattern.Index
+      Test.Booster.Pattern.InternalCollections
+      Test.Booster.Pattern.MatchEval
+      Test.Booster.Pattern.MatchImplies
+      Test.Booster.Pattern.MatchRewrite
+      Test.Booster.Pattern.Rewrite
+      Test.Booster.Pattern.Substitution
+      Test.Booster.Pattern.Util
+      Test.Booster.SMT.LowLevel
+      Test.Booster.Syntax.Json
+      Test.Booster.Syntax.Json.Internalise
+      Test.Booster.Syntax.ParsedKore.Parser
+      Test.Booster.Util
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      unit-tests
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
+  build-tool-depends:
+      tasty-discover:tasty-discover
+  build-depends:
+      base
+    , binary
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , hedgehog
+    , hs-backend-booster
+    , kore-rpc-types
+    , monad-logger
+    , process
+    , tasty
+    , tasty-golden
+    , tasty-hedgehog
+    , tasty-hunit
+    , text
+    , transformers
+  default-language: Haskell2010
