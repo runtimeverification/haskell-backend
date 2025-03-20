@@ -189,7 +189,6 @@ tests:
     - tasty-golden
     - tasty-hedgehog
     - tasty-hunit
-    - tasty-test-reporter
     - text
     - transformers
     ghc-options:
@@ -231,7 +230,6 @@ tests:
       - tasty
       - tasty-golden
       - tasty-hunit
-      - tasty-test-reporter
       - hspec-hedgehog
       - hs-backend-booster
       - kore-rpc-types

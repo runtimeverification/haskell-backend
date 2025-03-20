@@ -139,22 +139,24 @@ Make sure that the file wasn't overwritten, if it was add the `experimental-feat
 ### Formatting
 The CI requires all Haskell files to be formatted via [fourmolu](https://hackage.haskell.org/package/fourmolu).
 
-If using VSCode, please refer to the language server section above. If not, the easiest way to do this locally is to run
+If using VSCode, please refer to the language server section above. If not, the easiest way to do this locally is by using the `nix` development shell `#style`, which provides `fourmolu` in the version used by CI for checking the format.
 
 ```
-nix run .#format
+nix develop .#style --command scripts/fourmolu.sh
 ```
 
-This will format all the haskell files in the given folder and all sub-folders. You can `cd` into a particular subfolder and run the command there, or if you only want to format a specific file, you can provide it as an argument to the above command:
-
+This script will run `fourmolu` to format all Haskell files in the project. You can also leave out the `--command ...` part and use `fourmolu` in the interactive `nix develop` shell to format particular files or subfolders:
 ```
-nix run .#format Foo.hs
+$ nix develop .#style
+<nix-develop>$ fourmolu path/to/Foo.hs
+... outputs the formatted file
+<nix-develop>$ cd a/sub/directory && fourmolu
 ```
 
-### Nix dev shell
+### Nix dev shell for building
 
-We provide a development nix shell with a suitable development environment and
-a binary cache at [runtimeverification.cachix.org]. The development can be launched via `nix develop` and then calling `stack build/test/etc`.
+We provide a development nix shell with a suitable development environment and a binary cache at [runtimeverification.cachix.org].
+The development can be launched via `nix develop .#cabal` and then calling `cabal build/test/etc`.
 
 ### Nix-direnv
 
@@ -166,17 +168,17 @@ echo "use flake" > .envrc
 
 Finally, run `direnv allow` inside the repo folder to load up the nix shell.
 
-Note that only `cabal` currently works within the nix shell and since it does not support the HPack `package.yaml` file format, any changes to this file will require running `hpack` before they are picked up by cabal.
+Note that only `cabal` currently works within the nix shell and since it does not support the HPack `package.yaml` file format, any changes to this file will require running `hpack` before they are picked up by cabal. The `*.cabal` files are checked in but not intended for manual editing if a `package.yaml` exists.
 
 ### Upgrading dependencies
 
-We use `stack.yaml` (and hence `stack.yaml.lock`) as the source of truth about the Haskell package set the project is built with. The Nix flake uses [stacklock2nix](https://github.com/cdepillabout/stacklock2nix) to make the packages specified by the lock file available to `cabal-install` inside Nix.
+We aim to use `stack.yaml` and its chosen LTS resolver as the source of truth for the Haskell package set the projectis built with.
+However, the nix flake uses `cabal2nix` to build cabal projects, using Haskell packages from `nixpkgs` and overriden with packages from Hackage with source overrides. `nixpkgs` provides some packages in slightly different versions, but the discrepancies are minor and mainly in test dependencies.
+A `cabal.project.freeze` file has been added to ensure the consistent use of known dependency versions when building outside `nix`.
+To optimize the build time of overriden packages, [some-cabal-hashes](https://github.com/lf-/nix-lib/blob/main/lib/some-cabal-hashes.nix) is utilized when overriding sources.
 
-Any GHC or resolver upgrades must double-check the `ghcVersion` value in the [`flake.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L32) file.
-
-It may also be required to update [`all-cabal-hashes`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L101).
-
-To support the scenario of building the project with `cabal-install` outside of Nix, We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using. The script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) should do most of that work, and [`scripts/check-cabal-stack-sync.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/check-cabal-stack-sync.sh) checks the result. Some manual adjustments will still be necessary for the `nix` builds in CI and locally to work.
+An upgrade to the stack resolver will therefore require a complete revision of the dependencies, starting with the  GHC version (specified in the `nix` flake under `ghcVer`, and revising the overrides in `flake.nix`.
+As a starting point to this process, the script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) can be used to generate a new `cabal.project.freeze` file which pins the dependencies to what the current `stack` resolver is using. Some manual adjustments will usually be necessary for the `nix` builds in CI and locally to work.
 
 ### Integration tests
 
