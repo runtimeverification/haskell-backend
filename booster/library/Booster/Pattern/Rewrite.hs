@@ -64,7 +64,7 @@ import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
 import Booster.Pattern.Match (
-    FailReason (ArgLengthsDiffer, SubsortingError),
+    FailReason (ArgLengthsDiffer, SubjectVariableMatch, SubsortingError),
     MatchResult (MatchFailed, MatchIndeterminate, MatchSuccess),
     MatchType (Rewrite),
     SortError,
@@ -392,6 +392,10 @@ applyRule pat@Pattern{ceilConditions} rule =
                             withContext CtxError $
                                 logPretty' @mods err
                             failRewrite $ InternalMatchError $ renderText $ pretty' @mods err
+                        MatchFailed err@(SubjectVariableMatch t v) -> do
+                            withContext CtxError $
+                                logPretty' @mods err
+                            failRewrite $ RuleApplicationUnclear rule pat.term $ NE.singleton (t, Var v)
                         MatchFailed reason -> do
                             withContext CtxFailure $ logPretty' @mods reason
                             returnNotApplied

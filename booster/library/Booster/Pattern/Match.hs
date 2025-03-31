@@ -216,9 +216,10 @@ match1 _       t1@DomainValue{}                           t2@KSet{}             
 match1 _       t1@DomainValue{}                           t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@DomainValue{}                           t2@FunctionApplication{}                   = addIndeterminate t1 t2
 -- match with var on the RHS must be indeterminate when evaluating functions. see: https://github.com/runtimeverification/hs-backend-booster/issues/231
+match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
+-- match with var on RHS is specially marked at the moment but must abort the rewriting (or lead to branching), see https://github.com/runtimeverification/haskell-backend/issues/4100
 match1 Rewrite t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Implies t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
-match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@Injection{}                             t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 _       t1@Injection{}                             t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -228,6 +229,7 @@ match1 _       t1@Injection{}                             t2@KList{}            
 match1 _       t1@Injection{}                             t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@Injection{}                             t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@Injection{}                             t2@FunctionApplication{}                   = addIndeterminate t1 t2
+match1 Rewrite t1@Injection{}                             (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 _       t1@Injection{}                             t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@KMap{}                                  t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@KMap{}                                  (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b

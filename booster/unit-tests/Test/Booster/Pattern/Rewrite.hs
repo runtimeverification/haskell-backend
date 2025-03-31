@@ -41,7 +41,7 @@ test_rewriteStep =
         "Rewriting"
         [ errorCases
         , rewriteSuccess
-        , unifyNotMatch
+        , subjectVariables
         , definednessUnclear
         , rewriteStuck
         , rulePriority
@@ -176,7 +176,7 @@ testConf = do
 ----------------------------------------
 errorCases
     , rewriteSuccess
-    , unifyNotMatch
+    , subjectVariables
     , definednessUnclear
     , rewriteStuck
     , rulePriority ::
@@ -207,10 +207,11 @@ rewriteSuccess =
             `rewritesTo` ( "con1-f1"
                          , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
                          )
-unifyNotMatch =
-    testCase "Stuck case when subject has variables" $
-        getsStuck
-            [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
+subjectVariables =
+    testCase "Aborts case when subject has variables" $ do
+        let t = [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
+        t `failsWith`
+            RuleApplicationUnclear rule3 t (NE.singleton ([trm| \dv{SomeSort{}}("otherThing")|], [trm| X:SomeSort{} |]))
 definednessUnclear =
     testCase "con4 rewrite to f2 might become undefined" $ do
         let pcon4 =
