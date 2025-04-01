@@ -104,7 +104,7 @@ master_shell() {
 }
 
 # kompile Kontrol's K dependencies
-feature_shell "poetry install && poetry run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.foundry --jobs 4"
+feature_shell "poetry install && poetry run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.* --jobs 4"
 
 # kompile the test contracts, to be reused in feature_shell and master_shell. Copy the result from pytest's temp directory
 PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir

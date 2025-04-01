@@ -79,8 +79,6 @@ data FailReason
       SubsortingError SortError
     | -- | The two terms have differing argument lengths
       ArgLengthsDiffer Term Term
-    | -- | Not a matching substitution
-      SubjectVariableMatch Term Variable
     deriving stock (Eq, Show)
 
 instance FromModifiersT mods => Pretty (PrettyWithModifiers mods FailReason) where
@@ -115,8 +113,6 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods FailReason) whe
             pretty $ show err
         ArgLengthsDiffer t1 t2 ->
             hsep ["Argument length differ", pretty' @mods t1, pretty' @mods t2]
-        SubjectVariableMatch t v ->
-            hsep ["Cannot match variable in subject:", pretty' @mods v, pretty' @mods t]
 
 {- | Attempts to find a simple unifying substitution for the given
    terms.
@@ -216,9 +212,11 @@ match1 _       t1@DomainValue{}                           t2@KSet{}             
 match1 _       t1@DomainValue{}                           t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@DomainValue{}                           t2@FunctionApplication{}                   = addIndeterminate t1 t2
 -- match with var on the RHS must be indeterminate when evaluating functions. see: https://github.com/runtimeverification/hs-backend-booster/issues/231
-match1 Rewrite t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
-match1 Implies t1@DomainValue{}                           (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
 match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
+-- match with var on RHS may lead to branching during rewriting, see https://github.com/runtimeverification/haskell-backend/issues/4100
+-- Related cases are currently marked with a special function so they can be identified and changed together later (extending branching functionality)
+match1 Rewrite t1@DomainValue{}                           (Var v2)                                   = subjectVariableMatch t1 v2
+match1 Implies t1@DomainValue{}                           (Var v2)                                   = subjectVariableMatch t1 v2
 match1 Eval    t1@Injection{}                             t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 _       t1@Injection{}                             t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
@@ -228,6 +226,7 @@ match1 _       t1@Injection{}                             t2@KList{}            
 match1 _       t1@Injection{}                             t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@Injection{}                             t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@Injection{}                             t2@FunctionApplication{}                   = addIndeterminate t1 t2
+match1 Rewrite t1@Injection{}                             (Var v2)                                   = subjectVariableMatch t1 v2
 match1 _       t1@Injection{}                             t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@KMap{}                                  t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@KMap{}                                  (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
@@ -239,7 +238,7 @@ match1 _       t1@KMap{}                                  t2@KList{}            
 match1 _       t1@KMap{}                                  t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KMap{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KMap{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KMap{}                                  (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
+match1 Rewrite t1@KMap{}                                  (Var v2)                                   = subjectVariableMatch t1 v2
 match1 _       t1@KMap{}                                  t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@KList{}                                 t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@KList{}                                 (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
@@ -252,7 +251,7 @@ match1 _       t1@(KList def1 heads1 rest1)               t2@(KList def2 heads2 
 match1 _       t1@KList{}                                 t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KList{}                                 t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KList{}                                 t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KList{}                                 (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
+match1 Rewrite t1@KList{}                                 (Var t2)                                   = subjectVariableMatch t1 t2
 match1 _       t1@KList{}                                 t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@KSet{}                                  t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@KSet{}                                  (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
@@ -264,7 +263,7 @@ match1 _       t1@KSet{}                                  t2@KList{}            
 match1 _       t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
 match1 _       t1@KSet{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KSet{}                                  (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
+match1 Rewrite t1@KSet{}                                  (Var t2)                                   = subjectVariableMatch t1 t2
 match1 _       t1@KSet{}                                  t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@ConsApplication{}                       t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@ConsApplication{}                       (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
@@ -276,7 +275,7 @@ match1 _       t1@ConsApplication{}                       t2@KSet{}             
 match1 matchTy (ConsApplication symbol1 sorts1 args1)     (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications matchTy symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 Eval    (ConsApplication symbol1 sorts1 args1)     (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 _       t1@ConsApplication{}                       t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@ConsApplication{}                       (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
+match1 Rewrite t1@ConsApplication{}                       (Var t2)                                   = subjectVariableMatch t1 t2
 match1 _       t1@ConsApplication{}                       t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@FunctionApplication{}                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@FunctionApplication{}                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
@@ -294,7 +293,7 @@ match1 Eval    (FunctionApplication symbol1 sorts1 args1) (ConsApplication symbo
 match1 _       t1@FunctionApplication{}                   t2@ConsApplication{}                       = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 _       t1@FunctionApplication{}                   t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@FunctionApplication{}                   (Var t2)                                   = failWith $ SubjectVariableMatch t1 t2
+match1 Rewrite t1@FunctionApplication{}                   (Var t2)                                   = subjectVariableMatch t1 t2
 match1 _       t1@FunctionApplication{}                   t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@Var{}                                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@Var{}                                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
@@ -447,6 +446,12 @@ matchVar
                             then term2
                             else Injection termSort variableSort term2
                 else failWith $ DifferentSorts (Var var) term2
+
+-- Subject variable matches are currently marked as indeterminate.
+-- The code may be extended to collect these as separate conditional
+-- results (for branching).
+subjectVariableMatch :: Term -> Variable -> StateT MatchState (Except MatchResult) ()
+subjectVariableMatch t v = addIndeterminate t (Var v)
 
 {- | pair up the argument lists and return the pairs in the first argument. If the lists
 are of equal length, return Nothing in second, else return the remaining
