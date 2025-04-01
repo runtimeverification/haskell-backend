@@ -9,13 +9,11 @@ import Control.Monad.Extra (void)
 import Control.Monad.Trans.Except (runExcept)
 import Data.Coerce (coerce)
 import Data.Data (Proxy)
-import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Network.JSONRPC (ErrorObj)
-import Prettyprinter (comma, hsep, punctuate, (<+>))
 
 import Booster.Definition.Base (KoreDefinition)
 import Booster.LLVM qualified
@@ -123,22 +121,18 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (sortOfPattern patL)
                                 (externaliseExistTerm existsL patL.term)
                                 (externaliseExistTerm existsR patR.term)
-                        MatchIndeterminate remainder ->
+                        MatchIndeterminate _remainder ->
                             ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
-                                        then -- we are being conservative here for now and returning an error.
-                                        -- since we have already simplified the LHS, we may want to eventually return implise, but the condition
-                                        -- will contain the remainder as an equality contraint, predicating the implication on that equality being true.
+                                        then -- we are being conservative here for now and returning "not-implied".
+                                             -- We could return implies, but the condition will contain the remainder
+                                             -- as an equality contraint, predicating the implication on that equality being true.
+                                            doesNotImply
+                                                (sortOfPattern patL)
+                                                (externaliseExistTerm existsL patL.term)
+                                                (externaliseExistTerm existsR patR.term)
 
-                                            pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
-                                                "match remainder: "
-                                                    <> renderDefault
-                                                        ( hsep $
-                                                            punctuate comma $
-                                                                map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
-                                                                    NonEmpty.toList remainder
-                                                        )
                                         else checkImpliesMatchTerms existsL simplifedSubstPatL existsR patR
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
