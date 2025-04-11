@@ -97,7 +97,7 @@ test_evaluateFunction =
   where
     eval direction t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty t
+        runNoLoggingT $ evaluateTerm direction funDef Nothing ns mempty t
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
@@ -126,7 +126,7 @@ test_simplify =
   where
     simpl direction t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing ns mempty t
+        runNoLoggingT $ evaluateTerm direction simplDef Nothing ns mempty t
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
@@ -223,7 +223,7 @@ test_simplifyConstraint =
     simpl t =
         do
             ns <- noSolver
-            runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
+            runNoLoggingT $ simplifyConstraint testDefinition Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =
@@ -236,7 +236,7 @@ test_errors =
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
             ns <- noSolver
-            isLoop loopTerms =<< (runNoLoggingT $ fst <$> evaluateTerm TopDown loopDef Nothing ns mempty subj)
+            isLoop loopTerms =<< (runNoLoggingT $ evaluateTerm TopDown loopDef Nothing ns mempty subj)
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'

@@ -539,12 +539,10 @@ applyRule pat@Pattern{ceilConditions} rule =
         RewriteRuleAppT (RewriteT io) (Maybe a)
     checkConstraint onUnclear onBottom knownPredicates p = do
         RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
-        RewriteState{cache = oldCache} <- lift . RewriteT . lift $ get
-        (simplified, cache) <-
+        RewriteState{cache} <- lift . RewriteT . lift $ get
+        simplified <-
             withContext CtxConstraint $
-                simplifyConstraint definition llvmApi smtSolver oldCache knownPredicates p
-        -- update cache
-        lift $ updateRewriterCache cache
+                simplifyConstraint definition llvmApi smtSolver cache knownPredicates p
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing
