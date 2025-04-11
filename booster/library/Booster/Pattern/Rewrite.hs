@@ -141,9 +141,6 @@ invalidateRewriterEquationsCache =
     RewriteT . lift . modify $ \s@RewriteState{} ->
         s{cache = s.cache{equations = mempty}}
 
-updateRewriterCache :: LoggerMIO io => SimplifierCache -> RewriteT io ()
-updateRewriterCache cache = RewriteT . lift . modify $ \s@RewriteState{} -> s{cache}
-
 {- | Performs a rewrite step (using suitable rewrite rules from the
    definition).
 
