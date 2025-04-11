@@ -212,13 +212,12 @@ pushTerm t = eqState . modify $ \s -> s{termStack = t :<| s.termStack}
 
 -- pushing new constraints means the cache is stale
 pushConstraints :: Monad io => Set Predicate -> EquationT io ()
-pushConstraints ps = eqState . modify $ \s -> s{predicates = s.predicates <> ps, cache = mempty}
+pushConstraints ps = eqState . modify $ \s -> s{predicates = s.predicates <> ps}
 
--- run an evaluation with a local empty cache (discarded afterwards)
-withoutCache :: Monad io => EquationT io a -> EquationT io a
-withoutCache action = do
+-- run an evaluation with local cache (discarded afterwards)
+withoutCaching :: Monad io => EquationT io a -> EquationT io a
+withoutCaching action = do
     prior <- getState
-    eqState $ put prior{cache = mempty}
     a <- action
     eqState $ modify $ \s -> s{cache = prior.cache}
     pure a
@@ -492,7 +491,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
     -- this runs with a local empty cache because it manipulates the known constraints
-    withoutCache (traverse_ simplifyAssumedPredicate . predicates =<< getState)
+    withoutCaching (traverse_ simplifyAssumedPredicate . predicates =<< getState)
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
     -- break-up introduced symbolic _andBool_, filter-out trivial truth, de-duplicate
@@ -526,7 +525,7 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
         err -> throw err
 
 -- evaluate the given predicate assuming all others
--- this manipulates the known predicates so it also resets the simplifier cache
+-- this manipulates the known predicates so it should run in 'withoutCaching'
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
     allPs <- predicates <$> getState
@@ -543,19 +542,13 @@ evaluateConstraints ::
     SimplifierCache ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate))
-evaluateConstraints def mLlvmLibrary smtSolver cache =
-    fmap fst . runEquationT def mLlvmLibrary smtSolver cache mempty . evaluateConstraints'
-
-evaluateConstraints' ::
-    LoggerMIO io =>
-    Set Predicate ->
-    EquationT io (Set Predicate)
-evaluateConstraints' constraints = withoutCache $ do
-    pushConstraints constraints -- invalidates the cache
-    -- evaluate all existing constraints, once
-    traverse_ simplifyAssumedPredicate . predicates =<< getState
-    -- this may yield additional new constraints, left unevaluated
-    predicates <$> getState
+evaluateConstraints def mLlvmLibrary smtSolver cache constraints =
+    fmap fst $ runEquationT def mLlvmLibrary smtSolver cache mempty $ do
+        pushConstraints constraints
+        -- evaluate all existing constraints, once
+        withoutCaching (traverse_ simplifyAssumedPredicate . predicates =<< getState)
+        -- this may yield additional new constraints, left unevaluated
+        predicates <$> getState
 
 ----------------------------------------
 
