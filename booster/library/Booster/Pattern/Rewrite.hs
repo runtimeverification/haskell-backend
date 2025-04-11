@@ -141,9 +141,6 @@ invalidateRewriterEquationsCache =
     RewriteT . lift . modify $ \s@RewriteState{} ->
         s{cache = s.cache{equations = mempty}}
 
-updateRewriterCache :: LoggerMIO io => SimplifierCache -> RewriteT io ()
-updateRewriterCache cache = RewriteT . lift . modify $ \s@RewriteState{} -> s{cache}
-
 {- | Performs a rewrite step (using suitable rewrite rules from the
    definition).
 
@@ -539,12 +536,10 @@ applyRule pat@Pattern{ceilConditions} rule =
         RewriteRuleAppT (RewriteT io) (Maybe a)
     checkConstraint onUnclear onBottom knownPredicates p = do
         RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
-        RewriteState{cache = oldCache} <- lift . RewriteT . lift $ get
-        (simplified, cache) <-
+        RewriteState{cache} <- lift . RewriteT . lift $ get
+        simplified <-
             withContext CtxConstraint $
-                simplifyConstraint definition llvmApi smtSolver oldCache knownPredicates p
-        -- update cache
-        lift $ updateRewriterCache cache
+                simplifyConstraint definition llvmApi smtSolver cache knownPredicates p
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing
