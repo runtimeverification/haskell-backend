@@ -223,7 +223,7 @@ test_simplifyConstraint =
     simpl t =
         do
             ns <- noSolver
-            runNoLoggingT $ simplifyConstraint testDefinition Nothing ns mempty mempty t
+            runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =

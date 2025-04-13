@@ -1083,6 +1083,9 @@ applyEquation term rule =
     This is used during rewriting to simplify side conditions of rules
     (to decide whether or not a rule can apply, not to retain the
     ensured conditions).
+
+    Consistency of the returned SimplifierCache must be tracked by the
+    caller, the cache incorporates the given knownPredicates.
 -}
 simplifyConstraint ::
     LoggerMIO io =>
@@ -1092,10 +1095,9 @@ simplifyConstraint ::
     SimplifierCache ->
     Set Predicate ->
     Predicate ->
-    io (Either EquationFailure Predicate)
+    io (Either EquationFailure Predicate, SimplifierCache)
 simplifyConstraint def mbApi smt cache knownPredicates =
-    fmap fst
-        . runEquationT def mbApi smt cache knownPredicates
+    runEquationT def mbApi smt cache knownPredicates
         . (coerce <$>)
         . simplifyConstraint' True
         . coerce
