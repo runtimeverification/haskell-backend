@@ -210,7 +210,6 @@ countSteps = length . (.termStack) <$> getState
 pushTerm :: Monad io => Term -> EquationT io ()
 pushTerm t = eqState . modify $ \s -> s{termStack = t :<| s.termStack}
 
--- pushing new constraints means the cache is stale
 pushConstraints :: Monad io => Set Predicate -> EquationT io ()
 pushConstraints ps = eqState . modify $ \s -> s{predicates = s.predicates <> ps}
 
@@ -525,12 +524,12 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
         err -> throw err
 
 -- evaluate the given predicate assuming all others
--- this manipulates the known predicates so it should run in 'withoutCaching'
+-- This manipulates the known predicates so it should run in 'withoutCaching'
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
     allPs <- predicates <$> getState
     let otherPs = Set.delete p allPs
-    eqState $ modify $ \s -> s{predicates = otherPs, cache = mempty}
+    eqState $ modify $ \s -> s{predicates = otherPs}
     newP <- simplifyConstraint' True $ coerce p
     pushConstraints $ Set.singleton $ coerce newP
 
