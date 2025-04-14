@@ -1,25 +1,45 @@
 set -eux
 
-PLUGIN_DIR=${PLUGIN_DIR?"PLUGIN_DIR required to link in a crypto plugin dependency"}
+SCRIPT_DIR=$(dirname $0)
+PLUGIN_DIR=${PLUGIN_DIR:-""}
+
+if [ -z "$PLUGIN_DIR" ]; then
+    echo "PLUGIN_DIR required to link in a crypto plugin dependency"
+    exit 1
+else
+    for lib in libff libcryptopp blake2; do
+        LIBFILE=$(find ${PLUGIN_DIR} -name "${lib}.a" | head -1)
+        [ -z "$LIBFILE" ] && (echo "[Error] Unable to locate ${lib}.a"; exit 1)
+        PLUGIN_LIBS+="$LIBFILE "
+        PLUGIN_INCLUDE+="-I$(dirname $LIBFILE) -I$(dirname $LIBFILE)/../include "
+    done
+    #PLUGIN_CPP=$(find ${PLUGIN_DIR}/plugin-c -name "*.cpp")
+    PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
+fi
+
 
 NAME=$(basename ${0%.kompile})
+NAMETGZ=$(basename ${0%.kompile})
+
 
 # provide haskell definition
 cp ${NAME}.haskell.kore ${NAME}.kore
 
 # Regenerate llvm backend decision tree
 mkdir -p ./dt
-llvm-kompile-matching ${NAME}.llvm.kore qbaL ./dt 1/2
+llvm-kompile-matching ${NAME}.llvm.kore qbaL ./dt 0
 
 # kompile llvm-definition to interpreter
 
-PLUGIN_LIB=${PLUGIN_DIR}/build/krypto/lib/krypto.a
+case "$OSTYPE" in
+  linux*)   LPROCPS="-lprocps" ;;
+  *)        LPROCPS="" ;;
+esac
 
 llvm-kompile ${NAME}.llvm.kore ./dt c -- \
              -fPIC -std=c++17 -o interpreter \
-             $PLUGIN_LIB -lcrypto -lssl -lsecp256k1 \
-             -I /usr/include -I $PLUGIN_DIR
-
+             $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
+             -lcrypto -lssl $LPROCPS -lsecp256k1
 mv interpreter.* ${NAME}.dylib
 
 # remove temporary artefacts
