@@ -428,7 +428,10 @@ llvmSimplify term = do
 ----------------------------------------
 -- Interface functions
 
--- | Evaluate and simplify a term.
+{- | Evaluate and simplify a term.
+
+  The returned cache should only be reused with the same known predicates.
+-}
 evaluateTerm ::
     LoggerMIO io =>
     Direction ->
@@ -437,11 +440,11 @@ evaluateTerm ::
     SMT.SMTContext ->
     Set Predicate ->
     Term ->
-    io (Either EquationFailure Term)
-evaluateTerm direction def llvmApi smtSolver knownPredicates =
-    fmap fst
-        . runEquationT def llvmApi smtSolver mempty knownPredicates
-        . evaluateTerm' direction
+    io (Either EquationFailure Term, SimplifierCache)
+evaluateTerm direction def llvmApi smtSolver knownPredicates term =
+    runEquationT def llvmApi smtSolver mempty knownPredicates $
+        withTermContext term $
+            evaluateTerm' direction term
 
 -- version for internal nested evaluation
 evaluateTerm' ::
