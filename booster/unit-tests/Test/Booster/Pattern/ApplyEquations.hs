@@ -236,9 +236,11 @@ test_errors =
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
             ns <- noSolver
-            isLoop loopTerms =<<
-                (runNoLoggingT $ fst <$>
-                    evaluateTerm TopDown loopDef Nothing ns mempty mempty subj)
+            isLoop loopTerms
+                =<< ( runNoLoggingT $
+                        fst
+                            <$> evaluateTerm TopDown loopDef Nothing ns mempty mempty subj
+                    )
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'

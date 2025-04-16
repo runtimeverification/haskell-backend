@@ -38,7 +38,7 @@ import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Sequence as Seq (Seq, (|>), fromList)
+import Data.Sequence as Seq (Seq, fromList, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack)
 import Numeric.Natural
@@ -1005,8 +1005,8 @@ performRewrite rewriteConfig pat = do
         withContext CtxSimplify $ evaluateConstraints definition llvmApi smtSolver pat.constraints
     case simplifiedConstraints of
         Right constraints ->
-            (flip runStateT rewriteStart $ doSteps False pat{constraints}) >>=
-            \(rr, RewriteStepsState{counter, traces}) -> pure (counter, traces, rr)
+            (flip runStateT rewriteStart $ doSteps False pat{constraints})
+                >>= \(rr, RewriteStepsState{counter, traces}) -> pure (counter, traces, rr)
         Left r@(SideConditionFalse{}) ->
             pure (0, fromList [RewriteSimplified (Just r)], error "Just return #Bottom here")
         Left err ->
@@ -1060,7 +1060,7 @@ performRewrite rewriteConfig pat = do
                 Left other -> do
                     emitRewriteTrace $ RewriteSimplified (Just other)
                     pure $ Just p
-                -- FIXME remove copying
+    -- FIXME remove copying
 
     -- simplifies term and constraints of the pattern
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
