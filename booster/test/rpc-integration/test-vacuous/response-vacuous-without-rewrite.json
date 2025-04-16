@@ -155,29 +155,13 @@
                         "value": "true"
                     },
                     "second": {
-                        "tag": "App",
-                        "name": "Lbl'UndsEqlsSlshEqls'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "0"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "0"
-                            }
-                        ]
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortBool",
+                            "args": []
+                        },
+                        "value": "false"
                     }
                 }
             }

@@ -150,8 +150,8 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         subst
                                 else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
 
-                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
-                                        (Right newPreds, _) ->
+                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver filteredConsequentPreds >>= \case
+                                        Right newPreds ->
                                             if all (== Predicate TrueBool) newPreds
                                                 then
                                                     implies
@@ -161,7 +161,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                                         subst
                                                 else -- here we conservatively abort (incomplete)
                                                     pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
-                                        (Left other, _) ->
+                                        Left other ->
                                             pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
 
             case (internalised antecedent.term, internalised consequent.term) of
