@@ -244,11 +244,7 @@ toCache Equations orig result = eqState $ do
     -- Check before inserting a new result to avoid creating a
     -- lookup chain e -> result -> olderResult.
     newEqCache <- case Map.lookup result s.cache.equations of
-        Nothing -> do
-            withContextFor Equations $
-                withTermContext orig $
-                    withTermContext result $
-                        logMessage ("New cache entry created" :: Text)
+        Nothing ->
             pure $ Map.insert orig result s.cache.equations
         Just furtherResult -> do
             when (result /= furtherResult) $ do
