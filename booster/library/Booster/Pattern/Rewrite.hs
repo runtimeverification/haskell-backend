@@ -1060,7 +1060,6 @@ performRewrite rewriteConfig pat = do
                 Left other -> do
                     emitRewriteTrace $ RewriteSimplified (Just other)
                     pure $ Just p
-    -- FIXME remove copying
 
     -- simplifies term and constraints of the pattern
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
