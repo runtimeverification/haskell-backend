@@ -333,6 +333,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , logger
                         , prettyModifiers
                         }
+    -- NB the returned cache assumes the known predicates
     pure (res, endState.cache)
 
 iterateEquations ::
@@ -423,19 +424,24 @@ llvmSimplify term = do
 ----------------------------------------
 -- Interface functions
 
--- | Evaluate and simplify a term.
+{- | Evaluate and simplify a term.
+
+  The returned cache should only be reused with the same known predicates.
+-}
 evaluateTerm ::
     LoggerMIO io =>
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
+    SimplifierCache ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm direction def llvmApi smtSolver knownPredicates =
-    runEquationT def llvmApi smtSolver mempty knownPredicates
-        . evaluateTerm' direction
+evaluateTerm direction def llvmApi smtSolver cache knownPredicates term =
+    runEquationT def llvmApi smtSolver cache knownPredicates $
+        withTermContext term $
+            evaluateTerm' direction term
 
 -- version for internal nested evaluation
 evaluateTerm' ::
@@ -447,6 +453,9 @@ evaluateTerm' direction = iterateEquations direction PreferFunctions
 
 {- | Simplify a Pattern, processing its constraints independently.
      Returns either the first failure or the new pattern if no failure was encountered
+
+   The returned cache may only be reused if pat.constraints are known
+   to remain true in the next usage context.
 -}
 evaluatePattern ::
     LoggerMIO io =>
@@ -510,35 +519,28 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
         err -> throw err
 
 -- evaluate the given predicate assuming all others
+-- This manipulates the known predicates so it should run without cache
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
-    allPs <- predicates <$> getState
-    let otherPs = Set.delete p allPs
-    eqState $ modify $ \s -> s{predicates = otherPs}
+    prior <- getState
+    let otherPs = Set.delete p (prior.predicates)
+    eqState $ modify $ \s -> s{predicates = otherPs, cache = mempty}
     newP <- simplifyConstraint' True $ coerce p
-    pushConstraints $ Set.singleton $ coerce newP
+    eqState $ modify $ \s -> s{cache = prior.cache, predicates = otherPs <> Set.singleton (coerce newP)}
 
 evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
-    SimplifierCache ->
     Set Predicate ->
-    io (Either EquationFailure (Set Predicate), SimplifierCache)
-evaluateConstraints def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache mempty . evaluateConstraints'
-
-evaluateConstraints' ::
-    LoggerMIO io =>
-    Set Predicate ->
-    EquationT io (Set Predicate)
-evaluateConstraints' constraints = do
-    pushConstraints constraints
-    -- evaluate all existing constraints, once
-    traverse_ simplifyAssumedPredicate . predicates =<< getState
-    -- this may yield additional new constraints, left unevaluated
-    predicates <$> getState
+    io (Either EquationFailure (Set Predicate))
+evaluateConstraints def mLlvmLibrary smtSolver constraints =
+    fmap fst $ runEquationT def mLlvmLibrary smtSolver mempty constraints $ do
+        -- evaluate all existing constraints, once
+        traverse_ simplifyAssumedPredicate . predicates =<< getState
+        -- this may yield additional new constraints, left unevaluated
+        predicates <$> getState
 
 ----------------------------------------
 
@@ -1075,9 +1077,8 @@ applyEquation term rule =
     (to decide whether or not a rule can apply, not to retain the
     ensured conditions).
 
-    If and as soon as this function is used inside equation
-    application, it needs to run within the same 'EquationT' context
-    so we can detect simplification loops and avoid monad nesting.
+    Consistency of the returned SimplifierCache must be tracked by the
+    caller, the cache incorporates the given knownPredicates.
 -}
 simplifyConstraint ::
     LoggerMIO io =>
@@ -1088,8 +1089,11 @@ simplifyConstraint ::
     Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi smt cache knownPredicates (Predicate p) = do
-    runEquationT def mbApi smt cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi smt cache knownPredicates =
+    runEquationT def mbApi smt cache knownPredicates
+        . (coerce <$>)
+        . simplifyConstraint' True
+        . coerce
 
 simplifyConstraints ::
     LoggerMIO io =>
