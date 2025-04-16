@@ -38,7 +38,7 @@ import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Sequence (Seq, (|>))
+import Data.Sequence as Seq (Seq, (|>), fromList)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack)
 import Numeric.Natural
@@ -55,9 +55,12 @@ import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
     CacheTag (Equations),
+    Direction (..),
     EquationFailure (..),
     SimplifierCache (..),
+    evaluateConstraints,
     evaluatePattern,
+    evaluateTerm,
     simplifyConstraint,
  )
 import Booster.Pattern.Base
@@ -998,9 +1001,16 @@ performRewrite ::
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
 performRewrite rewriteConfig pat = do
-    (rr, RewriteStepsState{counter, traces}) <-
-        flip runStateT rewriteStart $ doSteps False pat
-    pure (counter, traces, rr)
+    simplifiedConstraints <-
+        withContext CtxSimplify $ evaluateConstraints definition llvmApi smtSolver pat.constraints
+    case simplifiedConstraints of
+        Right constraints ->
+            (flip runStateT rewriteStart $ doSteps False pat{constraints}) >>=
+            \(rr, RewriteStepsState{counter, traces}) -> pure (counter, traces, rr)
+        Left r@(SideConditionFalse{}) ->
+            pure (0, fromList [RewriteSimplified (Just r)], error "Just return #Bottom here")
+        Left err ->
+            error (show err)
   where
     RewriteConfig
         { definition
@@ -1031,6 +1041,28 @@ performRewrite rewriteConfig pat = do
 
     updateCache simplifierCache = modify $ \rss -> (rss :: RewriteStepsState){simplifierCache}
 
+    -- only simplifies the _term_ of the pattern
+    simplifyT :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
+    simplifyT p = withContext CtxSimplify $ do
+        cache <- simplifierCache <$> get
+        evaluateTerm BottomUp definition llvmApi smtSolver cache p.constraints p.term >>= \(res, newCache) -> do
+            updateCache newCache
+            case res of
+                Right newTerm -> do
+                    emitRewriteTrace $ RewriteSimplified Nothing
+                    pure $ Just p{term = newTerm}
+                Left r@SideConditionFalse{} -> do
+                    emitRewriteTrace $ RewriteSimplified (Just r)
+                    pure Nothing
+                Left r@UndefinedTerm{} -> do
+                    emitRewriteTrace $ RewriteSimplified (Just r)
+                    pure Nothing
+                Left other -> do
+                    emitRewriteTrace $ RewriteSimplified (Just other)
+                    pure $ Just p
+                -- FIXME remove copying
+
+    -- simplifies term and constraints of the pattern
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
     simplifyP p = withContext CtxSimplify $ do
         st <- get
@@ -1225,7 +1257,7 @@ performRewrite rewriteConfig pat = do
                                 else withSimplified pat' msg (pure . RewriteAborted failure)
       where
         withSimplified p msg cont = do
-            (withPatternContext p $ simplifyP p) >>= \case
+            (withPatternContext p $ simplifyT p) >>= \case
                 Nothing -> do
                     logMessage ("Rewrite stuck after simplification." :: Text)
                     pure $ RewriteStuck p

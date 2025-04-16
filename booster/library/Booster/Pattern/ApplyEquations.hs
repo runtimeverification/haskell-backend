@@ -434,11 +434,12 @@ evaluateTerm ::
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
+    SimplifierCache ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm direction def llvmApi smtSolver knownPredicates term =
-    runEquationT def llvmApi smtSolver mempty knownPredicates $
+evaluateTerm direction def llvmApi smtSolver cache knownPredicates term =
+    runEquationT def llvmApi smtSolver cache knownPredicates $
         withTermContext term $
             evaluateTerm' direction term
 
@@ -532,12 +533,10 @@ evaluateConstraints ::
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
-    SimplifierCache ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate))
-evaluateConstraints def mLlvmLibrary smtSolver cache constraints =
-    fmap fst $ runEquationT def mLlvmLibrary smtSolver cache mempty $ do
-        pushConstraints constraints
+evaluateConstraints def mLlvmLibrary smtSolver constraints =
+    fmap fst $ runEquationT def mLlvmLibrary smtSolver mempty constraints $ do
         -- evaluate all existing constraints, once
         traverse_ simplifyAssumedPredicate . predicates =<< getState
         -- this may yield additional new constraints, left unevaluated

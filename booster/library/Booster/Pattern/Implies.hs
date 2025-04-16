@@ -150,7 +150,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         subst
                                 else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
 
-                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver mempty filteredConsequentPreds >>= \case
+                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver filteredConsequentPreds >>= \case
                                         Right newPreds ->
                                             if all (== Predicate TrueBool) newPreds
                                                 then
