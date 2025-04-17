@@ -40,7 +40,7 @@ import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Sequence as Seq (Seq, fromList, (|>))
 import Data.Set qualified as Set
-import Data.Text as Text (Text, pack)
+import Data.Text as Text (Text, pack, unpack)
 import Numeric.Natural
 import Prettyprinter
 
@@ -1001,16 +1001,32 @@ performRewrite ::
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
 performRewrite rewriteConfig pat = do
+    -- simplify all constraints (individually) before starting to rewrite
     simplifiedConstraints <-
         withContext CtxSimplify $ evaluateConstraints definition llvmApi smtSolver pat.constraints
-    case simplifiedConstraints of
-        Right constraints ->
-            (flip runStateT rewriteStart $ doSteps False pat{constraints})
-                >>= \(rr, RewriteStepsState{counter, traces}) -> pure (counter, traces, rr)
-        Left r@(SideConditionFalse{}) ->
-            pure (0, fromList [RewriteSimplified (Just r)], error "Just return #Bottom here")
-        Left err ->
-            error (show err)
+    (rr, RewriteStepsState{counter, traces}) <-
+        case simplifiedConstraints of
+            Right constraints ->
+                flip runStateT rewriteStart $ doSteps False pat{constraints}
+            Left r@SideConditionFalse{} ->
+                -- a side condition was found to be false, return a vacuous state
+                pure (RewriteTrivial pat, rewriteStart{traces = Seq.fromList [RewriteSimplified (Just r)]})
+            Left (InternalError msg) -> do
+                -- fail hard on internal errors
+                withContext CtxSimplify $ withContext CtxError $ logMessage msg
+                error $ Text.unpack msg
+            Left err -> do
+                -- log but ignore other actual errors (IndexIsNone,
+                -- TooManyIterations, EquationLoop, TooManyRecursions,
+                -- EquationLoop, UndefinedTerm), proceeding with the
+                -- original constraints (to fail later when processing
+                -- the constraints during rewriting or at the end).
+                getPrettyModifiers >>= \case
+                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                        withContext CtxSimplify . withContext CtxWarn . logMessage $
+                            renderOneLineText (pretty' @mods err)
+                flip runStateT rewriteStart $ doSteps False pat
+    pure (counter, traces, rr)
   where
     RewriteConfig
         { definition
