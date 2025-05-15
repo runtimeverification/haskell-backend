@@ -18,6 +18,7 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 
 import Booster.Builtin.Base
+import Booster.Builtin.BOOL (boolTerm)
 import Booster.Builtin.INT
 import Booster.Definition.Attributes.Base (
     KCollectionSymbolNames (..),
@@ -29,9 +30,48 @@ builtinsLIST :: Map ByteString BuiltinFunction
 builtinsLIST =
     Map.mapKeys ("LIST." <>) $
         Map.fromList
-            [ "get" ~~> listGetHook
+            [ "concat" ~~> listConcatHook
+            , "element" ~~> listElementHook
+            , "get" ~~> listGetHook
+            , "in" ~~> listInHook
+            , "make" ~~> listMakeHook
+            , "range" ~~> listRangeHook
             , "size" ~~> listSizeHook
+            , "unit" ~~> listUnitHook
+            , "update" ~~> listUpdateHook
             ]
+
+-- | concatenate two lists
+listConcatHook :: BuiltinFunction
+listConcatHook [KList def1 heads1 rest1, KList def2 heads2 rest2]
+    -- see Booster.Pattern.Base.internaliseKList
+    | def1 /= def2 =
+          pure Nothing -- actually a compiler error
+    | Nothing <- rest1
+    , Nothing <- rest2 =
+          pure $ Just $ KList def1 (heads1 <> heads2) Nothing
+    | Nothing <- rest1 =
+          pure $ Just $ KList def2 (heads1 <> heads2) rest2
+    | Nothing <- rest2
+    , Just (mid1, tails1) <- rest1 =
+          pure $ Just $ KList def1 heads1 $ Just (mid1, tails1 <> heads2)
+    | otherwise = -- opaque middle in both lists, unable to simplify
+          pure Nothing
+listConcatHook [KList def1 heads Nothing, other] =
+    pure $ Just $ KList def1 heads (Just (other, []))
+listConcatHook [other, KList def2 heads Nothing] =
+    pure $ Just $ KList def2 [] (Just (other, heads))
+listConcatHook [_, _] =
+    pure Nothing
+listConcatHook other =
+    arityError "LIST.concat" 2 other
+
+-- | create a singleton list from a given element
+listElementHook :: BuiltinFunction
+listElementHook [elem'] =
+    pure $ Just $ KList kItemListDef [elem'] Nothing
+listElementHook other =
+    arityError "LIST.element" 1 other
 
 listGetHook :: BuiltinFunction
 listGetHook [KList _ heads mbRest, intArg] =
@@ -67,6 +107,52 @@ listGetHook [_other, _] =
 listGetHook args =
     arityError "LIST.get" 2 args
 
+listInHook :: BuiltinFunction
+listInHook [e, KList _ heads rest] =
+    case rest of
+        Nothing -> pure $ Just $ boolTerm (e `elem` heads)
+        Just (_mid, tails)
+            | e `elem` tails ->
+                  pure $ Just $ boolTerm True
+            | otherwise -> -- could be in opaque _mid
+                  pure Nothing
+listInHook args =
+    arityError "LIST.in" 2 args
+
+listMakeHook :: BuiltinFunction
+listMakeHook [intArg, value] =
+    case fromIntegral <$> readIntTerm intArg of
+        Nothing ->
+            intArg `shouldHaveSort` "SortInt" >> pure Nothing
+        Just len ->
+            pure $ Just $ KList kItemListDef (replicate len value) Nothing
+listMakeHook args =
+    arityError "LIST.make" 2 args
+
+listRangeHook :: BuiltinFunction
+listRangeHook [KList def heads rest, fromFront, fromBack] =
+    case (fromIntegral <$> readIntTerm fromFront, fromIntegral <$> readIntTerm fromBack) of
+        (Nothing, _) ->
+            fromFront `shouldHaveSort` "SortInt" >> pure Nothing
+        (_, Nothing) ->
+            fromBack `shouldHaveSort` "SortInt" >> pure Nothing
+        (Just frontDrop, Just backDrop)
+            | frontDrop < 0 -> pure Nothing -- bottom
+            | backDrop < 0 -> pure Nothing -- bottom
+            | otherwise -> do
+                  let targetLen = length heads - frontDrop - backDrop
+                  case rest of
+                      Just _ -> pure Nothing -- opaque middle, cannot drop from back
+                      Nothing
+                          | targetLen < 0 ->
+                                pure Nothing -- bottom
+                          | otherwise -> do
+                                let part =
+                                        take targetLen $ drop frontDrop heads
+                                pure $ Just $ KList def part Nothing
+listRangeHook args =
+    arityError "LIST.range" 3 args
+
 listSizeHook :: BuiltinFunction
 listSizeHook = \case
     [KList _ heads Nothing] ->
@@ -77,6 +163,27 @@ listSizeHook = \case
         pure Nothing -- not an internal list, maybe unevaluated function call
     moreArgs ->
         arityError "LIST.size" 1 moreArgs
+
+listUnitHook :: BuiltinFunction
+listUnitHook [] = pure $ Just $ KList kItemListDef [] Nothing
+listUnitHook args =
+    arityError "LIST.unit" 0 args
+
+listUpdateHook :: BuiltinFunction
+listUpdateHook [KList def heads rest, intArg, value] =
+    case fromIntegral <$> readIntTerm intArg of
+        Nothing ->
+            intArg `shouldHaveSort` "SortInt" >> pure Nothing
+        Just idx
+            | idx < 0 ->
+                  pure Nothing -- bottom
+            | idx >= length heads ->
+                  pure Nothing -- indeterminate
+            | otherwise -> do
+                  let ~(front, _target : back) = splitAt idx heads
+                  pure $ Just $ KList def (front <> (value : back)) rest
+listUpdateHook args =
+    arityError "LIST.update" 3 args
 
 kItemListDef :: KListDefinition
 kItemListDef =
