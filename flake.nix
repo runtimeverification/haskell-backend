@@ -139,11 +139,18 @@
 
       withZ3 = pkgs: pkg: exe: pkgs.stdenv.mkDerivation {
         name = exe;
-        phases = [ "installPhase" ];
+        dontUnpack = true;
+        dontPatch = true;
+        dontConfigure = true;
+        dontBuild = true;
+        
         buildInputs = with pkgs; [ makeWrapper ];
         installPhase = ''
           mkdir -p $out/bin
-          makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
+          cp ${pkg}/bin/${exe} $out/bin/${exe}
+        '';
+        postFixup = ''
+          wrapProgram $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
         '';
       };
     in {
