@@ -98,8 +98,10 @@ listOfThings n =
     let things = map numDV [1 .. n]
      in KList Fixture.testKListDef things Nothing
 
+-- wrap an Int into an injection to KItem here
 numDV :: Int -> Term
-numDV n = dv Fixture.someSort $ BS.pack $ show n
+numDV n =
+    Fixture.inj Fixture.someSort Fixture.kItemSort $ dv Fixture.someSort $ BS.pack $ show n
 
 evalHook :: MonadFail m => BS.ByteString -> [Term] -> m (Maybe Term)
 evalHook name args = either (fail . show) pure $ runExcept $ runHook name args
@@ -190,18 +192,16 @@ testListSizeHook =
             l <- forAll smallNat
             let aList =
                     KList Fixture.testKListDef (replicate l [trm| \dv{SomeSort{}}("thing")|]) Nothing
-            result <- evalEither $ runExcept $ hook [aList]
+            result <- evalHook "LIST.size" [aList]
             Just (Builtin.intTerm (fromIntegral l)) === result
         , testProperty "LIST.size on symbolic lists has no result" . property $ do
             l <- forAll $ between1And 5
             let aList =
                     KList Fixture.testKListDef [] $
                         Just ([trm| INIT:SortList|], replicate l [trm| \dv{SomeSort{}}("thing")|])
-            result <- evalEither $ runExcept $ hook [aList]
+            result <- evalHook "LIST.size" [aList]
             Nothing === result
         ]
-  where
-    hook = runHook "LIST.size"
 
 testListGetHook :: TestTree
 testListGetHook =
@@ -210,33 +210,30 @@ testListGetHook =
         [ testProperty "LIST.get with empty lists has no result" . property $ do
             i <- forAll $ Gen.int (Range.constant (-42) 42)
             let iTerm = Builtin.intTerm $ fromIntegral i
-            result <- evalEither $ runExcept $ hook [aList [] Nothing, iTerm]
+            result <- evalHook "LIST.get" [aList [] Nothing, iTerm]
             Nothing === result
         , -- positive index
           testProperty "LIST.get with idx >= 0 on concrete lists" . property $ do
             l <- forAll smallNat
             i <- forAll $ between0And l
             let iTerm = Builtin.intTerm $ fromIntegral i
-            result <- evalEither $ runExcept $ hook [aList [0 .. l] Nothing, iTerm]
-            Just (mkDV i) === result
+            result <- evalHook "LIST.get" [aList [0 .. l] Nothing, iTerm]
+            Just (numDV i) === result
         , testProperty "LIST.get with idx >= 0 on list with symbolic tail" . property $ do
             l <- forAll smallNat
             i <- forAll $ between0And l
             let iTerm = Builtin.intTerm $ fromIntegral i
             result <-
-                evalEither . runExcept $
-                    hook [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
-            Just (mkDV i) === result
+                evalHook "LIST.get" [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
+            Just (numDV i) === result
         , testProperty "List.get with idx >= 0 where concrete head too short" . property $ do
             l <- forAll smallNat
             delta <- forAll $ between1And 42
             let iTerm = Builtin.intTerm $ fromIntegral (l + delta)
             result <-
-                evalEither . runExcept $
-                    hook [aList [0 .. l] Nothing, iTerm]
+                evalHook "LIST.get" [aList [0 .. l] Nothing, iTerm]
             result2 <-
-                evalEither . runExcept $
-                    hook [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
+                evalHook "LIST.get" [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
             Nothing === result
             Nothing === result2
         , testProperty "LIST.get with idx >= 0 on list with symbolic head" . property $ do
@@ -244,33 +241,30 @@ testListGetHook =
             i <- forAll $ between0And l
             let symList = aList [] $ Just ([trm| X:SortList|], [0 .. l])
                 iTerm = Builtin.intTerm $ fromIntegral i
-            result <- evalEither $ runExcept $ hook [symList, iTerm]
+            result <- evalHook "LIST.get" [symList, iTerm]
             Nothing === result
         , -- negative indexes
           testProperty "LIST.get with idx < 0 on concrete lists" . property $ do
             l <- forAll smallNat
             i <- forAll $ between1And (l + 1)
             let iTerm = Builtin.intTerm $ fromIntegral $ negate i
-            result <- evalEither $ runExcept $ hook [aList [0 .. l] Nothing, iTerm]
-            Just (mkDV (l + 1 - i)) === result
+            result <- evalHook "LIST.get" [aList [0 .. l] Nothing, iTerm]
+            Just (numDV (l + 1 - i)) === result
         , testProperty "LIST.get with idx < 0 on list with symbolic tail" . property $ do
             l <- forAll smallNat
             i <- forAll $ between1And (l + 1)
             let iTerm = Builtin.intTerm $ fromIntegral $ negate i
             result <-
-                evalEither . runExcept $
-                    hook [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
+                evalHook "LIST.get" [aList [0 .. l] (Just ([trm|X:SortList|], [])), iTerm]
             Nothing === result
         , testProperty "List.get with idx < 0 where concrete tail too short" . property $ do
             l <- forAll smallNat
             delta <- forAll $ between1And 42
             let iTerm = Builtin.intTerm $ fromIntegral $ negate (l + 1 + delta)
             result <-
-                evalEither . runExcept $
-                    hook [aList [] (Just ([trm|X:SortList|], [0 .. l])), iTerm]
+                evalHook "LIST.get" [aList [] (Just ([trm|X:SortList|], [0 .. l])), iTerm]
             result2 <-
-                evalEither . runExcept $
-                    hook [aList [0 .. l] (Just ([trm|X:SortList|], [0 .. l])), iTerm]
+                evalHook "LIST.get" [aList [0 .. l] (Just ([trm|X:SortList|], [0 .. l])), iTerm]
             Nothing === result
             Nothing === result2
         , testProperty "LIST.get on list with symbolic head, concrete tail" . property $ do
@@ -278,19 +272,13 @@ testListGetHook =
             i <- forAll $ between1And (l + 1)
             let iTerm = Builtin.intTerm $ fromIntegral $ negate i
             result <-
-                evalEither . runExcept $
-                    hook [aList [] $ Just ([trm| X:SortList|], [0 .. l]), iTerm]
-            Just (mkDV (l + 1 - i)) === result
+                evalHook "LIST.get" [aList [] $ Just ([trm| X:SortList|], [0 .. l]), iTerm]
+            Just (numDV (l + 1 - i)) === result
         ]
   where
-    hook = runHook "LIST.get"
-
     aList :: [Int] -> Maybe (Term, [Int]) -> Term
     aList heads mbTail =
-        KList Fixture.testKListDef (map mkDV heads) (fmap (second $ map mkDV) mbTail)
-
-    -- FIXME strictly-speaking, we would need injections to KItem here
-    mkDV = dv someSort . BS.pack . show
+        KList Fixture.testKListDef (map numDV heads) (fmap (second $ map numDV) mbTail)
 
 testListUpdateHook :: TestTree
 testListUpdateHook =

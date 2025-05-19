@@ -183,7 +183,6 @@ listUpdateHook [KList def heads rest, intArg, value] =
                     (_heads, []) ->
                         -- idx >= length heads, indeterminate
                         pure Nothing
-
 listUpdateHook args =
     arityError "LIST.update" 3 args
 
