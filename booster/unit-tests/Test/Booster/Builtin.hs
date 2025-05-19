@@ -39,8 +39,7 @@ import Test.Booster.Fixture as Fixture
 test_builtins :: [TestTree]
 test_builtins =
     [ testIntHooks
-    , testListSizeHooks
-    , testListGetHooks
+    , testListHooks
     , testMapHooks
     ]
 
@@ -82,10 +81,111 @@ testIntHooks =
             assertException $ f [dv_a]
             assertException $ f [dv_a, dv_a, dv_a]
 
-testListSizeHooks :: TestTree
-testListSizeHooks =
+testListHooks :: TestTree
+testListHooks =
     testGroup
-        "LIST.size hooks"
+        "LIST hooks"
+        [ testListArityChecks
+        , testListConcatHook
+        , testListSizeHook
+        , testListGetHook
+        , testListUpdateHook
+        ]
+
+-- helpers
+listOfThings :: Int -> Term
+listOfThings n =
+    let things = map numDV [1 .. n]
+     in KList Fixture.testKListDef things Nothing
+
+numDV :: Int -> Term
+numDV n = dv Fixture.someSort $ BS.pack $ show n
+
+evalHook :: MonadFail m => BS.ByteString -> [Term] -> m (Maybe Term)
+evalHook name args = either (fail . show) pure $ runExcept $ runHook name args
+
+testListArityChecks :: TestTree
+testListArityChecks =
+    testGroup
+        "Arity of list hooks is checked"
+        [ testCase "LIST.concat: 2 list arg.s" $ do
+            assertException "LIST.concat" []
+            assertException "LIST.concat" [[trm| X:SortList |]]
+            assertException "LIST.concat" $ replicate 3 [trm| X:SortList |]
+        , testCase "LIST.size: list arg." $ do
+            assertException "LIST.size" []
+            assertException "LIST.size" $ replicate 2 [trm| X:SortList |]
+        , testCase "LIST.get: list and int arg.s" $ do
+            assertException "LIST.get" []
+            assertException "LIST.get" [[trm| X:SortList |]]
+            assertException "LIST.get" $ replicate 3 [trm| X:SortList{} |]
+        , testCase "LIST.update: list, index, and element" $ do
+            assertException "LIST.update" []
+            assertException "LIST.update" [[trm| X:SortList |]]
+            assertException "LIST.update" $ replicate 2 [trm| X:SortList{} |]
+            assertException "LIST.update" $ replicate 4 [trm| X:SortList{} |]
+        ]
+  where
+    assertException name =
+        assertBool "Unexpected success" . isLeft . runExcept . runHook name
+
+testListConcatHook :: TestTree
+testListConcatHook =
+    testGroup
+        "LIST.concat hook"
+        [ testCase "LIST.concat on two empty lists" $ do
+            let empty = listOfThings 0
+            result <- evalHook "LIST.concat" [empty, empty]
+            Just empty @=? result
+        , testProperty "LIST.concat with an empty list argument" . property $ do
+            l <- forAll smallNat
+            let aList = listOfThings l
+                empty = listOfThings 0
+            resultR <- evalHook "LIST.concat" [aList, empty]
+            Just aList === resultR
+            resultL <- evalHook "LIST.concat" [empty, aList]
+            Just aList === resultL
+        , testProperty "LIST.concat with concrete lists" . property $ do
+            l1 <- forAll smallNat
+            l2 <- forAll smallNat
+            let list1 = listOfThings l1
+                list2 = listOfThings l2
+                expected = map numDV $ [1 .. l1] <> [1 .. l2]
+            result <- evalHook "LIST.concat" [list1, list2]
+            Just (KList Fixture.testKListDef expected Nothing) === result
+        , testProperty "LIST.concat with one opaque middle term" . property $ do
+            l1 <- forAll smallNat
+            l1t <- forAll smallNat
+            l2 <- forAll smallNat
+            let heads1 = map numDV [1 .. l1]
+                tail1 = Just ([trm| M1:SortList |], map numDV [1 .. l1t])
+                heads2 = map numDV [1 .. l2]
+                list1 = KList Fixture.testKListDef heads1 tail1
+                list2 = KList Fixture.testKListDef heads2 Nothing
+            result <- evalHook "LIST.concat" [list1, list2]
+            let expectedTail = Just ([trm| M1:SortList |], map numDV $ [1 .. l1t] <> [1 .. l2])
+            Just (KList Fixture.testKListDef heads1 expectedTail) === result
+            result2 <- evalHook "LIST.concat" [list2, list1]
+            Just (KList Fixture.testKListDef (heads2 <> heads1) tail1) === result2
+        , testProperty "LIST.concat with two opaque middle terms: indeterminate" . property $ do
+            l1 <- forAll smallNat
+            l1t <- forAll smallNat
+            l2 <- forAll smallNat
+            l2t <- forAll smallNat
+            let list1 =
+                    KList Fixture.testKListDef (map numDV [1 .. l1]) $
+                        Just ([trm| M1:SortList |], map numDV [1 .. l1t])
+            let list2 =
+                    KList Fixture.testKListDef (map numDV [1 .. l2]) $
+                        Just ([trm| M2:SortList |], map numDV [1 .. l2t])
+            result <- evalHook "LIST.concat" [list1, list2]
+            Nothing === result
+        ]
+
+testListSizeHook :: TestTree
+testListSizeHook =
+    testGroup
+        "LIST.size hook"
         [ testProperty "LIST.size on concrete lists" . property $ do
             l <- forAll smallNat
             let aList =
@@ -99,25 +199,15 @@ testListSizeHooks =
                         Just ([trm| INIT:SortList|], replicate l [trm| \dv{SomeSort{}}("thing")|])
             result <- evalEither $ runExcept $ hook [aList]
             Nothing === result
-        , testCase "LIST.size arity is checked" $ do
-            let assertException = assertBool "Unexpected success" . isLeft . runExcept
-            assertException $ hook []
-            assertException $ hook $ replicate 2 [trm| X:SortList{} |]
-            assertException $ hook $ replicate 3 [trm| X:SortList{} |]
         ]
   where
     hook = runHook "LIST.size"
 
-testListGetHooks :: TestTree
-testListGetHooks =
+testListGetHook :: TestTree
+testListGetHook =
     testGroup
-        "LIST.get hooks"
-        [ testCase "LIST.get arity is checked" $ do
-            let assertException = assertBool "Unexpected success" . isLeft . runExcept
-            assertException $ hook []
-            assertException $ hook [[trm| X:SortList{} |]]
-            assertException $ hook $ replicate 3 [trm| X:SortList{} |]
-        , testProperty "LIST.get with empty lists has no result" . property $ do
+        "LIST.get hook"
+        [ testProperty "LIST.get with empty lists has no result" . property $ do
             i <- forAll $ Gen.int (Range.constant (-42) 42)
             let iTerm = Builtin.intTerm $ fromIntegral i
             result <- evalEither $ runExcept $ hook [aList [] Nothing, iTerm]
@@ -201,6 +291,30 @@ testListGetHooks =
 
     -- FIXME strictly-speaking, we would need injections to KItem here
     mkDV = dv someSort . BS.pack . show
+
+testListUpdateHook :: TestTree
+testListUpdateHook =
+    testGroup
+        "LIST.update hook"
+        [ testProperty "LIST.update within concrete head of a list" . property $ do
+            l <- forAll $ between1And 42
+            i <- forAll $ between0And (l - 1)
+            let list = listOfThings l
+                thing = [trm| \dv{SomeSort}("thing") |]
+            result <- evalHook "LIST.update" [list, Builtin.intTerm (fromIntegral i), thing]
+            let expectedHeads = map numDV [1 .. i] <> [thing] <> map numDV [i + 2 .. l]
+            Just (KList Fixture.testKListDef expectedHeads Nothing) === result
+        , testProperty "LIST.update outside length of concrete head of a list" . property $ do
+            l <- forAll smallNat
+            i <- forAll smallNat
+            let list =
+                    KList Fixture.testKListDef (map numDV [1 .. l]) $
+                        Just ([trm| X:SortList |], [])
+                thing = [trm| \dv{SomeSort}("thing") |]
+                idxTerm = Builtin.intTerm $ fromIntegral $ l + i
+            result <- evalHook "LIST.update" [list, idxTerm, thing]
+            Nothing === result
+        ]
 
 testMapHooks :: TestTree
 testMapHooks =
