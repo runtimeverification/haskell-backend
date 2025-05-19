@@ -176,11 +176,14 @@ listUpdateHook [KList def heads rest, intArg, value] =
         Just idx
             | idx < 0 ->
                 pure Nothing -- bottom
-            | idx >= length heads ->
-                pure Nothing -- indeterminate
-            | otherwise -> do
-                let ~(front, _target : back) = splitAt idx heads
-                pure $ Just $ KList def (front <> (value : back)) rest
+            | otherwise ->
+                case splitAt idx heads of
+                    (front, _target : back) ->
+                        pure $ Just $ KList def (front <> (value : back)) rest
+                    (_heads, []) ->
+                        -- idx >= length heads, indeterminate
+                        pure Nothing
+
 listUpdateHook args =
     arityError "LIST.update" 3 args
 
