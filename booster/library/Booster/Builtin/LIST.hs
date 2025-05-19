@@ -17,8 +17,8 @@ import Data.ByteString.Char8 (ByteString, pack)
 import Data.Map (Map)
 import Data.Map qualified as Map
 
-import Booster.Builtin.Base
 import Booster.Builtin.BOOL (boolTerm)
+import Booster.Builtin.Base
 import Booster.Builtin.INT
 import Booster.Definition.Attributes.Base (
     KCollectionSymbolNames (..),
@@ -46,23 +46,22 @@ listConcatHook :: BuiltinFunction
 listConcatHook [KList def1 heads1 rest1, KList def2 heads2 rest2]
     -- see Booster.Pattern.Base.internaliseKList
     | def1 /= def2 =
-          pure Nothing -- actually a compiler error
+        pure Nothing -- actually a compiler error
     | Nothing <- rest1
     , Nothing <- rest2 =
-          pure $ Just $ KList def1 (heads1 <> heads2) Nothing
+        pure $ Just $ KList def1 (heads1 <> heads2) Nothing
     | Nothing <- rest1 =
-          pure $ Just $ KList def2 (heads1 <> heads2) rest2
+        pure $ Just $ KList def2 (heads1 <> heads2) rest2
     | Nothing <- rest2
     , Just (mid1, tails1) <- rest1 =
-          pure $ Just $ KList def1 heads1 $ Just (mid1, tails1 <> heads2)
-    | otherwise = -- opaque middle in both lists, unable to simplify
-          pure Nothing
+        pure $ Just $ KList def1 heads1 $ Just (mid1, tails1 <> heads2)
+    | otherwise -- opaque middle in both lists, unable to simplify
+        =
+        pure Nothing
 listConcatHook [KList def1 heads Nothing, other] =
     pure $ Just $ KList def1 heads (Just (other, []))
 listConcatHook [other, KList def2 heads Nothing] =
     pure $ Just $ KList def2 [] (Just (other, heads))
-listConcatHook [_, _] =
-    pure Nothing
 listConcatHook other =
     arityError "LIST.concat" 2 other
 
@@ -113,9 +112,9 @@ listInHook [e, KList _ heads rest] =
         Nothing -> pure $ Just $ boolTerm (e `elem` heads)
         Just (_mid, tails)
             | e `elem` tails ->
-                  pure $ Just $ boolTerm True
+                pure $ Just $ boolTerm True
             | otherwise -> -- could be in opaque _mid
-                  pure Nothing
+                pure Nothing
 listInHook args =
     arityError "LIST.in" 2 args
 
@@ -140,16 +139,16 @@ listRangeHook [KList def heads rest, fromFront, fromBack] =
             | frontDrop < 0 -> pure Nothing -- bottom
             | backDrop < 0 -> pure Nothing -- bottom
             | otherwise -> do
-                  let targetLen = length heads - frontDrop - backDrop
-                  case rest of
-                      Just _ -> pure Nothing -- opaque middle, cannot drop from back
-                      Nothing
-                          | targetLen < 0 ->
-                                pure Nothing -- bottom
-                          | otherwise -> do
-                                let part =
-                                        take targetLen $ drop frontDrop heads
-                                pure $ Just $ KList def part Nothing
+                let targetLen = length heads - frontDrop - backDrop
+                case rest of
+                    Just _ -> pure Nothing -- opaque middle, cannot drop from back
+                    Nothing
+                        | targetLen < 0 ->
+                            pure Nothing -- bottom
+                        | otherwise -> do
+                            let part =
+                                    take targetLen $ drop frontDrop heads
+                            pure $ Just $ KList def part Nothing
 listRangeHook args =
     arityError "LIST.range" 3 args
 
@@ -176,12 +175,12 @@ listUpdateHook [KList def heads rest, intArg, value] =
             intArg `shouldHaveSort` "SortInt" >> pure Nothing
         Just idx
             | idx < 0 ->
-                  pure Nothing -- bottom
+                pure Nothing -- bottom
             | idx >= length heads ->
-                  pure Nothing -- indeterminate
+                pure Nothing -- indeterminate
             | otherwise -> do
-                  let ~(front, _target : back) = splitAt idx heads
-                  pure $ Just $ KList def (front <> (value : back)) rest
+                let ~(front, _target : back) = splitAt idx heads
+                pure $ Just $ KList def (front <> (value : back)) rest
 listUpdateHook args =
     arityError "LIST.update" 3 args
 
