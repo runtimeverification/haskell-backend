@@ -603,7 +603,8 @@ traverseTerm direction onRecurse onEval trm = do
                             KMap def
                                 <$> handlePairs keyVals'
                                 <*> traverse onRecurse rest'
-                        other -> -- unlikely to occur, but won't loop
+                        other ->
+                            -- unlikely to occur, but won't loop
                             onRecurse other
         klist@(KList def heads rest) -> do
             let handleRest =
