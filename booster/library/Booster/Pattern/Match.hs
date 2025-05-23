@@ -246,7 +246,6 @@ match1 _       t1@KList{}                                 t2@DomainValue{}      
 match1 Eval    t1@KList{}                                 t2@Injection{}                             = addIndeterminate t1 t2
 match1 _       t1@KList{}                                 t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KList{}                                 t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
-match1 Eval    t1@KList{}                                 t2@KList{}                                 = addIndeterminate t1 t2
 match1 _       t1@(KList def1 heads1 rest1)               t2@(KList def2 heads2 rest2)               = if def1 == def2 then matchLists def1 heads1 rest1 heads2 rest2 else failWith $ DifferentSorts t1 t2
 match1 _       t1@KList{}                                 t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KList{}                                 t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2

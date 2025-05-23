@@ -25,6 +25,7 @@ module Kore.Builtin.List.List (
     sizeKey,
     makeKey,
     updateAllKey,
+    rangeKey,
 ) where
 
 import Data.Sequence (
@@ -165,3 +166,6 @@ makeKey = "LIST.make"
 
 updateAllKey :: IsString s => s
 updateAllKey = "LIST.updateAll"
+
+rangeKey :: IsString s => s
+rangeKey = "LIST.range"
