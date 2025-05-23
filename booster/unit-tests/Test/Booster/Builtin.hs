@@ -87,24 +87,14 @@ testListHooks =
         "LIST hooks"
         [ testListArityChecks
         , testListConcatHook
-        , testListSizeHook
+        , testListElementHook
         , testListGetHook
+        , testListInHook
+        , testListMakeHook
+        , testListRangeHook
+        , testListSizeHook
         , testListUpdateHook
         ]
-
--- helpers
-listOfThings :: Int -> Term
-listOfThings n =
-    let things = map numDV [1 .. n]
-     in KList Fixture.testKListDef things Nothing
-
--- wrap an Int into an injection to KItem here
-numDV :: Int -> Term
-numDV n =
-    Fixture.inj Fixture.someSort Fixture.kItemSort $ dv Fixture.someSort $ BS.pack $ show n
-
-evalHook :: MonadFail m => BS.ByteString -> [Term] -> m (Maybe Term)
-evalHook name args = either (fail . show) pure $ runExcept $ runHook name args
 
 testListArityChecks :: TestTree
 testListArityChecks =
@@ -114,6 +104,7 @@ testListArityChecks =
             assertException "LIST.concat" []
             assertException "LIST.concat" [[trm| X:SortList |]]
             assertException "LIST.concat" $ replicate 3 [trm| X:SortList |]
+--        , error "missing arity checks!"
         , testCase "LIST.size: list arg." $ do
             assertException "LIST.size" []
             assertException "LIST.size" $ replicate 2 [trm| X:SortList |]
@@ -130,6 +121,21 @@ testListArityChecks =
   where
     assertException name =
         assertBool "Unexpected success" . isLeft . runExcept . runHook name
+
+-- list and element helpers
+listOfThings :: Int -> Term
+listOfThings n =
+    let things = map numDV [1 .. n]
+     in KList Fixture.testKListDef things Nothing
+
+-- wrap an Int into an injection to KItem here
+numDV :: Int -> Term
+numDV n =
+    Fixture.inj Fixture.someSort Fixture.kItemSort $ dv Fixture.someSort $ BS.pack $ show n
+
+-- this assumes all terms are sort KItem or that sorts are irrelevant
+kitemList :: [Term] -> Term
+kitemList items = KList Builtin.kItemListDef items Nothing
 
 testListConcatHook :: TestTree
 testListConcatHook =
@@ -182,6 +188,88 @@ testListConcatHook =
                         Just ([trm| M2:SortList |], map numDV [1 .. l2t])
             result <- evalHook "LIST.concat" [list1, list2]
             Nothing === result
+        ]
+
+testListElementHook :: TestTree
+testListElementHook =
+    testGroup
+        "LIST.element"
+        [ testCase "making a singleton list" $ do
+            let thing = [trm| THING:SortKItem |]
+            result <- evalHook "LIST.element" [thing]
+            -- this will return the fixed built-in list metadata
+            Just (kitemList [thing]) @=? result
+        ]
+
+testListInHook :: TestTree
+testListInHook =
+    testGroup
+        "LIST.in"
+        [ testCase "LIST.in is false when the list is empty" $ do
+            let thing = numDV 0
+                empty = listOfThings 0
+            result <- evalHook "LIST.in" [thing, empty]
+            result `_shouldBe_` False
+        , testProperty "LIST.in is true when an item is present in the head" . property $ do
+                l <- forAll $ between1And 42
+                k <- forAll $ between1And l
+                let list = listOfThings l -- [1 .. l]
+                    target = numDV k
+                result <- evalHook "LIST.in" [target, list]
+                result `shouldBe` True
+        , testProperty "LIST.in is true when an item is present in the tail" . property $ do
+                l <- forAll $ between1And 42
+                k <- forAll $ between1And l
+                let elems = map numDV [1 .. l]
+                    list = KList Fixture.testKListDef [] $ Just ([trm| INIT:SortList |], elems)
+                    target = numDV k
+                result <- evalHook "LIST.in" [target, list]
+                result `shouldBe` True
+        , testProperty "LIST.in is false when an item is not present (concrete list)" . property $ do
+                l <- forAll smallNat
+                let list = listOfThings l -- [1 .. l]
+                    target = numDV 0
+                result <- evalHook "LIST.in" [target, list]
+                result `shouldBe` False
+        , testProperty "LIST.in is indeterminate when an item is not present (list with opaque middle)" . property $ do
+                l <- forAll smallNat
+                let elems = map numDV [1 .. l]
+                    list = KList Fixture.testKListDef elems $ Just ([trm| INIT:SortList |], [])
+                    target = numDV 0
+                result <- evalHook "LIST.in" [target, list]
+                Nothing === result
+        ]
+  where
+    x `_shouldBe_` b = Just (Builtin.boolTerm b) @=? x
+    x `shouldBe` b = Just (Builtin.boolTerm b) === x
+
+
+testListMakeHook :: TestTree
+testListMakeHook =
+    testGroup
+        "LIST.make"
+        [ testCase "LIST.in makes empty lists when size 0 is given" $ do
+            let thing = numDV 0
+                size = Builtin.intTerm 0
+            result <- evalHook "LIST.make" [size, thing]
+            Just (KList Builtin.kItemListDef [] Nothing) @=? result
+        , testProperty "LIST.in makes a list of given length" . property $ do
+            let thing = numDV 0
+            size <- forAll smallNat
+            let sizeTerm = Builtin.intTerm $ fromIntegral size
+            result <- evalHook "LIST.make" [sizeTerm, thing]
+            case result of
+                Nothing -> failure
+                Just (KList _ concrete Nothing) ->
+                    concrete === replicate size thing
+                Just other -> failure
+        ]
+
+testListRangeHook :: TestTree
+testListRangeHook =
+    testGroup
+        "LIST.range"
+        [ -- TODO
         ]
 
 testListSizeHook :: TestTree
@@ -335,9 +423,6 @@ genAssocs range = noDupKeys <$> Gen.list range genAssoc
 
 mapWith :: [(Term, Term)] -> Maybe Term -> Term
 mapWith = KMap Fixture.testKMapDefinition
-
-concreteList :: [Term] -> Term
-concreteList items = KList Builtin.kItemListDef items Nothing
 
 testMapUpdateHook :: TestTree
 testMapUpdateHook =
@@ -690,7 +775,7 @@ testMapKeysListHook =
             result <- runKeysList [mapWith assocs Nothing]
             let expected =
                     -- map assocs are sorted and deduplicated
-                    concreteList . map fst . Set.toAscList . Set.fromList $ assocs
+                    kitemList . map fst . Set.toAscList . Set.fromList $ assocs
             Just expected === result
         ]
   where
@@ -716,7 +801,7 @@ testMapValuesHook =
             result <- runValues [mapWith assocs Nothing]
             let expected =
                     -- map assocs are sorted and deduplicated
-                    concreteList . map snd . Set.toAscList . Set.fromList $ assocs
+                    kitemList . map snd . Set.toAscList . Set.fromList $ assocs
             Just expected === result
         ]
   where
@@ -825,6 +910,9 @@ runHook :: BS.ByteString -> Builtin.BuiltinFunction
 runHook name =
     fromMaybe (error $ show name <> " hook not found") $
         Map.lookup name Builtin.hooks
+
+evalHook :: MonadFail m => BS.ByteString -> [Term] -> m (Maybe Term)
+evalHook name args = either (fail . show) pure $ runExcept $ runHook name args
 
 smallNat :: Gen Int
 smallNat = Gen.int (Range.linear 0 42)
