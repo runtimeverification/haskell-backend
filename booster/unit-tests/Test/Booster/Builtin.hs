@@ -232,13 +232,14 @@ testListInHook =
             result <- evalHook "LIST.in" [target, list]
             result `shouldBe` False
         , testProperty "LIST.in is indeterminate when an item is not present (list with opaque middle)"
-            . property $ do
-            l <- forAll smallNat
-            let elems = map numDV [1 .. l]
-                list = KList Fixture.testKListDef elems $ Just ([trm| INIT:SortList |], [])
-                target = numDV 0
-            result <- evalHook "LIST.in" [target, list]
-            Nothing === result
+            . property
+            $ do
+                l <- forAll smallNat
+                let elems = map numDV [1 .. l]
+                    list = KList Fixture.testKListDef elems $ Just ([trm| INIT:SortList |], [])
+                    target = numDV 0
+                result <- evalHook "LIST.in" [target, list]
+                Nothing === result
         ]
   where
     x `_shouldBe_` b = Just (Builtin.boolTerm b) @=? x
