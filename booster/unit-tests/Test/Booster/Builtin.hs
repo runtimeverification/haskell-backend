@@ -104,8 +104,8 @@ testListArityChecks =
             assertException "LIST.concat" []
             assertException "LIST.concat" [[trm| X:SortList |]]
             assertException "LIST.concat" $ replicate 3 [trm| X:SortList |]
---        , error "missing arity checks!"
-        , testCase "LIST.size: list arg." $ do
+        , --        , error "missing arity checks!"
+          testCase "LIST.size: list arg." $ do
             assertException "LIST.size" []
             assertException "LIST.size" $ replicate 2 [trm| X:SortList |]
         , testCase "LIST.get: list and int arg.s" $ do
@@ -211,38 +211,38 @@ testListInHook =
             result <- evalHook "LIST.in" [thing, empty]
             result `_shouldBe_` False
         , testProperty "LIST.in is true when an item is present in the head" . property $ do
-                l <- forAll $ between1And 42
-                k <- forAll $ between1And l
-                let list = listOfThings l -- [1 .. l]
-                    target = numDV k
-                result <- evalHook "LIST.in" [target, list]
-                result `shouldBe` True
+            l <- forAll $ between1And 42
+            k <- forAll $ between1And l
+            let list = listOfThings l -- [1 .. l]
+                target = numDV k
+            result <- evalHook "LIST.in" [target, list]
+            result `shouldBe` True
         , testProperty "LIST.in is true when an item is present in the tail" . property $ do
-                l <- forAll $ between1And 42
-                k <- forAll $ between1And l
-                let elems = map numDV [1 .. l]
-                    list = KList Fixture.testKListDef [] $ Just ([trm| INIT:SortList |], elems)
-                    target = numDV k
-                result <- evalHook "LIST.in" [target, list]
-                result `shouldBe` True
+            l <- forAll $ between1And 42
+            k <- forAll $ between1And l
+            let elems = map numDV [1 .. l]
+                list = KList Fixture.testKListDef [] $ Just ([trm| INIT:SortList |], elems)
+                target = numDV k
+            result <- evalHook "LIST.in" [target, list]
+            result `shouldBe` True
         , testProperty "LIST.in is false when an item is not present (concrete list)" . property $ do
-                l <- forAll smallNat
-                let list = listOfThings l -- [1 .. l]
-                    target = numDV 0
-                result <- evalHook "LIST.in" [target, list]
-                result `shouldBe` False
-        , testProperty "LIST.in is indeterminate when an item is not present (list with opaque middle)" . property $ do
-                l <- forAll smallNat
-                let elems = map numDV [1 .. l]
-                    list = KList Fixture.testKListDef elems $ Just ([trm| INIT:SortList |], [])
-                    target = numDV 0
-                result <- evalHook "LIST.in" [target, list]
-                Nothing === result
+            l <- forAll smallNat
+            let list = listOfThings l -- [1 .. l]
+                target = numDV 0
+            result <- evalHook "LIST.in" [target, list]
+            result `shouldBe` False
+        , testProperty "LIST.in is indeterminate when an item is not present (list with opaque middle)"
+            . property $ do
+            l <- forAll smallNat
+            let elems = map numDV [1 .. l]
+                list = KList Fixture.testKListDef elems $ Just ([trm| INIT:SortList |], [])
+                target = numDV 0
+            result <- evalHook "LIST.in" [target, list]
+            Nothing === result
         ]
   where
     x `_shouldBe_` b = Just (Builtin.boolTerm b) @=? x
     x `shouldBe` b = Just (Builtin.boolTerm b) === x
-
 
 testListMakeHook :: TestTree
 testListMakeHook =
@@ -269,8 +269,9 @@ testListRangeHook :: TestTree
 testListRangeHook =
     testGroup
         "LIST.range"
-        [ -- TODO
-        ]
+        []
+
+-- TODO
 
 testListSizeHook :: TestTree
 testListSizeHook =
