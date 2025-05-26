@@ -104,14 +104,25 @@ testListArityChecks =
             assertException "LIST.concat" []
             assertException "LIST.concat" [[trm| X:SortList |]]
             assertException "LIST.concat" $ replicate 3 [trm| X:SortList |]
-        , --        , error "missing arity checks!"
-          testCase "LIST.size: list arg." $ do
-            assertException "LIST.size" []
-            assertException "LIST.size" $ replicate 2 [trm| X:SortList |]
         , testCase "LIST.get: list and int arg.s" $ do
             assertException "LIST.get" []
             assertException "LIST.get" [[trm| X:SortList |]]
             assertException "LIST.get" $ replicate 3 [trm| X:SortList{} |]
+        , testCase "LIST.in: element and list  arg." $ do
+            assertException "LIST.in" []
+            assertException "LIST.in" [[trm| X:SortList |]]
+            assertException "LIST.in" $ replicate 3 [trm| X:SortList |]
+        , testCase "LIST.make: element and size arg." $ do
+            assertException "LIST.make" []
+            assertException "LIST.make" [[trm| X:SortList |]]
+            assertException "LIST.make" $ replicate 3 [trm| X:SortList |]
+        , testCase "LIST.range: list and two int arg.s" $ do
+            assertException "LIST.range" []
+            assertException "LIST.range" [[trm| X:SortList |]]
+            assertException "LIST.range" $ replicate 4 [trm| X:SortList |]
+        , testCase "LIST.size: list arg." $ do
+            assertException "LIST.size" []
+            assertException "LIST.size" $ replicate 2 [trm| X:SortList |]
         , testCase "LIST.update: list, index, and element" $ do
             assertException "LIST.update" []
             assertException "LIST.update" [[trm| X:SortList |]]
@@ -292,8 +303,8 @@ testListRangeHook =
             back <- forAll smallNat
             frontDrop <- forAll $ between0And front
             backDrop <- forAll $ between0And back
-            let frontElems = map numDV [1..front]
-                backElems = map numDV [1..back]
+            let frontElems = map numDV [1 .. front]
+                backElems = map numDV [1 .. back]
                 midVar = [trm| MID:List |]
                 list =
                     KList Fixture.testKListDef frontElems $ Just (midVar, backElems)
