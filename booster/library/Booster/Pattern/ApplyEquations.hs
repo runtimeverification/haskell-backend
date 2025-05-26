@@ -585,28 +585,60 @@ traverseTerm direction onRecurse onEval trm = do
                     else
                         SymbolApplication sym sorts
                             <$> mapM onRecurse args
-        -- maps, lists, and sets, are not currently evaluated because
-        -- the matcher does not provide matches on collections.
-        KMap def keyVals rest ->
-            KMap def
-                <$> mapM (\(k, v) -> (,) <$> onRecurse k <*> onRecurse v) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
-        KList def heads rest ->
-            KList def
-                <$> mapM onRecurse heads
-                <*> maybe
-                    (pure Nothing)
-                    ( (Just <$>)
-                        . \(mid, tails) ->
-                            (,)
-                                <$> onRecurse mid
-                                <*> mapM onRecurse tails
-                    )
-                    rest
-        KSet def keyVals rest ->
-            KSet def
-                <$> mapM onRecurse keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
+        kmap@(KMap def keyVals rest) -> do
+            let handlePairs = mapM (\(k, v) -> (,) <$> onRecurse k <*> onRecurse v)
+            if direction == BottomUp
+                then do
+                    -- evaluate arguments first
+                    keyVals' <- handlePairs keyVals
+                    rest' <- traverse onRecurse rest
+                    -- then try to apply equations
+                    onEval $ KMap def keyVals' rest'
+                else {- direction == TopDown -} do
+                    -- try to apply equations
+                    kmap' <- onEval kmap
+                    case kmap' of
+                        -- the result should be another internal KMap
+                        KMap _ keyVals' rest' ->
+                            KMap def
+                                <$> handlePairs keyVals'
+                                <*> traverse onRecurse rest'
+                        other ->
+                            -- unlikely to occur, but won't loop
+                            onRecurse other
+        klist@(KList def heads rest) -> do
+            let handleRest =
+                    traverse $ \(mid, tails) -> (,) <$> onRecurse mid <*> mapM onRecurse tails
+            if direction == BottomUp
+                then do
+                    heads' <- mapM onRecurse heads
+                    rest' <- handleRest rest
+                    onEval (KList def heads' rest')
+                else {- direction == TopDown -} do
+                    klist' <- onEval klist
+                    case klist' of
+                        -- the result should be another internal KList
+                        KList _ heads' rest' ->
+                            KList def
+                                <$> mapM onRecurse heads'
+                                <*> handleRest rest'
+                        other ->
+                            onRecurse other
+        kset@(KSet def elems rest)
+            | direction == BottomUp -> do
+                elems' <- mapM onRecurse elems
+                rest' <- traverse onRecurse rest
+                onEval $ KSet def elems' rest'
+            | otherwise {- direction == TopDown -} -> do
+                kset' <- onEval kset
+                case kset' of
+                    -- the result should be another internal KSet
+                    KSet _ elems' rest' ->
+                        KSet def
+                            <$> mapM onRecurse elems'
+                            <*> traverse onRecurse rest'
+                    other ->
+                        onRecurse other
 
 cached :: LoggerMIO io => CacheTag -> (Term -> EquationT io Term) -> Term -> EquationT io Term
 cached cacheTag cb t@(Term attributes _)
