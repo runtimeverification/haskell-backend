@@ -138,17 +138,20 @@ listRangeHook [KList def heads rest, fromFront, fromBack] =
         (Just frontDrop, Just backDrop)
             | frontDrop < 0 -> pure Nothing -- bottom
             | backDrop < 0 -> pure Nothing -- bottom
-            | otherwise -> do
+            | Nothing <- rest -> do
                 let targetLen = length heads - frontDrop - backDrop
-                case rest of
-                    Just _ -> pure Nothing -- opaque middle, cannot drop from back
-                    Nothing
-                        | targetLen < 0 ->
-                            pure Nothing -- bottom
-                        | otherwise -> do
-                            let part =
-                                    take targetLen $ drop frontDrop heads
-                            pure $ Just $ KList def part Nothing
+                if targetLen < 0
+                    then pure Nothing -- bottom
+                    else do
+                        let part = take targetLen $ drop frontDrop heads
+                        pure $ Just $ KList def part Nothing
+            | Just (mid, tails) <- rest ->
+              if length tails < backDrop
+                  then pure Nothing -- opaque middle, cannot drop from back
+                  else do
+                      let heads' = drop frontDrop heads
+                          tails' = reverse $ drop backDrop $ reverse tails
+                      pure $ Just $ KList def heads' $ Just (mid, tails')
 listRangeHook args =
     arityError "LIST.range" 3 args
 

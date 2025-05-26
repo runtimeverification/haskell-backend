@@ -261,18 +261,62 @@ testListMakeHook =
             result <- evalHook "LIST.make" [sizeTerm, thing]
             case result of
                 Nothing -> failure
-                Just (KList _ concrete Nothing) ->
-                    concrete === replicate size thing
-                Just other -> failure
+                Just (KList _ concreteElems Nothing) ->
+                    concreteElems === replicate size thing
+                Just _ -> failure
         ]
 
 testListRangeHook :: TestTree
 testListRangeHook =
     testGroup
         "LIST.range"
-        []
-
--- TODO
+        [ testProperty "LIST.range with zero indexes is identity" . property $ do
+            size <- forAll smallNat
+            let list = listOfThings size
+            result <- evalHook "LIST.range" [list, Builtin.intTerm 0, Builtin.intTerm 0]
+            Just list === result
+        , testProperty "LIST.range with valid range in concrete list" . property $ do
+            size <- forAll smallNat
+            a <- forAll $ between0And size
+            let maxB = size - a
+            b <- forAll $ between0And maxB
+            let list = listOfThings size -- [1..size]
+                expected =
+                    KList Fixture.testKListDef (map numDV [a + 1 .. size - b]) Nothing
+                aTerm = Builtin.intTerm $ fromIntegral a
+                bTerm = Builtin.intTerm $ fromIntegral b
+            result <- evalHook "LIST.range" [list, aTerm, bTerm]
+            Just expected === result
+        , testProperty "LIST.range with opaque middle but feasible range" . property $ do
+            front <- forAll $ between1And 42 -- NB list must not be just the variable
+            back <- forAll smallNat
+            frontDrop <- forAll $ between0And front
+            backDrop <- forAll $ between0And back
+            let frontElems = map numDV [1..front]
+                backElems = map numDV [1..back]
+                midVar = [trm| MID:List |]
+                list =
+                    KList Fixture.testKListDef frontElems $ Just (midVar, backElems)
+                frontTerm = Builtin.intTerm $ fromIntegral frontDrop
+                backTerm = Builtin.intTerm $ fromIntegral backDrop
+            result <- evalHook "LIST.range" [list, frontTerm, backTerm]
+            let expected =
+                    KList
+                        Fixture.testKListDef
+                        (map numDV [frontDrop + 1 .. front])
+                        (Just (midVar, map numDV [1 .. back - backDrop]))
+            Just expected === result
+        , testProperty "LIST.range concrete list, parameters too large" . property $ do
+            size <- forAll smallNat
+            plus <- forAll $ between1And 42
+            let zero = Builtin.intTerm 0
+                tooMuch = Builtin.intTerm $ fromIntegral (size + plus)
+                list = listOfThings size
+            result1 <- evalHook "LIST.range" [list, zero, tooMuch]
+            Nothing === result1
+            result2 <- evalHook "LIST.range" [list, tooMuch, zero]
+            Nothing === result2
+        ]
 
 testListSizeHook :: TestTree
 testListSizeHook =
