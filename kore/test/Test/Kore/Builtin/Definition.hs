@@ -412,6 +412,9 @@ updateAllListSymbol :: Internal.Symbol
 updateAllListSymbol =
     builtinSymbol "updateAllList" listSort [listSort, intSort, listSort]
         & hook "LIST.updateAll"
+rangeListSymbol :: Internal.Symbol
+rangeListSymbol =
+    hook "LIST.range" $ builtinSymbol "rangeList" listSort [listSort, intSort, intSort]
 unitList :: TermLike RewritingVariableName
 unitList = mkApplySymbol unitListSymbol []
 elementList ::
@@ -453,6 +456,12 @@ updateAllList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 updateAllList l1 ix l2 = mkApplySymbol updateAllListSymbol [l1, ix, l2]
+rangeList ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+rangeList l start end = mkApplySymbol rangeListSymbol [l, start, end]
 -- ** Map
 unitMapSymbol :: Internal.Symbol
 unitMapSymbol = builtinSymbol "unitMap" mapSort [] & hook "MAP.unit"
@@ -1539,6 +1548,7 @@ listModule =
             , hookedSymbolDecl sizeListSymbol
             , hookedSymbolDecl makeListSymbol
             , hookedSymbolDecl updateAllListSymbol
+            , hookedSymbolDecl rangeListSymbol
             , -- A second builtin List sort, to confuse 'asPattern'.
               listSortDecl2
             , hookedSymbolDecl unitList2Symbol
