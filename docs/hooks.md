@@ -538,8 +538,8 @@ present, replace the associated value with the new value provided.
 
 ### MAP.updateAll
 
-Insert all associations from the second map into the first map. If any key 
-is already present in the first map, the associated value is replaced with 
+Insert all associations from the second map into the first map. If any key
+is already present in the first map, the associated value is replaced with
 the new value from the second map.
 
 ~~~
@@ -866,7 +866,7 @@ If-then-else: if condition then something, else something else.
 
 ## KRYPTO
 
-All hash functions in this module interpret their input byte string as a raw sequence of 
+All hash functions in this module interpret their input byte string as a raw sequence of
 8-bit bytes and output the digest in base-16 encoding
 (a sequence of hexademical numerals `[0-9a-f]` each corresponding to 4 bits).
 
@@ -953,6 +953,14 @@ should be in the '\0' .. '\255' range.
 ~~~
     hooked-symbol update{}(Bytes{}, Int{}, Int{}) : Bytes{}
         [hook{}("BYTES.update")]
+~~~
+
+### BYTES.get
+Look up a byte at a given index `i` in a `Bytes` array.
+
+~~~
+    hooked-symbol get{}(Bytes{}, Int{}) : Int{}
+        [hook{}("BYTES.get")]
 ~~~
 
 ### BYTES.substr

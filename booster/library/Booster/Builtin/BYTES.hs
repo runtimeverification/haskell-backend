@@ -12,11 +12,12 @@ Built-in functions (hooks) in the BYTES namespace, as described in
 -}
 module Booster.Builtin.BYTES (
     builtinsBYTES,
+    pattern BytesDV,
 ) where
 
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
-import Data.Char (chr)
+import Data.Char (chr, ord)
 import Data.Map (Map)
 import Data.Map qualified as Map
 
@@ -29,6 +30,7 @@ builtinsBYTES =
     Map.mapKeys ("BYTES." <>) $
         Map.fromList
             [ "update" ~~> bytesupdateHook
+            , "get" ~~> bytesgetHook
             , "substr" ~~> bytessubstrHook
             , "replaceAt" ~~> bytesreplaceAtHook
             , "padRight" ~~> bytespadRightHook
@@ -41,6 +43,7 @@ builtinsBYTES =
 
 
 bytesupdateHook
+    , bytesgetHook
     , bytessubstrHook
     , bytesreplaceAtHook
     , bytespadRightHook
@@ -62,6 +65,13 @@ bytesupdateHook [bytes, idx, new]
             back = BS.tail rest
         pure $ Just $ BytesDV $ front <> BS.cons (chr d) back
 bytesupdateHook other = arityError "BYTES.update" 3 other
+
+bytesgetHook [bytes, idx]
+    | BytesDV bs <- bytes
+    , Just i <- readIntTerm' idx
+    , 0 <= i && i < BS.length bs =
+        pure $ Just $ intTerm' $ ord $ BS.index bs i
+bytesgetHook other = arityError "BYTES.get" 2 other
 
 -- | extract a sub-sequence [start .. end) from the bytes
 bytessubstrHook [bytes, start, end]

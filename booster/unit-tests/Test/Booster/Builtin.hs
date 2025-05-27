@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 {- |
@@ -11,6 +12,7 @@ module Test.Booster.Builtin (
 import Control.Monad.Trans.Except
 import Data.Bifunctor (second)
 import Data.ByteString.Char8 qualified as BS
+import Data.Char
 import Data.Either (isLeft)
 import Data.Function (on)
 import Data.List (nubBy)
@@ -28,6 +30,7 @@ import Test.Tasty.Hedgehog
 
 import Booster.Builtin qualified as Builtin (hooks)
 import Booster.Builtin.BOOL qualified as Builtin
+import Booster.Builtin.BYTES (pattern BytesDV)
 import Booster.Builtin.Base qualified as Builtin (BuiltinFunction)
 import Booster.Builtin.INT qualified as Builtin
 import Booster.Builtin.LIST qualified as Builtin (kItemListDef)
@@ -41,6 +44,7 @@ test_builtins =
     [ testIntHooks
     , testListHooks
     , testMapHooks
+    , testBytesHooks
     ]
 
 testIntHooks :: TestTree
@@ -960,6 +964,86 @@ testMapInclusionHook =
             , Fixture.functionKMapWithOneItem
             , mapWith assocs (Just restVar)
             ]
+
+testBytesHooks :: TestTree
+testBytesHooks =
+    testGroup
+        "BYTES hooks"
+        [ testBytesUpdate
+        , testBytesGet
+        ]
+
+testBytesUpdate :: TestTree
+testBytesUpdate =
+    testGroup
+        "BYTES.update"
+        [ testProperty "BYTES.update [v] 0 v = v" . property $ do
+            val <- forAll $ Gen.latin1
+            let val' = toInteger $ ord val
+                bytes = BS.pack [val]
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [BytesDV bytes, Builtin.intTerm 0, Builtin.intTerm val']
+            Just (BytesDV bytes) === result
+        , testCase "BYTES.update 'abcd' 0 x = 'xbcd'" $ do
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [ BytesDV $ BS.pack "abcd"
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm' $ ord 'x'
+                    ]
+            Just (BytesDV "xbcd") @=? result
+        , testCase "BYTES.update 'abcd' 3 x = 'abcx'" $ do
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [ BytesDV $ BS.pack "abcd"
+                    , Builtin.intTerm 3
+                    , Builtin.intTerm' $ ord 'x'
+                    ]
+            Just (BytesDV "abcx") @=? result
+        , testProperty "(i < 0) => BYTES.update b i v = Nothing" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            val <- forAll Gen.latin1
+            i <- forAll $ between1And 1024
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [ BytesDV $ BS.pack str
+                    , Builtin.intTerm' $ negate i
+                    , Builtin.intTerm' $ ord val
+                    ]
+            Nothing === result
+        , testProperty "(i > length b) => BYTES.update b i v = Nothing" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            val <- forAll Gen.latin1
+            i <- forAll $ between1And 1024
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [ BytesDV $ BS.pack str
+                    , Builtin.intTerm' $ i + length str
+                    , Builtin.intTerm' $ ord val
+                    ]
+            Nothing === result
+        ]
+
+testBytesGet :: TestTree
+testBytesGet =
+    testGroup
+        "BYTES.get"
+        [ testProperty "Indexing into a byte array" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1023) Gen.latin1
+            i <- forAll $ Gen.int (Range.linear (-100) 2048)
+            let expected =
+                    if 0 <= i && i < length str
+                        then Just (Builtin.intTerm' $ ord (str!!i))
+                        else Nothing
+            result <- evalHook "BYTES.get" [BytesDV $ BS.pack str, Builtin.intTerm' i]
+            expected === result
+        ]
 
 ------------------------------------------------------------
 -- helpers
