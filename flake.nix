@@ -2,8 +2,9 @@
   description = "K Kore Language Haskell Backend";
 
   inputs = {
-    rv-utils.url = "github:runtimeverification/rv-nix-tools";
-    nixpkgs.follows = "rv-utils/nixpkgs";
+    rv-nix-tools.url = "github:runtimeverification/rv-nix-tools/854d4f05ea78547d46e807b414faad64cea10ae4";
+    nixpkgs.follows = "rv-nix-tools/nixpkgs";
+
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
       flake = false;
@@ -15,7 +16,7 @@
     };
   };
 
-  outputs = { self, rv-utils, nixpkgs, z3, flake-utils, some-cabal-hashes-lib }:
+  outputs = { self, rv-nix-tools, nixpkgs, z3, flake-utils, some-cabal-hashes-lib }:
   let
     z3Overlay = final: prev: {
       z3 = prev.z3.overrideAttrs (_: {
