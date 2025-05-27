@@ -971,6 +971,7 @@ testBytesHooks =
         "BYTES hooks"
         [ testBytesUpdate
         , testBytesGet
+        , testBytesSubstr
         ]
 
 testBytesUpdate :: TestTree
@@ -1039,10 +1040,52 @@ testBytesGet =
             i <- forAll $ Gen.int (Range.linear (-100) 2048)
             let expected =
                     if 0 <= i && i < length str
-                        then Just (Builtin.intTerm' $ ord (str!!i))
+                        then Just (Builtin.intTerm' $ ord (str !! i))
                         else Nothing
             result <- evalHook "BYTES.get" [BytesDV $ BS.pack str, Builtin.intTerm' i]
             expected === result
+        ]
+
+testBytesSubstr :: TestTree
+testBytesSubstr =
+    testGroup
+        "BYTES.substr"
+        [ testCase "substr 'abcd' 0 0 = ''" $ do
+            result <-
+                evalHook
+                    "BYTES.substr"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 0
+                    ]
+            Just (BytesDV "") @=? result
+        , testCase "substr 'abcd' 0 1 = 'a'" $ do
+            result <-
+                evalHook
+                    "BYTES.substr"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 1
+                    ]
+            Just (BytesDV "a") @=? result
+        , testCase "substr 'abcd' 1 3 = 'bc'" $ do
+            result <-
+                evalHook
+                    "BYTES.substr"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 1
+                    , Builtin.intTerm 3
+                    ]
+            Just (BytesDV "bc") @=? result
+        , testCase "substr 'abcd' 0 4 = 'abcd'" $ do
+            result <-
+                evalHook
+                    "BYTES.substr"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 4
+                    ]
+            Just (BytesDV "abcd") @=? result
         ]
 
 ------------------------------------------------------------

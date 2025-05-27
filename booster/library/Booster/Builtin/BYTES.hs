@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -41,7 +42,6 @@ builtinsBYTES =
             , "bytes2int" ~~> bytesbytes2intHook
             ]
 
-
 bytesupdateHook
     , bytesgetHook
     , bytessubstrHook
@@ -51,7 +51,8 @@ bytesupdateHook
     , bytesreverseHook
     , byteslengthHook
     , bytesint2bytesHook
-    , bytesbytes2intHook :: BuiltinFunction
+    , bytesbytes2intHook ::
+        BuiltinFunction
 
 -- | in 'bytes', replace element at 'idx' (valid index) by 'new' (within 0..255)
 bytesupdateHook [bytes, idx, new]
@@ -79,11 +80,10 @@ bytessubstrHook [bytes, start, end]
     , Just st <- readIntTerm' start
     , 0 <= st && st < BS.length bs
     , Just e <- readIntTerm' end
-    , st <= e && e < BS.length bs = do
+    , st <= e && e <= BS.length bs = do
         let left = BS.take e bs -- st <= e, therefore st <= length left
         pure $ Just $ BytesDV $ BS.drop st left
 bytessubstrHook other = arityError "BYTES.substr" 3 other
-
 
 bytesreplaceAtHook = bytespadRightHook
 bytespadRightHook = bytespadLeftHook

@@ -21,8 +21,8 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 
 import Booster.Builtin.BOOL
-import Booster.Builtin.Base
 import Booster.Builtin.BYTES
+import Booster.Builtin.Base
 import Booster.Builtin.INT
 import Booster.Builtin.KEQUAL
 import Booster.Builtin.LIST
