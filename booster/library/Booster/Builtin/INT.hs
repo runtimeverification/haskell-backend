@@ -10,7 +10,9 @@ Requires built-in 'Bool' type.
 module Booster.Builtin.INT (
     builtinsINT,
     readIntTerm,
+    readIntTerm',
     intTerm,
+    intTerm',
 ) where
 
 import Data.ByteString.Char8 (ByteString, pack, unpack)
@@ -76,3 +78,9 @@ intTerm = DomainValue SortInt . pack . show
 readIntTerm :: Term -> Maybe Integer
 readIntTerm (DomainValue SortInt val) = readMaybe (unpack val)
 readIntTerm _other = Nothing
+
+readIntTerm' :: Integral a => Term -> Maybe a
+readIntTerm' = fmap fromIntegral . readIntTerm
+
+intTerm' :: Integral a => a -> Term
+intTerm' = intTerm . fromIntegral
