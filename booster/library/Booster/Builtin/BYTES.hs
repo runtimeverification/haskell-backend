@@ -38,6 +38,7 @@ builtinsBYTES =
             , "padLeft" ~~> bytespadLeftHook
             , "reverse" ~~> bytesreverseHook
             , "length" ~~> byteslengthHook
+            , "concat" ~~> bytesconcatHook
             , "int2bytes" ~~> bytesint2bytesHook
             , "bytes2int" ~~> bytesbytes2intHook
             ]
@@ -50,6 +51,7 @@ bytesupdateHook
     , bytespadLeftHook
     , bytesreverseHook
     , byteslengthHook
+    , bytesconcatHook
     , bytesint2bytesHook
     , bytesbytes2intHook ::
         BuiltinFunction
@@ -67,6 +69,7 @@ bytesupdateHook [bytes, idx, new]
         pure $ Just $ BytesDV $ front <> BS.cons (chr d) back
 bytesupdateHook other = arityError "BYTES.update" 3 other
 
+-- | read int at index 'idx' from bytes ('idx' non-negative and < length bytes)
 bytesgetHook [bytes, idx]
     | BytesDV bs <- bytes
     , Just i <- readIntTerm' idx
@@ -74,7 +77,10 @@ bytesgetHook [bytes, idx]
         pure $ Just $ intTerm' $ ord $ BS.index bs i
 bytesgetHook other = arityError "BYTES.get" 2 other
 
--- | extract a sub-sequence [start .. end) from the bytes
+{- | extract a sub-sequence [start .. end) from the bytes
+  * 'start' must be non-negative and < length bytes
+  * 'end' must be >='start' and <= length bytes
+-}
 bytessubstrHook [bytes, start, end]
     | BytesDV bs <- bytes
     , Just st <- readIntTerm' start
@@ -85,16 +91,43 @@ bytessubstrHook [bytes, start, end]
         pure $ Just $ BytesDV $ BS.drop st left
 bytessubstrHook other = arityError "BYTES.substr" 3 other
 
-bytesreplaceAtHook = bytespadRightHook
-bytespadRightHook = bytespadLeftHook
-bytespadLeftHook = bytesreverseHook
-bytesreverseHook = bytesint2bytesHook
+-- | what exactly is the semantics?
+bytesreplaceAtHook other = arityError "BYTES.replaceAt" 3 other
 
+-- | pad a byte array on the right with 'pad' to have at least length 'len'
+bytespadRightHook [bytes, len, pad]
+    | BytesDV bs <- bytes
+    , Just l <- readIntTerm' len
+    , Just p <- chr <$> readIntTerm' pad =
+        if BS.length bs >= l
+            then pure $ Just bytes
+            else pure $ Just $ BytesDV $ bs <> BS.replicate (l - BS.length bs) p
+bytespadRightHook other = arityError "BYTES.padRight" 3 other
+
+-- | pad a byte array on the left with 'pad' to have at least length 'len'
+bytespadLeftHook [bytes, len, pad]
+    | BytesDV bs <- bytes
+    , Just l <- readIntTerm' len
+    , Just p <- chr <$> readIntTerm' pad =
+        if BS.length bs >= l
+            then pure $ Just bytes
+            else pure $ Just $ BytesDV $ BS.replicate (l - BS.length bs) p <> bs
+bytespadLeftHook other = arityError "BYTES.padLeft" 3 other
+
+-- | reverse the bytes in a byte array
+bytesreverseHook [BytesDV bs] = pure . Just . BytesDV $ BS.reverse bs
+bytesreverseHook other = arityError "BYTES.reverse" 1 other
+
+-- | length of a byte array
 byteslengthHook [BytesDV bs] = pure . Just . intTerm' $ BS.length bs
 byteslengthHook other = arityError "BYTES.length" 1 other
 
-bytesint2bytesHook = bytesbytes2intHook
-bytesbytes2intHook = \_ -> pure Nothing
+-- | concatenate two byte arrays
+bytesconcatHook [BytesDV bs1, BytesDV bs2] = pure . Just . BytesDV $ bs1 <> bs2
+bytesconcatHook other = arityError "BYTES.concat" 2 other
+
+bytesint2bytesHook other = arityError "BYTES.int2bytes" 3 other
+bytesbytes2intHook other = arityError "BYTES.bytes2int" 3 other
 
 ------------------------
 

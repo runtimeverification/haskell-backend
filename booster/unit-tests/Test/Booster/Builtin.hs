@@ -979,7 +979,7 @@ testBytesUpdate =
     testGroup
         "BYTES.update"
         [ testProperty "BYTES.update [v] 0 v = v" . property $ do
-            val <- forAll $ Gen.latin1
+            val <- forAll Gen.latin1
             let val' = toInteger $ ord val
                 bytes = BS.pack [val]
             result <-
@@ -1029,6 +1029,17 @@ testBytesUpdate =
                     , Builtin.intTerm' $ ord val
                     ]
             Nothing === result
+        , testProperty "BYTES.update with any opaque arguments: Nothing" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            i <- Builtin.intTerm' <$> (forAll $ between0And $ length str)
+            v <- Builtin.intTerm' . ord <$> forAll Gen.latin1
+            let bytes = BytesDV $ BS.pack str
+            result1 <- evalHook "BYTES.update" [[trm| B:Bytes |], i, v]
+            Nothing === result1
+            result2 <- evalHook "BYTES.update" [bytes, [trm| I:Int |], v]
+            Nothing === result2
+            result3 <- evalHook "BYTES.update" [bytes, i, [trm| V:Int |]]
+            Nothing === result3
         ]
 
 testBytesGet :: TestTree
@@ -1044,6 +1055,14 @@ testBytesGet =
                         else Nothing
             result <- evalHook "BYTES.get" [BytesDV $ BS.pack str, Builtin.intTerm' i]
             expected === result
+        , testProperty "BYTES.get with any opaque arguments: Nothing" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            i <- Builtin.intTerm' <$> (forAll $ between0And $ length str)
+            let bytes = BytesDV $ BS.pack str
+            result1 <- evalHook "BYTES.get" [[trm| B:Bytes |], i]
+            Nothing === result1
+            result2 <- evalHook "BYTES.get" [bytes, [trm| I:Int |]]
+            Nothing === result2
         ]
 
 testBytesSubstr :: TestTree
@@ -1086,6 +1105,19 @@ testBytesSubstr =
                     , Builtin.intTerm 4
                     ]
             Just (BytesDV "abcd") @=? result
+        , testProperty "BYTES.substr with any opaque arguments: Nothing" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            i <- forAll $ between0And $ length str
+            j <- forAll $ Gen.int (Range.linear i $ length str + 1)
+            let bytes = BytesDV $ BS.pack str
+                i' = Builtin.intTerm' i
+                j' = Builtin.intTerm' j
+            result1 <- evalHook "BYTES.substr" [[trm| B:Bytes |], i', j']
+            Nothing === result1
+            result2 <- evalHook "BYTES.substr" [bytes, [trm| I:Int |], j']
+            Nothing === result2
+            result3 <- evalHook "BYTES.substr" [bytes, i', [trm| J:Int |]]
+            Nothing === result3
         ]
 
 ------------------------------------------------------------
