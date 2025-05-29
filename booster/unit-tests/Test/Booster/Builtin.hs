@@ -972,6 +972,11 @@ testBytesHooks =
         [ testBytesUpdate
         , testBytesGet
         , testBytesSubstr
+        , testBytesReplaceAt
+        , testBytesPadding
+        , testBytesReverse
+        , testBytesLength
+        , testBytesConcat
         ]
 
 testBytesUpdate :: TestTree
@@ -1118,6 +1123,169 @@ testBytesSubstr =
             Nothing === result2
             result3 <- evalHook "BYTES.substr" [bytes, i', [trm| J:Int |]]
             Nothing === result3
+        ]
+
+testBytesReplaceAt :: TestTree
+testBytesReplaceAt =
+    testGroup
+        "BYTES.replaceAt"
+        [ testProperty "returns original if replacement is empty" . property $ do
+            i <- forAll smallNat
+            let varBytes = [trm| B:Bytes |]
+                empty = BytesDV ""
+            result <- evalHook "BYTES.replaceAt" [varBytes, Builtin.intTerm' i, empty]
+            Just varBytes === result
+        , testProperty "returns Nothing for opaque inputs" . property $ do
+            str1 <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            str2 <- forAll $ Gen.string (Range.linear 1 1024) Gen.latin1 -- non-empty!
+            i <- forAll $ between0And $ length str1
+            let bytes = BytesDV $ BS.pack str1
+                i' = Builtin.intTerm' i
+                new = BytesDV $ BS.pack str2
+            result1 <- evalHook "BYTES.replaceAt" [[trm| B:Bytes |], i', new]
+            Nothing === result1
+            result2 <- evalHook "BYTES.replaceAt" [bytes, [trm| I:Int |], new]
+            Nothing === result2
+            result3 <- evalHook "BYTES.replaceAt" [bytes, i', [trm| B:Bytes |]]
+            Nothing === result3
+        , testProperty "returns Nothing if index is not valid" . property $ do
+            str1 <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            str2 <- forAll $ Gen.string (Range.linear 1 1024) Gen.latin1 -- non-empty!
+            i <- forAll smallNat
+            let bytes = BytesDV $ BS.pack str1
+                largeI = Builtin.intTerm' $ i + length str1
+                negativeI = Builtin.intTerm' $ negate (i + 1)
+                new = BytesDV $ BS.pack str2
+            result1 <- evalHook "BYTES.replaceAt" [bytes, largeI, new]
+            Nothing === result1
+            result2 <- evalHook "BYTES.replaceAt" [bytes, negativeI, new]
+            Nothing === result2
+        , testCase "replaceAt 'abcd' 0 '12' = '12cd'" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 0
+                    , BytesDV "12"
+                    ]
+            Just (BytesDV "12cd") @=? result
+        , testCase "replaceAt 'abcd' 1 '12' = 'a12d'" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 1
+                    , BytesDV "12"
+                    ]
+            Just (BytesDV "a12d") @=? result
+        , testCase "replaceAt 'abcd' 3 '12' = 'abc12'" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [ BytesDV "abcd"
+                    , Builtin.intTerm 3
+                    , BytesDV "12"
+                    ]
+            Just (BytesDV "abc12") @=? result
+        ]
+
+testBytesPadding :: TestTree
+testBytesPadding =
+    testGroup
+        "BYTES.padRight and BYTES.padLeft"
+        [ testProperty "returns original if length bytes >= target length" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            len <- fmap Builtin.intTerm' . forAll $ Gen.int (Range.linear 0 $ length str)
+            pad <- Builtin.intTerm' . ord <$> forAll Gen.latin1
+            let bytes = BytesDV $ BS.pack str
+            resultR <- evalHook "BYTES.padRight" [bytes, len, pad]
+            Just bytes === resultR
+            resultL <- evalHook "BYTES.padLeft" [bytes, len, pad]
+            Just bytes === resultL
+        , testCase "padRight 'abcd' 5 'e' = 'abcde" $ do
+            result <-
+                evalHook
+                    "BYTES.padRight"
+                    [BytesDV "abcd", Builtin.intTerm 5, Builtin.intTerm' $ ord 'e']
+            Just (BytesDV "abcde") @=? result
+        , testCase "padLeft 'abcd' 6 'e' = 'eeabcd" $ do
+            result <-
+                evalHook
+                    "BYTES.padLeft"
+                    [BytesDV "abcd", Builtin.intTerm 6, Builtin.intTerm' $ ord 'e']
+            Just (BytesDV "eeabcd") @=? result
+        , testProperty "returns Nothing on opaque arguments" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            len <- fmap Builtin.intTerm' . forAll $ Gen.int (Range.linear 0 $ length str)
+            pad <- Builtin.intTerm' . ord <$> forAll Gen.latin1
+            let varBytes = [trm| B:Bytes |]
+                varLen = [trm| I:Int |]
+                bytes = BytesDV $ BS.pack str
+            resultR1 <- evalHook "BYTES.padRight" [varBytes, len, pad]
+            Nothing === resultR1
+            resultR2 <- evalHook "BYTES.padRight" [bytes, varLen, pad]
+            Nothing === resultR2
+            resultR3 <- evalHook "BYTES.padRight" [bytes, len, varLen]
+            Nothing === resultR3
+            resultL1 <- evalHook "BYTES.padLeft" [varBytes, len, pad]
+            Nothing === resultL1
+            resultL2 <- evalHook "BYTES.padLeft" [bytes, varLen, pad]
+            Nothing === resultL2
+            resultL3 <- evalHook "BYTES.padLeft" [bytes, len, varLen]
+            Nothing === resultL3
+        ]
+
+testBytesReverse :: TestTree
+testBytesReverse =
+    testGroup
+        "BYTES.reverse"
+        [ testProperty "∀ b. reverse (reverse b) = b" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            let bytes = BytesDV $ BS.pack str
+            evalHook "BYTES.reverse" [bytes] >>= \case
+                Nothing -> failure
+                Just reversed -> do
+                    result <- evalHook "BYTES.reverse" [reversed]
+                    Just bytes === result
+        , testCase "reverse 'abcd' = 'dcba'" $ do
+            result <- evalHook "BYTES.reverse" [BytesDV "abcd"]
+            Just (BytesDV "dcba") @=? result
+        , testCase "returns Nothing on opaque argument" $ do
+            result <- evalHook "BYTES.reverse" [[trm| B:Bytes |]]
+            Nothing @=? result
+        ]
+
+testBytesLength :: TestTree
+testBytesLength =
+    testGroup
+        "BYTES.length"
+        [ testCase "length (empty) = 0" $ do
+            result <- evalHook "BYTES.length" [BytesDV ""]
+            Just (Builtin.intTerm 0) @=? result
+        , testCase "length 'abcd' = 4" $ do
+            result <- evalHook "BYTES.length" [BytesDV "abcd"]
+            Just (Builtin.intTerm 4) @=? result
+        ]
+
+testBytesConcat :: TestTree
+testBytesConcat =
+    testGroup
+        "BYTES.concat"
+        [ testProperty "concat '' b = b, concat b '' = b" . property $ do
+            str <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            let bytes = BytesDV $ BS.pack str
+            result1 <- evalHook "BYTES.concat" [bytes, BytesDV ""]
+            Just bytes === result1
+            result2 <- evalHook "BYTES.concat" [BytesDV "", bytes]
+            Just bytes === result2
+        , testCase "concat 'abcd' 'efgh' = 'abcdefgh'" $ do
+            result <- evalHook "BYTES.concat" [BytesDV "abcd", BytesDV "efgh"]
+            Just (BytesDV "abcdefgh") @=? result
+        , testProperty "concat xs ys = xs <> ys" . property $ do
+            str1 <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            str2 <- forAll $ Gen.string (Range.linear 0 1024) Gen.latin1
+            result <- evalHook "BYTES.concat" [BytesDV $ BS.pack str1, BytesDV $ BS.pack str2]
+            Just (BytesDV $ BS.pack $ str1 <> str2) === result
         ]
 
 ------------------------------------------------------------
