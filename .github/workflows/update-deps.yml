@@ -1,0 +1,44 @@
+name: 'Update Version'
+on:
+  push:
+    branches:
+      - '_update-deps/runtimeverification/rv-nix-tools'
+  workflow_dispatch:
+# Stop in progress workflows on the same branch and same workflow to use latest committed code
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  update-versions:
+    name: 'Update Dependency Versions'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
+      - name: 'Configure GitHub user'
+        run: |
+          git config user.name devops
+          git config user.email devops@runtimeverification.com
+      - name: 'Install Nix/Cachix'
+        uses: cachix/install-nix-action@v19
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - uses: cachix/cachix-action@v12
+        with:
+          name: k-framework
+          authToken: ${{ secrets.CACHIX_PUBLIC_TOKEN }}
+      - name: 'Update nix flake inputs'
+        run: |
+          RV_NIX_TOOLS_VERSION=$(cat deps/rv-nix-tools)
+          sed -i 's!    rv-nix-tools.url = "github:runtimeverification/rv-nix-tools/[a-z0-9\.]*"!    rv-nix-tools.url = "github:runtimeverification/rv-nix-tools/'"${RV_NIX_TOOLS_VERSION}"'"!' flake.nix
+          nix flake update
+          git add flake.nix flake.lock && git commit -m 'flake.{nix,lock}: update Nix derivations' || true
+      - name: 'Push updates'
+        run: git push
