@@ -29,9 +29,15 @@ version_sub() {
     local version
     version="$(cat $version_file)"
     sed -i "s/^version: '.*'$/version: '${version}'/" dev-tools/package.yaml
+    sed -i "s/^version:        .*$/version:        ${version}/" dev-tools/hs-backend-booster-dev-tools.cabal
+
     sed -i "s/^version: '.*'$/version: '${version}'/" booster/package.yaml
+    sed -i "s/^version:        .*$/version:        ${version}/" booster/hs-backend-booster.cabal
+
     sed -i "s/^version:        .*$/version:        ${version}/" kore/kore.cabal
+
     sed -i "s/^version:        .*$/version:        ${version}/" ./kore-rpc-types/kore-rpc-types.cabal
+
     sed -i 's/^k-haskell-backend (.*) unstable; urgency=medium$/k-haskell-backend ('"$version"') unstable; urgency=medium/' package/debian/changelog
 }
 
