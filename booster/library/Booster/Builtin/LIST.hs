@@ -113,7 +113,7 @@ listInHook [e, KList _ heads rest] =
     case rest of
         Nothing
             | e `elem` heads -> pure $ Just TrueBool
-            | not (e `elem` heads)
+            | e `notElem` heads
             , all isConstructorLike_ (e : heads) ->
                 pure $ Just FalseBool
             | otherwise -> pure Nothing
