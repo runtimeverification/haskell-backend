@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -17,7 +19,6 @@ import Data.ByteString.Char8 (ByteString, pack)
 import Data.Map (Map)
 import Data.Map qualified as Map
 
-import Booster.Builtin.BOOL (boolTerm)
 import Booster.Builtin.Base
 import Booster.Builtin.INT
 import Booster.Definition.Attributes.Base (
@@ -25,6 +26,7 @@ import Booster.Definition.Attributes.Base (
     KListDefinition (..),
  )
 import Booster.Pattern.Base
+import Booster.Pattern.Bool (pattern FalseBool, pattern TrueBool)
 
 builtinsLIST :: Map ByteString BuiltinFunction
 builtinsLIST =
@@ -109,11 +111,16 @@ listGetHook args =
 listInHook :: BuiltinFunction
 listInHook [e, KList _ heads rest] =
     case rest of
-        Nothing -> pure $ Just $ boolTerm (e `elem` heads)
+        Nothing
+            | e `elem` heads -> pure $ Just TrueBool
+            | e `notElem` heads
+            , all isConstructorLike_ (e : heads) ->
+                pure $ Just FalseBool
+            | otherwise -> pure Nothing
         Just (_mid, tails)
             | e `elem` tails ->
-                pure $ Just $ boolTerm True
-            | otherwise -> -- could be in opaque _mid
+                pure $ Just TrueBool
+            | otherwise -> -- could be in opaque _mid or not constructor-like
                 pure Nothing
 listInHook args =
     arityError "LIST.in" 2 args
