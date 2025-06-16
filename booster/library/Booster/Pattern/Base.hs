@@ -125,6 +125,9 @@ data TermAttributes = TermAttributes
     -- variables, recursive through AndTerm
     , hash :: !Int
     , isConstructorLike :: !Bool
+    -- ^ Means that logic equality is the same as syntactic equality.
+    -- True for domain values and constructor symbols (recursive
+    -- through arg.s), recursive through AndTerm.
     , canBeEvaluated :: !Bool
     -- ^ false for function calls, variables, and AndTerms
     }

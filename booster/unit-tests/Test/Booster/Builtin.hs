@@ -139,6 +139,15 @@ listOfThings n =
     let things = map numDV [1 .. n]
      in KList Fixture.testKListDef things Nothing
 
+listWithVar :: Int -> Int -> Term
+listWithVar n place =
+    case listOfThings n of
+        KList def elems rest ->
+            let variable = [trm| ELEM:SomeSort |]
+                (front, back) = splitAt (max n place) elems
+             in KList def (front <> [variable] <> back) rest
+        _ -> error "unexpected term returned by listOfThings"
+
 -- wrap an Int into an injection to KItem here
 numDV :: Int -> Term
 numDV n =
@@ -158,7 +167,8 @@ testListConcatHook =
             Just empty @=? result
         , testProperty "LIST.concat with an empty list argument" . property $ do
             l <- forAll smallNat
-            let aList = listOfThings l
+            v <- forAll smallNat
+            let aList = listWithVar l v
                 empty = listOfThings 0
             resultR <- evalHook "LIST.concat" [aList, empty]
             Just aList === resultR
@@ -242,6 +252,16 @@ testListInHook =
                 target = numDV 0
             result <- evalHook "LIST.in" [target, list]
             result `shouldBe` False
+        , testProperty
+            "LIST.in is indeterminate when an item is not present in a list with a variable element"
+            . property
+            $ do
+                l <- forAll smallNat
+                v <- forAll smallNat
+                let list = listWithVar l v -- [1 .. v-1, ELEM, v .. l]
+                    target = numDV 0
+                result <- evalHook "LIST.in" [target, list]
+                Nothing === result
         , testProperty "LIST.in is indeterminate when an item is not present (list with opaque middle)"
             . property
             $ do
