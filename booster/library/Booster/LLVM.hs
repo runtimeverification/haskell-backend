@@ -26,7 +26,9 @@ simplifyBool :: LoggerMIO io => Internal.API -> Term -> io (Either Internal.Llvm
 simplifyBool api trm = ioWithTiming $ Internal.runLLVM api $ do
     kore <- Internal.ask
     trmPtr <- Internal.marshallTerm trm
-    liftIO $ kore.simplifyBool trmPtr
+    result <- liftIO $ kore.simplifyBool trmPtr
+    liftIO kore.collect
+    pure result
 
 simplifyTerm ::
     LoggerMIO io =>
