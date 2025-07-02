@@ -1,4 +1,5 @@
 module Booster.LLVM (
+    llvmReset,
     simplifyBool,
     simplifyTerm,
     Internal.API,
@@ -21,6 +22,9 @@ import Booster.Pattern.Base
 import Booster.Pattern.Binary
 import Booster.Pattern.Util
 import Booster.Util (secWithUnit, timed)
+
+llvmReset :: LoggerMIO io => Internal.API -> io ()
+llvmReset api = liftIO api.munmap -- releases thread-local mmap'ed memory in the LLVM backend
 
 simplifyBool :: LoggerMIO io => Internal.API -> Term -> io (Either Internal.LlvmError Bool)
 simplifyBool api trm = ioWithTiming $ Internal.runLLVM api $ do

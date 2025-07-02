@@ -106,6 +106,7 @@ data API = API
     , simplifyBool :: KorePatternPtr -> IO (Either LlvmError Bool)
     , simplify :: KorePatternPtr -> KoreSortPtr -> IO (Either LlvmError ByteString)
     , collect :: IO ()
+    , munmap :: IO ()
     , mutex :: MVar ()
     }
 
@@ -276,6 +277,8 @@ mkAPI dlib = flip runReaderT dlib $ do
                                             pure $ Right result
                                         else Left . LlvmError <$> errorMessage errPtr
 
+    munmap <- resetMunmapAllArenas -- HACK. Adjust name after llvm-backend dependency upgrade
+
     mutableBytesEnabled <-
         kllvmMutableBytesEnabled `catch` \(_ :: IOException) -> pure (pure 0)
     liftIO $
@@ -285,7 +288,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 "[Warn] Using an LLVM backend compiled with --llvm-mutable-bytes (unsound byte array semantics)"
 
     mutex <- liftIO $ newMVar ()
-    pure API{patt, symbol, sort, simplifyBool, simplify, collect, mutex}
+    pure API{patt, symbol, sort, simplifyBool, simplify, collect, munmap, mutex}
 
 ask :: LLVM API
 ask = LLVM Reader.ask

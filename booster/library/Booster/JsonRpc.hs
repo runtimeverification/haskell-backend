@@ -19,6 +19,7 @@ module Booster.JsonRpc (
 import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
 import Control.Monad
+import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
@@ -41,7 +42,7 @@ import Booster.CLOptions (RewriteOptions (..))
 import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
-import Booster.LLVM as LLVM (API)
+import Booster.LLVM as LLVM (API, llvmReset)
 import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (Pattern (..), Sort (SortApp))
@@ -435,9 +436,12 @@ respond stateVar request =
     withModule mbMainModule action = do
         state <- liftIO $ readMVar stateVar
         let mainName = fromMaybe state.defaultMain mbMainModule
+            purgeLlvmLib = whenJust state.mLlvmLibrary llvmReset
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
-            Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions)
+            Just d ->
+                action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions) <* purgeLlvmLib
+
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case

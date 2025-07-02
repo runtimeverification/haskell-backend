@@ -159,6 +159,7 @@ void kore_symbol_add_formal_argument(kore_symbol *, kore_sort const *);
 
 void kllvm_init(void);
 void kllvm_free_all_memory(void);
+void reset_munmap_all_arenas(void);
 
 /* Sort-specific functions */
 
