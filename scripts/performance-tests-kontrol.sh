@@ -149,4 +149,3 @@ fi
 
 cd $SCRIPT_DIR
 python3 compare.py logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log > logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare
-fi
