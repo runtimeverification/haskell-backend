@@ -59,7 +59,6 @@ type KoreSymbolPtr = ForeignPtr KoreSymbol
 type KoreSortPtr = ForeignPtr KoreSort
 type KoreErrorPtr = ForeignPtr KoreError
 
-
 $(dynamicBindings "./cbits/kllvm-c.h")
 
 newtype KoreStringPatternAPI = KoreStringPatternAPI
@@ -278,7 +277,6 @@ mkAPI dlib = flip runReaderT dlib $ do
                                         else Left . LlvmError <$> errorMessage errPtr
 
     munmap <- resetMunmapAllArenas -- HACK. Adjust name after llvm-backend dependency upgrade
-
     mutableBytesEnabled <-
         kllvmMutableBytesEnabled `catch` \(_ :: IOException) -> pure (pure 0)
     liftIO $

@@ -442,7 +442,6 @@ respond stateVar request =
             Just d ->
                 action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions) <* purgeLlvmLib
 
-
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
