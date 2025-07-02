@@ -30,9 +30,7 @@ simplifyBool :: LoggerMIO io => Internal.API -> Term -> io (Either Internal.Llvm
 simplifyBool api trm = ioWithTiming $ Internal.runLLVM api $ do
     kore <- Internal.ask
     trmPtr <- Internal.marshallTerm trm
-    result <- liftIO $ kore.simplifyBool trmPtr
-    liftIO kore.collect
-    pure result
+    liftIO $ kore.simplifyBool trmPtr
 
 simplifyTerm ::
     LoggerMIO io =>
@@ -46,7 +44,6 @@ simplifyTerm api def trm sort = ioWithTiming $ Internal.runLLVM api $ do
     trmPtr <- Internal.marshallTerm trm
     sortPtr <- Internal.marshallSort sort
     mbinary <- liftIO $ kore.simplify trmPtr sortPtr
-    liftIO kore.collect
     case mbinary of
         Left err -> pure $ Left err
         Right binary -> do

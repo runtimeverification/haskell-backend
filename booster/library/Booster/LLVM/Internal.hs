@@ -121,7 +121,7 @@ withDLib dlib = Linker.withDL dlib [Linker.RTLD_LAZY]
 
 runLLVM :: API -> LLVM a -> IO a
 runLLVM api (LLVM m) =
-    withMVar api.mutex $ const $ runReaderT m api -- TODO add <* api.collect here
+    withMVar api.mutex $ const (runReaderT m api <* api.collect)
 
 mkAPI :: Linker.DL -> IO API
 mkAPI dlib = flip runReaderT dlib $ do
