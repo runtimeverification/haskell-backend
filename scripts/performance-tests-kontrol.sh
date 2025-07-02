@@ -96,11 +96,11 @@ sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/test
 uv lock
 
 feature_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend $SCRIPT_DIR/../ --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend $SCRIPT_DIR/../ --ignore-environment --command bash -c "$1"
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --ignore-environment --command bash -c "$1"
 }
 
 # kompile Kontrol's K dependencies
