@@ -33,7 +33,7 @@ import Data.Data (Data)
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
+import Foreign (ForeignPtr, Int64, finalizeForeignPtr, newForeignPtr, withForeignPtr)
 import Foreign qualified
 import Foreign.C qualified as C
 import Foreign.C.Types (CSize (..))
@@ -52,11 +52,13 @@ data KoreSymbol
 data KoreError
 data Block
 type SizeT = CSize
+type Int64T = Foreign.Int64
 
 type KorePatternPtr = ForeignPtr KorePattern
 type KoreSymbolPtr = ForeignPtr KoreSymbol
 type KoreSortPtr = ForeignPtr KoreSort
 type KoreErrorPtr = ForeignPtr KoreError
+
 
 $(dynamicBindings "./cbits/kllvm-c.h")
 
