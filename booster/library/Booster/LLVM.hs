@@ -1,4 +1,5 @@
 module Booster.LLVM (
+    llvmReset,
     simplifyBool,
     simplifyTerm,
     Internal.API,
@@ -22,6 +23,9 @@ import Booster.Pattern.Binary
 import Booster.Pattern.Util
 import Booster.Util (secWithUnit, timed)
 
+llvmReset :: LoggerMIO io => Internal.API -> io ()
+llvmReset api = liftIO api.munmap -- releases thread-local mmap'ed memory in the LLVM backend
+
 simplifyBool :: LoggerMIO io => Internal.API -> Term -> io (Either Internal.LlvmError Bool)
 simplifyBool api trm = ioWithTiming $ Internal.runLLVM api $ do
     kore <- Internal.ask
@@ -40,7 +44,6 @@ simplifyTerm api def trm sort = ioWithTiming $ Internal.runLLVM api $ do
     trmPtr <- Internal.marshallTerm trm
     sortPtr <- Internal.marshallSort sort
     mbinary <- liftIO $ kore.simplify trmPtr sortPtr
-    liftIO kore.collect
     case mbinary of
         Left err -> pure $ Left err
         Right binary -> do
