@@ -355,7 +355,7 @@ matchInj
             -- This means we cannot simply fail the rewrite: the match is
             -- indeterminate if the function result is.
             subsorts <- gets mSubsorts
-            isSubsort <-  -- rule requires a more specific sort?
+            isSubsort <- -- rule requires a more specific sort?
                 lift . withExcept (MatchFailed . SubsortingError) $
                     checkSubsort subsorts source1 source2
             if isSubsort
