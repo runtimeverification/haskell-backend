@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           hs-backend-booster-dev-tools
-version:        0.1.132
+version:        0.1.133
 synopsis:       Dev-tools for hs-backend-booster
 category:       Language
 homepage:       https://github.com/runtimeverification/hs-backend-booster#readme
