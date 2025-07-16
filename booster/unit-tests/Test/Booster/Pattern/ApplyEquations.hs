@@ -16,6 +16,7 @@ module Test.Booster.Pattern.ApplyEquations (
 ) where
 
 import Control.Monad.Logger (runNoLoggingT)
+import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -249,16 +250,16 @@ test_errors =
 
 ----------------------------------------
 
-index :: SymbolName -> TermIndex
-index = TermIndex . (: []) . TopSymbol
+index :: (ByteString -> CellIndex) -> SymbolName -> TermIndex
+index constr = TermIndex . (: []) . constr
 
 funDef, simplDef, loopDef :: KoreDefinition
 funDef =
     testDefinition
         { functionEquations =
             mkTheory
-                [ (index "f1", f1Equations)
-                , (index "f2", f2Equations) -- should not be applied (f2 partial)
+                [ (index TopFun "f1", f1Equations)
+                , (index TopFun "f2", f2Equations) -- should not be applied (f2 partial)
                 ]
         }
 simplDef =
@@ -266,7 +267,7 @@ simplDef =
         { simplifications =
             mkTheory
                 [
-                    ( index "con1"
+                    ( index TopCons "con1"
                     ,
                         [ equation -- con1(con2(f2(X))) => con1(X) , but f2 partial => not applied
                             Nothing
@@ -287,7 +288,7 @@ simplDef =
                         ]
                     )
                 ,
-                    ( index "con3"
+                    ( index TopCons "con3"
                     ,
                         [ equation -- con3(X, X) => inj{sub,some}(con4(X, X))
                             Nothing
@@ -304,7 +305,7 @@ loopDef =
         { simplifications =
             mkTheory
                 [
-                    ( index "f1"
+                    ( index TopFun "f1"
                     ,
                         [ equation
                             Nothing

@@ -63,17 +63,17 @@ test_performRewrite =
 
 ----------------------------------------
 
-index :: SymbolName -> TermIndex
-index = TermIndex . (: []) . TopSymbol
+indexC :: SymbolName -> TermIndex
+indexC = TermIndex . (: []) . TopCons
 
 def :: KoreDefinition
 def =
     testDefinition
         { rewriteTheory =
             mkTheory
-                [ (index "con1", [rule1, rule2, rule1'])
-                , (index "con3", [rule3])
-                , (index "con4", [rule4])
+                [ (indexC "con1", [rule1, rule2, rule1'])
+                , (indexC "con3", [rule3])
+                , (indexC "con4", [rule4])
                 ]
         }
 

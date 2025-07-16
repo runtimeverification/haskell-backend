@@ -7,6 +7,7 @@ Everything to do with term indexing.
 module Booster.Pattern.Index (
     CellIndex (..),
     TermIndex (..),
+    (^<=^),
     compositeTermIndex,
     kCellTermIndex,
     termTopIndex,
@@ -16,6 +17,7 @@ module Booster.Pattern.Index (
 
 import Control.Applicative (Alternative (..), asum)
 import Control.DeepSeq (NFData)
+import Data.ByteString (ByteString)
 import Data.Functor.Foldable (embed, para)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
@@ -48,11 +50,32 @@ newtype TermIndex = TermIndex [CellIndex]
 
 data CellIndex
     = None -- bottom element
-    | TopSymbol SymbolName
+    | TopCons SymbolName
+    | TopFun SymbolName
+    | Value ByteString
+    | TopMap
+    | TopList
+    | TopSet
     | Anything -- top element
-    -- should we have  | Value Sort ?? (see Term type)
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
+
+{- | Partial less-or-equal for CellIndex (implies partial order)
+
+                Anything
+   ____________/   |  \_______________________________________...
+  /          /     |            |           \             \
+TopList ..TopSet  Value "x"..Value "y"  TopCons "A"..  TopFun "f"..
+  \__________|__   |  _________|____________|____________/____...
+                \  | /
+                 None
+-}
+(^<=^) :: CellIndex -> CellIndex -> Bool
+None     ^<=^ _        = True
+a        ^<=^ None     = a == None
+_        ^<=^ Anything = True
+Anything ^<=^ a        = a == Anything
+_        ^<=^ _        = False
 
 {- | Combines two indexes (an "infimum" function on the index lattice).
 
@@ -65,9 +88,9 @@ instance Semigroup CellIndex where
     _ <> None = None
     x <> Anything = x
     Anything <> x = x
-    s@(TopSymbol s1) <> TopSymbol s2
-        | s1 == s2 = s
-        | otherwise = None -- incompatible indexes
+    idx1 <> idx2
+        | idx1 == idx2 = idx1
+        | otherwise = None
 
 {- | Compute all indexes that cover the given index, for rule lookup.
 
@@ -162,11 +185,27 @@ stripSortInjections = \case
 termTopIndex :: Term -> TermIndex
 termTopIndex = TermIndex . (: []) . cellTopIndex
 
+{- | Cell top indexes form a lattice with a flat partial ordering
+
+-}
 cellTopIndex :: Term -> CellIndex
 cellTopIndex = \case
-    SymbolApplication symbol _ _ ->
-        TopSymbol symbol.name
+    ConsApplication symbol _ _ ->
+        TopCons symbol.name
+    FunctionApplication symbol _ _ ->
+        TopFun symbol.name
+    DomainValue _ v ->
+        Value v
+    Var{} ->
+        Anything
+    KMap{} ->
+        TopMap
+    KList{} ->
+        TopList
+    KSet{} ->
+        TopSet
+    -- look-through
+    Injection _ _ t ->
+        cellTopIndex t
     AndTerm t1 t2 ->
         cellTopIndex t1 <> cellTopIndex t2
-    _other ->
-        Anything

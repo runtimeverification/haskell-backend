@@ -143,9 +143,14 @@ instance Pretty Summary where
         prettyTermIndex :: TermIndex -> Doc a
         prettyTermIndex (TermIndex ixs) = Pretty.sep $ map prettyCellIndex ixs
 
-        prettyCellIndex Anything = "Anything"
-        prettyCellIndex (TopSymbol sym) = prettyLabel sym
-        prettyCellIndex None = "None"
+        prettyCellIndex None = "_|_"
+        prettyCellIndex Anything = "***"
+        prettyCellIndex (TopCons sym) = "C--" <> prettyLabel sym
+        prettyCellIndex (TopFun sym) = "F--" <> prettyLabel sym
+        prettyCellIndex (Value sym) = "V--" <> prettyLabel sym
+        prettyCellIndex TopMap = "Map"
+        prettyCellIndex TopList = "List"
+        prettyCellIndex TopSet  = "Set"
 
         prettyCeilRule :: RewriteRule r -> Doc a
         prettyCeilRule RewriteRule{lhs, rhs} =

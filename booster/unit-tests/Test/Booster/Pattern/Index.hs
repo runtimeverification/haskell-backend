@@ -34,14 +34,14 @@ testKCellIndexing =
     testGroup
         "Indexing the K cell"
         [ testCase "An empty K cell is indexed as dotk" $
-            [trm| kCell{}(dotk{}()) |] ==> TopSymbol "dotk"
+            [trm| kCell{}(dotk{}()) |] ==> TopCons "dotk"
         , testCase "A non-empty K cell is indexed as its head element without injections" $ do
             [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}())) |]
-                ==> TopSymbol "f1"
+                ==> TopFun "f1"
             KSeq someSort [trm| X:SomeSort{} |]
                 ==> Anything
             [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(\dv{SomeSort{}}("X")), dotk{}())) |]
-                ==> Anything
+                ==> Value "X"
             [trm| kCell{}(X:SortK{}) |]
                 ==> Anything
         , testCase "The K cell is found when nested under other cells" $ do
@@ -53,7 +53,7 @@ testKCellIndexing =
                   other{}(dotk{}())
                 )
                 |]
-                ==> TopSymbol "f1"
+                ==> TopFun "f1"
             [trm|
                 topCell{}(
                   nesting{}(
@@ -62,7 +62,7 @@ testKCellIndexing =
                   other{}(X:SortK{})
                 )
                 |]
-                ==> TopSymbol "dotk"
+                ==> TopCons "dotk"
         ]
   where
     (==>) :: Term -> CellIndex -> Assertion
@@ -92,7 +92,7 @@ testCompositeIndexing =
                       other{}(dotk{}())
                     )
                     |]
-                [TopSymbol "dotk"]
+                [TopCons "dotk"]
             testWith
                 [other.name]
                 [trm|
@@ -105,7 +105,7 @@ testCompositeIndexing =
                       )
                     )
                     |]
-                [TopSymbol "f1"]
+                [TopFun "f1"]
             testWith
                 [other.name]
                 [trm|
@@ -128,7 +128,7 @@ testCompositeIndexing =
                       other{}(dotk{}())
                     )
                     |]
-                [TopSymbol "dotk", TopSymbol "f1"]
+                [TopCons "dotk", TopFun "f1"]
             testWith
                 [other.name, kCell.name]
                 [trm|
@@ -141,7 +141,7 @@ testCompositeIndexing =
                       )
                     )
                     |]
-                [TopSymbol "f1", Anything]
+                [TopFun "f1", Anything]
             testWith
                 [other.name, kCell.name]
                 [trm|
@@ -152,7 +152,7 @@ testCompositeIndexing =
                       other{}(X:SortK{})
                     )
                     |]
-                [Anything, TopSymbol "dotk"]
+                [Anything, TopCons "dotk"]
         , testCase "If a duplicated cell is chosen, the first occurrence counts" $ do
             testWith
                 [other.name]
@@ -171,7 +171,7 @@ testCompositeIndexing =
                       other{}(X:SortK{})
                     )
                     |]
-                [TopSymbol "dotk"]
+                [TopCons "dotk"]
         ]
   where
     testWith :: [SymbolName] -> Term -> [CellIndex] -> Assertion
@@ -181,14 +181,16 @@ testTopTermIndexing :: TestTree
 testTopTermIndexing =
     testGroup
         "Indexing the top term"
-        [ testCase "Only symbol applications get an index" $ do
+        [ testCase "Different terms get different indexes" $ do
+                -- FIXME more tests here
             [trm| VAR:SomeSort{} |] ==> Anything
-            [trm| \dv{SomeSort{}}("") |] ==> Anything
-            [trm| f1{}(VAR:SomeSort{}) |] ==> TopSymbol "f1"
+            [trm| \dv{SomeSort{}}("") |] ==> Value ""
+            [trm| f1{}(VAR:SomeSort{}) |] ==> TopFun "f1"
+            [trm| con1{}(VAR:SomeSort{}) |] ==> TopCons "con1"
         , testCase "And-terms are indexed by combining the argument indexes" $ do
-            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| Y:SomeSort{} |] ==> TopSymbol "f1"
-            AndTerm [trm| X:SomeSort{} |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopSymbol "f1"
-            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopSymbol "f1"
+            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| Y:SomeSort{} |] ==> TopFun "f1"
+            AndTerm [trm| X:SomeSort{} |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopFun "f1"
+            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopFun "f1"
             AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f2{}( Y:SomeSort{} ) |] ==> None
             AndTerm [trm| X:SomeSort{} |] [trm| Y:SomeSort{} |] ==> Anything
         ]
@@ -203,23 +205,23 @@ testIndexCover =
         [ testCase "Anything in all components is unchanged" $
             [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
         , testCase "[Anything] is added to single-component indexes" $
-            [TopSymbol "bla"] ==> [[TopSymbol "bla"], [Anything]]
+            [TopCons "bla"] ==> [[TopCons "bla"], [Anything]]
         , testCase "Anything is added to every component, in all combinations" $ do
-            let cells = map TopSymbol ["bla", "blu", "bli"]
+            let cells = map TopCons ["bla", "blu", "bli"]
             take 2 cells
-                ==> [ [TopSymbol "bla", TopSymbol "blu"]
-                    , [TopSymbol "bla", Anything]
-                    , [Anything, TopSymbol "blu"]
+                ==> [ [TopCons "bla", TopCons "blu"]
+                    , [TopCons "bla", Anything]
+                    , [Anything, TopCons "blu"]
                     , [Anything, Anything]
                     ]
             cells
                 ==> [ cells
-                    , [TopSymbol "bla", TopSymbol "blu", Anything]
-                    , [TopSymbol "bla", Anything, TopSymbol "bli"]
-                    , [TopSymbol "bla", Anything, Anything]
-                    , [Anything, TopSymbol "blu", TopSymbol "bli"]
-                    , [Anything, TopSymbol "blu", Anything]
-                    , [Anything, Anything, TopSymbol "bli"]
+                    , [TopCons "bla", TopCons "blu", Anything]
+                    , [TopCons "bla", Anything, TopCons "bli"]
+                    , [TopCons "bla", Anything, Anything]
+                    , [Anything, TopCons "blu", TopCons "bli"]
+                    , [Anything, TopCons "blu", Anything]
+                    , [Anything, Anything, TopCons "bli"]
                     , [Anything, Anything, Anything]
                     ]
         ]
