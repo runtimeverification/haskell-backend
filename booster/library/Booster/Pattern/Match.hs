@@ -350,6 +350,17 @@ matchInj
             if isSubsort
                 then bindVariable matchType v (Injection source2 source1 trm2)
                 else failWith (DifferentSorts trm1 trm2)
+        | FunctionApplication{} <- trm2 = do
+            -- Functions may have a more general sort than the actual result.
+            -- This means we cannot simply fail the rewrite: the match is
+            -- indeterminate if the function result is.
+            subsorts <- gets mSubsorts
+            isSubsort <- -- rule requires a more specific sort?
+                lift . withExcept (MatchFailed . SubsortingError) $
+                    checkSubsort subsorts source1 source2
+            if isSubsort
+                then addIndeterminate trm1 trm2
+                else failWith (DifferentSorts (Injection source1 target1 trm1) (Injection source2 target2 trm2))
         | otherwise =
             failWith (DifferentSorts (Injection source1 target1 trm1) (Injection source2 target2 trm2))
 {-# INLINE matchInj #-}

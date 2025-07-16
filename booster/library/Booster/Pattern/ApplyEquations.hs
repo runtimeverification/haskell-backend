@@ -44,7 +44,7 @@ import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Sequence (Seq (..), pattern (:<|))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
@@ -161,17 +161,20 @@ data EquationState = EquationState
     , cache :: SimplifierCache
     }
 
-data SimplifierCache = SimplifierCache {llvm, equations :: Map Term Term}
+data SimplifierCache = SimplifierCache {llvm, equations, pathConditions :: Map Term Term}
     deriving stock (Show)
 
 instance Semigroup SimplifierCache where
     cache1 <> cache2 =
-        SimplifierCache (cache1.llvm <> cache2.llvm) (cache1.equations <> cache2.equations)
+        SimplifierCache
+            (cache1.llvm <> cache2.llvm)
+            (cache1.equations <> cache2.equations)
+            (cache1.pathConditions <> cache2.pathConditions)
 
 instance Monoid SimplifierCache where
-    mempty = SimplifierCache mempty mempty
+    mempty = SimplifierCache mempty mempty mempty
 
-data CacheTag = LLVM | Equations
+data CacheTag = LLVM | Equations | PathConditions
     deriving stock (Show)
 
 instance ContextFor CacheTag where
@@ -192,8 +195,26 @@ startState cache known =
         , recursionStack = []
         , changed = False
         , predicates = known
-        , cache
+        , -- replacements from predicates are rebuilt from the path conditions every time
+          cache = cache{pathConditions = buildReplacements known}
         }
+
+buildReplacements :: Set Predicate -> Map Term Term
+buildReplacements = Map.fromList . mapMaybe toReplacement . Set.elems
+  where
+    toReplacement :: Predicate -> Maybe (Term, Term)
+    toReplacement = \case
+        Predicate (EqualsInt (v@DomainValue{}) t) -> Just (t, v)
+        Predicate (EqualsInt t (v@DomainValue{})) -> Just (t, v)
+        Predicate (EqualsBool (v@DomainValue{}) t) -> Just (t, v)
+        Predicate (EqualsBool t (v@DomainValue{})) -> Just (t, v)
+        _otherwise -> Nothing
+
+cacheReset :: Monad io => EquationT io ()
+cacheReset = eqState $ do
+    st@EquationState{predicates, cache} <- get
+    let newCache = cache{equations = mempty, pathConditions = buildReplacements predicates}
+    put st{cache = newCache}
 
 eqState :: Monad io => StateT EquationState io a -> EquationT io a
 eqState = EquationT . lift . lift
@@ -237,6 +258,7 @@ popRecursion = do
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
 toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
+toCache PathConditions _ _ = pure () -- never adding to the replacements
 toCache LLVM orig result = eqState . modify $
     \s -> s{cache = s.cache{llvm = Map.insert orig result s.cache.llvm}}
 toCache Equations orig result = eqState $ do
@@ -261,6 +283,7 @@ fromCache tag t = eqState $ do
     s <- get
     case tag of
         LLVM -> pure $ Map.lookup t s.cache.llvm
+        PathConditions -> pure $ Map.lookup t s.cache.pathConditions
         Equations -> do
             case Map.lookup t s.cache.equations of
                 Nothing -> pure Nothing
@@ -377,10 +400,14 @@ iterateEquations direction preference startTerm = do
             -- NB llvmSimplify is idempotent. No need to iterate if
             -- the equation evaluation does not change the term any more.
             resetChanged
+            -- apply syntactic replacements of terms by domain values from path condition
+            replacedTerm <-
+                let simp = cached PathConditions $ traverseTerm BottomUp simp pure
+                 in simp llvmResult
             -- evaluate functions and simplify (recursively at each level)
             newTerm <-
                 let simp = cached Equations $ traverseTerm direction simp (applyHooksAndEquations preference)
-                 in simp llvmResult
+                 in simp replacedTerm
             changeFlag <- getChanged
             if changeFlag
                 then checkForLoop newTerm >> resetChanged >> go newTerm
@@ -913,8 +940,7 @@ applyEquation term rule =
                         unless (null ensuredConditions) $ do
                             withContextFor Equations . logMessage $
                                 ("New ensured condition from evaluation, invalidating cache" :: Text)
-                            lift . eqState . modify $
-                                \s -> s{cache = s.cache{equations = mempty}}
+                            lift cacheReset
                         pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
