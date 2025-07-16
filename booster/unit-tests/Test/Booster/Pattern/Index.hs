@@ -230,8 +230,10 @@ testIndexCover =
                     , [Anything, Anything, TopCons "bli"]
                     , [Anything, Anything, Anything]
                     ]
-        , testCase "Term index [Anything] is covered by all possible indexes" $ do
+        , testCase "Cell index Anything is covered by all possible indexes" $ do
             [Anything] ==> map (: []) cellIndexes
+            [Anything, TopList] ==> concat [ [[i, TopList], [i, Anything]] | i <- cellIndexes]
+            [Anything, Anything] ==> permuteCIs 2
         ]
   where
     (==>) :: [CellIndex] -> [[CellIndex]] -> Assertion
@@ -243,6 +245,7 @@ testIndexCover =
             <> map TopFun ["f1", "f2"]
             <> [TopMap, TopList, TopSet, Anything]
     indexes = Set.fromList . map TermIndex . permuteCIs
+    permuteCIs :: Int -> [[CellIndex]]
     permuteCIs n
         | n <= 0 = [[]]
         | otherwise = [i : is | i <- cellIndexes, is <- permuteCIs (n - 1)]
