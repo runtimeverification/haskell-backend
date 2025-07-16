@@ -802,7 +802,7 @@ applyEquations theory handler term = do
         withContext CtxAbort $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
     let
-        indexes = Set.toList $ Idx.coveringIndexes index
+        indexes = Set.toList $ Map.keysSet theory `Idx.covering` index
         equationsFor i = fromMaybe Map.empty $ Map.lookup i theory
         -- neither simplification nor function equations should need groups,
         -- since simplification priority is just a suggestion and function equations

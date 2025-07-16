@@ -182,14 +182,16 @@ testTopTermIndexing =
     testGroup
         "Indexing the top term"
         [ testCase "Different terms get different indexes" $ do
-                -- FIXME more tests here
             [trm| VAR:SomeSort{} |] ==> Anything
             [trm| \dv{SomeSort{}}("") |] ==> Value ""
             [trm| f1{}(VAR:SomeSort{}) |] ==> TopFun "f1"
             [trm| con1{}(VAR:SomeSort{}) |] ==> TopCons "con1"
+            KMap testKMapDefinition [] Nothing ==> TopMap
+            KList testKListDef [] Nothing ==> TopList
+            KSet testKSetDef [] Nothing ==> TopSet
         , testCase "And-terms are indexed by combining the argument indexes" $ do
             AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| Y:SomeSort{} |] ==> TopFun "f1"
-            AndTerm [trm| X:SomeSort{} |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopFun "f1"
+            AndTerm [trm| X:SomeSort{} |] [trm| con1{}( Y:SomeSort{} ) |] ==> TopCons "con1"
             AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopFun "f1"
             AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f2{}( Y:SomeSort{} ) |] ==> None
             AndTerm [trm| X:SomeSort{} |] [trm| Y:SomeSort{} |] ==> Anything
@@ -201,9 +203,13 @@ testTopTermIndexing =
 testIndexCover :: TestTree
 testIndexCover =
     testGroup
-        "coveringIndexes function"
-        [ testCase "Anything in all components is unchanged" $
-            [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
+        "Index covering function"
+        [ testCase "indexes function works" $ do
+            indexes 0 @=? Set.singleton (TermIndex [])
+            indexes 1 @=? Set.fromList [TermIndex [i] | i <- cellIndexes]
+            indexes 2 @=? Set.fromList [TermIndex [i, j] | i <- cellIndexes, j <- cellIndexes]
+        --  , testCase "Anything in all components is unchanged" $
+        --    [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
         , testCase "[Anything] is added to single-component indexes" $
             [TopCons "bla"] ==> [[TopCons "bla"], [Anything]]
         , testCase "Anything is added to every component, in all combinations" $ do
@@ -224,8 +230,19 @@ testIndexCover =
                     , [Anything, Anything, TopCons "bli"]
                     , [Anything, Anything, Anything]
                     ]
+        , testCase "Term index [Anything] is covered by all possible indexes" $ do
+            [Anything] ==> map (:[]) cellIndexes
         ]
   where
     (==>) :: [CellIndex] -> [[CellIndex]] -> Assertion
     idx ==> expected =
-        Set.toList (Idx.coveringIndexes $ TermIndex idx) @?= map TermIndex expected
+        (indexes (length idx) `Idx.covering` TermIndex idx)
+            @?= Set.fromList (map TermIndex expected)
+    cellIndexes =
+        map TopCons ["bla", "blu", "bli"] <>
+            map TopFun ["f1", "f2"] <>
+            [TopMap, TopList, TopSet, Anything]
+    indexes = Set.fromList . map TermIndex . permuteCIs
+    permuteCIs n
+        | n <= 0    = [[]]
+        | otherwise = [ i : is | i <- cellIndexes, is <- permuteCIs (n - 1) ]

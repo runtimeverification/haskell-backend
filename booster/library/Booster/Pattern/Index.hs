@@ -7,11 +7,16 @@ Everything to do with term indexing.
 module Booster.Pattern.Index (
     CellIndex (..),
     TermIndex (..),
+    -- Flat lattice
     (^<=^),
+    invert,
+    -- compute index cover for rule selection
+    covering,
+    -- indexing
     compositeTermIndex,
     kCellTermIndex,
     termTopIndex,
-    coveringIndexes,
+    -- shortcut to
     hasNone,
 ) where
 
@@ -60,6 +65,18 @@ data CellIndex
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
+
+{- | Index lattice class. This is mostly just a _flat lattice_ but also
+  needs to support a special 'invert' method for the subject term index.
+-}
+class IndexLattice a where
+    (^<=^) :: a -> a -> Bool
+
+    invert :: a -> a
+
+ifGreater :: IndexLattice a => Set a -> a -> Set a
+ifGreater base x = Set.filter (x ^<=^) base
+
 {- | Partial less-or-equal for CellIndex (implies partial order)
 
                 Anything
@@ -70,12 +87,23 @@ TopList ..TopSet  Value "x"..Value "y"  TopCons "A"..  TopFun "f"..
                 \  | /
                  None
 -}
-(^<=^) :: CellIndex -> CellIndex -> Bool
-None     ^<=^ _        = True
-a        ^<=^ None     = a == None
-_        ^<=^ Anything = True
-Anything ^<=^ a        = a == Anything
-_        ^<=^ _        = False
+
+instance IndexLattice CellIndex where
+    None     ^<=^ _        = True
+    a        ^<=^ None     = a == None
+    _        ^<=^ Anything = True
+    Anything ^<=^ a        = a == Anything
+    a        ^<=^ b        = a == b
+
+    invert None = Anything
+    invert Anything = None
+    invert a = a
+
+-- | Partial less-or-equal for TermIndex (product lattice)
+instance IndexLattice TermIndex where
+    TermIndex idxs1 ^<=^ TermIndex idxs2 = and $ zipWith (^<=^) idxs1 idxs2
+
+    invert (TermIndex idxs) = TermIndex (map invert idxs)
 
 {- | Combines two indexes (an "infimum" function on the index lattice).
 
@@ -83,6 +111,7 @@ _        ^<=^ _        = False
   matches an 'AndTerm t1 t2' must match both 't1' and 't2', so 't1'
   and 't2' must have "compatible" indexes for this to be possible.
 -}
+
 instance Semigroup CellIndex where
     None <> _ = None
     _ <> None = None
@@ -92,30 +121,32 @@ instance Semigroup CellIndex where
         | idx1 == idx2 = idx1
         | otherwise = None
 
-{- | Compute all indexes that cover the given index, for rule lookup.
-
-  An index B is said to "cover" another index A if all parts of B are
-  either equal to the respective parts of A, or 'Anything'.
-
-  When selecting candidate rules for a term, we must consider all
-  rules whose index has either the exact same @CellIndex@ or
-  @Anything@ at every position of their @TermIndex@.
--}
-coveringIndexes :: TermIndex -> Set TermIndex
-coveringIndexes (TermIndex ixs) =
-    Set.fromList . map TermIndex $ orAnything ixs
-  where
-    orAnything :: [CellIndex] -> [[CellIndex]]
-    orAnything [] = [[]]
-    orAnything (i : is) =
-        let rest = orAnything is
-         in map (i :) rest <> map (Anything :) rest
-
 {- | Check whether a @TermIndex@ has @None@ in any position (this
 means no match will be possible).
 -}
 hasNone :: TermIndex -> Bool
 hasNone (TermIndex ixs) = None `elem` ixs
+
+{- | Computes all indexes that "cover" the given index, for rule lookup.
+
+  An index B is said to "cover" an index A if all components of B are
+  greater or equal to those of the respective component of A inverted.
+
+  * For components of A that are distinct from @Anything@, this means
+    the component of B is equal to that of A or @Anything@.
+  * For components of A that are @None@, the respective component of B
+    _must_ be @Anything@. However, if A contains @None@ no match is
+    possible anyway.
+  * For components of A that are @Anything@, B can contain an
+    arbitrary index (@None@ will again have no chance of a match,
+    though).
+
+  When selecting candidate rules for a term, we must consider all
+  rules whose index has either the exact same @CellIndex@ or
+  @Anything@ at every position of their @TermIndex@.
+-}
+covering :: Set TermIndex -> TermIndex -> Set TermIndex
+covering prior ix = prior `ifGreater` invert ix
 
 -- | Indexes a term by the heads of K sequences in given cells.
 compositeTermIndex :: [SymbolName] -> Term -> TermIndex

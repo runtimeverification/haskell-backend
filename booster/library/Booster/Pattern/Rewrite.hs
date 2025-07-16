@@ -179,7 +179,7 @@ rewriteStep cutLabels terminalLabels pat = do
         termIdx = getIndex pat.term
     when (Idx.hasNone termIdx) $ throw (TermIndexIsNone pat.term)
     let
-        indexes = Set.toList $ Idx.coveringIndexes termIdx
+        indexes = Set.toList $ Map.keysSet def.rewriteTheory `Idx.covering` termIdx
         rulesFor i = fromMaybe Map.empty $ Map.lookup i def.rewriteTheory
         rules =
             map snd . Map.toAscList . Map.unionsWith (<>) $ map rulesFor indexes
