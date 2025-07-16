@@ -150,7 +150,7 @@ instance Pretty Summary where
         prettyCellIndex (Value sym) = "V--" <> prettyLabel sym
         prettyCellIndex TopMap = "Map"
         prettyCellIndex TopList = "List"
-        prettyCellIndex TopSet  = "Set"
+        prettyCellIndex TopSet = "Set"
 
         prettyCeilRule :: RewriteRule r -> Doc a
         prettyCeilRule RewriteRule{lhs, rhs} =

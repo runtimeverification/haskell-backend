@@ -208,9 +208,9 @@ testIndexCover =
             indexes 0 @=? Set.singleton (TermIndex [])
             indexes 1 @=? Set.fromList [TermIndex [i] | i <- cellIndexes]
             indexes 2 @=? Set.fromList [TermIndex [i, j] | i <- cellIndexes, j <- cellIndexes]
-        --  , testCase "Anything in all components is unchanged" $
-        --    [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
-        , testCase "[Anything] is added to single-component indexes" $
+        , --  , testCase "Anything in all components is unchanged" $
+          --    [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
+          testCase "[Anything] is added to single-component indexes" $
             [TopCons "bla"] ==> [[TopCons "bla"], [Anything]]
         , testCase "Anything is added to every component, in all combinations" $ do
             let cells = map TopCons ["bla", "blu", "bli"]
@@ -231,7 +231,7 @@ testIndexCover =
                     , [Anything, Anything, Anything]
                     ]
         , testCase "Term index [Anything] is covered by all possible indexes" $ do
-            [Anything] ==> map (:[]) cellIndexes
+            [Anything] ==> map (: []) cellIndexes
         ]
   where
     (==>) :: [CellIndex] -> [[CellIndex]] -> Assertion
@@ -239,10 +239,10 @@ testIndexCover =
         (indexes (length idx) `Idx.covering` TermIndex idx)
             @?= Set.fromList (map TermIndex expected)
     cellIndexes =
-        map TopCons ["bla", "blu", "bli"] <>
-            map TopFun ["f1", "f2"] <>
-            [TopMap, TopList, TopSet, Anything]
+        map TopCons ["bla", "blu", "bli"]
+            <> map TopFun ["f1", "f2"]
+            <> [TopMap, TopList, TopSet, Anything]
     indexes = Set.fromList . map TermIndex . permuteCIs
     permuteCIs n
-        | n <= 0    = [[]]
-        | otherwise = [ i : is | i <- cellIndexes, is <- permuteCIs (n - 1) ]
+        | n <= 0 = [[]]
+        | otherwise = [i : is | i <- cellIndexes, is <- permuteCIs (n - 1)]

@@ -65,7 +65,6 @@ data CellIndex
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
-
 {- | Index lattice class. This is mostly just a _flat lattice_ but also
   needs to support a special 'invert' method for the subject term index.
 -}
@@ -87,13 +86,12 @@ TopList ..TopSet  Value "x"..Value "y"  TopCons "A"..  TopFun "f"..
                 \  | /
                  None
 -}
-
 instance IndexLattice CellIndex where
-    None     ^<=^ _        = True
-    a        ^<=^ None     = a == None
-    _        ^<=^ Anything = True
-    Anything ^<=^ a        = a == Anything
-    a        ^<=^ b        = a == b
+    None ^<=^ _ = True
+    a ^<=^ None = a == None
+    _ ^<=^ Anything = True
+    Anything ^<=^ a = a == Anything
+    a ^<=^ b = a == b
 
     invert None = Anything
     invert Anything = None
@@ -111,7 +109,6 @@ instance IndexLattice TermIndex where
   matches an 'AndTerm t1 t2' must match both 't1' and 't2', so 't1'
   and 't2' must have "compatible" indexes for this to be possible.
 -}
-
 instance Semigroup CellIndex where
     None <> _ = None
     _ <> None = None
@@ -216,9 +213,7 @@ stripSortInjections = \case
 termTopIndex :: Term -> TermIndex
 termTopIndex = TermIndex . (: []) . cellTopIndex
 
-{- | Cell top indexes form a lattice with a flat partial ordering
-
--}
+-- | Cell top indexes form a lattice with a flat partial ordering
 cellTopIndex :: Term -> CellIndex
 cellTopIndex = \case
     ConsApplication symbol _ _ ->
