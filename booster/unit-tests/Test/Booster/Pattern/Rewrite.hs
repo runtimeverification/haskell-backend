@@ -53,9 +53,7 @@ test_performRewrite =
         "Iterated rewriting"
         [ -- same tests as above, but calling the iterating function
           canRewrite
-        , abortsOnErrors
-        , callsError
-        , getsStuckOnFailures
+        , abortsOnProblems
         , supportsDepthControl
         , supportsCutPoints
         , supportsTerminalRules
@@ -388,40 +386,37 @@ canRewrite =
                 app con2 [d]
         ]
 
-abortsOnErrors :: TestTree
-abortsOnErrors =
+abortsOnProblems :: TestTree
+abortsOnProblems =
     testGroup
-        "Aborts rewrite when there is an error"
+        "Aborts on unexpected situations or unclear rule application"
         [ testCase "when the term index is None" $
             let term =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( \and{SomeSort{}}( con1{}( \dv{SomeSort{}}("thing") ), con2{}( \dv{SomeSort{}}("thing") ) ) ), C:SortK{} ) ) |]
              in aborts
                     (TermIndexIsNone term)
                     term
-        ]
-
-callsError :: TestTree
-callsError =
-    testGroup
-        "Calls error when there are unexpected situations"
-        [ testCase "on wrong argument count in a symbol application" $
+        , testCase "Errors on wrong argument count in a symbol application" $
             runRewrite
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 >>= \case
                     (_, RewriteAborted InternalMatchError{} _) -> pure ()
                     _ -> assertFailure "success"
+        , testCase "Aborts when unification is not a match" $
+            let t =
+                    [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}(X:SomeSort{}, \dv{SomeSort{}}("thing"))), C:SortK{}) ) |]
+             in aborts
+                    ( RuleApplicationUnclear
+                        rule3
+                        t
+                        (NE.singleton ([trm| \dv{SomeSort{}}("otherThing")|], [trm| X:SomeSort{} |]))
+                    )
+                    t
+        , testCase "Aborts when definedness is unclear" $
+            let t =
+                    [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}(\dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing"))), C:SortK{}) ) |]
+             in aborts (DefinednessUnclear rule4 (Pattern_ t) [UndefinedSymbol "f2"]) t
         ]
-
-getsStuckOnFailures :: TestTree
-getsStuckOnFailures =
-    testGroup
-        "Gets stuck when the rewriter cannot handle it"
-        -- [ testCase "when unification is not a match" $
-        --     getsStuck [trm| con3{}(X:SomeSort{}, \dv{SomeSort{}}("thing")) |]
-        -- , testCase "when definedness is unclear" $
-        --     getsStuck [trm| con4{}(\dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing")) |]
-        -- ]
-        [] -- FIXME rewrite these tests!
 
 newtype MaxDepth = MaxDepth Natural
 
