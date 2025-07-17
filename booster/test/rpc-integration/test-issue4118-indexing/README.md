@@ -11,13 +11,13 @@ Therefore the only rules tried would be those with index `Anything` (in that com
 
 Rules:
 ```
-  rule f(A) => f(B)               // index TopFun "f"
-  rule f(B) => A                  // index TopFun "f"
+  rule f(A) => f(B)               // index IdxFun "f"
+  rule f(B) => A                  // index IdxFun "f"
 
   rule [consrule]:                // index TopCon "Cons"
     <k> Cons(I) => f(I) ... </k>
 
-  rule [Vrule]:                   // index TopVal "A"
+  rule [Vrule]:                   // index IdxVal "A"
     <k> A => Done ... </k>
 
   rule [varrule]:                 // index ***

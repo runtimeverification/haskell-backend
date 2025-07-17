@@ -44,7 +44,7 @@ symbol at the top. Other terms that are not symbol applications have
 index @Anything@.
 
 Rather than making the term indexing function partial, we introduce a
-unique bottom element @None@ to the index type (to make it a lattice).
+unique bottom element @IdxNone@ to the index type (to make it a lattice).
 This can then handle @AndTerm@ by indexing both arguments and
 combining them.
 
@@ -57,13 +57,13 @@ newtype TermIndex = TermIndex [CellIndex]
     deriving anyclass (NFData)
 
 data CellIndex
-    = None -- bottom element
-    | TopCons SymbolName
-    | TopFun SymbolName
-    | TopVal ByteString
-    | TopMap
-    | TopList
-    | TopSet
+    = IdxNone -- bottom element
+    | IdxCons SymbolName
+    | IdxFun SymbolName
+    | IdxVal ByteString
+    | IdxMap
+    | IdxList
+    | IdxSet
     | Anything -- top element
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
@@ -84,20 +84,20 @@ ifGreater base x = Set.filter (x ^<=^) base
                 Anything
    ____________/   |  \_______________________________________...
   /          /     |            |           \             \
-TopList ..TopSet  TopVal "x"..TopVal "y"  TopCons "A"..  TopFun "f"..
+IdxList ..IdxSet  IdxVal "x"..IdxVal "y"  IdxCons "A"..  IdxFun "f"..
   \__________|__   |  _________|____________|____________/____...
                 \  | /
-                 None
+                 IdxNone
 -}
 instance IndexLattice CellIndex where
-    None ^<=^ _ = True
-    a ^<=^ None = a == None
+    IdxNone ^<=^ _ = True
+    a ^<=^ IdxNone = a == IdxNone
     _ ^<=^ Anything = True
     Anything ^<=^ a = a == Anything
     a ^<=^ b = a == b
 
-    invert None = Anything
-    invert Anything = None
+    invert IdxNone = Anything
+    invert Anything = IdxNone
     invert a = a
 
 -- | Partial less-or-equal for TermIndex (product lattice)
@@ -113,42 +113,42 @@ instance IndexLattice TermIndex where
   and 't2' must have "compatible" indexes for this to be possible.
 -}
 instance Semigroup CellIndex where
-    None <> _ = None
-    _ <> None = None
+    IdxNone <> _ = IdxNone
+    _ <> IdxNone = IdxNone
     x <> Anything = x
     Anything <> x = x
     idx1 <> idx2
         | idx1 == idx2 = idx1
-        | otherwise = None
+        | otherwise = IdxNone
 
 -- | Pretty instances
 instance Pretty TermIndex where
     pretty (TermIndex ixs) = sep $ map pretty ixs
 
 instance Pretty CellIndex where
-    pretty None = "_|_"
+    pretty IdxNone = "_|_"
     pretty Anything = "***"
-    pretty (TopCons sym) = "C--" <> prettyLabel sym
-    pretty (TopFun sym) = "F--" <> prettyLabel sym
-    pretty (TopVal sym) = "V--" <> prettyLabel sym
-    pretty TopMap = "Map"
-    pretty TopList = "List"
-    pretty TopSet = "Set"
+    pretty (IdxCons sym) = "C--" <> prettyLabel sym
+    pretty (IdxFun sym) = "F--" <> prettyLabel sym
+    pretty (IdxVal sym) = "V--" <> prettyLabel sym
+    pretty IdxMap = "Map"
+    pretty IdxList = "List"
+    pretty IdxSet = "Set"
 
 prettyLabel :: ByteString -> Doc a
 prettyLabel = either error (pretty . unpack) . decodeLabel
 
-{- | Check whether a @TermIndex@ has @None@ in any position (this
+{- | Check whether a @TermIndex@ has @IdxNone@ in any position (this
 means no match will be possible).
 -}
 hasNone :: TermIndex -> Bool
-hasNone (TermIndex ixs) = None `elem` ixs
+hasNone (TermIndex ixs) = IdxNone `elem` ixs
 
--- | turns TopFun _ into Anything (for rewrite rule selection)
+-- | turns IdxFun _ into Anything (for rewrite rule selection)
 noFunctions :: TermIndex -> TermIndex
 noFunctions (TermIndex ixs) = TermIndex (map funsAnything ixs)
   where
-    funsAnything TopFun{} = Anything
+    funsAnything IdxFun{} = Anything
     funsAnything other = other
 
 {- | Computes all indexes that "cover" the given index, for rule lookup.
@@ -158,11 +158,11 @@ noFunctions (TermIndex ixs) = TermIndex (map funsAnything ixs)
 
   * For components of A that are distinct from @Anything@, this means
     the component of B is equal to that of A or @Anything@.
-  * For components of A that are @None@, the respective component of B
-    _must_ be @Anything@. However, if A contains @None@ no match is
+  * For components of A that are @IdxNone@, the respective component of B
+    _must_ be @Anything@. However, if A contains @IdxNone@ no match is
     possible anyway.
   * For components of A that are @Anything@, B can contain an
-    arbitrary index (@None@ will again have no chance of a match,
+    arbitrary index (@IdxNone@ will again have no chance of a match,
     though).
 
   When selecting candidate rules for a term, we must consider all
@@ -244,19 +244,19 @@ termTopIndex = TermIndex . (: []) . cellTopIndex
 cellTopIndex :: Term -> CellIndex
 cellTopIndex = \case
     ConsApplication symbol _ _ ->
-        TopCons symbol.name
+        IdxCons symbol.name
     FunctionApplication symbol _ _ ->
-        TopFun symbol.name
+        IdxFun symbol.name
     DomainValue _ v ->
-        TopVal v
+        IdxVal v
     Var{} ->
         Anything
     KMap{} ->
-        TopMap
+        IdxMap
     KList{} ->
-        TopList
+        IdxList
     KSet{} ->
-        TopSet
+        IdxSet
     -- look-through
     Injection _ _ t ->
         cellTopIndex t

@@ -12,10 +12,10 @@ module TEST
                 | Cons ( Abcd ) [symbol(Cons)]
                 | f ( Abcd )    [function, total, symbol(f)]
 
-  rule f(A) => f(B) // index TopFun "f"
-  rule f(B) => A    // index TopFun "f"
+  rule f(A) => f(B) // index IdxFun "f"
+  rule f(B) => A    // index IdxFun "f"
 
-  rule [Vrule]: // index TopVal "A"
+  rule [Vrule]: // index IdxVal "A"
     <k> A => Done ... </k>
 
   rule [consrule]: // index TopCon "Cons"

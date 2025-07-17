@@ -767,7 +767,7 @@ data RewriteFailed k
       RewriteSortError (RewriteRule k) Term SortError
     | -- | An error was detected during matching
       InternalMatchError Text
-    | -- | Term has index 'None', no rule should apply
+    | -- | Term has index 'IdxNone', no rule should apply
       TermIndexIsNone Term
     deriving stock (Eq, Show)
 
@@ -823,7 +823,7 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods (RewriteFailed 
                 , pretty $ show sortError
                 ]
         TermIndexIsNone term ->
-            "Term index is None for term " <> pretty' @mods term
+            "Term index is IdxNone for term " <> pretty' @mods term
         InternalMatchError err -> "An internal error occured" <> pretty err
 
 ruleLabelOrLoc :: RewriteRule k -> Doc a

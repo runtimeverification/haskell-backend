@@ -258,8 +258,8 @@ funDef =
     testDefinition
         { functionEquations =
             mkTheory
-                [ (index TopFun "f1", f1Equations)
-                , (index TopFun "f2", f2Equations) -- should not be applied (f2 partial)
+                [ (index IdxFun "f1", f1Equations)
+                , (index IdxFun "f2", f2Equations) -- should not be applied (f2 partial)
                 ]
         }
 simplDef =
@@ -267,7 +267,7 @@ simplDef =
         { simplifications =
             mkTheory
                 [
-                    ( index TopCons "con1"
+                    ( index IdxCons "con1"
                     ,
                         [ equation -- con1(con2(f2(X))) => con1(X) , but f2 partial => not applied
                             Nothing
@@ -288,7 +288,7 @@ simplDef =
                         ]
                     )
                 ,
-                    ( index TopCons "con3"
+                    ( index IdxCons "con3"
                     ,
                         [ equation -- con3(X, X) => inj{sub,some}(con4(X, X))
                             Nothing
@@ -305,7 +305,7 @@ loopDef =
         { simplifications =
             mkTheory
                 [
-                    ( index TopFun "f1"
+                    ( index IdxFun "f1"
                     ,
                         [ equation
                             Nothing

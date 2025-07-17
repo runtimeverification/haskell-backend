@@ -34,14 +34,14 @@ testKCellIndexing =
     testGroup
         "Indexing the K cell"
         [ testCase "An empty K cell is indexed as dotk" $
-            [trm| kCell{}(dotk{}()) |] ==> TopCons "dotk"
+            [trm| kCell{}(dotk{}()) |] ==> IdxCons "dotk"
         , testCase "A non-empty K cell is indexed as its head element without injections" $ do
             [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(f1{}(X:SomeSort{})), dotk{}())) |]
-                ==> TopFun "f1"
+                ==> IdxFun "f1"
             KSeq someSort [trm| X:SomeSort{} |]
                 ==> Anything
             [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(\dv{SomeSort{}}("X")), dotk{}())) |]
-                ==> TopVal "X"
+                ==> IdxVal "X"
             [trm| kCell{}(X:SortK{}) |]
                 ==> Anything
         , testCase "The K cell is found when nested under other cells" $ do
@@ -53,7 +53,7 @@ testKCellIndexing =
                   other{}(dotk{}())
                 )
                 |]
-                ==> TopFun "f1"
+                ==> IdxFun "f1"
             [trm|
                 topCell{}(
                   nesting{}(
@@ -62,7 +62,7 @@ testKCellIndexing =
                   other{}(X:SortK{})
                 )
                 |]
-                ==> TopCons "dotk"
+                ==> IdxCons "dotk"
         ]
   where
     (==>) :: Term -> CellIndex -> Assertion
@@ -92,7 +92,7 @@ testCompositeIndexing =
                       other{}(dotk{}())
                     )
                     |]
-                [TopCons "dotk"]
+                [IdxCons "dotk"]
             testWith
                 [other.name]
                 [trm|
@@ -105,7 +105,7 @@ testCompositeIndexing =
                       )
                     )
                     |]
-                [TopFun "f1"]
+                [IdxFun "f1"]
             testWith
                 [other.name]
                 [trm|
@@ -128,7 +128,7 @@ testCompositeIndexing =
                       other{}(dotk{}())
                     )
                     |]
-                [TopCons "dotk", TopFun "f1"]
+                [IdxCons "dotk", IdxFun "f1"]
             testWith
                 [other.name, kCell.name]
                 [trm|
@@ -141,7 +141,7 @@ testCompositeIndexing =
                       )
                     )
                     |]
-                [TopFun "f1", Anything]
+                [IdxFun "f1", Anything]
             testWith
                 [other.name, kCell.name]
                 [trm|
@@ -152,7 +152,7 @@ testCompositeIndexing =
                       other{}(X:SortK{})
                     )
                     |]
-                [Anything, TopCons "dotk"]
+                [Anything, IdxCons "dotk"]
         , testCase "If a duplicated cell is chosen, the first occurrence counts" $ do
             testWith
                 [other.name]
@@ -171,7 +171,7 @@ testCompositeIndexing =
                       other{}(X:SortK{})
                     )
                     |]
-                [TopCons "dotk"]
+                [IdxCons "dotk"]
         ]
   where
     testWith :: [SymbolName] -> Term -> [CellIndex] -> Assertion
@@ -183,17 +183,17 @@ testTopTermIndexing =
         "Indexing the top term"
         [ testCase "Different terms get different indexes" $ do
             [trm| VAR:SomeSort{} |] ==> Anything
-            [trm| \dv{SomeSort{}}("") |] ==> TopVal ""
-            [trm| f1{}(VAR:SomeSort{}) |] ==> TopFun "f1"
-            [trm| con1{}(VAR:SomeSort{}) |] ==> TopCons "con1"
-            KMap testKMapDefinition [] Nothing ==> TopMap
-            KList testKListDef [] Nothing ==> TopList
-            KSet testKSetDef [] Nothing ==> TopSet
+            [trm| \dv{SomeSort{}}("") |] ==> IdxVal ""
+            [trm| f1{}(VAR:SomeSort{}) |] ==> IdxFun "f1"
+            [trm| con1{}(VAR:SomeSort{}) |] ==> IdxCons "con1"
+            KMap testKMapDefinition [] Nothing ==> IdxMap
+            KList testKListDef [] Nothing ==> IdxList
+            KSet testKSetDef [] Nothing ==> IdxSet
         , testCase "And-terms are indexed by combining the argument indexes" $ do
-            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| Y:SomeSort{} |] ==> TopFun "f1"
-            AndTerm [trm| X:SomeSort{} |] [trm| con1{}( Y:SomeSort{} ) |] ==> TopCons "con1"
-            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f1{}( Y:SomeSort{} ) |] ==> TopFun "f1"
-            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f2{}( Y:SomeSort{} ) |] ==> None
+            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| Y:SomeSort{} |] ==> IdxFun "f1"
+            AndTerm [trm| X:SomeSort{} |] [trm| con1{}( Y:SomeSort{} ) |] ==> IdxCons "con1"
+            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f1{}( Y:SomeSort{} ) |] ==> IdxFun "f1"
+            AndTerm [trm| f1{}( X:SomeSort{} ) |] [trm| f2{}( Y:SomeSort{} ) |] ==> IdxNone
             AndTerm [trm| X:SomeSort{} |] [trm| Y:SomeSort{} |] ==> Anything
         ]
   where
@@ -211,28 +211,28 @@ testIndexCover =
         , --  , testCase "Anything in all components is unchanged" $
           --    [Anything, Anything, Anything] ==> [[Anything, Anything, Anything]]
           testCase "[Anything] is added to single-component indexes" $
-            [TopCons "bla"] ==> [[TopCons "bla"], [Anything]]
+            [IdxCons "bla"] ==> [[IdxCons "bla"], [Anything]]
         , testCase "Anything is added to every component, in all combinations" $ do
-            let cells = map TopCons ["bla", "blu", "bli"]
+            let cells = map IdxCons ["bla", "blu", "bli"]
             take 2 cells
-                ==> [ [TopCons "bla", TopCons "blu"]
-                    , [TopCons "bla", Anything]
-                    , [Anything, TopCons "blu"]
+                ==> [ [IdxCons "bla", IdxCons "blu"]
+                    , [IdxCons "bla", Anything]
+                    , [Anything, IdxCons "blu"]
                     , [Anything, Anything]
                     ]
             cells
                 ==> [ cells
-                    , [TopCons "bla", TopCons "blu", Anything]
-                    , [TopCons "bla", Anything, TopCons "bli"]
-                    , [TopCons "bla", Anything, Anything]
-                    , [Anything, TopCons "blu", TopCons "bli"]
-                    , [Anything, TopCons "blu", Anything]
-                    , [Anything, Anything, TopCons "bli"]
+                    , [IdxCons "bla", IdxCons "blu", Anything]
+                    , [IdxCons "bla", Anything, IdxCons "bli"]
+                    , [IdxCons "bla", Anything, Anything]
+                    , [Anything, IdxCons "blu", IdxCons "bli"]
+                    , [Anything, IdxCons "blu", Anything]
+                    , [Anything, Anything, IdxCons "bli"]
                     , [Anything, Anything, Anything]
                     ]
         , testCase "Cell index Anything is covered by all possible indexes" $ do
             [Anything] ==> map (: []) cellIndexes
-            [Anything, TopList] ==> concat [[[i, TopList], [i, Anything]] | i <- cellIndexes]
+            [Anything, IdxList] ==> concat [[[i, IdxList], [i, Anything]] | i <- cellIndexes]
             [Anything, Anything] ==> permuteCIs 2
         ]
   where
@@ -241,9 +241,9 @@ testIndexCover =
         (indexes (length idx) `Idx.covering` TermIndex idx)
             @?= Set.fromList (map TermIndex expected)
     cellIndexes =
-        map TopCons ["bla", "blu", "bli"]
-            <> map TopFun ["f1", "f2"]
-            <> [TopMap, TopList, TopSet, Anything]
+        map IdxCons ["bla", "blu", "bli"]
+            <> map IdxFun ["f1", "f2"]
+            <> [IdxMap, IdxList, IdxSet, Anything]
     indexes = Set.fromList . map TermIndex . permuteCIs
     permuteCIs :: Int -> [[CellIndex]]
     permuteCIs n

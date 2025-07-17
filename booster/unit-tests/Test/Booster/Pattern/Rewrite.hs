@@ -62,7 +62,7 @@ test_performRewrite =
 ----------------------------------------
 
 indexC :: SymbolName -> TermIndex
-indexC = TermIndex . (: []) . TopCons
+indexC = TermIndex . (: []) . IdxCons
 
 def :: KoreDefinition
 def =
@@ -182,7 +182,7 @@ errorCases
 errorCases =
     testGroup
         "Simple error cases"
-        [ testCase "Index is None" $ do
+        [ testCase "Index is IdxNone" $ do
             let t =
                     [trm|
                         kCell{}(
@@ -392,7 +392,7 @@ abortsOnProblems :: TestTree
 abortsOnProblems =
     testGroup
         "Aborts on unexpected situations or unclear rule application"
-        [ testCase "when the term index is None" $
+        [ testCase "when the term index is IdxNone" $
             let term =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( \and{SomeSort{}}( con1{}( \dv{SomeSort{}}("thing") ), con2{}( \dv{SomeSort{}}("thing") ) ) ), C:SortK{} ) ) |]
              in aborts
