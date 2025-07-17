@@ -6,7 +6,7 @@ This demonstrates a bug caused by discarding rules with non-matching index, fixe
 When an unevaluated function `f` is in an indexed position, the index of the term would have a component `TopSymbol f`, and there would not be (cannot be!) any rules with such an index.
 Therefore the only rules tried would be those with index `Anything` (in that component).
 
-* If none of these rules can be applied (which is likely in practice), the returned result is `Stuck` instead of `Aborted` (see [`no-evaluators` test result](../test-no-evaluators/)).
+* If none of these rules can be applied (which is likely in practice), the returned result is `Stuck` instead of `Aborted` (see [`test-no-evaluator` result](../test-no-evaluator/)).
 * All rules tried may have lower priority than one which could apply once the function gets evaluated, leading to a wrong result ( demonstrated in this test).
 
 Rules:
