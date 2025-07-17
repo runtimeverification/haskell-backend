@@ -16,8 +16,9 @@ module Booster.Pattern.Index (
     compositeTermIndex,
     kCellTermIndex,
     termTopIndex,
-    -- shortcut to abort rewriting/evaluation
+    -- helpers
     hasNone,
+    noFunctions,
 ) where
 
 import Control.Applicative (Alternative (..), asum)
@@ -135,14 +136,20 @@ instance Pretty CellIndex where
     pretty TopSet = "Set"
 
 prettyLabel :: ByteString -> Doc a
-prettyLabel = either error ( pretty . unpack) . decodeLabel
-
+prettyLabel = either error (pretty . unpack) . decodeLabel
 
 {- | Check whether a @TermIndex@ has @None@ in any position (this
 means no match will be possible).
 -}
 hasNone :: TermIndex -> Bool
 hasNone (TermIndex ixs) = None `elem` ixs
+
+-- | turns TopFun _ into Anything (for rewrite rule selection)
+noFunctions :: TermIndex -> TermIndex
+noFunctions (TermIndex ixs) = TermIndex (map funsAnything ixs)
+  where
+    funsAnything TopFun{} = Anything
+    funsAnything other = other
 
 {- | Computes all indexes that "cover" the given index, for rule lookup.
 

@@ -232,7 +232,7 @@ testIndexCover =
                     ]
         , testCase "Cell index Anything is covered by all possible indexes" $ do
             [Anything] ==> map (: []) cellIndexes
-            [Anything, TopList] ==> concat [ [[i, TopList], [i, Anything]] | i <- cellIndexes]
+            [Anything, TopList] ==> concat [[[i, TopList], [i, Anything]] | i <- cellIndexes]
             [Anything, Anything] ==> permuteCIs 2
         ]
   where

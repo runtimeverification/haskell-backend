@@ -322,16 +322,18 @@ canRewrite :: TestTree
 canRewrite =
     testGroup
         "Can rewrite"
-        [ testCase "Rewrites con1 once, then gets stuck" $
+        [ testCase "Rewrites con1 once, then aborts on function" $
             let startTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewrites
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         , testCase "Rewrites con3 twice, branching on con1" $ do
             let branch1 =
                     ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
@@ -429,12 +431,14 @@ supportsDepthControl =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewritesToDepth
                     (MaxDepth 42)
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         , testCase "stops execution after 1 step when maxDepth == 1" $
             rewritesToDepth
                 (MaxDepth 1)
@@ -523,12 +527,14 @@ supportsCutPoints =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewritesToCutPoint
                     "otherLabel"
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         , testCase "prefers reporting branches to stopping at label in one branch" $ do
             let branch1 =
                     ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
@@ -601,12 +607,14 @@ supportsTerminalRules =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewritesToTerminal
                     "otherLabel"
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         ]
   where
     rewritesToTerminal :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()

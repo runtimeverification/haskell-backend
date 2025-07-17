@@ -179,7 +179,13 @@ rewriteStep cutLabels terminalLabels pat = do
         termIdx = getIndex pat.term
     when (Idx.hasNone termIdx) $ throw (TermIndexIsNone pat.term)
     let
-        indexes = Set.toList $ Map.keysSet def.rewriteTheory `Idx.covering` termIdx
+        indexes =
+            Set.toList $ Map.keysSet def.rewriteTheory `Idx.covering` Idx.noFunctions termIdx
+        -- Function calls in the index have to be generalised to
+        -- `Anything` for rewriting because they may evaluate to any
+        -- category of terms. If there are any function calls in the
+        -- subject, the rewrite can only succeed if the function call
+        -- is matched to a variable.
         rulesFor i = fromMaybe Map.empty $ Map.lookup i def.rewriteTheory
         rules =
             map snd . Map.toAscList . Map.unionsWith (<>) $ map rulesFor indexes
