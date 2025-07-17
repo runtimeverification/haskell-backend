@@ -16,20 +16,22 @@ module Booster.Pattern.Index (
     compositeTermIndex,
     kCellTermIndex,
     termTopIndex,
-    -- shortcut to
+    -- shortcut to abort rewriting/evaluation
     hasNone,
 ) where
 
 import Control.Applicative (Alternative (..), asum)
 import Control.DeepSeq (NFData)
-import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (ByteString, unpack)
 import Data.Functor.Foldable (embed, para)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import GHC.Generics (Generic)
+import Prettyprinter (Doc, Pretty, pretty, sep)
 
 import Booster.Pattern.Base
+import Booster.Util (decodeLabel)
 
 {- | Index data allowing for a quick lookup of potential axioms.
 
@@ -57,7 +59,7 @@ data CellIndex
     = None -- bottom element
     | TopCons SymbolName
     | TopFun SymbolName
-    | Value ByteString
+    | TopVal ByteString
     | TopMap
     | TopList
     | TopSet
@@ -81,7 +83,7 @@ ifGreater base x = Set.filter (x ^<=^) base
                 Anything
    ____________/   |  \_______________________________________...
   /          /     |            |           \             \
-TopList ..TopSet  Value "x"..Value "y"  TopCons "A"..  TopFun "f"..
+TopList ..TopSet  TopVal "x"..TopVal "y"  TopCons "A"..  TopFun "f"..
   \__________|__   |  _________|____________|____________/____...
                 \  | /
                  None
@@ -117,6 +119,24 @@ instance Semigroup CellIndex where
     idx1 <> idx2
         | idx1 == idx2 = idx1
         | otherwise = None
+
+-- | Pretty instances
+instance Pretty TermIndex where
+    pretty (TermIndex ixs) = sep $ map pretty ixs
+
+instance Pretty CellIndex where
+    pretty None = "_|_"
+    pretty Anything = "***"
+    pretty (TopCons sym) = "C--" <> prettyLabel sym
+    pretty (TopFun sym) = "F--" <> prettyLabel sym
+    pretty (TopVal sym) = "V--" <> prettyLabel sym
+    pretty TopMap = "Map"
+    pretty TopList = "List"
+    pretty TopSet = "Set"
+
+prettyLabel :: ByteString -> Doc a
+prettyLabel = either error ( pretty . unpack) . decodeLabel
+
 
 {- | Check whether a @TermIndex@ has @None@ in any position (this
 means no match will be possible).
@@ -221,7 +241,7 @@ cellTopIndex = \case
     FunctionApplication symbol _ _ ->
         TopFun symbol.name
     DomainValue _ v ->
-        Value v
+        TopVal v
     Var{} ->
         Anything
     KMap{} ->

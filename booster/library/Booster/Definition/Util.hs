@@ -30,7 +30,7 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Definition.Ceil (ComputeCeilSummary (..))
 import Booster.Pattern.Base
-import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
+import Booster.Pattern.Index (TermIndex (..))
 import Booster.Pattern.Pretty
 import Booster.Prettyprinter
 import Booster.Util
@@ -111,16 +111,16 @@ instance Pretty Summary where
                         : tableView prettyLabel prettyLabel summary.subSorts
                    )
                 <> ( "Rewrite rules by term index:"
-                        : tableView prettyTermIndex pretty summary.rewriteRules
+                        : tableView pretty pretty summary.rewriteRules
                    )
                 <> ( "Function equations by term index:"
-                        : tableView prettyTermIndex pretty summary.functionRules
+                        : tableView pretty pretty summary.functionRules
                    )
                 <> ( "Simplifications by term index:"
-                        : tableView prettyTermIndex pretty summary.simplifications
+                        : tableView pretty pretty summary.simplifications
                    )
                 <> ( "Ceils:"
-                        : tableView prettyTermIndex prettyCeilRule summary.ceils
+                        : tableView pretty prettyCeilRule summary.ceils
                    )
                 <> [mempty]
       where
@@ -139,18 +139,6 @@ instance Pretty Summary where
                 (header <> ": " <> pretty (length xs)) : map (("- " <>) . f) xs
 
         prettyLabel = either error (pretty . BS.unpack) . decodeLabel
-
-        prettyTermIndex :: TermIndex -> Doc a
-        prettyTermIndex (TermIndex ixs) = Pretty.sep $ map prettyCellIndex ixs
-
-        prettyCellIndex None = "_|_"
-        prettyCellIndex Anything = "***"
-        prettyCellIndex (TopCons sym) = "C--" <> prettyLabel sym
-        prettyCellIndex (TopFun sym) = "F--" <> prettyLabel sym
-        prettyCellIndex (Value sym) = "V--" <> prettyLabel sym
-        prettyCellIndex TopMap = "Map"
-        prettyCellIndex TopList = "List"
-        prettyCellIndex TopSet = "Set"
 
         prettyCeilRule :: RewriteRule r -> Doc a
         prettyCeilRule RewriteRule{lhs, rhs} =

@@ -41,7 +41,7 @@ testKCellIndexing =
             KSeq someSort [trm| X:SomeSort{} |]
                 ==> Anything
             [trm| kCell{}(kseq{}(inj{SomeSort{},SortKItem{}}(\dv{SomeSort{}}("X")), dotk{}())) |]
-                ==> Value "X"
+                ==> TopVal "X"
             [trm| kCell{}(X:SortK{}) |]
                 ==> Anything
         , testCase "The K cell is found when nested under other cells" $ do
@@ -183,7 +183,7 @@ testTopTermIndexing =
         "Indexing the top term"
         [ testCase "Different terms get different indexes" $ do
             [trm| VAR:SomeSort{} |] ==> Anything
-            [trm| \dv{SomeSort{}}("") |] ==> Value ""
+            [trm| \dv{SomeSort{}}("") |] ==> TopVal ""
             [trm| f1{}(VAR:SomeSort{}) |] ==> TopFun "f1"
             [trm| con1{}(VAR:SomeSort{}) |] ==> TopCons "con1"
             KMap testKMapDefinition [] Nothing ==> TopMap
