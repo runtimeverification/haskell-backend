@@ -1172,7 +1172,9 @@ simplifyConstraint' :: LoggerMIO io => Bool -> Term -> EquationT io Term
 -- 'true \equals P' using simplifyBool if they are concrete, or using
 -- evaluateTerm.
 simplifyConstraint' recurseIntoEvalBool = \case
-    t@(Term TermAttributes{canBeEvaluated} _)
+    t@(Term TermAttributes{isEvaluated, canBeEvaluated} _)
+        | isEvaluated ->
+            pure t
         | isConcrete t && canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
