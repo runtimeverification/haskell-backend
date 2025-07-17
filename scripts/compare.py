@@ -14,10 +14,13 @@ if len(sys.argv) > 4:
 else:
     minchange = 0.035
 
-testname = re.compile(r'.*\[(?P<name>.*)\]$')
+bracket_name = re.compile(r'[^[]*\[(?P<name>.*)\]$')
+colon_name = re.compile(r'[^:]*::(?P<name>.*)$')
 
 def readName(input):
-    r = testname.match(input)
+    r = bracket_name.match(input)
+    if r is None:
+        r = colon_name.match(input)
     if r is None:
         return input
     else:
