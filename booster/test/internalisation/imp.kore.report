@@ -297,7 +297,7 @@ Subsorts:
   - SortTCell
   - SortTCellOpt
 Rewrite rules by term index:
-- Anything: 11
+- ***: 11
   - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp1-cool
   - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp2-cool
   - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp1-cool
@@ -309,201 +309,201 @@ Rewrite rules by term index:
   - IMP-SYNTAX._&&__IMP-SYNTAX_BExp_BExp_BExp1-cool
   - IMP-SYNTAX.if(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block1-cool
   - variable_lookup
-- Lbl!__IMP-SYNTAX_BExp_BExp: 2
+- C--Lbl!__IMP-SYNTAX_BExp_BExp: 2
   - IMP-SYNTAX.!__IMP-SYNTAX_BExp_BExp1-heat
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (134, 8)
-- Lbl-__IMP-SYNTAX_AExp_Int: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (125, 8)
-- Lbl?Int_IMP-SYNTAX_AExp: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (121, 8)
-- Lbl_&&__IMP-SYNTAX_BExp_BExp_BExp: 3
+- C--Lbl-__IMP-SYNTAX_AExp_Int: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (125, 8)
+- C--Lbl?Int_IMP-SYNTAX_AExp: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (121, 8)
+- C--Lbl_&&__IMP-SYNTAX_BExp_BExp_BExp: 3
   - IMP-SYNTAX._&&__IMP-SYNTAX_BExp_BExp_BExp1-heat
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (136, 8)
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (135, 8)
-- Lbl_+__IMP-SYNTAX_AExp_AExp_AExp: 3
+- C--Lbl_+__IMP-SYNTAX_AExp_AExp_AExp: 3
   - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp1-heat
   - IMP-SYNTAX._+__IMP-SYNTAX_AExp_AExp_AExp2-heat
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (124, 8)
-- Lbl_/__IMP-SYNTAX_AExp_AExp_AExp: 3
+- C--Lbl_/__IMP-SYNTAX_AExp_AExp_AExp: 3
   - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp1-heat
   - IMP-SYNTAX._/__IMP-SYNTAX_AExp_AExp_AExp2-heat
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (123, 8)
-- Lbl_<=__IMP-SYNTAX_BExp_AExp_AExp: 3
+- C--Lbl_<=__IMP-SYNTAX_BExp_AExp_AExp: 3
   - IMP-SYNTAX._<=__IMP-SYNTAX_BExp_AExp_AExp1-heat
   - IMP-SYNTAX._<=__IMP-SYNTAX_BExp_AExp_AExp2-heat
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (133, 8)
-- Lbl_=_;_IMP-SYNTAX_Stmt_Id_AExp: 2
+- C--Lbl_=_;_IMP-SYNTAX_Stmt_Id_AExp: 2
   - IMP-SYNTAX._=_;_IMP-SYNTAX_Stmt_Id_AExp2-heat
   - variable_setting
-- Lbl___IMP-SYNTAX_Stmt_Stmt_Stmt: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (175, 8)
-- Lblif(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block: 3
+- C--Lbl___IMP-SYNTAX_Stmt_Stmt_Stmt: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (175, 8)
+- C--Lblif(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block: 3
   - IMP-SYNTAX.if(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block1-heat
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (185, 8)
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (184, 8)
-- Lblint_;__IMP-SYNTAX_Pgm_Ids_Stmt: 2
+- C--Lblint_;__IMP-SYNTAX_Pgm_Ids_Stmt: 2
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (208, 8)
   - /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (206, 8)
-- Lblwhile(_)__IMP-SYNTAX_Stmt_BExp_Block: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (191, 8)
-- Lbl{_}_IMP-SYNTAX_Block_Stmt: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (155, 8)
-- Lbl{}_IMP-SYNTAX_Block: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (154, 8)
+- C--Lblwhile(_)__IMP-SYNTAX_Stmt_BExp_Block: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (191, 8)
+- C--Lbl{_}_IMP-SYNTAX_Block_Stmt: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (155, 8)
+- C--Lbl{}_IMP-SYNTAX_Block: /Users/sam/git/haskell-backend-json-rpc/booster/test/internalisation/imp.k :  (154, 8)
 Function equations by term index:
-- Lbl_=/=Bool_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1159, 8)
-- Lbl_=/=Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1438, 8)
-- Lbl_=/=K_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2318, 8)
-- Lbl_andBool_: 2
+- F--Lbl_=/=Bool_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1159, 8)
+- F--Lbl_=/=Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1438, 8)
+- F--Lbl_=/=K_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2318, 8)
+- F--Lbl_andBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1132, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1130, 8)
-- Lbl_andThenBool_: 2
+- F--Lbl_andThenBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1137, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1135, 8)
-- Lbl_divInt_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1427, 8)
-- Lbl_dividesInt__INT-COMMON_Bool_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1439, 8)
-- Lbl_impliesBool_: 2
+- F--Lbl_divInt_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1427, 8)
+- F--Lbl_dividesInt__INT-COMMON_Bool_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1439, 8)
+- F--Lbl_impliesBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1155, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1154, 8)
-- Lbl_orBool_: 2
+- F--Lbl_orBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1146, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1144, 8)
-- Lbl_orElseBool_: 2
+- F--Lbl_orElseBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1151, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1149, 8)
-- Lbl_xorBool_: 2
+- F--Lbl_xorBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1142, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1140, 8)
-- Lbl_|Set__SET_Set_Set_Set: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (749, 8)
-- LblbitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1423, 8)
-- LblfreshInt(_)_INT_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1442, 8)
-- LblgetGeneratedCounterCell: UNKNOWN
-- LblinitGeneratedCounterCell: UNKNOWN
-- LblinitGeneratedTopCell: UNKNOWN
-- LblinitKCell: UNKNOWN
-- LblinitStateCell: UNKNOWN
-- LblinitTCell: UNKNOWN
-- LblisAExp: 2
+- F--Lbl_|Set__SET_Set_Set_Set: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (749, 8)
+- F--LblbitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1423, 8)
+- F--LblfreshInt(_)_INT_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1442, 8)
+- F--LblgetGeneratedCounterCell: UNKNOWN
+- F--LblinitGeneratedCounterCell: UNKNOWN
+- F--LblinitGeneratedTopCell: UNKNOWN
+- F--LblinitKCell: UNKNOWN
+- F--LblinitStateCell: UNKNOWN
+- F--LblinitTCell: UNKNOWN
+- F--LblisAExp: 2
   - UNKNOWN
   - UNKNOWN
-- LblisBExp: 2
+- F--LblisBExp: 2
   - UNKNOWN
   - UNKNOWN
-- LblisBlock: 2
+- F--LblisBlock: 2
   - UNKNOWN
   - UNKNOWN
-- LblisBool: 2
+- F--LblisBool: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedCounterCell: 2
+- F--LblisGeneratedCounterCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedCounterCellOpt: 2
+- F--LblisGeneratedCounterCellOpt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedTopCell: 2
+- F--LblisGeneratedTopCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedTopCellFragment: 2
+- F--LblisGeneratedTopCellFragment: 2
   - UNKNOWN
   - UNKNOWN
-- LblisId: 2
+- F--LblisId: 2
   - UNKNOWN
   - UNKNOWN
-- LblisIds: 2
+- F--LblisIds: 2
   - UNKNOWN
   - UNKNOWN
-- LblisInt: 2
+- F--LblisInt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisK: UNKNOWN
-- LblisKCell: 2
+- F--LblisK: UNKNOWN
+- F--LblisKCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKCellOpt: 2
+- F--LblisKCellOpt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKConfigVar: 2
+- F--LblisKConfigVar: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKItem: 2
+- F--LblisKItem: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKResult: 2
+- F--LblisKResult: 2
   - UNKNOWN
   - UNKNOWN
-- LblisList: 2
+- F--LblisList: 2
   - UNKNOWN
   - UNKNOWN
-- LblisMap: 2
+- F--LblisMap: 2
   - UNKNOWN
   - UNKNOWN
-- LblisPgm: 2
+- F--LblisPgm: 2
   - UNKNOWN
   - UNKNOWN
-- LblisSet: 2
+- F--LblisSet: 2
   - UNKNOWN
   - UNKNOWN
-- LblisStateCell: 2
+- F--LblisStateCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisStateCellOpt: 2
+- F--LblisStateCellOpt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisStmt: 2
+- F--LblisStmt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisString: 2
+- F--LblisString: 2
   - UNKNOWN
   - UNKNOWN
-- LblisTCell: 2
+- F--LblisTCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisTCellFragment: 2
+- F--LblisTCellFragment: 2
   - UNKNOWN
   - UNKNOWN
-- LblisTCellOpt: 2
+- F--LblisTCellOpt: 2
   - UNKNOWN
   - UNKNOWN
-- Lblite: 2
+- F--Lblite: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2320, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2321, 8)
-- LblminInt(_,_)_INT-COMMON_Int_Int_Int: 2
+- F--LblminInt(_,_)_INT-COMMON_Int_Int_Int: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1435, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1436, 8)
-- LblnotBool_: 2
+- F--LblnotBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1128, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1127, 8)
-- Lblproject:AExp: UNKNOWN
-- Lblproject:BExp: UNKNOWN
-- Lblproject:Block: UNKNOWN
-- Lblproject:Bool: UNKNOWN
-- Lblproject:GeneratedCounterCell: UNKNOWN
-- Lblproject:GeneratedCounterCellOpt: UNKNOWN
-- Lblproject:GeneratedTopCell: UNKNOWN
-- Lblproject:GeneratedTopCellFragment: UNKNOWN
-- Lblproject:Id: UNKNOWN
-- Lblproject:Ids: UNKNOWN
-- Lblproject:Int: UNKNOWN
-- Lblproject:K: UNKNOWN
-- Lblproject:KCell: UNKNOWN
-- Lblproject:KCellOpt: UNKNOWN
-- Lblproject:KItem: UNKNOWN
-- Lblproject:KResult: UNKNOWN
-- Lblproject:List: UNKNOWN
-- Lblproject:Map: UNKNOWN
-- Lblproject:Pgm: UNKNOWN
-- Lblproject:Set: UNKNOWN
-- Lblproject:StateCell: UNKNOWN
-- Lblproject:StateCellOpt: UNKNOWN
-- Lblproject:Stmt: UNKNOWN
-- Lblproject:String: UNKNOWN
-- Lblproject:TCell: UNKNOWN
-- Lblproject:TCellFragment: UNKNOWN
-- Lblproject:TCellOpt: UNKNOWN
-- LblpushList: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (954, 8)
-- LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1425, 8)
-- append: 2
+- F--Lblproject:AExp: UNKNOWN
+- F--Lblproject:BExp: UNKNOWN
+- F--Lblproject:Block: UNKNOWN
+- F--Lblproject:Bool: UNKNOWN
+- F--Lblproject:GeneratedCounterCell: UNKNOWN
+- F--Lblproject:GeneratedCounterCellOpt: UNKNOWN
+- F--Lblproject:GeneratedTopCell: UNKNOWN
+- F--Lblproject:GeneratedTopCellFragment: UNKNOWN
+- F--Lblproject:Id: UNKNOWN
+- F--Lblproject:Ids: UNKNOWN
+- F--Lblproject:Int: UNKNOWN
+- F--Lblproject:K: UNKNOWN
+- F--Lblproject:KCell: UNKNOWN
+- F--Lblproject:KCellOpt: UNKNOWN
+- F--Lblproject:KItem: UNKNOWN
+- F--Lblproject:KResult: UNKNOWN
+- F--Lblproject:List: UNKNOWN
+- F--Lblproject:Map: UNKNOWN
+- F--Lblproject:Pgm: UNKNOWN
+- F--Lblproject:Set: UNKNOWN
+- F--Lblproject:StateCell: UNKNOWN
+- F--Lblproject:StateCellOpt: UNKNOWN
+- F--Lblproject:Stmt: UNKNOWN
+- F--Lblproject:String: UNKNOWN
+- F--Lblproject:TCell: UNKNOWN
+- F--Lblproject:TCellFragment: UNKNOWN
+- F--Lblproject:TCellOpt: UNKNOWN
+- F--LblpushList: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (954, 8)
+- F--LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1425, 8)
+- F--append: 2
   - UNKNOWN
   - UNKNOWN
 Simplifications by term index:
-- Lbl_%Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1362, 8)
-- Lbl_&Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1413, 8)
-- Lbl_+Int_: 7
+- F--Lbl_%Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1362, 8)
+- F--Lbl_&Int_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1413, 8)
+- F--Lbl_+Int_: 7
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1358, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1404, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1406, 8)
@@ -511,45 +511,45 @@ Simplifications by term index:
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1403, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1408, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1400, 8)
-- Lbl_-Int_: 6
+- F--Lbl_-Int_: 6
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1359, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1405, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1409, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1410, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1411, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1401, 8)
-- Lbl_<<Int_: 2
+- F--Lbl_<<Int_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1365, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1366, 8)
-- Lbl_==K_: 2
+- F--Lbl_==K_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (2301, 8)
   - INT-KORE.eq-k-to-eq-int
-- Lbl_>>Int_: 2
+- F--Lbl_>>Int_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1367, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1368, 8)
-- Lbl_andBool_: 2
+- F--Lbl_andBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1131, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1133, 8)
-- Lbl_andThenBool_: 2
+- F--Lbl_andThenBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1136, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1138, 8)
-- Lbl_impliesBool_: 2
+- F--Lbl_impliesBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1157, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1156, 8)
-- Lbl_modInt_: 2
+- F--Lbl_modInt_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1430, 5)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1361, 8)
-- Lbl_orBool_: 2
+- F--Lbl_orBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1147, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1145, 8)
-- Lbl_orElseBool_: 2
+- F--Lbl_orElseBool_: 2
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1152, 8)
   - /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1150, 8)
-- Lbl_xorBool_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1141, 8)
+- F--Lbl_xorBool_: /nix/store/10bil1g5xdnskljl0xwi4gzg4bpv3lsw-k-7.1.110-0bfb62cf00b71470ed80a42be339d5f87c858e54/include/kframework/builtin/domains.md :  (1141, 8)
 Ceils:
-- Lbl_%Int_: #Ceil( _%Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
-- Lbl_/Int_: #Ceil( _/Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
-- Lbl_<<Int_: #Ceil( _<<Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
-- Lbl_>>Int_: #Ceil( _>>Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
-- Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))
-- Lbl_modInt_: #Ceil( _modInt_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- F--Lbl_%Int_: #Ceil( _%Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- F--Lbl_/Int_: #Ceil( _/Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- F--Lbl_<<Int_: #Ceil( _<<Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
+- F--Lbl_>>Int_: #Ceil( _>>Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
+- F--Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))
+- F--Lbl_modInt_: #Ceil( _modInt_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")

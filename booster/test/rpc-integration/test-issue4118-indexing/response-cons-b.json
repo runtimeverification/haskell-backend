@@ -2,8 +2,8 @@
     "jsonrpc": "2.0",
     "id": 1,
     "result": {
-        "reason": "aborted",
-        "depth": 1,
+        "reason": "stuck",
+        "depth": 2,
         "state": {
             "term": {
                 "format": "KORE",
@@ -25,37 +25,9 @@
                                     "args": [
                                         {
                                             "tag": "App",
-                                            "name": "inj",
-                                            "sorts": [
-                                                {
-                                                    "tag": "SortApp",
-                                                    "name": "SortFoo",
-                                                    "args": []
-                                                },
-                                                {
-                                                    "tag": "SortApp",
-                                                    "name": "SortKItem",
-                                                    "args": []
-                                                }
-                                            ],
-                                            "args": [
-                                                {
-                                                    "tag": "App",
-                                                    "name": "Lblf'LParUndsRParUnds'NO-EVALUATOR'Unds'Foo'Unds'Int",
-                                                    "sorts": [],
-                                                    "args": [
-                                                        {
-                                                            "tag": "DV",
-                                                            "sort": {
-                                                                "tag": "SortApp",
-                                                                "name": "SortInt",
-                                                                "args": []
-                                                            },
-                                                            "value": "12"
-                                                        }
-                                                    ]
-                                                }
-                                            ]
+                                            "name": "LblDone",
+                                            "sorts": [],
+                                            "args": []
                                         },
                                         {
                                             "tag": "App",
