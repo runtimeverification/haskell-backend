@@ -14,10 +14,10 @@ Rules:
   rule f(A) => f(B)               // index IdxFun "f"
   rule f(B) => A                  // index IdxFun "f"
 
-  rule [consrule]:                // index TopCon "Cons"
+  rule [consrule]:                // index IdxCons "Cons"
     <k> Cons(I) => f(I) ... </k>
 
-  rule [Vrule]:                   // index IdxVal "A"
+  rule [arule]:                   // index IdxCons "A"
     <k> A => Done ... </k>
 
   rule [varrule]:                 // index ***
@@ -33,9 +33,9 @@ Input: `Cons(B)`
   - which leads to the rewrite looping with `varrule`.
 * With the fixed indexes,
   - booster tries _all_ rules in priority order because `f` can evaluate to different things
-  - a rewrite with `consrule` or `Vrule` aborts on an indeterminate match with `f(B)`
+  - a rewrite with `consrule` or `arule` aborts on an indeterminate match with `f(B)`
   - the term is simplified, evaluating `f(B) => A`
-  - the subsequent rewrite succeeds for `Vrule`, producing `Done`
+  - the subsequent rewrite succeeds for `arule`, producing `Done`
 
 ```
 Cons(B) =rewrite=> f(B) =eval=> A =rewrite=> Done    correct

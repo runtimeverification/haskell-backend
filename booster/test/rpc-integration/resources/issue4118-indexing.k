@@ -15,10 +15,10 @@ module TEST
   rule f(A) => f(B) // index IdxFun "f"
   rule f(B) => A    // index IdxFun "f"
 
-  rule [Vrule]: // index IdxVal "A"
+  rule [arule]: // index IdxCons "A"
     <k> A => Done ... </k>
 
-  rule [consrule]: // index TopCon "Cons"
+  rule [consrule]: // index IdxCons "Cons"
     <k> Cons(I) => f(I) ... </k>
 
   rule [varrule]: // index ***
