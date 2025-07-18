@@ -53,9 +53,7 @@ test_performRewrite =
         "Iterated rewriting"
         [ -- same tests as above, but calling the iterating function
           canRewrite
-        , abortsOnErrors
-        , callsError
-        , getsStuckOnFailures
+        , abortsOnProblems
         , supportsDepthControl
         , supportsCutPoints
         , supportsTerminalRules
@@ -63,17 +61,17 @@ test_performRewrite =
 
 ----------------------------------------
 
-index :: SymbolName -> TermIndex
-index = TermIndex . (: []) . TopSymbol
+indexC :: SymbolName -> TermIndex
+indexC = TermIndex . (: []) . IdxCons
 
 def :: KoreDefinition
 def =
     testDefinition
         { rewriteTheory =
             mkTheory
-                [ (index "con1", [rule1, rule2, rule1'])
-                , (index "con3", [rule3])
-                , (index "con4", [rule4])
+                [ (indexC "con1", [rule1, rule2, rule1'])
+                , (indexC "con3", [rule3])
+                , (indexC "con4", [rule4])
                 ]
         }
 
@@ -184,7 +182,7 @@ errorCases
 errorCases =
     testGroup
         "Simple error cases"
-        [ testCase "Index is None" $ do
+        [ testCase "Index is IdxNone" $ do
             let t =
                     [trm|
                         kCell{}(
@@ -233,7 +231,7 @@ rewriteStuck =
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con2{}( \dv{SomeSort{}}("thing") ) ), Thing:SortK{}) ) |]
         , testCase "No rules for dotk()" $
             getsStuck
-                [trm| kCell{}( kseq{}(dotk{}()) ) |]
+                [trm| kCell{}( dotk{}() ) |]
         ]
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $
@@ -324,16 +322,18 @@ canRewrite :: TestTree
 canRewrite =
     testGroup
         "Can rewrite"
-        [ testCase "Rewrites con1 once, then gets stuck" $
+        [ testCase "Rewrites con1 once, then aborts on function" $
             let startTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewrites
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         , testCase "Rewrites con3 twice, branching on con1" $ do
             let branch1 =
                     ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
@@ -388,38 +388,36 @@ canRewrite =
                 app con2 [d]
         ]
 
-abortsOnErrors :: TestTree
-abortsOnErrors =
+abortsOnProblems :: TestTree
+abortsOnProblems =
     testGroup
-        "Aborts rewrite when there is an error"
-        [ testCase "when the term index is None" $
+        "Aborts on unexpected situations or unclear rule application"
+        [ testCase "when the term index is IdxNone" $
             let term =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( \and{SomeSort{}}( con1{}( \dv{SomeSort{}}("thing") ), con2{}( \dv{SomeSort{}}("thing") ) ) ), C:SortK{} ) ) |]
              in aborts
                     (TermIndexIsNone term)
                     term
-        ]
-
-callsError :: TestTree
-callsError =
-    testGroup
-        "Calls error when there are unexpected situations"
-        [ testCase "on wrong argument count in a symbol application" $
+        , testCase "Errors on wrong argument count in a symbol application" $
             runRewrite
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 >>= \case
                     (_, RewriteAborted InternalMatchError{} _) -> pure ()
                     _ -> assertFailure "success"
-        ]
-
-getsStuckOnFailures :: TestTree
-getsStuckOnFailures =
-    testGroup
-        "Gets stuck when the rewriter cannot handle it"
-        [ testCase "when unification is not a match" $
-            getsStuck [trm| con3{}(X:SomeSort{}, \dv{SomeSort{}}("thing")) |]
-        , testCase "when definedness is unclear" $
-            getsStuck [trm| con4{}(\dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing")) |]
+        , testCase "Aborts when unification is not a match" $
+            let t =
+                    [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}(X:SomeSort{}, \dv{SomeSort{}}("thing"))), C:SortK{}) ) |]
+             in aborts
+                    ( RuleApplicationUnclear
+                        rule3
+                        t
+                        (NE.singleton ([trm| \dv{SomeSort{}}("otherThing")|], [trm| X:SomeSort{} |]))
+                    )
+                    t
+        , testCase "Aborts when definedness is unclear" $
+            let t =
+                    [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}(\dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing"))), C:SortK{}) ) |]
+             in aborts (DefinednessUnclear rule4 (Pattern_ t) [UndefinedSymbol "f2"]) t
         ]
 
 newtype MaxDepth = MaxDepth Natural
@@ -433,12 +431,14 @@ supportsDepthControl =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewritesToDepth
                     (MaxDepth 42)
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         , testCase "stops execution after 1 step when maxDepth == 1" $
             rewritesToDepth
                 (MaxDepth 1)
@@ -527,12 +527,14 @@ supportsCutPoints =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewritesToCutPoint
                     "otherLabel"
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         , testCase "prefers reporting branches to stopping at label in one branch" $ do
             let branch1 =
                     ( [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("somethingElse"), \dv{SomeSort{}}("somethingElse") ) ), C:SortK{}) ) |]
@@ -605,12 +607,14 @@ supportsTerminalRules =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 targetTerm =
                     [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                remainder =
+                    NE.singleton ([trm| con1{}(\dv{SomeSort{}}("thing")) |], [trm| f1{}(\dv{SomeSort{}}("thing")) |])
              in rewritesToTerminal
                     "otherLabel"
                     (Steps 1)
                     startTerm
                     targetTerm
-                    RewriteStuck
+                    (\t -> RewriteAborted (RuleApplicationUnclear rule1 t remainder) t)
         ]
   where
     rewritesToTerminal :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
