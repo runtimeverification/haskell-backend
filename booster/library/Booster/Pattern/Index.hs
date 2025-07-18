@@ -39,9 +39,13 @@ import Booster.Util (decodeLabel)
 A @Term@ is indexed by inspecting the top term component of one or
 more given cells. A @TermIndex@ is a list of @CellIndex@es.
 
-The @CellIndex@ of a cell containing a @SymbolApplication@ node is the
-symbol at the top. Other terms that are not symbol applications have
-index @Anything@.
+The @CellIndex@ of a cell reflects the top constructor of the term.
+For @SymbolApplication@s, constructors and functions are distinguished,
+for @DomainValue@s, the actual value (as a string) is part of the index.
+Internalised collections have special indexes, Variables have index @Anything@.
+
+NB Indexes are _unsorted_. For instance, @IdxVal "42"@ is the index of
+both String "42" _and_ Integer 42.
 
 Rather than making the term indexing function partial, we introduce a
 unique bottom element @IdxNone@ to the index type (to make it a lattice).
@@ -76,17 +80,14 @@ class IndexLattice a where
 
     invert :: a -> a
 
-ifGreater :: IndexLattice a => Set a -> a -> Set a
-ifGreater base x = Set.filter (x ^<=^) base
-
 {- | Partial less-or-equal for CellIndex (implies partial order)
 
                 Anything
-   ____________/   |  \_______________________________________...
-  /          /     |            |           \             \
-IdxList ..IdxSet  IdxVal "x"..IdxVal "y"  IdxCons "A"..  IdxFun "f"..
-  \__________|__   |  _________|____________|____________/____...
-                \  | /
+   ____________/    |  \_______________________________________...
+  /          /      |           |           \             \
+IdxList ..IdxSet   IdxVal "x"..IdxVal "y"  IdxCons "A"..  IdxFun "f"..
+  \_________|__     |    _______|____________|____________/____...
+                \   |   /
                  IdxNone
 -}
 instance IndexLattice CellIndex where
@@ -106,7 +107,7 @@ instance IndexLattice TermIndex where
 
     invert (TermIndex idxs) = TermIndex (map invert idxs)
 
-{- | Combines two indexes (an "infimum" function on the index lattice).
+{- | Combines two indexes ("infimum" or "meet" function on the index lattice).
 
   This is useful for terms containing an 'AndTerm': Any term that
   matches an 'AndTerm t1 t2' must match both 't1' and 't2', so 't1'
@@ -170,7 +171,7 @@ noFunctions (TermIndex ixs) = TermIndex (map funsAnything ixs)
   @Anything@ at every position of their @TermIndex@.
 -}
 covering :: Set TermIndex -> TermIndex -> Set TermIndex
-covering prior ix = prior `ifGreater` invert ix
+covering prior ix = Set.filter (invert ix ^<=^) prior
 
 -- | Indexes a term by the heads of K sequences in given cells.
 compositeTermIndex :: [SymbolName] -> Term -> TermIndex
