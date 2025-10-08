@@ -78,8 +78,8 @@ jobs:
           - runner: ubuntu-22.04
             os: ubuntu-22.04
             nix: x86_64-linux
-          - runner: MacM1
-            os: self-macos-12
+          - runner: self-macos-latest
+            os: self-macos-latest
             nix: aarch64-darwin
     runs-on: ${{ matrix.runner }}
     steps:
