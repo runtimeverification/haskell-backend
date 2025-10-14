@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           hs-backend-booster
-version:        0.1.140
+version:        0.1.141
 synopsis:       A simple rewrite engine to accelerate K Framework's Haskell backend
 description:    See [README](README.md)
 category:       Language
