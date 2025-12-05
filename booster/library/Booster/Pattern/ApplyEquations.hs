@@ -882,7 +882,7 @@ applyEquation (FunctionApplication _sym [] [Term term _]) rule
             ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
                 pure $
                     Left
-                        ( \ctxt -> ctxt $ logWarn $ "Refusing to apply sort predicate rule to an unevaluated term"
+                        ( \ctxt -> ctxt $ logWarn "Refusing to apply sort predicate rule to an unevaluated term"
                         , IndeterminateMatch
                         )
 applyEquation term rule =
