@@ -96,13 +96,13 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 # kompile evm-semantics or skip kompilation if using an existing TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
-    feature_shell "make poetry && poetry run -C kevm-pyk -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+    feature_shell "make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
 fi
 
 # kompile all verification K definitions and specs
 PREKOMPILED_DIR=$TEMPD/prekompiled
 mkdir -p $PREKOMPILED_DIR
-feature_shell "cd kevm-pyk && poetry run pytest src/tests/integration/test_prove.py::test_kompile_targets -vv --maxfail=0 --kompiled-targets-dir $PREKOMPILED_DIR"
+feature_shell "uv --directory kevm-pyk run -- pytest src/tests/integration/test_prove.py::test_kompile_targets -vv --maxfail=0 --kompiled-targets-dir $PREKOMPILED_DIR"
 
 mkdir -p $SCRIPT_DIR/logs
 
@@ -116,7 +116,7 @@ if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
 fi
 
-feature_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+feature_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "No zombie processes found"
 
 
@@ -127,7 +127,7 @@ if [ -z "$BUG_REPORT" ]; then
         unset KORE_RPC_OPTS
     fi
     if [ ! -e "$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-        master_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
+        master_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
         killall kore-rpc-booster || echo "No zombie processes found"
     fi
 
