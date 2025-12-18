@@ -875,7 +875,7 @@ applyEquation ::
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
 applyEquation (FunctionApplication _sym [] [term]) rule
     | isSortPredicate rule
-    , FunctionApplication _ _ _ <- term =
+    , KSeq _ (FunctionApplication _ _ _) <- term =
         -- sort predicates only match on a sort injection, unevaluated
         -- function applications may create false negatives
         pure $
