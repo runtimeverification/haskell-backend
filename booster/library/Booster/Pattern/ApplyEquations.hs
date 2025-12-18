@@ -873,18 +873,20 @@ applyEquation ::
     EquationT
         io
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
-applyEquation (FunctionApplication _sym [] [Term term _]) rule
+applyEquation (FunctionApplication _sym [] [term]) rule
     | isSortPredicate rule
-    , not term.isEvaluated =
+    , KSeq _ (FunctionApplication _ _ _) <- term =
         -- sort predicates only match on a sort injection, unevaluated
         -- function applications may create false negatives
-        getPrettyModifiers >>= \case
-            ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
-                pure $
-                    Left
-                        ( \ctxt -> ctxt $ logWarn "Refusing to apply sort predicate rule to an unevaluated term"
-                        , IndeterminateMatch
-                        )
+        pure $
+            Left
+                ( \ctxt ->
+                    ctxt $
+                        withTermContext term $
+                            withContext CtxWarn $
+                                logMessage ("Refusing to apply sort predicate rule to an unevaluated term" :: Text)
+                , IndeterminateMatch
+                )
 applyEquation term rule =
     runExceptT $
         getPrettyModifiers >>= \case
