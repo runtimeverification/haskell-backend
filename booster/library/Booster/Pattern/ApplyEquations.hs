@@ -844,6 +844,27 @@ applyEquations theory handler term = do
                     )
                     err
 
+{- | A sort predicate equation is characterised by the following:
+  * Its lhs is a function application (of a symbol starting with 'Lblis', not checked)
+  * function argument is a singleton K sequence
+  * containing an injection of a Variable into the 'KItem' sort
+  * rhs is a boolean
+  * requires and ensures are both empty (i.e., plain "true" DVs)
+  * the rule has no location information
+-}
+isSortPredicate :: RewriteRule tag -> Bool
+isSortPredicate rule
+    | SymbolApplication _funSym [] [arg] <- rule.lhs
+    , KSeq sort (Var v) <- arg -- implicitly: Injection sort KItem (Var v)
+    , v.variableSort == sort
+    , (rule.rhs == TrueBool || rule.rhs == FalseBool)
+    , [Predicate TrueBool] <- rule.requires -- , null rule.requires
+    , [Predicate TrueBool] <- rule.ensures -- , null rule.ensures
+    , UNKNOWN <- sourceRef rule.attributes =
+        True
+    | otherwise =
+        False
+
 applyEquation ::
     forall io tag.
     LoggerMIO io =>
@@ -852,6 +873,20 @@ applyEquation ::
     EquationT
         io
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
+applyEquation (FunctionApplication _sym [] [term]) rule
+    | isSortPredicate rule
+    , KSeq _ (FunctionApplication _ _ _) <- term =
+        -- sort predicates only match on a sort injection, unevaluated
+        -- function applications may create false negatives
+        pure $
+            Left
+                ( \ctxt ->
+                    ctxt $
+                        withTermContext term $
+                            withContext CtxWarn $
+                                logMessage ("Refusing to apply sort predicate rule to an unevaluated term" :: Text)
+                , IndeterminateMatch
+                )
 applyEquation term rule =
     runExceptT $
         getPrettyModifiers >>= \case
