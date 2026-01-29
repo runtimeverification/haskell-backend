@@ -357,8 +357,10 @@ matchInj
             s2IsSubsort <-
                 lift . withExcept (MatchFailed . SubsortingError) $
                     checkSubsort subsorts source2 source1
-            -- cases below, checking subsorting is as expected, too
-
+            -- cases below require a subsort relation (and source1 ==
+            -- source2 is already handled)
+            unless (s1IsSubsort || s2IsSubsort) $
+                failWith (DifferentSorts trm1 trm2)
             -- Functions may have a more general sort than the actual result.
             -- This means we cannot simply fail the rewrite: the match is
             -- indeterminate if the function result is.
