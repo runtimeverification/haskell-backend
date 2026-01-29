@@ -341,15 +341,6 @@ matchInj
             failWith (DifferentSorts (Injection source1 target1 trm1) (Injection source2 target2 trm2))
         | source1 == source2 = do
             enqueueRegularProblem trm1 trm2
-        | Var v <- trm1 = do
-            -- variable in pattern, check source sorts and bind
-            subsorts <- gets mSubsorts
-            isSubsort <-
-                lift . withExcept (MatchFailed . SubsortingError) $
-                    checkSubsort subsorts source2 source1
-            if isSubsort
-                then bindVariable matchType v (Injection source2 source1 trm2)
-                else failWith (DifferentSorts trm1 trm2)
         | FunctionApplication{} <- trm2 = do
             -- Functions may have a more general sort than the actual result.
             -- This means we cannot simply fail the rewrite: the match is
@@ -361,6 +352,15 @@ matchInj
             if isSubsort
                 then addIndeterminate trm1 trm2
                 else failWith (DifferentSorts (Injection source1 target1 trm1) (Injection source2 target2 trm2))
+        | Var v <- trm1 = do
+            -- variable in pattern, check source sorts and bind
+            subsorts <- gets mSubsorts
+            isSubsort <-
+                lift . withExcept (MatchFailed . SubsortingError) $
+                    checkSubsort subsorts source2 source1
+            if isSubsort
+                then bindVariable matchType v (Injection source2 source1 trm2)
+                else failWith (DifferentSorts trm1 trm2)
         | otherwise =
             failWith (DifferentSorts (Injection source1 target1 trm1) (Injection source2 target2 trm2))
 {-# INLINE matchInj #-}
