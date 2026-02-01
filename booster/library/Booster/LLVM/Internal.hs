@@ -32,7 +32,7 @@ import Data.Data (Data)
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
+import Foreign (ForeignPtr, Int64, finalizeForeignPtr, newForeignPtr, withForeignPtr)
 import Foreign qualified
 import Foreign.C qualified as C
 import Foreign.C.Types (CSize (..))
@@ -51,6 +51,7 @@ data KoreSymbol
 data KoreError
 data Block
 type SizeT = CSize
+type Int64T = Foreign.Int64
 
 type KorePatternPtr = ForeignPtr KorePattern
 type KoreSymbolPtr = ForeignPtr KoreSymbol
@@ -103,6 +104,7 @@ data API = API
     , simplifyBool :: KorePatternPtr -> IO (Either LlvmError Bool)
     , simplify :: KorePatternPtr -> KoreSortPtr -> IO (Either LlvmError ByteString)
     , collect :: IO ()
+    , munmap :: IO ()
     }
 
 newtype LLVM a = LLVM (ReaderT API IO a)
@@ -115,7 +117,7 @@ withDLib :: FilePath -> (Linker.DL -> IO a) -> IO a
 withDLib dlib = Linker.withDL dlib [Linker.RTLD_LAZY]
 
 runLLVM :: API -> LLVM a -> IO a
-runLLVM api (LLVM m) = runReaderT m api
+runLLVM api (LLVM m) = runReaderT m api <* api.collect
 
 mkAPI :: Linker.DL -> IO API
 mkAPI dlib = flip runReaderT dlib $ do
@@ -271,6 +273,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                                             pure $ Right result
                                         else Left . LlvmError <$> errorMessage errPtr
 
+    munmap <- resetMunmapAllArenas -- HACK. Adjust name after llvm-backend dependency upgrade
     mutableBytesEnabled <-
         kllvmMutableBytesEnabled `catch` \(_ :: IOException) -> pure (pure 0)
     liftIO $
@@ -279,7 +282,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 stderr
                 "[Warn] Using an LLVM backend compiled with --llvm-mutable-bytes (unsound byte array semantics)"
 
-    pure API{patt, symbol, sort, simplifyBool, simplify, collect}
+    pure API{patt, symbol, sort, simplifyBool, simplify, collect, munmap}
 
 ask :: LLVM API
 ask = LLVM Reader.ask

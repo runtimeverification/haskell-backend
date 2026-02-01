@@ -99,7 +99,7 @@ if [ -z "${LLVM_LIB}" ]; then
 
         # kompile llvm-definition to interpreter
         llvm-kompile $TEMPD/llvm-definition.kore $TEMPD/dt c -- \
-                -fPIC -std=c++17 -o $TEMPD/interpreter \
+                -fPIC -std=c++20 -o $TEMPD/interpreter \
                 $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
                 -lcrypto -lssl $LPROCPS
         lib=$TEMPD/interpreter.$LIBSUFFIX

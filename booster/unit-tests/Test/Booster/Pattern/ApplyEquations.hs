@@ -16,6 +16,7 @@ module Test.Booster.Pattern.ApplyEquations (
 ) where
 
 import Control.Monad.Logger (runNoLoggingT)
+import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -97,7 +98,7 @@ test_evaluateFunction =
   where
     eval direction t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty t
+        runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty mempty t
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
@@ -126,7 +127,7 @@ test_simplify =
   where
     simpl direction t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing ns mempty t
+        runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing ns mempty mempty t
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
@@ -236,7 +237,11 @@ test_errors =
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
             ns <- noSolver
-            isLoop loopTerms =<< (runNoLoggingT $ fst <$> evaluateTerm TopDown loopDef Nothing ns mempty subj)
+            isLoop loopTerms
+                =<< ( runNoLoggingT $
+                        fst
+                            <$> evaluateTerm TopDown loopDef Nothing ns mempty mempty subj
+                    )
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'
@@ -245,16 +250,16 @@ test_errors =
 
 ----------------------------------------
 
-index :: SymbolName -> TermIndex
-index = TermIndex . (: []) . TopSymbol
+index :: (ByteString -> CellIndex) -> SymbolName -> TermIndex
+index constr = TermIndex . (: []) . constr
 
 funDef, simplDef, loopDef :: KoreDefinition
 funDef =
     testDefinition
         { functionEquations =
             mkTheory
-                [ (index "f1", f1Equations)
-                , (index "f2", f2Equations) -- should not be applied (f2 partial)
+                [ (index IdxFun "f1", f1Equations)
+                , (index IdxFun "f2", f2Equations) -- should not be applied (f2 partial)
                 ]
         }
 simplDef =
@@ -262,7 +267,7 @@ simplDef =
         { simplifications =
             mkTheory
                 [
-                    ( index "con1"
+                    ( index IdxCons "con1"
                     ,
                         [ equation -- con1(con2(f2(X))) => con1(X) , but f2 partial => not applied
                             Nothing
@@ -283,7 +288,7 @@ simplDef =
                         ]
                     )
                 ,
-                    ( index "con3"
+                    ( index IdxCons "con3"
                     ,
                         [ equation -- con3(X, X) => inj{sub,some}(con4(X, X))
                             Nothing
@@ -300,7 +305,7 @@ loopDef =
         { simplifications =
             mkTheory
                 [
-                    ( index "f1"
+                    ( index IdxFun "f1"
                     ,
                         [ equation
                             Nothing

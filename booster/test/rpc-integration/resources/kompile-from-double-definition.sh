@@ -22,9 +22,6 @@ NAME=$(basename ${0%.kompile})
 NAMETGZ=$(basename ${0%.kompile})
 
 
-# provide haskell definition
-cp ${NAME}.haskell.kore ${NAME}.kore
-
 # Regenerate llvm backend decision tree
 mkdir -p ./dt
 llvm-kompile-matching ${NAME}.llvm.kore qbaL ./dt 0
@@ -37,10 +34,13 @@ case "$OSTYPE" in
 esac
 
 llvm-kompile ${NAME}.llvm.kore ./dt c -- \
-             -fPIC -std=c++17 -o interpreter \
+             -fPIC -std=c++20 -o interpreter \
              $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
              -lcrypto -lssl $LPROCPS -lsecp256k1
 mv interpreter.* ${NAME}.dylib
 
 # remove temporary artefacts
 rm -r dt
+
+# provide haskell definition
+cp ${NAME}.haskell.kore ${NAME}.kore

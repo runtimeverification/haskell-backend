@@ -145,73 +145,73 @@ Subsorts:
 - SortMap: SortMap
 - SortSet: SortSet
 Rewrite rules by term index:
-- LblFoo()_DOES-NOT-PRESERVE-DEFINEDNESS_Foo: /home/jost/work/RV/code/hs-backend-booster/test/internalisation/does-not-preserve-definedness.k :  (4, 8)
+- C--LblFoo()_DOES-NOT-PRESERVE-DEFINEDNESS_Foo: /home/jost/work/RV/code/hs-backend-booster/test/internalisation/does-not-preserve-definedness.k :  (4, 8)
 Function equations by term index:
-- Lbl_|Set__SET_Set_Set_Set: /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (531, 8)
-- LblgetGeneratedCounterCell: UNKNOWN
-- LblinitGeneratedCounterCell: UNKNOWN
-- LblinitGeneratedTopCell: UNKNOWN
-- LblinitKCell: UNKNOWN
-- LblisBool: 2
+- F--Lbl_|Set__SET_Set_Set_Set: /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (531, 8)
+- F--LblgetGeneratedCounterCell: UNKNOWN
+- F--LblinitGeneratedCounterCell: UNKNOWN
+- F--LblinitGeneratedTopCell: UNKNOWN
+- F--LblinitKCell: UNKNOWN
+- F--LblisBool: 2
   - UNKNOWN
   - UNKNOWN
-- LblisFoo: 2
+- F--LblisFoo: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedCounterCell: 2
+- F--LblisGeneratedCounterCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedCounterCellOpt: 2
+- F--LblisGeneratedCounterCellOpt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedTopCell: 2
+- F--LblisGeneratedTopCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisGeneratedTopCellFragment: 2
+- F--LblisGeneratedTopCellFragment: 2
   - UNKNOWN
   - UNKNOWN
-- LblisInt: 2
+- F--LblisInt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisK: UNKNOWN
-- LblisKCell: 2
+- F--LblisK: UNKNOWN
+- F--LblisKCell: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKCellOpt: 2
+- F--LblisKCellOpt: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKConfigVar: 2
+- F--LblisKConfigVar: 2
   - UNKNOWN
   - UNKNOWN
-- LblisKItem: 2
+- F--LblisKItem: 2
   - UNKNOWN
   - UNKNOWN
-- LblisList: 2
+- F--LblisList: 2
   - UNKNOWN
   - UNKNOWN
-- LblisMap: 2
+- F--LblisMap: 2
   - UNKNOWN
   - UNKNOWN
-- LblisSet: 2
+- F--LblisSet: 2
   - UNKNOWN
   - UNKNOWN
-- Lblproject:Bool: UNKNOWN
-- Lblproject:Foo: UNKNOWN
-- Lblproject:GeneratedCounterCell: UNKNOWN
-- Lblproject:GeneratedCounterCellOpt: UNKNOWN
-- Lblproject:GeneratedTopCell: UNKNOWN
-- Lblproject:GeneratedTopCellFragment: UNKNOWN
-- Lblproject:Int: UNKNOWN
-- Lblproject:K: UNKNOWN
-- Lblproject:KCell: UNKNOWN
-- Lblproject:KCellOpt: UNKNOWN
-- Lblproject:KItem: UNKNOWN
-- Lblproject:List: UNKNOWN
-- Lblproject:Map: UNKNOWN
-- Lblproject:Set: UNKNOWN
-- append: 2
+- F--Lblproject:Bool: UNKNOWN
+- F--Lblproject:Foo: UNKNOWN
+- F--Lblproject:GeneratedCounterCell: UNKNOWN
+- F--Lblproject:GeneratedCounterCellOpt: UNKNOWN
+- F--Lblproject:GeneratedTopCell: UNKNOWN
+- F--Lblproject:GeneratedTopCellFragment: UNKNOWN
+- F--Lblproject:Int: UNKNOWN
+- F--Lblproject:K: UNKNOWN
+- F--Lblproject:KCell: UNKNOWN
+- F--Lblproject:KCellOpt: UNKNOWN
+- F--Lblproject:KItem: UNKNOWN
+- F--Lblproject:List: UNKNOWN
+- F--Lblproject:Map: UNKNOWN
+- F--Lblproject:Set: UNKNOWN
+- F--append: 2
   - UNKNOWN
   - UNKNOWN
 Simplifications by term index:
 Ceils:
-- Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))
+- F--Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))

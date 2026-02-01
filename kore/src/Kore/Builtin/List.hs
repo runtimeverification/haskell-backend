@@ -211,6 +211,10 @@ symbolVerifiers =
             ( updateAllKey
             , Builtin.verifySymbol assertSort [assertSort, Int.assertSort, assertSort]
             )
+        ,
+            ( rangeKey
+            , Builtin.verifySymbol assertSort [assertSort, Int.assertSort, Int.assertSort]
+            )
         ]
 
 {- | Abort function evaluation if the argument is not a List domain value.
@@ -336,17 +340,17 @@ evalSize _ _ _ = Builtin.wrongArity sizeKey
 
 evalMake :: Builtin.Function
 evalMake _ resultSort [_len, value] = do
-    _len <- fromInteger <$> Int.expectBuiltinInt getKey _len
+    _len <- fromInteger <$> Int.expectBuiltinInt makeKey _len
     if _len >= 0
         then lift $ returnList resultSort (Seq.replicate _len value)
         else return (Pattern.bottomOf resultSort)
-evalMake _ _ _ = Builtin.wrongArity sizeKey
+evalMake _ _ _ = Builtin.wrongArity makeKey
 
 evalUpdateAll :: Builtin.Function
 evalUpdateAll _ resultSort [_list1, _ix, _list2] = do
-    _list1 <- expectBuiltinList getKey _list1
-    _list2 <- expectBuiltinList getKey _list2
-    _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
+    _list1 <- expectBuiltinList updateAllKey _list1
+    _list2 <- expectBuiltinList updateAllKey _list2
+    _ix <- fromInteger <$> Int.expectBuiltinInt updateAllKey _ix
     let len1 = Seq.length _list1
         len2 = Seq.length _list2
         result
@@ -360,6 +364,23 @@ evalUpdateAll _ resultSort [_list1, _ix, _list2] = do
     lift result
 evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 
+evalRange :: Builtin.Function
+evalRange _ resultSort [list, fromFront, fromBack] = do
+    baseList <- expectBuiltinList rangeKey list
+    frontDrop <- fromInteger <$> Int.expectBuiltinInt rangeKey fromFront
+    backDrop <- fromInteger <$> Int.expectBuiltinInt rangeKey fromBack
+    let len = Seq.length baseList
+        bottom = return $ Pattern.bottomOf resultSort
+        result
+            | frontDrop < 0 = bottom
+            | backDrop < 0 = bottom
+            | len < frontDrop + backDrop = bottom
+            | otherwise =
+                let size = len - frontDrop - backDrop
+                 in returnList resultSort (Seq.take size $ Seq.drop frontDrop baseList)
+    lift result
+evalRange _ _ _ = Builtin.wrongArity rangeKey
+
 -- | Implement builtin function evaluation.
 builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
 builtinFunctions key
@@ -372,6 +393,7 @@ builtinFunctions key
     | key == sizeKey = Just $ Builtin.functionEvaluator evalSize
     | key == makeKey = Just $ Builtin.functionEvaluator evalMake
     | key == updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll
+    | key == rangeKey = Just $ Builtin.functionEvaluator evalRange
     | otherwise = Nothing
 
 data FirstElemVarData = FirstElemVarData

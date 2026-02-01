@@ -2,7 +2,7 @@
     "jsonrpc": "2.0",
     "id": 1,
     "result": {
-        "reason": "stuck",
+        "reason": "aborted",
         "depth": 1,
         "state": {
             "term": {

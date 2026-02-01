@@ -44,7 +44,7 @@ import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Sequence (Seq (..), pattern (:<|))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
@@ -161,17 +161,20 @@ data EquationState = EquationState
     , cache :: SimplifierCache
     }
 
-data SimplifierCache = SimplifierCache {llvm, equations :: Map Term Term}
+data SimplifierCache = SimplifierCache {llvm, equations, pathConditions :: Map Term Term}
     deriving stock (Show)
 
 instance Semigroup SimplifierCache where
     cache1 <> cache2 =
-        SimplifierCache (cache1.llvm <> cache2.llvm) (cache1.equations <> cache2.equations)
+        SimplifierCache
+            (cache1.llvm <> cache2.llvm)
+            (cache1.equations <> cache2.equations)
+            (cache1.pathConditions <> cache2.pathConditions)
 
 instance Monoid SimplifierCache where
-    mempty = SimplifierCache mempty mempty
+    mempty = SimplifierCache mempty mempty mempty
 
-data CacheTag = LLVM | Equations
+data CacheTag = LLVM | Equations | PathConditions
     deriving stock (Show)
 
 instance ContextFor CacheTag where
@@ -192,8 +195,26 @@ startState cache known =
         , recursionStack = []
         , changed = False
         , predicates = known
-        , cache
+        , -- replacements from predicates are rebuilt from the path conditions every time
+          cache = cache{pathConditions = buildReplacements known}
         }
+
+buildReplacements :: Set Predicate -> Map Term Term
+buildReplacements = Map.fromList . mapMaybe toReplacement . Set.elems
+  where
+    toReplacement :: Predicate -> Maybe (Term, Term)
+    toReplacement = \case
+        Predicate (EqualsInt (v@DomainValue{}) t) -> Just (t, v)
+        Predicate (EqualsInt t (v@DomainValue{})) -> Just (t, v)
+        Predicate (EqualsBool (v@DomainValue{}) t) -> Just (t, v)
+        Predicate (EqualsBool t (v@DomainValue{})) -> Just (t, v)
+        _otherwise -> Nothing
+
+cacheReset :: Monad io => EquationT io ()
+cacheReset = eqState $ do
+    st@EquationState{predicates, cache} <- get
+    let newCache = cache{equations = mempty, pathConditions = buildReplacements predicates}
+    put st{cache = newCache}
 
 eqState :: Monad io => StateT EquationState io a -> EquationT io a
 eqState = EquationT . lift . lift
@@ -237,6 +258,7 @@ popRecursion = do
         else eqState $ put s{recursionStack = tail s.recursionStack}
 
 toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
+toCache PathConditions _ _ = pure () -- never adding to the replacements
 toCache LLVM orig result = eqState . modify $
     \s -> s{cache = s.cache{llvm = Map.insert orig result s.cache.llvm}}
 toCache Equations orig result = eqState $ do
@@ -261,6 +283,7 @@ fromCache tag t = eqState $ do
     s <- get
     case tag of
         LLVM -> pure $ Map.lookup t s.cache.llvm
+        PathConditions -> pure $ Map.lookup t s.cache.pathConditions
         Equations -> do
             case Map.lookup t s.cache.equations of
                 Nothing -> pure Nothing
@@ -333,6 +356,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , logger
                         , prettyModifiers
                         }
+    -- NB the returned cache assumes the known predicates
     pure (res, endState.cache)
 
 iterateEquations ::
@@ -376,10 +400,14 @@ iterateEquations direction preference startTerm = do
             -- NB llvmSimplify is idempotent. No need to iterate if
             -- the equation evaluation does not change the term any more.
             resetChanged
+            -- apply syntactic replacements of terms by domain values from path condition
+            replacedTerm <-
+                let simp = cached PathConditions $ traverseTerm BottomUp simp pure
+                 in simp llvmResult
             -- evaluate functions and simplify (recursively at each level)
             newTerm <-
                 let simp = cached Equations $ traverseTerm direction simp (applyHooksAndEquations preference)
-                 in simp llvmResult
+                 in simp replacedTerm
             changeFlag <- getChanged
             if changeFlag
                 then checkForLoop newTerm >> resetChanged >> go newTerm
@@ -423,19 +451,24 @@ llvmSimplify term = do
 ----------------------------------------
 -- Interface functions
 
--- | Evaluate and simplify a term.
+{- | Evaluate and simplify a term.
+
+  The returned cache should only be reused with the same known predicates.
+-}
 evaluateTerm ::
     LoggerMIO io =>
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
+    SimplifierCache ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm direction def llvmApi smtSolver knownPredicates =
-    runEquationT def llvmApi smtSolver mempty knownPredicates
-        . evaluateTerm' direction
+evaluateTerm direction def llvmApi smtSolver cache knownPredicates term =
+    runEquationT def llvmApi smtSolver cache knownPredicates $
+        withTermContext term $
+            evaluateTerm' direction term
 
 -- version for internal nested evaluation
 evaluateTerm' ::
@@ -447,6 +480,9 @@ evaluateTerm' direction = iterateEquations direction PreferFunctions
 
 {- | Simplify a Pattern, processing its constraints independently.
      Returns either the first failure or the new pattern if no failure was encountered
+
+   The returned cache may only be reused if pat.constraints are known
+   to remain true in the next usage context.
 -}
 evaluatePattern ::
     LoggerMIO io =>
@@ -510,35 +546,28 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
         err -> throw err
 
 -- evaluate the given predicate assuming all others
+-- This manipulates the known predicates so it should run without cache
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
-    allPs <- predicates <$> getState
-    let otherPs = Set.delete p allPs
-    eqState $ modify $ \s -> s{predicates = otherPs}
+    prior <- getState
+    let otherPs = Set.delete p (prior.predicates)
+    eqState $ modify $ \s -> s{predicates = otherPs, cache = mempty}
     newP <- simplifyConstraint' True $ coerce p
-    pushConstraints $ Set.singleton $ coerce newP
+    eqState $ modify $ \s -> s{cache = prior.cache, predicates = otherPs <> Set.singleton (coerce newP)}
 
 evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
     SMT.SMTContext ->
-    SimplifierCache ->
     Set Predicate ->
-    io (Either EquationFailure (Set Predicate), SimplifierCache)
-evaluateConstraints def mLlvmLibrary smtSolver cache =
-    runEquationT def mLlvmLibrary smtSolver cache mempty . evaluateConstraints'
-
-evaluateConstraints' ::
-    LoggerMIO io =>
-    Set Predicate ->
-    EquationT io (Set Predicate)
-evaluateConstraints' constraints = do
-    pushConstraints constraints
-    -- evaluate all existing constraints, once
-    traverse_ simplifyAssumedPredicate . predicates =<< getState
-    -- this may yield additional new constraints, left unevaluated
-    predicates <$> getState
+    io (Either EquationFailure (Set Predicate))
+evaluateConstraints def mLlvmLibrary smtSolver constraints =
+    fmap fst $ runEquationT def mLlvmLibrary smtSolver mempty constraints $ do
+        -- evaluate all existing constraints, once
+        traverse_ simplifyAssumedPredicate . predicates =<< getState
+        -- this may yield additional new constraints, left unevaluated
+        predicates <$> getState
 
 ----------------------------------------
 
@@ -583,28 +612,60 @@ traverseTerm direction onRecurse onEval trm = do
                     else
                         SymbolApplication sym sorts
                             <$> mapM onRecurse args
-        -- maps, lists, and sets, are not currently evaluated because
-        -- the matcher does not provide matches on collections.
-        KMap def keyVals rest ->
-            KMap def
-                <$> mapM (\(k, v) -> (,) <$> onRecurse k <*> onRecurse v) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
-        KList def heads rest ->
-            KList def
-                <$> mapM onRecurse heads
-                <*> maybe
-                    (pure Nothing)
-                    ( (Just <$>)
-                        . \(mid, tails) ->
-                            (,)
-                                <$> onRecurse mid
-                                <*> mapM onRecurse tails
-                    )
-                    rest
-        KSet def keyVals rest ->
-            KSet def
-                <$> mapM onRecurse keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
+        kmap@(KMap def keyVals rest) -> do
+            let handlePairs = mapM (\(k, v) -> (,) <$> onRecurse k <*> onRecurse v)
+            if direction == BottomUp
+                then do
+                    -- evaluate arguments first
+                    keyVals' <- handlePairs keyVals
+                    rest' <- traverse onRecurse rest
+                    -- then try to apply equations
+                    onEval $ KMap def keyVals' rest'
+                else {- direction == TopDown -} do
+                    -- try to apply equations
+                    kmap' <- onEval kmap
+                    case kmap' of
+                        -- the result should be another internal KMap
+                        KMap _ keyVals' rest' ->
+                            KMap def
+                                <$> handlePairs keyVals'
+                                <*> traverse onRecurse rest'
+                        other ->
+                            -- unlikely to occur, but won't loop
+                            onRecurse other
+        klist@(KList def heads rest) -> do
+            let handleRest =
+                    traverse $ \(mid, tails) -> (,) <$> onRecurse mid <*> mapM onRecurse tails
+            if direction == BottomUp
+                then do
+                    heads' <- mapM onRecurse heads
+                    rest' <- handleRest rest
+                    onEval (KList def heads' rest')
+                else {- direction == TopDown -} do
+                    klist' <- onEval klist
+                    case klist' of
+                        -- the result should be another internal KList
+                        KList _ heads' rest' ->
+                            KList def
+                                <$> mapM onRecurse heads'
+                                <*> handleRest rest'
+                        other ->
+                            onRecurse other
+        kset@(KSet def elems rest)
+            | direction == BottomUp -> do
+                elems' <- mapM onRecurse elems
+                rest' <- traverse onRecurse rest
+                onEval $ KSet def elems' rest'
+            | otherwise {- direction == TopDown -} -> do
+                kset' <- onEval kset
+                case kset' of
+                    -- the result should be another internal KSet
+                    KSet _ elems' rest' ->
+                        KSet def
+                            <$> mapM onRecurse elems'
+                            <*> traverse onRecurse rest'
+                    other ->
+                        onRecurse other
 
 cached :: LoggerMIO io => CacheTag -> (Term -> EquationT io Term) -> Term -> EquationT io Term
 cached cacheTag cb t@(Term attributes _)
@@ -741,7 +802,7 @@ applyEquations theory handler term = do
         withContext CtxAbort $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
     let
-        indexes = Set.toList $ Idx.coveringIndexes index
+        indexes = Set.toList $ Map.keysSet theory `Idx.covering` index
         equationsFor i = fromMaybe Map.empty $ Map.lookup i theory
         -- neither simplification nor function equations should need groups,
         -- since simplification priority is just a suggestion and function equations
@@ -879,8 +940,7 @@ applyEquation term rule =
                         unless (null ensuredConditions) $ do
                             withContextFor Equations . logMessage $
                                 ("New ensured condition from evaluation, invalidating cache" :: Text)
-                            lift . eqState . modify $
-                                \s -> s{cache = s.cache{equations = mempty}}
+                            lift cacheReset
                         pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
@@ -1075,9 +1135,8 @@ applyEquation term rule =
     (to decide whether or not a rule can apply, not to retain the
     ensured conditions).
 
-    If and as soon as this function is used inside equation
-    application, it needs to run within the same 'EquationT' context
-    so we can detect simplification loops and avoid monad nesting.
+    Consistency of the returned SimplifierCache must be tracked by the
+    caller, the cache incorporates the given knownPredicates.
 -}
 simplifyConstraint ::
     LoggerMIO io =>
@@ -1088,8 +1147,11 @@ simplifyConstraint ::
     Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi smt cache knownPredicates (Predicate p) = do
-    runEquationT def mbApi smt cache knownPredicates $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint def mbApi smt cache knownPredicates =
+    runEquationT def mbApi smt cache knownPredicates
+        . (coerce <$>)
+        . simplifyConstraint' True
+        . coerce
 
 simplifyConstraints ::
     LoggerMIO io =>
@@ -1110,7 +1172,9 @@ simplifyConstraint' :: LoggerMIO io => Bool -> Term -> EquationT io Term
 -- 'true \equals P' using simplifyBool if they are concrete, or using
 -- evaluateTerm.
 simplifyConstraint' recurseIntoEvalBool = \case
-    t@(Term TermAttributes{canBeEvaluated} _)
+    t@(Term TermAttributes{isEvaluated, canBeEvaluated} _)
+        | isEvaluated ->
+            pure t
         | isConcrete t && canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of

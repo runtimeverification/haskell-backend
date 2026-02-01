@@ -4,8 +4,10 @@
 #ifndef __cplusplus
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #else
 #include <cstddef>
+#include <cstdint>
 #endif
 
 #ifdef __cplusplus
@@ -75,7 +77,7 @@ typedef struct kore_sort kore_sort;
 typedef struct kore_symbol kore_symbol;
 typedef struct block block;
 
-/* KOREPattern */
+/* kore_pattern */
 
 char *kore_pattern_dump(kore_pattern const *);
 
@@ -127,8 +129,11 @@ void kore_simplify(
 void kore_simplify_binary(
     kore_error *, char *, size_t, kore_sort const *, char **, size_t *);
 
+block *take_steps(int64_t depth, block *term);
 
-/* KORESort */
+void init_static_objects(void);
+
+/* kore_sort */
 
 char *kore_sort_dump(kore_sort const *);
 
@@ -142,7 +147,7 @@ bool kore_sort_is_k(kore_sort const *);
 kore_sort *kore_composite_sort_new(char const *);
 void kore_composite_sort_add_argument(kore_sort const *, kore_sort const *);
 
-/* KORESymbol */
+/* kore_symbol */
 
 kore_symbol *kore_symbol_new(char const *);
 
@@ -154,10 +159,23 @@ void kore_symbol_add_formal_argument(kore_symbol *, kore_sort const *);
 
 void kllvm_init(void);
 void kllvm_free_all_memory(void);
+void reset_munmap_all_arenas(void);
 
 /* Sort-specific functions */
 
 bool kllvm_mutable_bytes_enabled(void);
+
+/* Definitions */
+
+/**
+ * Parse the given KORE definition, then if any of its axioms have a `label`
+ * attribute that matches the supplied label, return the name of the function
+ * symbol that attempts matching a pattern against that axiom (and will
+ * therefore populate the backend's global matching log).
+ *
+ * If no such axiom exists, return `nullptr`.
+ */
+char *kore_match_function_name(char const *defn_path, char const *label);
 
 #ifdef __cplusplus
 }

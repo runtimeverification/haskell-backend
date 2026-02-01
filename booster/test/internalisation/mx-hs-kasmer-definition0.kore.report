@@ -4805,100 +4805,84 @@ Subsorts:
 - SortWrappedBytes: SortWrappedBytes
 - SortWrappedInt: SortWrappedInt
 Rewrite rules by term index:
-- Anything Lbl#exception(_,_)_ELROND-NODE_InternalCmd_ExceptionCode_Bytes Anything: ELROND-CONFIG.exception-revert
-- Anything Lbl#throwException(_,_)_ELROND-NODE_ThrowException_ExceptionCode_String Anything: ELROND-CONFIG.throwException-cmd
-- Anything Lbl#throwExceptionBs(_,_)_ELROND-NODE_ThrowException_ExceptionCode_Bytes Anything: ELROND-CONFIG.throwExceptionBs-cmd
-- Anything LbladdToESDTBalance(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int_Bool Anything: 3
-  - ESDT.addToESDTBalance
-  - ESDT.addToESDTBalance-new-esdtData
-  - ESDT.addToESDTBalance-new-err
-- Anything LblcallContractCb(_,_,_)_ASYNC_InternalCmd_Bytes_String_VmInputCell Anything: ASYNC.callContractCb
-- Anything LblesdtNftAddQuantity(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int_Int Anything: ESDT.esdtNftAddQuantity
-- Anything LblesdtNftAddUri(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_ListBytes Anything: 2
-  - ESDT.esdtNftAddUri
-  - ESDT.esdtNftAddUri-not-found
-- Anything LblmoveNFTToDestination(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Bytes_Int Anything: 3
+- *** C--Lbl#throwException(_,_)_ELROND-NODE_ThrowException_ExceptionCode_String ***: ELROND-CONFIG.throwException-cmd
+- *** C--Lbl#throwExceptionBs(_,_)_ELROND-NODE_ThrowException_ExceptionCode_Bytes ***: ELROND-CONFIG.throwExceptionBs-cmd
+- *** C--LblmoveNFTToDestination(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Bytes_Int ***: 3
   - ESDT.moveNFTToDestination-self
   - ESDT.moveNFTToDestination-existing
   - ESDT.moveNFTToDestination-new
-- Anything LblsetAccountOwner(_,_)_ELROND-CONFIG_InternalCmd_Bytes_Bytes Anything: mx-semantics/elrond-config.md :  (512, 10)
-- Anything LbltransferESDT(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_ESDTTransfer Anything: 2
-  - mx-semantics/esdt.md :  (40, 10)
-  - mx-semantics/esdt.md :  (49, 10)
-- Anything LbltransferFunds(_,_,_)_ELROND-CONFIG_InternalCmd_Bytes_Bytes_Int Anything: mx-semantics/elrond-config.md :  (532, 10)
-- Anything LbltransferFundsH(_,_,_)_ELROND-CONFIG_InternalCmd_Bytes_Bytes_Int Anything: 3
-  - ELROND-CONFIG.transferFundsH-self
-  - ELROND-CONFIG.transferFundsH-oofunds
-  - ELROND-CONFIG.transferFundsH
-- Anything Anything Anything: 12
+- *** *** ***: 3
   - mx-semantics/auto-allocate.md :  (42, 10)
   - wasm-semantics/wasm.md :  (355, 10)
-  - wasm-semantics/wasm.md :  (510, 10)
-  - wasm-semantics/wasm.md :  (346, 10)
-  - wasm-semantics/wasm.md :  (344, 10)
-  - wasm-semantics/wasm.md :  (345, 10)
-  - wasm-semantics/wasm.md :  (343, 10)
-  - wasm-semantics/wasm.md :  (1208, 10)
-  - wasm-semantics/wasm.md :  (1207, 10)
   - wasm-semantics/wasm.md :  (353, 10)
-  - mx-semantics/auto-allocate.md :  (53, 10)
+- *** *** C--Lbl.List{"mandosSteps"}: MANDOS.steps-empty
+- *** *** C--LblcheckAccountESDTBalanceAux: mx-semantics/mandos.md :  (405, 10)
+- *** *** C--LblcheckAccountNonce: mx-semantics/mandos.md :  (367, 10)
+- *** *** C--LblqueryTx: mx-semantics/mandos.md :  (604, 10)
+- *** *** C--LblsetEsdtBalance: mx-semantics/mandos.md :  (164, 10)
+- *** C--Lbl#exception(_,_)_ELROND-NODE_InternalCmd_ExceptionCode_Bytes ***: 2
+  - ELROND-CONFIG.exception-revert
   - ELROND-CONFIG.exception-skip
-- Anything Anything Lbl.List{"mandosSteps"}: MANDOS.steps-empty
-- Anything Anything LblcheckAccountESDTBalanceAux: mx-semantics/mandos.md :  (405, 10)
-- Anything Anything LblcheckAccountNonce: mx-semantics/mandos.md :  (367, 10)
-- Anything Anything LblqueryTx: mx-semantics/mandos.md :  (604, 10)
-- Anything Anything LblsetEsdtBalance: mx-semantics/mandos.md :  (164, 10)
-- Anything Lbl#mergeOutputs_ASYNC_InternalCmd Anything: 2
+- *** C--Lbl#mergeOutputs_ASYNC_InternalCmd ***: 2
   - ASYNC.mergeOutputs
   - ASYNC.mergeOutputs-err
-- Anything Lbl#setVMOutput Anything: SWITCH.setVMOutput
-- Anything LbladdAsyncCall Anything: ASYNC.addAsyncCall
-- Anything LblappendToOutAccount Anything: 3
+- *** C--Lbl#setVMOutput ***: SWITCH.setVMOutput
+- *** C--LbladdAsyncCall ***: ASYNC.addAsyncCall
+- *** C--LbladdToESDTBalance(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int_Bool ***: 3
+  - ESDT.addToESDTBalance
+  - ESDT.addToESDTBalance-new-esdtData
+  - ESDT.addToESDTBalance-new-err
+- *** C--LblappendToOutAccount ***: 3
   - ELROND-NODE.appendToOutAccount
   - ELROND-NODE.appendToOutAccount-new-item
   - ELROND-NODE.appendToOutAccount-zero
-- Anything LblasyncExecute Anything: ASYNC.asyncExecute
-- Anything LblcallContractString Anything: mx-semantics/elrond-config.md :  (592, 10)
-- Anything LblcallContractWasmString Anything: 5
+- *** C--LblasyncExecute ***: ASYNC.asyncExecute
+- *** C--LblcallContractCb(_,_,_)_ASYNC_InternalCmd_Bytes_String_VmInputCell ***: ASYNC.callContractCb
+- *** C--LblcallContractString ***: mx-semantics/elrond-config.md :  (592, 10)
+- *** C--LblcallContractWasmString ***: 5
   - ELROND-CONFIG.callContract-builtin
   - ELROND-CONFIG.callContract
   - ELROND-CONFIG.callContract-err-callback
   - ELROND-CONFIG.callContract-not-contract
   - ELROND-CONFIG.callContract-not-found
-- Anything LblcheckAccountExists(_)_ELROND-NODE_InternalCmd_Bytes Anything: 2
+- *** C--LblcheckAccountExists(_)_ELROND-NODE_InternalCmd_Bytes ***: 2
   - ELROND-NODE.checkAccountExists-pass
   - ELROND-NODE.checkAccountExists-fail
-- Anything LblcheckAllowedToExecute Anything: 3
+- *** C--LblcheckAllowedToExecute ***: 3
   - ESDT.checkAllowedToExecute-system
   - ESDT.checkAllowedToExecute-pass
   - ESDT.checkAllowedToExecute-fail
-- Anything LblcheckBool Anything: 2
+- *** C--LblcheckBool ***: 2
   - ELROND-NODE.checkBool-f
   - ELROND-NODE.checkBool-t
-- Anything LblcheckESDTBalance(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int Anything: 2
+- *** C--LblcheckESDTBalance(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int ***: 2
   - ESDT.checkESDTBalance
   - ESDT.checkESDTBalance-oof
-- Anything LblcreateAccount Anything: 2
+- *** C--LblcreateAccount ***: 2
   - ELROND-CONFIG.createAccount-existing
   - ELROND-CONFIG.createAccount-new
-- Anything LbldetermineIsSCCallAfter Anything: 2
+- *** C--LbldetermineIsSCCallAfter ***: 2
   - ESDT.determineIsSCCallAfter-call
   - ESDT.determineIsSCCallAfter-nocall
-- Anything LbldropAsyncLocalCall Anything: ASYNC.dropAsyncLocalCall
-- Anything LbldropCallState Anything: ELROND-NODE.dropCallState
-- Anything LbldropWorldState Anything: ELROND-NODE.dropWorldState
-- Anything LblesdtLocalBurn Anything: ESDT.esdtLocalBurn-cmd
-- Anything LblesdtLocalMint Anything: ESDT.esdtLocalMint-cmd
-- Anything LblesdtNftBurn(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int_Int Anything: ESDT.esdtNftBurn
-- Anything LblesdtNftCreate Anything: ESDT.esdtNftCreate
-- Anything LblexecuteAsyncLocalCall Anything: ASYNC.executeAsyncLocalCall
-- Anything LblexecuteAsyncLocalCallback Anything: 2
+- *** C--LbldropAsyncLocalCall ***: ASYNC.dropAsyncLocalCall
+- *** C--LbldropCallState ***: ELROND-NODE.dropCallState
+- *** C--LbldropWorldState ***: ELROND-NODE.dropWorldState
+- *** C--LblesdtLocalBurn ***: ESDT.esdtLocalBurn-cmd
+- *** C--LblesdtLocalMint ***: ESDT.esdtLocalMint-cmd
+- *** C--LblesdtNftAddQuantity(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int_Int ***: ESDT.esdtNftAddQuantity
+- *** C--LblesdtNftAddUri(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_ListBytes ***: 2
+  - ESDT.esdtNftAddUri
+  - ESDT.esdtNftAddUri-not-found
+- *** C--LblesdtNftBurn(_,_,_,_)_ESDT_InternalCmd_Bytes_Bytes_Int_Int ***: ESDT.esdtNftBurn
+- *** C--LblesdtNftCreate ***: ESDT.esdtNftCreate
+- *** C--LblexecuteAsyncLocalCall ***: ASYNC.executeAsyncLocalCall
+- *** C--LblexecuteAsyncLocalCallback ***: 2
   - ASYNC.executeAsyncLocalCallback-no-callback
   - ASYNC.executeAsyncLocalCallback
-- Anything LblnewWasmInstance Anything: ELROND-CONFIG.newWasmInstance
-- Anything LblpopCallState Anything: ELROND-NODE.popCallState
-- Anything LblpopWorldState Anything: ELROND-NODE.popWorldState
-- Anything LblprocessBuiltinFunction Anything: 9
+- *** C--LblnewWasmInstance ***: ELROND-CONFIG.newWasmInstance
+- *** C--LblpopCallState ***: ELROND-NODE.popCallState
+- *** C--LblpopWorldState ***: ELROND-NODE.popWorldState
+- *** C--LblprocessBuiltinFunction ***: 9
   - ESDT.ESDTNFTCreate
   - ESDT.ESDTNFTTransfer
   - ESDT.ESDTTransfer
@@ -4908,258 +4892,267 @@ Rewrite rules by term index:
   - ESDT.ESDTNFTAddQuantity
   - ESDT.ESDTNFTBurn
   - ESDT.ESDTNFTAddURI
-- Anything LblpushCallState Anything: ELROND-NODE.pushCallState
-- Anything LblpushWorldState Anything: ELROND-NODE.pushWorldState
-- Anything LblregisterAsyncCall Anything: ASYNC.registerAsyncCall
-- Anything LblremoveEmptyNft(_,_)_ESDT_InternalCmd_Bytes_Bytes Anything: 2
+- *** C--LblpushCallState ***: ELROND-NODE.pushCallState
+- *** C--LblpushWorldState ***: ELROND-NODE.pushWorldState
+- *** C--LblregisterAsyncCall ***: ASYNC.registerAsyncCall
+- *** C--LblremoveEmptyNft(_,_)_ESDT_InternalCmd_Bytes_Bytes ***: 2
   - ESDT.removeEmptyNft
   - ESDT.removeEmptyNft-skip
-- Anything LblresetCallState Anything: ELROND-NODE.resetCallstate
-- Anything LblsaveLatestNonce Anything: ESDT.saveLatestNonce
-- Anything LblsaveNFT Anything: ESDT.saveNFT
-- Anything LblsetAccountCode Anything: ELROND-CONFIG.setAccountCode
-- Anything LblsetAccountFields Anything: ELROND-CONFIG.setAccountFields
-- Anything LblsetContractModIdx_ELROND-CONFIG_InternalCmd Anything: ELROND-CONFIG.setContractModIdx
-- Anything LbltransferESDTs(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_List Anything: mx-semantics/esdt.md :  (27, 10)
-- Anything LbltransferESDTsAux(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_List Anything: 2
+- *** C--LblresetCallState ***: ELROND-NODE.resetCallstate
+- *** C--LblsaveLatestNonce ***: ESDT.saveLatestNonce
+- *** C--LblsaveNFT ***: ESDT.saveNFT
+- *** C--LblsetAccountCode ***: ELROND-CONFIG.setAccountCode
+- *** C--LblsetAccountFields ***: ELROND-CONFIG.setAccountFields
+- *** C--LblsetAccountOwner(_,_)_ELROND-CONFIG_InternalCmd_Bytes_Bytes ***: mx-semantics/elrond-config.md :  (512, 10)
+- *** C--LblsetContractModIdx_ELROND-CONFIG_InternalCmd ***: ELROND-CONFIG.setContractModIdx
+- *** C--LbltransferESDT(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_ESDTTransfer ***: 2
+  - mx-semantics/esdt.md :  (40, 10)
+  - mx-semantics/esdt.md :  (49, 10)
+- *** C--LbltransferESDTs(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_List ***: mx-semantics/esdt.md :  (27, 10)
+- *** C--LbltransferESDTsAux(_,_,_)_ESDT_InternalCmd_Bytes_Bytes_List ***: 2
   - mx-semantics/esdt.md :  (34, 10)
   - mx-semantics/esdt.md :  (33, 10)
-- Anything dotk LblcallTx: MANDOS.callTx
-- Anything dotk LblcallTxAux: MANDOS.callTxAux
-- Anything dotk LblcheckAccountBalance: mx-semantics/mandos.md :  (383, 10)
-- Anything dotk LblcheckAccountBalanceAux: mx-semantics/mandos.md :  (388, 10)
-- Anything dotk LblcheckAccountCode: mx-semantics/mandos.md :  (451, 10)
-- Anything dotk LblcheckAccountCodeAux: 2
+- *** C--LbltransferFunds(_,_,_)_ELROND-CONFIG_InternalCmd_Bytes_Bytes_Int ***: mx-semantics/elrond-config.md :  (532, 10)
+- *** C--LbltransferFundsH(_,_,_)_ELROND-CONFIG_InternalCmd_Bytes_Bytes_Int ***: 3
+  - ELROND-CONFIG.transferFundsH-self
+  - ELROND-CONFIG.transferFundsH-oofunds
+  - ELROND-CONFIG.transferFundsH
+- *** C--dotk C--LblcallTx: MANDOS.callTx
+- *** C--dotk C--LblcallTxAux: MANDOS.callTxAux
+- *** C--dotk C--LblcheckAccountBalance: mx-semantics/mandos.md :  (383, 10)
+- *** C--dotk C--LblcheckAccountBalanceAux: mx-semantics/mandos.md :  (388, 10)
+- *** C--dotk C--LblcheckAccountCode: mx-semantics/mandos.md :  (451, 10)
+- *** C--dotk C--LblcheckAccountCodeAux: 2
   - MANDOS.checkAccountCodeAux-code
   - MANDOS.checkAccountCodeAux-no-code
-- Anything dotk LblcheckAccountESDTBalance: mx-semantics/mandos.md :  (400, 10)
-- Anything dotk LblcheckAccountESDTBalanceAux: mx-semantics/mandos.md :  (422, 10)
-- Anything dotk LblcheckAccountNonceAux: mx-semantics/mandos.md :  (371, 10)
-- Anything dotk LblcheckAccountStorage: mx-semantics/mandos.md :  (433, 10)
-- Anything dotk LblcheckAccountStorageAux: mx-semantics/mandos.md :  (438, 10)
-- Anything dotk LblcheckEsdtRoles: MANDOS.checkEsdtRoles
-- Anything dotk LblcheckExpectLogs: 2
+- *** C--dotk C--LblcheckAccountESDTBalance: mx-semantics/mandos.md :  (400, 10)
+- *** C--dotk C--LblcheckAccountESDTBalanceAux: mx-semantics/mandos.md :  (422, 10)
+- *** C--dotk C--LblcheckAccountNonceAux: mx-semantics/mandos.md :  (371, 10)
+- *** C--dotk C--LblcheckAccountStorage: mx-semantics/mandos.md :  (433, 10)
+- *** C--dotk C--LblcheckAccountStorageAux: mx-semantics/mandos.md :  (438, 10)
+- *** C--dotk C--LblcheckEsdtRoles: MANDOS.checkEsdtRoles
+- *** C--dotk C--LblcheckExpectLogs: 2
   - mx-semantics/mandos.md :  (585, 10)
   - mx-semantics/mandos.md :  (590, 10)
-- Anything dotk LblcheckExpectMessage: mx-semantics/mandos.md :  (578, 10)
-- Anything dotk LblcheckExpectOut: mx-semantics/mandos.md :  (564, 10)
-- Anything dotk LblcheckExpectStatus: mx-semantics/mandos.md :  (571, 10)
-- Anything dotk LblcheckNoAdditionalAccounts: mx-semantics/mandos.md :  (498, 10)
-- Anything dotk LblcheckedAccount: mx-semantics/mandos.md :  (486, 10)
-- Anything dotk LblcheckedAccountAux: mx-semantics/mandos.md :  (491, 10)
-- Anything dotk LblclearCheckedAccounts: mx-semantics/mandos.md :  (506, 10)
-- Anything dotk LbldeployTx: mx-semantics/mandos.md :  (634, 10)
-- Anything dotk LbldeployTxAux: MANDOS.deployTxAux
-- Anything dotk LblmandosSteps: MANDOS.steps-seq
-- Anything dotk LblnewAddress: mx-semantics/mandos.md :  (289, 10)
-- Anything dotk LblnewAddressAux: mx-semantics/mandos.md :  (294, 10)
-- Anything dotk LblqueryTxAux: mx-semantics/mandos.md :  (607, 10)
-- Anything dotk Lblregister: mx-semantics/mandos.md :  (87, 10)
-- Anything dotk LblsetAccount: mx-semantics/mandos.md :  (149, 10)
-- Anything dotk LblsetAccountAux: mx-semantics/mandos.md :  (154, 10)
-- Anything dotk LblsetCurBlockInfo: 5
+- *** C--dotk C--LblcheckExpectMessage: mx-semantics/mandos.md :  (578, 10)
+- *** C--dotk C--LblcheckExpectOut: mx-semantics/mandos.md :  (564, 10)
+- *** C--dotk C--LblcheckExpectStatus: mx-semantics/mandos.md :  (571, 10)
+- *** C--dotk C--LblcheckNoAdditionalAccounts: mx-semantics/mandos.md :  (498, 10)
+- *** C--dotk C--LblcheckedAccount: mx-semantics/mandos.md :  (486, 10)
+- *** C--dotk C--LblcheckedAccountAux: mx-semantics/mandos.md :  (491, 10)
+- *** C--dotk C--LblclearCheckedAccounts: mx-semantics/mandos.md :  (506, 10)
+- *** C--dotk C--LbldeployTx: mx-semantics/mandos.md :  (634, 10)
+- *** C--dotk C--LbldeployTxAux: MANDOS.deployTxAux
+- *** C--dotk C--LblmandosSteps: MANDOS.steps-seq
+- *** C--dotk C--LblnewAddress: mx-semantics/mandos.md :  (289, 10)
+- *** C--dotk C--LblnewAddressAux: mx-semantics/mandos.md :  (294, 10)
+- *** C--dotk C--LblqueryTxAux: mx-semantics/mandos.md :  (607, 10)
+- *** C--dotk C--Lblregister: mx-semantics/mandos.md :  (87, 10)
+- *** C--dotk C--LblsetAccount: mx-semantics/mandos.md :  (149, 10)
+- *** C--dotk C--LblsetAccountAux: mx-semantics/mandos.md :  (154, 10)
+- *** C--dotk C--LblsetCurBlockInfo: 5
   - mx-semantics/mandos.md :  (325, 10)
   - mx-semantics/mandos.md :  (315, 10)
   - mx-semantics/mandos.md :  (330, 10)
   - mx-semantics/mandos.md :  (320, 10)
   - mx-semantics/mandos.md :  (310, 10)
-- Anything dotk LblsetEsdtBalanceAux: 2
+- *** C--dotk C--LblsetEsdtBalanceAux: 2
   - MANDOS.setEsdtBalanceAux
   - MANDOS.setEsdtBalanceAux-new
-- Anything dotk LblsetEsdtLastNonce: 2
+- *** C--dotk C--LblsetEsdtLastNonce: 2
   - MANDOS.setEsdtLastNonce-existing
   - MANDOS.setEsdtLastNonce-new
-- Anything dotk LblsetEsdtRoles: 2
+- *** C--dotk C--LblsetEsdtRoles: 2
   - MANDOS.setEsdtRoles-existing
   - MANDOS.setEsdtRoles-new
-- Anything dotk LblsetPrevBlockInfo: 5
+- *** C--dotk C--LblsetPrevBlockInfo: 5
   - mx-semantics/mandos.md :  (350, 10)
   - mx-semantics/mandos.md :  (340, 10)
   - mx-semantics/mandos.md :  (355, 10)
   - mx-semantics/mandos.md :  (345, 10)
   - mx-semantics/mandos.md :  (335, 10)
-- Anything dotk Lbltransfer: mx-semantics/mandos.md :  (679, 10)
-- Anything dotk LbltransferTx: mx-semantics/mandos.md :  (686, 10)
-- Anything dotk LbltransferTxAux: mx-semantics/mandos.md :  (692, 10)
-- Anything dotk LblvalidatorReward: mx-semantics/mandos.md :  (707, 10)
-- Anything dotk LblvalidatorRewardTx: mx-semantics/mandos.md :  (714, 10)
-- Anything dotk LblvalidatorRewardTxAux: mx-semantics/mandos.md :  (718, 10)
-- Lbl#appendBytesToBuffer(_)_MANBUFOPS_InternalInstr_Int Anything Anything: mx-semantics/vmhooks/manBufOps.md :  (59, 10)
-- Lbl#appendBytes_ELROND-NODE_BytesOp Anything Anything: mx-semantics/elrond-node.md :  (225, 10)
-- Lbl#appendToOut(_)_ELROND-NODE_InternalInstr_Bytes Anything Anything: mx-semantics/elrond-node.md :  (250, 10)
-- Lbl#appendToOutFromBytesStack_ELROND-NODE_InternalInstr Anything Anything: mx-semantics/elrond-node.md :  (246, 10)
-- Lbl#bigIntGetESDTExternalBalance(_)_BIGINTOPS_InternalInstr_Int Anything Anything: 2
+- *** C--dotk C--Lbltransfer: mx-semantics/mandos.md :  (679, 10)
+- *** C--dotk C--LbltransferTx: mx-semantics/mandos.md :  (686, 10)
+- *** C--dotk C--LbltransferTxAux: mx-semantics/mandos.md :  (692, 10)
+- *** C--dotk C--LblvalidatorReward: mx-semantics/mandos.md :  (707, 10)
+- *** C--dotk C--LblvalidatorRewardTx: mx-semantics/mandos.md :  (714, 10)
+- *** C--dotk C--LblvalidatorRewardTxAux: mx-semantics/mandos.md :  (718, 10)
+- C--Lbl#appendBytesToBuffer(_)_MANBUFOPS_InternalInstr_Int *** ***: mx-semantics/vmhooks/manBufOps.md :  (59, 10)
+- C--Lbl#appendBytes_ELROND-NODE_BytesOp *** ***: mx-semantics/elrond-node.md :  (225, 10)
+- C--Lbl#appendToOut(_)_ELROND-NODE_InternalInstr_Bytes *** ***: mx-semantics/elrond-node.md :  (250, 10)
+- C--Lbl#appendToOutFromBytesStack_ELROND-NODE_InternalInstr *** ***: mx-semantics/elrond-node.md :  (246, 10)
+- C--Lbl#bigIntGetESDTExternalBalance(_)_BIGINTOPS_InternalInstr_Int *** ***: 2
   - mx-semantics/vmhooks/bigIntOps.md :  (509, 10)
   - mx-semantics/vmhooks/bigIntOps.md :  (525, 10)
-- Lbl#bytesEqual_ELROND-NODE_InternalInstr Anything Anything: mx-semantics/elrond-node.md :  (235, 10)
-- Lbl#callIndirect(_,_)_WASM_Instr_RefVal_FuncType Anything Anything: 3
+- C--Lbl#bytesEqual_ELROND-NODE_InternalInstr *** ***: mx-semantics/elrond-node.md :  (235, 10)
+- C--Lbl#callIndirect(_,_)_WASM_Instr_RefVal_FuncType *** ***: 3
   - WASM.callIndirect-null-ref
   - WASM.callIndirect-invoke
   - WASM.callIndirect-wrong-type
-- Lbl#checkESDTRole(_)_KASMER_InternalInstr_ESDTLocalRole Anything Anything: 3
+- C--Lbl#checkESDTRole(_)_KASMER_InternalInstr_ESDTLocalRole *** ***: 3
   - KASMER.checkESDTRole-exists
   - KASMER.checkESDTRole-none
   - KASMER.checkESDTRole-not-found
-- Lbl#createAsyncCallWithTypedArgs(_,_,_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_IntResult_BytesResult_ListBytesResult_Int_Int_BytesResult Anything Anything: BASEOPS.createAsyncCallWithTypedArgs
-- Lbl#dropBytes_ELROND-NODE_BytesOp Anything Anything: mx-semantics/elrond-node.md :  (222, 10)
-- Lbl#elemAux(_,_)_WASM_ElemDefn_Int_ElemMode Anything Anything: 3
+- C--Lbl#createAsyncCallWithTypedArgs(_,_,_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_IntResult_BytesResult_ListBytesResult_Int_Int_BytesResult *** ***: BASEOPS.createAsyncCallWithTypedArgs
+- C--Lbl#dropBytes_ELROND-NODE_BytesOp *** ***: mx-semantics/elrond-node.md :  (222, 10)
+- C--Lbl#elemAux(_,_)_WASM_ElemDefn_Int_ElemMode *** ***: 3
   - WASM.elem-active-aux
   - WASM.elem-declarative-aux
   - WASM.elem-passive-aux
-- Lbl#elemCheckSizeGTE(_,_)_WASM_Instr_Int_Int Anything Anything: 2
+- C--Lbl#elemCheckSizeGTE(_,_)_WASM_Instr_Int_Int *** ***: 2
   - WASM.elemCheckSizeGTE-pass
   - WASM.elemCheckSizeGTE-fail
-- Lbl#executeOnDestContext(_,_,_,_,_,_)_BASEOPS_InternalInstr_Bytes_Int_List_Int_Bytes_ListBytes Anything Anything: BASEOPS.executeOnDestContext
-- Lbl#executeOnDestContextWithTypedArgs(_,_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_IntResult_ListResult_Int_BytesResult_ListBytesResult Anything Anything: BASEOPS.executeOnDestContextWithTypedArgs
-- Lbl#getArgsFromMemory(_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int Anything Anything: 2
+- C--Lbl#executeOnDestContext(_,_,_,_,_,_)_BASEOPS_InternalInstr_Bytes_Int_List_Int_Bytes_ListBytes *** ***: BASEOPS.executeOnDestContext
+- C--Lbl#executeOnDestContextWithTypedArgs(_,_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_IntResult_ListResult_Int_BytesResult_ListBytesResult *** ***: BASEOPS.executeOnDestContextWithTypedArgs
+- C--Lbl#getArgsFromMemory(_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int *** ***: 2
   - mx-semantics/elrond-config.md :  (343, 10)
   - mx-semantics/elrond-config.md :  (349, 10)
-- Lbl#getArgsFromMemoryAux(_,_,_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int_Int_Int Anything Anything: 2
+- C--Lbl#getArgsFromMemoryAux(_,_,_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int_Int_Int *** ***: 2
   - mx-semantics/elrond-config.md :  (360, 10)
   - mx-semantics/elrond-config.md :  (354, 10)
-- Lbl#getBigInt(_,_)_BIGINT-HELPERS_InternalInstr_Int_Signedness Anything Anything: 2
+- C--Lbl#getBigInt(_,_)_BIGINT-HELPERS_InternalInstr_Int_Signedness *** ***: 2
   - mx-semantics/vmhooks/bigIntOps.md :  (25, 10)
   - mx-semantics/vmhooks/bigIntOps.md :  (35, 10)
-- Lbl#getBigIntOrCreate(_,_)_BIGINT-HELPERS_InternalInstr_Int_Signedness Anything Anything: 2
+- C--Lbl#getBigIntOrCreate(_,_)_BIGINT-HELPERS_InternalInstr_Int_Signedness *** ***: 2
   - BIGINT-HELPERS.getBigIntOrCreate-get
   - BIGINT-HELPERS.getBigIntOrCreate-create
-- Lbl#getBuffer(_)_MANBUFOPS_InternalInstr_Int Anything Anything: 2
+- C--Lbl#getBuffer(_)_MANBUFOPS_InternalInstr_Int *** ***: 2
   - MANBUFOPS.getBuffer
   - MANBUFOPS.getBuffer-not-found
-- Lbl#getESDTTokenData_MANAGEDEI_InternalInstr Anything Anything: 2
+- C--Lbl#getESDTTokenData_MANAGEDEI_InternalInstr *** ***: 2
   - MANAGEDEI.getESDTTokenData-nft
   - MANAGEDEI.getESDTTokenData-ft
-- Lbl#getExternalBalance_BASEOPS_InternalInstr Anything Anything: 2
+- C--Lbl#getExternalBalance_BASEOPS_InternalInstr *** ***: 2
   - mx-semantics/vmhooks/baseOps.md :  (76, 10)
   - mx-semantics/vmhooks/baseOps.md :  (85, 10)
-- Lbl#hashManBuffer(_,_,_)_CRYPTOEI-HELPERS_InternalInstr_Int_Int_HashBytesStackInstr Anything Anything: CRYPTOEI-HELPERS.hashManBuffer
-- Lbl#hashMemory(_,_,_,_)_CRYPTOEI-HELPERS_InternalInstr_Int_Int_Int_HashBytesStackInstr Anything Anything: mx-semantics/vmhooks/cryptoei.md :  (30, 10)
-- Lbl#init_locals___WASM-INTERNAL-SYNTAX_Instr_Int_ValStack Anything Anything: 2
+- C--Lbl#hashManBuffer(_,_,_)_CRYPTOEI-HELPERS_InternalInstr_Int_Int_HashBytesStackInstr *** ***: CRYPTOEI-HELPERS.hashManBuffer
+- C--Lbl#hashMemory(_,_,_,_)_CRYPTOEI-HELPERS_InternalInstr_Int_Int_Int_HashBytesStackInstr *** ***: mx-semantics/vmhooks/cryptoei.md :  (30, 10)
+- C--Lbl#init_locals___WASM-INTERNAL-SYNTAX_Instr_Int_ValStack *** ***: 2
   - wasm-semantics/wasm.md :  (564, 10)
   - wasm-semantics/wasm.md :  (563, 10)
-- Lbl#isReservedKey(_)_ELROND-CONFIG_InternalInstr_String Anything Anything: 2
+- C--Lbl#isReservedKey(_)_ELROND-CONFIG_InternalInstr_String *** ***: 2
   - mx-semantics/elrond-config.md :  (200, 10)
   - mx-semantics/elrond-config.md :  (203, 10)
-- Lbl#keccakFromBytesStack_CRYPTOEI-HELPERS_HashBytesStackInstr Anything Anything: mx-semantics/vmhooks/cryptoei.md :  (25, 10)
-- Lbl#loadArgData(_,_,_,_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int_Int_Int_Int Anything Anything: mx-semantics/elrond-config.md :  (377, 10)
-- Lbl#loadArgDataWithLengthOnStack(_,_,_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int_Int_Int Anything Anything: mx-semantics/elrond-config.md :  (370, 10)
-- Lbl#loadBytesAsSInt64(_)_ELROND-CONFIG_InternalInstr_String Anything Anything: mx-semantics/elrond-config.md :  (313, 10)
-- Lbl#loadBytesAsUInt64(_)_ELROND-CONFIG_InternalInstr_String Anything Anything: mx-semantics/elrond-config.md :  (310, 10)
-- Lbl#mBufferCopyByteSliceH(_,_,_)_MANBUFOPS_InternalInstr_Int_Int_Int Anything Anything: 2
+- C--Lbl#keccakFromBytesStack_CRYPTOEI-HELPERS_HashBytesStackInstr *** ***: mx-semantics/vmhooks/cryptoei.md :  (25, 10)
+- C--Lbl#loadArgData(_,_,_,_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int_Int_Int_Int *** ***: mx-semantics/elrond-config.md :  (377, 10)
+- C--Lbl#loadArgDataWithLengthOnStack(_,_,_,_,_)_ELROND-CONFIG_InternalInstr_Int_Int_Int_Int_Int *** ***: mx-semantics/elrond-config.md :  (370, 10)
+- C--Lbl#loadBytesAsSInt64(_)_ELROND-CONFIG_InternalInstr_String *** ***: mx-semantics/elrond-config.md :  (313, 10)
+- C--Lbl#loadBytesAsUInt64(_)_ELROND-CONFIG_InternalInstr_String *** ***: mx-semantics/elrond-config.md :  (310, 10)
+- C--Lbl#mBufferCopyByteSliceH(_,_,_)_MANBUFOPS_InternalInstr_Int_Int_Int *** ***: 2
   - mx-semantics/vmhooks/manBufOps.md :  (303, 10)
   - mx-semantics/vmhooks/manBufOps.md :  (312, 10)
-- Lbl#mBufferGetByteSliceH(_,_,_)_MANBUFOPS_InternalInstr_Int_Int_Int Anything Anything: 2
+- C--Lbl#mBufferGetByteSliceH(_,_,_)_MANBUFOPS_InternalInstr_Int_Int_Int *** ***: 2
   - mx-semantics/vmhooks/manBufOps.md :  (228, 10)
   - mx-semantics/vmhooks/manBufOps.md :  (237, 10)
-- Lbl#memLoad(_,_)_ELROND-CONFIG_InternalInstr_Int_Int Anything Anything: 5
+- C--Lbl#memLoad(_,_)_ELROND-CONFIG_InternalInstr_Int_Int *** ***: 5
   - ELROND-CONFIG.memLoad-zero-length
   - ELROND-CONFIG.memLoad-negative-length
   - ELROND-CONFIG.memLoad
   - ELROND-CONFIG.memLoad-bad-bounds
   - ELROND-CONFIG.memLoad-owise
-- Lbl#memStore(_,_)_ELROND-CONFIG_InternalInstr_Int_Bytes Anything Anything: 4
+- C--Lbl#memStore(_,_)_ELROND-CONFIG_InternalInstr_Int_Bytes *** ***: 4
   - mx-semantics/elrond-config.md :  (58, 10)
   - mx-semantics/elrond-config.md :  (80, 10)
   - mx-semantics/elrond-config.md :  (63, 10)
   - ELROND-CONFIG.memStore-owise
-- Lbl#memStoreFromBytesStack(_)_ELROND-CONFIG_InternalInstr_Int Anything Anything: mx-semantics/elrond-config.md :  (55, 10)
-- Lbl#pushBytes(_)_ELROND-NODE_BytesOp_Bytes Anything Anything: mx-semantics/elrond-node.md :  (219, 10)
-- Lbl#returnData(_,_)_BASEOPS_InternalInstr_Int_Int Anything Anything: mx-semantics/vmhooks/baseOps.md :  (328, 10)
-- Lbl#returnIfSInt64(_,_)_ELROND-CONFIG_InternalInstr_Int_String Anything Anything: 2
+- C--Lbl#memStoreFromBytesStack(_)_ELROND-CONFIG_InternalInstr_Int *** ***: mx-semantics/elrond-config.md :  (55, 10)
+- C--Lbl#pushBytes(_)_ELROND-NODE_BytesOp_Bytes *** ***: mx-semantics/elrond-node.md :  (219, 10)
+- C--Lbl#returnData(_,_)_BASEOPS_InternalInstr_Int_Int *** ***: mx-semantics/vmhooks/baseOps.md :  (328, 10)
+- C--Lbl#returnIfSInt64(_,_)_ELROND-CONFIG_InternalInstr_Int_String *** ***: 2
   - mx-semantics/elrond-config.md :  (302, 10)
   - mx-semantics/elrond-config.md :  (299, 10)
-- Lbl#returnIfUInt64(_,_)_ELROND-CONFIG_InternalInstr_Int_String Anything Anything: 2
+- C--Lbl#returnIfUInt64(_,_)_ELROND-CONFIG_InternalInstr_Int_String *** ***: 2
   - mx-semantics/elrond-config.md :  (294, 10)
   - mx-semantics/elrond-config.md :  (291, 10)
-- Lbl#returnLength_ELROND-NODE_InternalInstr Anything Anything: mx-semantics/elrond-node.md :  (230, 10)
-- Lbl#setBalance(_,_)_KASMER_InternalInstr_BytesResult_IntResult Anything Anything: 5
+- C--Lbl#returnLength_ELROND-NODE_InternalInstr *** ***: mx-semantics/elrond-node.md :  (230, 10)
+- C--Lbl#setBalance(_,_)_KASMER_InternalInstr_BytesResult_IntResult *** ***: 5
   - KASMER.setBalance-invalid-big-int
   - KASMER.setBalance-neg
   - KASMER.setBalance-invalid-buffer
   - KASMER.setBalance
   - KASMER.setBalance-acct-not-found
-- Lbl#setBigInt(_,_,_)_BIGINT-HELPERS_InternalInstr_Int_Bytes_Signedness Anything Anything: mx-semantics/vmhooks/bigIntOps.md :  (65, 10)
-- Lbl#setBigIntFromBytesStack(_,_)_BIGINT-HELPERS_InternalInstr_Int_Signedness Anything Anything: mx-semantics/vmhooks/bigIntOps.md :  (62, 10)
-- Lbl#setBigIntValue(_,_)_BIGINT-HELPERS_InternalInstr_Int_Int Anything Anything: mx-semantics/vmhooks/bigIntOps.md :  (68, 10)
-- Lbl#setBuffer(_,_)_MANBUFOPS_InternalInstr_Int_Bytes Anything Anything: mx-semantics/vmhooks/manBufOps.md :  (54, 10)
-- Lbl#setBufferFromBytesStack(_)_MANBUFOPS_InternalInstr_Int Anything Anything: mx-semantics/vmhooks/manBufOps.md :  (51, 10)
-- Lbl#setESDTBalance(_)_KASMER_InternalInstr_IntResult Anything Anything: 5
+- C--Lbl#setBigInt(_,_,_)_BIGINT-HELPERS_InternalInstr_Int_Bytes_Signedness *** ***: mx-semantics/vmhooks/bigIntOps.md :  (65, 10)
+- C--Lbl#setBigIntFromBytesStack(_,_)_BIGINT-HELPERS_InternalInstr_Int_Signedness *** ***: mx-semantics/vmhooks/bigIntOps.md :  (62, 10)
+- C--Lbl#setBigIntValue(_,_)_BIGINT-HELPERS_InternalInstr_Int_Int *** ***: mx-semantics/vmhooks/bigIntOps.md :  (68, 10)
+- C--Lbl#setBuffer(_,_)_MANBUFOPS_InternalInstr_Int_Bytes *** ***: mx-semantics/vmhooks/manBufOps.md :  (54, 10)
+- C--Lbl#setBufferFromBytesStack(_)_MANBUFOPS_InternalInstr_Int *** ***: mx-semantics/vmhooks/manBufOps.md :  (51, 10)
+- C--Lbl#setESDTBalance(_)_KASMER_InternalInstr_IntResult *** ***: 5
   - KASMER.setESDTBalance-invalid-big-int
   - KASMER.setESDTBalance-neg
   - KASMER.setESDTBalance
   - KASMER.setESDTBalance-new-token
   - KASMER.setESDTBalance-acct-not-found
-- Lbl#setESDTRole(_,_)_KASMER_InternalInstr_ESDTLocalRole_Bool Anything Anything: 4
+- C--Lbl#setESDTRole(_,_)_KASMER_InternalInstr_ESDTLocalRole_Bool *** ***: 4
   - KASMER.setESDTRole-set-existing
   - KASMER.setESDTRole-add-new
   - KASMER.setESDTRole-remove-skip
   - KASMER.setESDTRole-not-found
-- Lbl#setReturnDataIfExists(_,_)_MANAGEDEI_InternalInstr_Int_Int Anything Anything: 2
+- C--Lbl#setReturnDataIfExists(_,_)_MANAGEDEI_InternalInstr_Int_Int *** ***: 2
   - MANAGEDEI.setReturnDataIfExists-noData
   - MANAGEDEI.setReturnDataIfExists
-- Lbl#setStorage(_,_)_ELROND-CONFIG_InternalInstr_Bytes_Bytes Anything Anything: mx-semantics/elrond-config.md :  (167, 10)
-- Lbl#sha256FromBytesStack_CRYPTOEI-HELPERS_HashBytesStackInstr Anything Anything: mx-semantics/vmhooks/cryptoei.md :  (20, 10)
-- Lbl#signalError_BASEOPS_InternalInstr Anything Anything: mx-semantics/vmhooks/baseOps.md :  (347, 10)
-- Lbl#sliceBytes(_,_)_MANBUFOPS_InternalInstr_Int_Int Anything Anything: mx-semantics/vmhooks/manBufOps.md :  (68, 10)
-- Lbl#startPrank(_)_KASMER_InternalInstr_BytesResult Anything Anything: 3
+- C--Lbl#setStorage(_,_)_ELROND-CONFIG_InternalInstr_Bytes_Bytes *** ***: mx-semantics/elrond-config.md :  (167, 10)
+- C--Lbl#sha256FromBytesStack_CRYPTOEI-HELPERS_HashBytesStackInstr *** ***: mx-semantics/vmhooks/cryptoei.md :  (20, 10)
+- C--Lbl#signalError_BASEOPS_InternalInstr *** ***: mx-semantics/vmhooks/baseOps.md :  (347, 10)
+- C--Lbl#sliceBytes(_,_)_MANBUFOPS_InternalInstr_Int_Int *** ***: mx-semantics/vmhooks/manBufOps.md :  (68, 10)
+- C--Lbl#startPrank(_)_KASMER_InternalInstr_BytesResult *** ***: 3
   - KASMER.startPrank
   - KASMER.startPrank-not-allowed
   - KASMER.startPrank-err
-- Lbl#storageLoadFromAddress_ELROND-CONFIG_InternalInstr Anything Anything: 2
+- C--Lbl#storageLoadFromAddress_ELROND-CONFIG_InternalInstr *** ***: 2
   - ELROND-CONFIG.storageLoadFromAddress
   - ELROND-CONFIG.storageLoadFromAddress-unknown-addr
-- Lbl#storageLoad_ELROND-CONFIG_InternalInstr Anything Anything: mx-semantics/elrond-config.md :  (211, 10)
-- Lbl#storageStore_ELROND-CONFIG_InternalInstr Anything Anything: mx-semantics/elrond-config.md :  (162, 10)
-- Lbl#tableCheckSizeGTE(_,_)_WASM_Instr_Int_Int Anything Anything: 2
+- C--Lbl#storageLoad_ELROND-CONFIG_InternalInstr *** ***: mx-semantics/elrond-config.md :  (211, 10)
+- C--Lbl#storageStore_ELROND-CONFIG_InternalInstr *** ***: mx-semantics/elrond-config.md :  (162, 10)
+- C--Lbl#tableCheckSizeGTE(_,_)_WASM_Instr_Int_Int *** ***: 2
   - WASM.tableCheckSizeGTE-pass
   - WASM.tableCheckSizeGTE-fail
-- Lbl#tableCopy(_,_,_,_,_)_WASM_Instr_Int_Int_Int_Int_Int Anything Anything: 3
+- C--Lbl#tableCopy(_,_,_,_,_)_WASM_Instr_Int_Int_Int_Int_Int *** ***: 3
   - WASM.tableCopy-LR
   - WASM.tableCopy-RL
   - WASM.tableCopy-zero
-- Lbl#tableFill(_,_,_,_)_WASM_Instr_Int_Int_RefVal_Int Anything Anything: 2
+- C--Lbl#tableFill(_,_,_,_)_WASM_Instr_Int_Int_RefVal_Int *** ***: 2
   - WASM.tableFill-loop
   - WASM.tableFill-zero
-- Lbl#tableGet(_,_)_WASM_Instr_Int_Int Anything Anything: 2
+- C--Lbl#tableGet(_,_)_WASM_Instr_Int_Int *** ***: 2
   - WASM.tableGet-trap
   - WASM.tableGet
-- Lbl#tableInit(_,_,_,_)_WASM_Instr_Int_Int_Int_ListRef Anything Anything: 2
+- C--Lbl#tableInit(_,_,_,_)_WASM_Instr_Int_Int_Int_ListRef *** ***: 2
   - WASM.tableInit
   - WASM.tableInit-done
-- Lbl#tableSet(_,_,_)_WASM_Instr_Int_RefVal_Int Anything Anything: 2
+- C--Lbl#tableSet(_,_,_)_WASM_Instr_Int_RefVal_Int *** ***: 2
   - WASM.tableSet
   - WASM.tableSet-oob
-- Lbl#throwException(_,_)_ELROND-NODE_ThrowException_ExceptionCode_String Anything Anything: ELROND-CONFIG.throwException
-- Lbl#throwExceptionBs(_,_)_ELROND-NODE_ThrowException_ExceptionCode_Bytes Anything Anything: ELROND-CONFIG.throwExceptionBs
-- Lbl#transferESDTNFTExecuteWithTypedArgs(_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_ListResult_Int_BytesResult_ListBytesResult Anything Anything: 2
+- C--Lbl#throwException(_,_)_ELROND-NODE_ThrowException_ExceptionCode_String *** ***: ELROND-CONFIG.throwException
+- C--Lbl#throwExceptionBs(_,_)_ELROND-NODE_ThrowException_ExceptionCode_Bytes *** ***: ELROND-CONFIG.throwExceptionBs
+- C--Lbl#transferESDTNFTExecuteWithTypedArgs(_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_ListResult_Int_BytesResult_ListBytesResult *** ***: 2
   - mx-semantics/vmhooks/baseOps.md :  (417, 10)
   - BASEOPS.transfer-esdt-and-execute
-- Lbl#transferValueExecuteWithTypedArgs(_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_IntResult_Int_BytesResult_ListBytesResult Anything Anything: 2
+- C--Lbl#transferValueExecuteWithTypedArgs(_,_,_,_,_)_BASEOPS_InternalInstr_BytesResult_IntResult_Int_BytesResult_ListBytesResult *** ***: 2
   - mx-semantics/vmhooks/baseOps.md :  (435, 10)
   - BASEOPS.transfer-and-execute
-- Lbl#transferValue_BASEOPS_InternalInstr Anything Anything: mx-semantics/vmhooks/baseOps.md :  (106, 10)
-- Lbl#waitCommands Lbl#endWasm Anything: SWITCH.waitCommands
-- Lbl#writeBytesToBuffer(_)_MANAGEDCONVERSIONS_InternalInstr_Bytes Anything Anything: MANAGEDCONVERSIONS.writeBytesToBuffer
-- Lbl#writeEsdtToBytes(_)_MANAGEDCONVERSIONS_InternalInstr_ESDTTransfer Anything Anything: mx-semantics/vmhooks/managedConversions.md :  (33, 10)
-- Lbl#writeEsdtsToBytes(_)_MANAGEDCONVERSIONS_InternalInstr_List Anything Anything: mx-semantics/vmhooks/managedConversions.md :  (20, 10)
-- Lbl#writeEsdtsToBytesH(_)_MANAGEDCONVERSIONS_InternalInstr_List Anything Anything: 2
+- C--Lbl#transferValue_BASEOPS_InternalInstr *** ***: mx-semantics/vmhooks/baseOps.md :  (106, 10)
+- C--Lbl#waitCommands C--Lbl#endWasm ***: SWITCH.waitCommands
+- C--Lbl#writeBytesToBuffer(_)_MANAGEDCONVERSIONS_InternalInstr_Bytes *** ***: MANAGEDCONVERSIONS.writeBytesToBuffer
+- C--Lbl#writeEsdtToBytes(_)_MANAGEDCONVERSIONS_InternalInstr_ESDTTransfer *** ***: mx-semantics/vmhooks/managedConversions.md :  (33, 10)
+- C--Lbl#writeEsdtsToBytes(_)_MANAGEDCONVERSIONS_InternalInstr_List *** ***: mx-semantics/vmhooks/managedConversions.md :  (20, 10)
+- C--Lbl#writeEsdtsToBytesH(_)_MANAGEDCONVERSIONS_InternalInstr_List *** ***: 2
   - mx-semantics/vmhooks/managedConversions.md :  (25, 10)
   - mx-semantics/vmhooks/managedConversions.md :  (27, 10)
-- Lbl#writeListBytesToBuffers(_)_MANAGEDCONVERSIONS_InternalInstr_ListBytes Anything Anything: MANAGEDCONVERSIONS.writeListBytesToBuffers
-- Lbl#writeListBytesToBuffersH(_)_MANAGEDCONVERSIONS_InternalInstr_ListBytes Anything Anything: 2
+- C--Lbl#writeListBytesToBuffers(_)_MANAGEDCONVERSIONS_InternalInstr_ListBytes *** ***: MANAGEDCONVERSIONS.writeListBytesToBuffers
+- C--Lbl#writeListBytesToBuffersH(_)_MANAGEDCONVERSIONS_InternalInstr_ListBytes *** ***: 2
   - MANAGEDCONVERSIONS.writeListBytesToBuffersH-nil
   - MANAGEDCONVERSIONS.writeListBytesToBuffersH-cons
-- Lbl#writeLogAux(_,_,_)_ELROND-CONFIG_InternalInstr_Int_ListBytes_Bytes Anything Anything: 2
+- C--Lbl#writeLogAux(_,_,_)_ELROND-CONFIG_InternalInstr_Int_ListBytes_Bytes *** ***: 2
   - mx-semantics/elrond-config.md :  (390, 10)
   - mx-semantics/elrond-config.md :  (395, 10)
-- Lbl#writeLog_ELROND-CONFIG_InternalInstr Anything Anything: mx-semantics/elrond-config.md :  (386, 10)
-- Lbl#writeManagedVecOfManagedBuffers(_,_)_MANAGEDCONVERSIONS_InternalInstr_ListBytes_Int Anything Anything: MANAGEDCONVERSIONS.writeManagedVecOfManagedBuffers
-- Lbl#writeToStorage(_,_)_ELROND-CONFIG_InternalInstr_Bytes_Bytes Anything Anything: 3
+- C--Lbl#writeLog_ELROND-CONFIG_InternalInstr *** ***: mx-semantics/elrond-config.md :  (386, 10)
+- C--Lbl#writeManagedVecOfManagedBuffers(_,_)_MANAGEDCONVERSIONS_InternalInstr_ListBytes_Int *** ***: MANAGEDCONVERSIONS.writeManagedVecOfManagedBuffers
+- C--Lbl#writeToStorage(_,_)_ELROND-CONFIG_InternalInstr_Bytes_Bytes *** ***: 3
   - mx-semantics/elrond-config.md :  (175, 10)
   - mx-semantics/elrond-config.md :  (184, 10)
   - ELROND-CONFIG.writeToStorage-unknown-addr
-- Lbl(invoke_)_WASM_Instr_Int Anything Anything: wasm-semantics/wasm.md :  (1189, 10)
-- Lbl_.___WASM_Instr_IValType_LoadOp_Int Anything Anything: 7
+- C--Lbl(invoke_)_WASM_Instr_Int *** ***: wasm-semantics/wasm.md :  (1189, 10)
+- C--Lbl_.___WASM_Instr_IValType_LoadOp_Int *** ***: 7
   - wasm-semantics/wasm.md :  (1452, 10)
   - wasm-semantics/wasm.md :  (1449, 10)
   - wasm-semantics/wasm.md :  (1446, 10)
@@ -5167,140 +5160,145 @@ Rewrite rules by term index:
   - wasm-semantics/wasm.md :  (1448, 10)
   - wasm-semantics/wasm.md :  (1450, 10)
   - wasm-semantics/wasm.md :  (1447, 10)
-- Lbl_.____WASM_Instr_IValType_StoreOp_Int_Int Anything Anything: 4
+- C--Lbl_.____WASM_Instr_IValType_StoreOp_Int_Int *** ***: 4
   - wasm-semantics/wasm.md :  (1425, 10)
   - wasm-semantics/wasm.md :  (1428, 10)
   - wasm-semantics/wasm.md :  (1427, 10)
   - wasm-semantics/wasm.md :  (1426, 10)
-- LblaBlock Anything Anything: wasm-semantics/wasm.md :  (498, 10)
-- LblaBr Anything Anything: 2
+- C--LblaBlock *** ***: wasm-semantics/wasm.md :  (498, 10)
+- C--LblaBr *** ***: 3
   - wasm-semantics/wasm.md :  (511, 10)
+  - wasm-semantics/wasm.md :  (510, 10)
   - wasm-semantics/wasm.md :  (513, 10)
-- LblaBr_if Anything Anything: 2
+- C--LblaBr_if *** ***: 2
   - wasm-semantics/wasm.md :  (518, 10)
   - wasm-semantics/wasm.md :  (521, 10)
-- LblaBr_table Anything Anything: wasm-semantics/wasm.md :  (527, 10)
-- LblaCall Anything Anything: wasm-semantics/wasm.md :  (1219, 10)
-- LblaCall_indirect Anything Anything: WASM.call-indirect-getRef
-- LblaCvtOp Anything Anything: 4
+- C--LblaBr_table *** ***: wasm-semantics/wasm.md :  (527, 10)
+- C--LblaCall *** ***: wasm-semantics/wasm.md :  (1219, 10)
+- C--LblaCall_indirect *** ***: WASM.call-indirect-getRef
+- C--LblaCvtOp *** ***: 4
   - wasm-semantics/wasm.md :  (435, 10)
   - wasm-semantics/wasm.md :  (438, 10)
   - wasm-semantics/wasm.md :  (429, 10)
   - wasm-semantics/wasm.md :  (432, 10)
-- LblaDataDefn Anything Anything: wasm-semantics/wasm.md :  (1643, 10)
-- LblaDrop Anything Anything: wasm-semantics/wasm.md :  (449, 10)
-- LblaElem.drop Anything Anything: WASM.elem.drop
-- LblaElemDefn Anything Anything: WASM.elem-active
-- LblaExportDefn Anything Anything: wasm-semantics/wasm.md :  (1692, 10)
-- LblaExtendS Anything Anything: wasm-semantics/wasm.md :  (389, 10)
-- LblaFBinOp Anything Anything: wasm-semantics/wasm.md :  (400, 10)
-- LblaFConst Anything Anything: wasm-semantics/wasm.md :  (373, 10)
-- LblaFRelOp Anything Anything: wasm-semantics/wasm.md :  (420, 10)
-- LblaFUnOp Anything Anything: wasm-semantics/wasm.md :  (387, 10)
-- LblaFuncDefn Anything Anything: wasm-semantics/wasm.md :  (1132, 10)
-- LblaGlobal.get Anything Anything: wasm-semantics/wasm.md :  (641, 10)
-- LblaGlobal.set Anything Anything: wasm-semantics/wasm.md :  (655, 10)
-- LblaGlobalDefn Anything Anything: wasm-semantics/wasm.md :  (608, 10)
-- LblaGrow Anything Anything: wasm-semantics/wasm.md :  (1510, 10)
-- LblaIBinOp Anything Anything: wasm-semantics/wasm.md :  (398, 10)
-- LblaIConst Anything Anything: wasm-semantics/wasm.md :  (372, 10)
-- LblaIRelOp Anything Anything: wasm-semantics/wasm.md :  (418, 10)
-- LblaIUnOp Anything Anything: wasm-semantics/wasm.md :  (385, 10)
-- LblaIf Anything Anything: 2
+- C--LblaDataDefn *** ***: wasm-semantics/wasm.md :  (1643, 10)
+- C--LblaDrop *** ***: wasm-semantics/wasm.md :  (449, 10)
+- C--LblaElem.drop *** ***: WASM.elem.drop
+- C--LblaElemDefn *** ***: WASM.elem-active
+- C--LblaExportDefn *** ***: wasm-semantics/wasm.md :  (1692, 10)
+- C--LblaExtendS *** ***: wasm-semantics/wasm.md :  (389, 10)
+- C--LblaFBinOp *** ***: wasm-semantics/wasm.md :  (400, 10)
+- C--LblaFConst *** ***: wasm-semantics/wasm.md :  (373, 10)
+- C--LblaFRelOp *** ***: wasm-semantics/wasm.md :  (420, 10)
+- C--LblaFUnOp *** ***: wasm-semantics/wasm.md :  (387, 10)
+- C--LblaFuncDefn *** ***: wasm-semantics/wasm.md :  (1132, 10)
+- C--LblaGlobal.get *** ***: wasm-semantics/wasm.md :  (641, 10)
+- C--LblaGlobal.set *** ***: wasm-semantics/wasm.md :  (655, 10)
+- C--LblaGlobalDefn *** ***: wasm-semantics/wasm.md :  (608, 10)
+- C--LblaGrow *** ***: wasm-semantics/wasm.md :  (1510, 10)
+- C--LblaIBinOp *** ***: wasm-semantics/wasm.md :  (398, 10)
+- C--LblaIConst *** ***: wasm-semantics/wasm.md :  (372, 10)
+- C--LblaIRelOp *** ***: wasm-semantics/wasm.md :  (418, 10)
+- C--LblaIUnOp *** ***: wasm-semantics/wasm.md :  (385, 10)
+- C--LblaIf *** ***: 2
   - wasm-semantics/wasm.md :  (536, 10)
   - wasm-semantics/wasm.md :  (540, 10)
-- LblaImportDefn Anything Anything: 4
+- C--LblaImportDefn *** ***: 5
   - wasm-semantics/wasm.md :  (1717, 10)
+  - mx-semantics/auto-allocate.md :  (53, 10)
   - wasm-semantics/wasm.md :  (1791, 10)
   - wasm-semantics/wasm.md :  (1767, 10)
   - wasm-semantics/wasm.md :  (1743, 10)
-- LblaImportDefnHelper Anything Anything: wasm-semantics/wasm.md :  (1727, 10)
-- LblaLoad Anything Anything: wasm-semantics/wasm.md :  (1443, 10)
-- LblaLocal.get Anything Anything: wasm-semantics/wasm.md :  (578, 10)
-- LblaLocal.set Anything Anything: wasm-semantics/wasm.md :  (582, 10)
-- LblaLocal.tee Anything Anything: wasm-semantics/wasm.md :  (587, 10)
-- LblaLoop Anything Anything: wasm-semantics/wasm.md :  (546, 10)
-- LblaMemoryDefn Anything Anything: 2
+- C--LblaImportDefnHelper *** ***: wasm-semantics/wasm.md :  (1727, 10)
+- C--LblaLoad *** ***: wasm-semantics/wasm.md :  (1443, 10)
+- C--LblaLocal.get *** ***: wasm-semantics/wasm.md :  (578, 10)
+- C--LblaLocal.set *** ***: wasm-semantics/wasm.md :  (582, 10)
+- C--LblaLocal.tee *** ***: wasm-semantics/wasm.md :  (587, 10)
+- C--LblaLoop *** ***: wasm-semantics/wasm.md :  (546, 10)
+- C--LblaMemoryDefn *** ***: 2
   - wasm-semantics/wasm.md :  (1353, 10)
   - wasm-semantics/wasm.md :  (1355, 10)
-- LblaModuleDecl Anything Anything: WASM.newModule
-- LblaNop Anything Anything: wasm-semantics/wasm.md :  (471, 10)
-- LblaRef.func Anything Anything: WASM.ref.func
-- LblaRef.is_null Anything Anything: 2
+- C--LblaModuleDecl *** ***: WASM.newModule
+- C--LblaNop *** ***: wasm-semantics/wasm.md :  (471, 10)
+- C--LblaRef.func *** ***: WASM.ref.func
+- C--LblaRef.is_null *** ***: 2
   - WASM.ref.isNull-true
   - WASM.ref.isNull-false
-- LblaRef.null Anything Anything: 4
+- C--LblaRef.null *** ***: 4
   - WASM.ref.null.extern
   - wasm-semantics/wasm.md :  (375, 10)
   - WASM.ref.null.func
   - wasm-semantics/wasm.md :  (376, 10)
-- LblaReturn Anything Anything: wasm-semantics/wasm.md :  (1209, 10)
-- LblaSelect Anything Anything: 2
+- C--LblaReturn *** ***: 3
+  - wasm-semantics/wasm.md :  (1208, 10)
+  - wasm-semantics/wasm.md :  (1207, 10)
+  - wasm-semantics/wasm.md :  (1209, 10)
+- C--LblaSelect *** ***: 2
   - wasm-semantics/wasm.md :  (458, 10)
   - wasm-semantics/wasm.md :  (452, 10)
-- LblaSize Anything Anything: wasm-semantics/wasm.md :  (1487, 10)
-- LblaStartDefn Anything Anything: wasm-semantics/wasm.md :  (1673, 10)
-- LblaStore Anything Anything: wasm-semantics/wasm.md :  (1392, 10)
-- LblaTable.copy Anything Anything: 2
+- C--LblaSize *** ***: wasm-semantics/wasm.md :  (1487, 10)
+- C--LblaStartDefn *** ***: wasm-semantics/wasm.md :  (1673, 10)
+- C--LblaStore *** ***: wasm-semantics/wasm.md :  (1392, 10)
+- C--LblaTable.copy *** ***: 2
   - WASM.table.copy-self
   - WASM.table.copy
-- LblaTable.fill Anything Anything: WASM.table.fill
-- LblaTable.get Anything Anything: WASM.table.get
-- LblaTable.grow Anything Anything: 2
+- C--LblaTable.fill *** ***: WASM.table.fill
+- C--LblaTable.get *** ***: WASM.table.get
+- C--LblaTable.grow *** ***: 2
   - WASM.table.grow-fail
   - WASM.table.grow
-- LblaTable.init Anything Anything: WASM.table.init
-- LblaTable.set Anything Anything: WASM.table.set
-- LblaTable.size Anything Anything: WASM.table.size
-- LblaTableDefn Anything Anything: 2
+- C--LblaTable.init *** ***: WASM.table.init
+- C--LblaTable.set *** ***: WASM.table.set
+- C--LblaTable.size *** ***: WASM.table.size
+- C--LblaTableDefn *** ***: 2
   - wasm-semantics/wasm.md :  (1308, 10)
   - wasm-semantics/wasm.md :  (1310, 10)
-- LblaTestOp Anything Anything: wasm-semantics/wasm.md :  (409, 10)
-- LblaTypeDefn Anything Anything: wasm-semantics/wasm.md :  (1103, 10)
-- LblaUnreachable Anything Anything: wasm-semantics/wasm.md :  (477, 10)
-- Lblallocelem(_,_,_)_WASM_Alloc_RefValType_ListRef_OptionalId Anything Anything: WASM.allocelem
-- Lblallocfunc(_,_,_,_,_,_)_WASM_Alloc_Int_Int_FuncType_VecType_Instrs_FuncMetadata Anything Anything: wasm-semantics/wasm.md :  (1143, 10)
-- Lblallocglobal(_,_)_WASM_Alloc_OptionalId_GlobalType Anything Anything: wasm-semantics/wasm.md :  (610, 10)
-- Lblallocmemory(_,_,_)_WASM_Alloc_OptionalId_Int_OptionalInt Anything Anything: wasm-semantics/wasm.md :  (1359, 10)
-- Lblalloctable(_,_,_,_)_WASM_Alloc_OptionalId_Int_OptionalInt_RefValType Anything Anything: wasm-semantics/wasm.md :  (1314, 10)
-- Lblalloctype(_,_)_WASM_Alloc_OptionalId_FuncType Anything Anything: wasm-semantics/wasm.md :  (1105, 10)
-- LblcheckIsSmartContract Anything Anything: 2
+- C--LblaTestOp *** ***: wasm-semantics/wasm.md :  (409, 10)
+- C--LblaTypeDefn *** ***: wasm-semantics/wasm.md :  (1103, 10)
+- C--LblaUnreachable *** ***: wasm-semantics/wasm.md :  (477, 10)
+- C--Lblallocelem(_,_,_)_WASM_Alloc_RefValType_ListRef_OptionalId *** ***: WASM.allocelem
+- C--Lblallocfunc(_,_,_,_,_,_)_WASM_Alloc_Int_Int_FuncType_VecType_Instrs_FuncMetadata *** ***: wasm-semantics/wasm.md :  (1143, 10)
+- C--Lblallocglobal(_,_)_WASM_Alloc_OptionalId_GlobalType *** ***: wasm-semantics/wasm.md :  (610, 10)
+- C--Lblallocmemory(_,_,_)_WASM_Alloc_OptionalId_Int_OptionalInt *** ***: wasm-semantics/wasm.md :  (1359, 10)
+- C--Lblalloctable(_,_,_,_)_WASM_Alloc_OptionalId_Int_OptionalInt_RefValType *** ***: wasm-semantics/wasm.md :  (1314, 10)
+- C--Lblalloctype(_,_)_WASM_Alloc_OptionalId_FuncType *** ***: wasm-semantics/wasm.md :  (1105, 10)
+- C--LblcheckIsSmartContract *** ***: 2
   - BASEOPS.checkIsSmartContract-no-code
   - BASEOPS.checkIsSmartContract-code
-- Lbldata{__}_WASM_DataDefn_Int_Bytes Anything Anything: wasm-semantics/wasm.md :  (1646, 10)
-- LblendFoundryImmediately Anything Anything: KASMER.endFoundryImmediately
-- LblfinishExecuteOnDestContext Anything Anything: 2
+- C--Lbldata{__}_WASM_DataDefn_Int_Bytes *** ***: wasm-semantics/wasm.md :  (1646, 10)
+- C--LblendFoundryImmediately *** ***: KASMER.endFoundryImmediately
+- C--LblfinishExecuteOnDestContext *** ***: 2
   - BASEOPS.finishExecuteOnDestContext-ok
   - BASEOPS.finishExecuteOnDestContext-exception
-- LblfoundryAssert Anything Anything: 2
+- C--LblfoundryAssert *** ***: 2
   - KASMER.foundryAssert-true
   - KASMER.foundryAssert-false
-- LblfoundryAssume Anything Anything: 2
+- C--LblfoundryAssume *** ***: 2
   - KASMER.foundryAssume-true
   - KASMER.foundryAssume-false
-- LblfoundryCreateAccount(_,_,_)_KASMER_InternalInstr_BytesResult_Int_IntResult Anything Anything: 2
+- C--LblfoundryCreateAccount(_,_,_)_KASMER_InternalInstr_BytesResult_Int_IntResult *** ***: 2
   - KASMER.foundryCreateAccount
   - KASMER.foundryCreateAccount-err
-- LblfoundryDeployContract(_,_,_,_,_,_)_KASMER_InternalInstr_BytesResult_Int_IntResult_BytesResult_ListBytesResult_Int Anything Anything: 2
+- C--LblfoundryDeployContract(_,_,_,_,_,_)_KASMER_InternalInstr_BytesResult_Int_IntResult_BytesResult_ListBytesResult_Int *** ***: 2
   - KASMER.foundryDeployContract
   - KASMER.foundryDeployContract-err
-- LblfoundryRegisterNewAddress(_,_,_)_KASMER_InternalInstr_BytesResult_Int_BytesResult Anything Anything: 2
+- C--LblfoundryRegisterNewAddress(_,_,_)_KASMER_InternalInstr_BytesResult_Int_BytesResult *** ***: 2
   - KASMER.foundryRegisterNewAddress
   - KASMER.foundryRegisterNewAddress-err
-- LblfoundryWriteToStorage_KASMER_InternalInstr Anything Anything: 2
+- C--LblfoundryWriteToStorage_KASMER_InternalInstr *** ***: 2
   - KASMER.foundryWriteToStorage-empty
   - KASMER.foundryWriteToStorage
-- Lblframe_____WASM_Frame_Int_ValTypes_ValStack_Map Anything Anything: wasm-semantics/wasm.md :  (1175, 10)
-- LblgetCurrentESDTNFTNonce Anything Anything: 2
+- C--Lblframe_____WASM_Frame_Int_ValTypes_ValStack_Map *** ***: wasm-semantics/wasm.md :  (1175, 10)
+- C--LblgetCurrentESDTNFTNonce *** ***: 2
   - BASEOPS.getCurrentESDTNFTNonce
   - BASEOPS.getCurrentESDTNFTNonce-none
-- LblgetESDTLocalRoles Anything Anything: 2
+- C--LblgetESDTLocalRoles *** ***: 2
   - MANAGEDEI.getESDTLocalRoles-aux
   - MANAGEDEI.getESDTLocalRoles-aux-nil
-- Lblgrow__WASM_Instr_Int Anything Anything: 2
+- C--Lblgrow__WASM_Instr_Int *** ***: 2
   - wasm-semantics/wasm.md :  (1528, 10)
   - wasm-semantics/wasm.md :  (1513, 10)
-- LblhostCall(_,_,_)_WASM-AUTO-ALLOCATE_Instr_String_String_FuncType Anything Anything: 147
+- C--LblhostCall(_,_,_)_WASM-AUTO-ALLOCATE_Instr_String_String_FuncType *** ***: 147
   - KASMER.testapi-createAccount
   - KASMER.testapi-deployContract
   - KASMER.testapi-registerNewAddress
@@ -5448,170 +5446,175 @@ Rewrite rules by term index:
   - MANAGEDEI.managedGetCallbackClosure
   - MANAGEDEI.managedGetCallbackClosure-err
   - KASMER.testapi-stopPrank-err
-- Lblinit_local___WASM-INTERNAL-SYNTAX_Instr_Int_Val Anything Anything: wasm-semantics/wasm.md :  (558, 10)
-- Lblinit_locals__WASM-INTERNAL-SYNTAX_Instr_ValStack Anything Anything: wasm-semantics/wasm.md :  (561, 10)
-- Lbllabel_{_}__WASM_Label_VecType_Instrs_ValStack Anything Anything: wasm-semantics/wasm.md :  (490, 10)
-- Lblload{_____}_WASM_Instr_IValType_Int_Int_Signedness_Int Anything Anything: 2
+- C--Lblinit_local___WASM-INTERNAL-SYNTAX_Instr_Int_Val *** ***: wasm-semantics/wasm.md :  (558, 10)
+- C--Lblinit_locals__WASM-INTERNAL-SYNTAX_Instr_ValStack *** ***: wasm-semantics/wasm.md :  (561, 10)
+- C--Lbllabel_{_}__WASM_Label_VecType_Instrs_ValStack *** ***: wasm-semantics/wasm.md :  (490, 10)
+- C--Lblload{_____}_WASM_Instr_IValType_Int_Int_Signedness_Int *** ***: 2
   - wasm-semantics/wasm.md :  (1463, 10)
   - wasm-semantics/wasm.md :  (1472, 10)
-- Lblload{_____}_WASM_Instr_IValType_Int_Int_Signedness_SparseBytes Anything Anything: 2
+- C--Lblload{_____}_WASM_Instr_IValType_Int_Int_Signedness_SparseBytes *** ***: 2
   - wasm-semantics/wasm.md :  (1480, 10)
   - wasm-semantics/wasm.md :  (1481, 10)
-- Lblload{____}_WASM_Instr_IValType_Int_Int_Signedness Anything Anything: wasm-semantics/wasm.md :  (1454, 10)
-- LblnewEmptyModule__WASM-AUTO-ALLOCATE_Stmt_WasmString Anything Anything: mx-semantics/auto-allocate.md :  (21, 10)
-- Lblstore{____}_WASM_Instr_Int_Int_Number_Int Anything Anything: 2
+- C--Lblload{____}_WASM_Instr_IValType_Int_Int_Signedness *** ***: wasm-semantics/wasm.md :  (1454, 10)
+- C--LblnewEmptyModule__WASM-AUTO-ALLOCATE_Stmt_WasmString *** ***: mx-semantics/auto-allocate.md :  (21, 10)
+- C--Lblstore{____}_WASM_Instr_Int_Int_Number_Int *** ***: 2
   - wasm-semantics/wasm.md :  (1404, 10)
   - wasm-semantics/wasm.md :  (1417, 10)
-- Lblstore{___}_WASM_Instr_Int_Int_Number Anything Anything: wasm-semantics/wasm.md :  (1395, 10)
-- dotk LblmkCall(_,_,_)_ELROND-NODE_InternalCmd_Bytes_WasmString_VmInputCell Anything: 2
+- C--Lblstore{___}_WASM_Instr_Int_Int_Number *** ***: wasm-semantics/wasm.md :  (1395, 10)
+- C--Lbltrap_WASM_Instr *** ***: 4
+  - wasm-semantics/wasm.md :  (346, 10)
+  - wasm-semantics/wasm.md :  (344, 10)
+  - wasm-semantics/wasm.md :  (345, 10)
+  - wasm-semantics/wasm.md :  (343, 10)
+- C--dotk C--LblmkCall(_,_,_)_ELROND-NODE_InternalCmd_Bytes_WasmString_VmInputCell ***: 2
   - ELROND-CONFIG.mkCall
   - ELROND-CONFIG.mkCall-func-not-found
-- dotk Anything Anything: ASYNC.executeAsyncLocalCalls
-- dotk Lbl#endWasm Anything: SWITCH.endWasm
-- dotk Lbl#waitWasm Anything: SWITCH.waitWasm
-- dotk LblexecuteAsyncLocalCalls Anything: ASYNC.executeAsyncLocalCalls-empty
-- dotk dotk Anything: 2
-  - mx-semantics/mandos.md :  (76, 10)
-  - mx-semantics/mandos.md :  (80, 10)
-- dotk dotk Lbl#wait_MANDOS_Step: mx-semantics/mandos.md :  (50, 10)
-- dotk dotk LblsetExitCode: mx-semantics/mandos.md :  (68, 10)
+- C--dotk C--dotk C--Lbl(module__)_WASM-TEXT-COMMON-SYNTAX_ModuleDecl_OptionalId_Defns: mx-semantics/mandos.md :  (76, 10)
+- C--dotk C--Lbl#endWasm ***: SWITCH.endWasm
+- C--dotk C--Lbl#waitWasm ***: SWITCH.waitWasm
+- C--dotk C--LblexecuteAsyncLocalCalls ***: 2
+  - ASYNC.executeAsyncLocalCalls
+  - ASYNC.executeAsyncLocalCalls-empty
+- C--dotk C--dotk ***: mx-semantics/mandos.md :  (80, 10)
+- C--dotk C--dotk C--Lbl#wait_MANDOS_Step: mx-semantics/mandos.md :  (50, 10)
+- C--dotk C--dotk C--LblsetExitCode: mx-semantics/mandos.md :  (68, 10)
 Function equations by term index:
-- Lbl#ContextLookup(_,_)_WASM-DATA-COMMON_Int_Map_Index: 2
+- F--Lbl#ContextLookup(_,_)_WASM-DATA-COMMON_Int_Map_Index: 2
   - wasm-semantics/wasm-text.md :  (413, 10)
   - wasm-semantics/data.md :  (293, 10)
-- Lbl#DS2Bytes(_)_WASM-DATA-COMMON_Bytes_DataString: wasm-semantics/data.md :  (627, 10)
-- Lbl#StorageAdded()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (250, 10)
-- Lbl#StorageDeleted()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (251, 10)
-- Lbl#StorageModified()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (249, 10)
-- Lbl#StorageUnmodified()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (248, 10)
-- Lbl#address2Bytes(_)_ELROND-NODE_Bytes_Address: 2
+- F--Lbl#DS2Bytes(_)_WASM-DATA-COMMON_Bytes_DataString: wasm-semantics/data.md :  (627, 10)
+- F--Lbl#StorageAdded()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (250, 10)
+- F--Lbl#StorageDeleted()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (251, 10)
+- F--Lbl#StorageModified()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (249, 10)
+- F--Lbl#StorageUnmodified()_ELROND-CONFIG_Int: mx-semantics/elrond-config.md :  (248, 10)
+- F--Lbl#address2Bytes(_)_ELROND-NODE_Bytes_Address: 2
   - mx-semantics/elrond-node.md :  (190, 10)
   - mx-semantics/elrond-node.md :  (189, 10)
-- Lbl#alignHexString(_)_ELROND-CONFIG_String_String: 2
+- F--Lbl#alignHexString(_)_ELROND-CONFIG_String_String: 2
   - mx-semantics/elrond-config.md :  (322, 10)
   - mx-semantics/elrond-config.md :  (323, 10)
-- Lbl#allReadable(_,_)_EEI-HELPERS_Bool_Bytes_Int: 3
+- F--Lbl#allReadable(_,_)_EEI-HELPERS_Bool_Bytes_Int: 3
   - mx-semantics/vmhooks/eei-helpers.md :  (61, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (63, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (64, 8)
-- Lbl#allValidRandom(_,_)_EEI-HELPERS_Bool_Bytes_Int: 3
+- F--Lbl#allValidRandom(_,_)_EEI-HELPERS_Bool_Bytes_Int: 3
   - mx-semantics/vmhooks/eei-helpers.md :  (78, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (80, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (81, 8)
-- Lbl#appendInstrs(_,_)_WASM-TEXT_Instrs_Instrs_Instrs: 2
+- F--Lbl#appendInstrs(_,_)_WASM-TEXT_Instrs_Instrs_Instrs: 2
   - wasm-semantics/wasm-text.md :  (645, 10)
   - wasm-semantics/wasm-text.md :  (644, 10)
-- Lbl#autoAllocModules(_,_)_WASM-AUTO-ALLOCATE_Stmts_Defns_Map: 3
+- F--Lbl#autoAllocModules(_,_)_WASM-AUTO-ALLOCATE_Stmts_Defns_Map: 3
   - mx-semantics/auto-allocate.md :  (36, 10)
   - mx-semantics/auto-allocate.md :  (37, 10)
   - mx-semantics/auto-allocate.md :  (38, 10)
-- Lbl#bigIntSign(_)_ELROND-CONFIG_Int_Int: 3
+- F--Lbl#bigIntSign(_)_ELROND-CONFIG_Int_Int: 3
   - mx-semantics/elrond-config.md :  (268, 10)
   - mx-semantics/elrond-config.md :  (266, 10)
   - mx-semantics/elrond-config.md :  (267, 10)
-- Lbl#canGrow(_,_,_)_WASM_Bool_Int_Int_OptionalInt: 2
+- F--Lbl#canGrow(_,_,_)_WASM_Bool_Int_Int_OptionalInt: 2
   - wasm-semantics/wasm.md :  (825, 10)
   - wasm-semantics/wasm.md :  (823, 10)
-- Lbl#canSaveId(_,_)_WASM-DATA-COMMON_Bool_Map_OptionalId: 2
+- F--Lbl#canSaveId(_,_)_WASM-DATA-COMMON_Bool_Map_OptionalId: 2
   - wasm-semantics/data.md :  (280, 10)
   - wasm-semantics/data.md :  (279, 10)
-- Lbl#chop(_)_WASM-DATA-COMMON_IVal_IVal: wasm-semantics/data.md :  (406, 10)
-- Lbl#concatDS(_)_WASM-DATA-COMMON_String_DataString: wasm-semantics/data.md :  (617, 10)
-- Lbl#concatDS(_,_)_WASM-DATA-COMMON_String_DataString_String: 2
+- F--Lbl#chop(_)_WASM-DATA-COMMON_IVal_IVal: wasm-semantics/data.md :  (406, 10)
+- F--Lbl#concatDS(_)_WASM-DATA-COMMON_String_DataString: wasm-semantics/data.md :  (617, 10)
+- F--Lbl#concatDS(_,_)_WASM-DATA-COMMON_String_DataString_String: 2
   - wasm-semantics/data.md :  (618, 10)
   - wasm-semantics/data.md :  (619, 10)
-- Lbl#ctz(_)_WASM-NUMERIC_Int_Int: 2
+- F--Lbl#ctz(_)_WASM-NUMERIC_Int_Int: 2
   - wasm-semantics/numeric.md :  (146, 10)
   - wasm-semantics/numeric.md :  (147, 10)
-- Lbl#drop(_,_)_WASM-DATA-COMMON_ValStack_Int_ValStack: 3
+- F--Lbl#drop(_,_)_WASM-DATA-COMMON_ValStack_Int_ValStack: 3
   - wasm-semantics/data.md :  (522, 10)
   - wasm-semantics/data.md :  (521, 10)
   - wasm-semantics/data.md :  (523, 10)
-- Lbl#emptyModule(_)_WASM_ModuleDecl_OptionalId: wasm-semantics/wasm.md :  (1851, 10)
-- Lbl#encodeUTF8(_)_WASM-DATA-COMMON_Bytes_Int: 4
+- F--Lbl#emptyModule(_)_WASM_ModuleDecl_OptionalId: wasm-semantics/wasm.md :  (1851, 10)
+- F--Lbl#encodeUTF8(_)_WASM-DATA-COMMON_Bytes_Int: 4
   - wasm-semantics/data.md :  (596, 10)
   - wasm-semantics/data.md :  (601, 10)
   - wasm-semantics/data.md :  (599, 10)
   - wasm-semantics/data.md :  (597, 10)
-- Lbl#freshCtx()_WASM-TEXT_Context: wasm-semantics/wasm-text.md :  (785, 10)
-- Lbl#gatherTypes(_,_,_)_WASM_VecType_TypeKeyWord_TypeDecls_ValTypes: 5
+- F--Lbl#freshCtx()_WASM-TEXT_Context: wasm-semantics/wasm-text.md :  (785, 10)
+- F--Lbl#gatherTypes(_,_,_)_WASM_VecType_TypeKeyWord_TypeDecls_ValTypes: 5
   - wasm-semantics/wasm.md :  (1073, 10)
   - wasm-semantics/wasm.md :  (1072, 10)
   - wasm-semantics/wasm.md :  (1070, 10)
   - wasm-semantics/wasm.md :  (1069, 10)
   - wasm-semantics/wasm.md :  (1068, 10)
-- Lbl#get(_)_WASM-DATA-COMMON_Int_IVal: wasm-semantics/data.md :  (414, 10)
-- Lbl#getBytesRange(_,_,_)_WASM-DATA-COMMON_Bytes_SparseBytes_Int_Int: wasm-semantics/data.md :  (655, 10)
-- Lbl#getElemSegment(_,_)_WASM-DATA-COMMON_Index_ElemSegment_Int: 2
+- F--Lbl#get(_)_WASM-DATA-COMMON_Int_IVal: wasm-semantics/data.md :  (414, 10)
+- F--Lbl#getBytesRange(_,_,_)_WASM-DATA-COMMON_Bytes_SparseBytes_Int_Int: wasm-semantics/data.md :  (655, 10)
+- F--Lbl#getElemSegment(_,_)_WASM-DATA-COMMON_Index_ElemSegment_Int: 2
   - wasm-semantics/data.md :  (310, 10)
   - wasm-semantics/data.md :  (311, 10)
-- Lbl#getInts(_,_)_WASM-DATA-COMMON_Int_Ints_Int: 2
+- F--Lbl#getInts(_,_)_WASM-DATA-COMMON_Int_Ints_Int: 2
   - wasm-semantics/data.md :  (316, 10)
   - wasm-semantics/data.md :  (317, 10)
-- Lbl#getModuleCodePath(_)_MANDOS_OptionalString_ModuleDecl: 3
+- F--Lbl#getModuleCodePath(_)_MANDOS_OptionalString_ModuleDecl: 3
   - mx-semantics/mandos.md :  (459, 10)
   - mx-semantics/mandos.md :  (458, 10)
   - mx-semantics/mandos.md :  (460, 10)
-- Lbl#getOffset(_)_WASM-TEXT_Int_MemArg: 3
+- F--Lbl#getOffset(_)_WASM-TEXT_Int_MemArg: 3
   - wasm-semantics/wasm-text.md :  (1137, 10)
   - wasm-semantics/wasm-text.md :  (1135, 10)
   - wasm-semantics/wasm-text.md :  (1136, 10)
-- Lbl#getRandomChars(_)_EEI-HELPERS_Bytes_Bytes: 2
+- F--Lbl#getRandomChars(_)_EEI-HELPERS_Bytes_Bytes: 2
   - mx-semantics/vmhooks/eei-helpers.md :  (45, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (40, 8)
-- Lbl#getRange(_,_,_)_WASM-DATA-COMMON_Int_SparseBytes_Int_Int: wasm-semantics/data.md :  (660, 10)
-- Lbl#getTicker(_)_EEI-HELPERS_Bytes_Bytes: 2
+- F--Lbl#getRange(_,_,_)_WASM-DATA-COMMON_Int_SparseBytes_Int_Int: wasm-semantics/data.md :  (660, 10)
+- F--Lbl#getTicker(_)_EEI-HELPERS_Bytes_Bytes: 2
   - mx-semantics/vmhooks/eei-helpers.md :  (43, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (38, 8)
-- Lbl#growthAllowed(_,_)_WASM_Bool_Int_OptionalInt: 2
+- F--Lbl#growthAllowed(_,_)_WASM_Bool_Int_OptionalInt: 2
   - wasm-semantics/wasm.md :  (1547, 10)
   - wasm-semantics/wasm.md :  (1548, 10)
-- Lbl#hasPrefix(_,_)_ELROND-CONFIG_Bool_String_String: 2
+- F--Lbl#hasPrefix(_,_)_ELROND-CONFIG_Bool_String_String: 2
   - mx-semantics/elrond-config.md :  (44, 10)
   - mx-semantics/elrond-config.md :  (40, 10)
-- Lbl#idcElems(_)_WASM-TEXT_Map_Defns: wasm-semantics/wasm-text.md :  (1256, 10)
-- Lbl#idcElemsAux(_,_,_)_WASM-TEXT_Map_Defns_Int_Map: 4
+- F--Lbl#idcElems(_)_WASM-TEXT_Map_Defns: wasm-semantics/wasm-text.md :  (1256, 10)
+- F--Lbl#idcElemsAux(_,_,_)_WASM-TEXT_Map_Defns_Int_Map: 4
   - wasm-semantics/wasm-text.md :  (1258, 10)
   - wasm-semantics/wasm-text.md :  (1264, 10)
   - wasm-semantics/wasm-text.md :  (1260, 10)
   - wasm-semantics/wasm-text.md :  (1268, 10)
-- Lbl#idcFuncs(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1218, 10)
-- Lbl#idcFuncsAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 6
+- F--Lbl#idcFuncs(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1218, 10)
+- F--Lbl#idcFuncsAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 6
   - wasm-semantics/wasm-text.md :  (1225, 10)
   - wasm-semantics/wasm-text.md :  (1224, 10)
   - wasm-semantics/wasm-text.md :  (1226, 10)
   - wasm-semantics/wasm-text.md :  (1221, 10)
   - wasm-semantics/wasm-text.md :  (1220, 10)
   - wasm-semantics/wasm-text.md :  (1222, 10)
-- Lbl#idcGlobals(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1299, 10)
-- Lbl#idcGlobalsAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 6
+- F--Lbl#idcGlobals(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1299, 10)
+- F--Lbl#idcGlobalsAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 6
   - wasm-semantics/wasm-text.md :  (1305, 10)
   - wasm-semantics/wasm-text.md :  (1307, 10)
   - wasm-semantics/wasm-text.md :  (1302, 10)
   - wasm-semantics/wasm-text.md :  (1301, 10)
   - wasm-semantics/wasm-text.md :  (1306, 10)
   - wasm-semantics/wasm-text.md :  (1303, 10)
-- Lbl#idcMems(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1275, 10)
-- Lbl#idcMemsAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 5
+- F--Lbl#idcMems(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1275, 10)
+- F--Lbl#idcMemsAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 5
   - wasm-semantics/wasm-text.md :  (1288, 10)
   - wasm-semantics/wasm-text.md :  (1276, 10)
   - wasm-semantics/wasm-text.md :  (1279, 10)
   - wasm-semantics/wasm-text.md :  (1292, 10)
   - wasm-semantics/wasm-text.md :  (1283, 10)
-- Lbl#idcTables(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1231, 10)
-- Lbl#idcTablesAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 5
+- F--Lbl#idcTables(_,_)_WASM-TEXT_Map_Defns_Defns: wasm-semantics/wasm-text.md :  (1231, 10)
+- F--Lbl#idcTablesAux(_,_,_,_)_WASM-TEXT_Map_Defns_Defns_Int_Map: 5
   - wasm-semantics/wasm-text.md :  (1244, 10)
   - wasm-semantics/wasm-text.md :  (1232, 10)
   - wasm-semantics/wasm-text.md :  (1235, 10)
   - wasm-semantics/wasm-text.md :  (1248, 10)
   - wasm-semantics/wasm-text.md :  (1239, 10)
-- Lbl#idcTypes(_)_WASM-TEXT_Map_Defns: wasm-semantics/wasm-text.md :  (1209, 10)
-- Lbl#idcTypesAux(_,_,_)_WASM-TEXT_Map_Defns_Int_Map: 3
+- F--Lbl#idcTypes(_)_WASM-TEXT_Map_Defns: wasm-semantics/wasm-text.md :  (1209, 10)
+- F--Lbl#idcTypesAux(_,_,_)_WASM-TEXT_Map_Defns_Int_Map: 3
   - wasm-semantics/wasm-text.md :  (1213, 10)
   - wasm-semantics/wasm-text.md :  (1212, 10)
   - wasm-semantics/wasm-text.md :  (1211, 10)
-- Lbl#ids2Idxs(_,_)_WASM-TEXT_Map_TypeUse_LocalDecls: wasm-semantics/wasm-text.md :  (1312, 10)
-- Lbl#ids2Idxs(_,_,_)_WASM-TEXT_Map_Int_TypeUse_LocalDecls: 8
+- F--Lbl#ids2Idxs(_,_)_WASM-TEXT_Map_TypeUse_LocalDecls: wasm-semantics/wasm-text.md :  (1312, 10)
+- F--Lbl#ids2Idxs(_,_,_)_WASM-TEXT_Map_Int_TypeUse_LocalDecls: 8
   - wasm-semantics/wasm-text.md :  (1323, 10)
   - wasm-semantics/wasm-text.md :  (1316, 10)
   - wasm-semantics/wasm-text.md :  (1315, 10)
@@ -5620,133 +5623,133 @@ Function equations by term index:
   - wasm-semantics/wasm-text.md :  (1314, 10)
   - wasm-semantics/wasm-text.md :  (1325, 10)
   - wasm-semantics/wasm-text.md :  (1321, 10)
-- Lbl#idxCloseBracket(_,_)_WASM-DATA-COMMON_Int_String_Int: 2
+- F--Lbl#idxCloseBracket(_,_)_WASM-DATA-COMMON_Int_String_Int: 2
   - wasm-semantics/data.md :  (591, 10)
   - wasm-semantics/data.md :  (592, 10)
-- Lbl#incBytes(_,_)_MANDOS_Bytes_Bytes_Int: mx-semantics/mandos.md :  (733, 10)
-- Lbl#isInfinityOrNaN(_)_WASM-NUMERIC_Bool_Float: wasm-semantics/numeric.md :  (160, 10)
-- Lbl#isSmartContract(_)_ELROND-CONFIG_Bool_Bytes: 2
+- F--Lbl#incBytes(_,_)_MANDOS_Bytes_Bytes_Int: mx-semantics/mandos.md :  (733, 10)
+- F--Lbl#isInfinityOrNaN(_)_WASM-NUMERIC_Bool_Float: wasm-semantics/numeric.md :  (160, 10)
+- F--Lbl#isSmartContract(_)_ELROND-CONFIG_Bool_Bytes: 2
   - mx-semantics/elrond-config.md :  (451, 10)
   - mx-semantics/elrond-config.md :  (458, 10)
-- Lbl#isTickerValid(_)_EEI-HELPERS_Bool_Bytes: 2
+- F--Lbl#isTickerValid(_)_EEI-HELPERS_Bool_Bytes: 2
   - mx-semantics/vmhooks/eei-helpers.md :  (54, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (51, 8)
-- Lbl#lambda__: wasm-semantics/data/sparse-bytes.k :  (63, 8)
-- Lbl#lambda__2: mx-semantics/vmhooks/bigIntOps.md :  (96, 24)
-- Lbl#lenElemExprs(_)_WASM-TEXT_Int_ElemExprs: 2
+- F--Lbl#lambda__: wasm-semantics/data/sparse-bytes.k :  (63, 8)
+- F--Lbl#lambda__2: mx-semantics/vmhooks/bigIntOps.md :  (96, 24)
+- F--Lbl#lenElemExprs(_)_WASM-TEXT_Int_ElemExprs: 2
   - wasm-semantics/wasm-text.md :  (532, 10)
   - wasm-semantics/wasm-text.md :  (533, 10)
-- Lbl#lenElemSegment(_)_WASM-DATA-COMMON_Int_ElemSegment: 2
+- F--Lbl#lenElemSegment(_)_WASM-DATA-COMMON_Int_ElemSegment: 2
   - wasm-semantics/data.md :  (307, 10)
   - wasm-semantics/data.md :  (308, 10)
-- Lbl#lenInts(_)_WASM-DATA-COMMON_Int_Ints: 2
+- F--Lbl#lenInts(_)_WASM-DATA-COMMON_Int_Ints: 2
   - wasm-semantics/data.md :  (313, 10)
   - wasm-semantics/data.md :  (314, 10)
-- Lbl#lengthDataPages(_)_WASM-TEXT_Int_DataString: wasm-semantics/wasm-text.md :  (567, 10)
-- Lbl#limitsMatchImport(_,_,_)_WASM_Bool_Int_OptionalInt_Limits: 3
+- F--Lbl#lengthDataPages(_)_WASM-TEXT_Int_DataString: wasm-semantics/wasm-text.md :  (567, 10)
+- F--Lbl#limitsMatchImport(_,_,_)_WASM_Bool_Int_OptionalInt_Limits: 3
   - wasm-semantics/wasm.md :  (1823, 10)
   - wasm-semantics/wasm.md :  (1825, 10)
   - wasm-semantics/wasm.md :  (1824, 10)
-- Lbl#locals2vectype(_,_)_WASM-TEXT_VecType_LocalDecls_ValTypes: 3
+- F--Lbl#locals2vectype(_,_)_WASM-TEXT_VecType_LocalDecls_ValTypes: 3
   - wasm-semantics/wasm-text.md :  (902, 10)
   - wasm-semantics/wasm-text.md :  (903, 10)
   - wasm-semantics/wasm-text.md :  (904, 10)
-- Lbl#lookupStorage(_,_)_ELROND-CONFIG_Bytes_MapBytesToBytes_Bytes: mx-semantics/elrond-config.md :  (234, 10)
-- Lbl#maxMemorySize()_WASM-INTERNAL-SYNTAX_Int: wasm-semantics/wasm.md :  (1557, 10)
-- Lbl#maxTableSize()_WASM-INTERNAL-SYNTAX_Int: wasm-semantics/wasm.md :  (1558, 10)
-- Lbl#minWidth(_)_WASM-NUMERIC_Int_Int: 2
+- F--Lbl#lookupStorage(_,_)_ELROND-CONFIG_Bytes_MapBytesToBytes_Bytes: mx-semantics/elrond-config.md :  (234, 10)
+- F--Lbl#maxMemorySize()_WASM-INTERNAL-SYNTAX_Int: wasm-semantics/wasm.md :  (1557, 10)
+- F--Lbl#maxTableSize()_WASM-INTERNAL-SYNTAX_Int: wasm-semantics/wasm.md :  (1558, 10)
+- F--Lbl#minWidth(_)_WASM-NUMERIC_Int_Int: 2
   - wasm-semantics/numeric.md :  (143, 10)
   - wasm-semantics/numeric.md :  (144, 10)
-- Lbl#newKey(_)_BIGINT-HELPERS_Int_Map: mx-semantics/vmhooks/bigIntOps.md :  (78, 10)
-- Lbl#newKey(_)_BIGINT-HELPERS_Int_MapIntToBytes: mx-semantics/vmhooks/bigIntOps.md :  (82, 10)
-- Lbl#newKey(_)_BIGINT-HELPERS_Int_MapIntToInt: mx-semantics/vmhooks/bigIntOps.md :  (86, 10)
-- Lbl#newKeyAux(_,_)_BIGINT-HELPERS_Int_Int_Map: 2
+- F--Lbl#newKey(_)_BIGINT-HELPERS_Int_Map: mx-semantics/vmhooks/bigIntOps.md :  (78, 10)
+- F--Lbl#newKey(_)_BIGINT-HELPERS_Int_MapIntToBytes: mx-semantics/vmhooks/bigIntOps.md :  (82, 10)
+- F--Lbl#newKey(_)_BIGINT-HELPERS_Int_MapIntToInt: mx-semantics/vmhooks/bigIntOps.md :  (86, 10)
+- F--Lbl#newKeyAux(_,_)_BIGINT-HELPERS_Int_Int_Map: 2
   - mx-semantics/vmhooks/bigIntOps.md :  (79, 10)
   - mx-semantics/vmhooks/bigIntOps.md :  (80, 10)
-- Lbl#newKeyAux(_,_)_BIGINT-HELPERS_Int_Int_MapIntToBytes: 2
+- F--Lbl#newKeyAux(_,_)_BIGINT-HELPERS_Int_Int_MapIntToBytes: 2
   - mx-semantics/vmhooks/bigIntOps.md :  (83, 10)
   - mx-semantics/vmhooks/bigIntOps.md :  (84, 10)
-- Lbl#newKeyAux(_,_)_BIGINT-HELPERS_Int_Int_MapIntToInt: 2
+- F--Lbl#newKeyAux(_,_)_BIGINT-HELPERS_Int_Int_MapIntToInt: 2
   - mx-semantics/vmhooks/bigIntOps.md :  (87, 10)
   - mx-semantics/vmhooks/bigIntOps.md :  (88, 10)
-- Lbl#numBytes(_)_WASM-DATA-COMMON_Int_IValType: wasm-semantics/data.md :  (378, 10)
-- Lbl#open(_)_K-IO_IOInt_String: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2487, 8)
-- Lbl#pageSize()_WASM-INTERNAL-SYNTAX_Int: wasm-semantics/wasm.md :  (1556, 10)
-- Lbl#parseHexBytes(_)_ELROND-CONFIG_Bytes_String: mx-semantics/elrond-config.md :  (328, 10)
-- Lbl#parseHexBytesAux(_)_ELROND-CONFIG_Bytes_String: 2
+- F--Lbl#numBytes(_)_WASM-DATA-COMMON_Int_IValType: wasm-semantics/data.md :  (378, 10)
+- F--Lbl#open(_)_K-IO_IOInt_String: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2487, 8)
+- F--Lbl#pageSize()_WASM-INTERNAL-SYNTAX_Int: wasm-semantics/wasm.md :  (1556, 10)
+- F--Lbl#parseHexBytes(_)_ELROND-CONFIG_Bytes_String: mx-semantics/elrond-config.md :  (328, 10)
+- F--Lbl#parseHexBytesAux(_)_ELROND-CONFIG_Bytes_String: 2
   - mx-semantics/elrond-config.md :  (330, 10)
   - mx-semantics/elrond-config.md :  (329, 10)
-- Lbl#popcnt(_)_WASM-NUMERIC_Int_Int: 2
+- F--Lbl#popcnt(_)_WASM-NUMERIC_Int_Int: 2
   - wasm-semantics/numeric.md :  (149, 10)
   - wasm-semantics/numeric.md :  (150, 10)
-- Lbl#pow(_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType: 2
+- F--Lbl#pow(_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType: 2
   - wasm-semantics/data.md :  (385, 10)
   - wasm-semantics/data.md :  (387, 10)
-- Lbl#pow1(_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType: 2
+- F--Lbl#pow1(_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType: 2
   - wasm-semantics/data.md :  (384, 10)
   - wasm-semantics/data.md :  (386, 10)
-- Lbl#quoteUnparseWasmString(_)_ELROND-NODE_WasmStringToken_String: mx-semantics/elrond-node.md :  (185, 10)
-- Lbl#randomCharsAreValid(_)_EEI-HELPERS_Bool_Bytes: 2
+- F--Lbl#quoteUnparseWasmString(_)_ELROND-NODE_WasmStringToken_String: mx-semantics/elrond-node.md :  (185, 10)
+- F--Lbl#randomCharsAreValid(_)_EEI-HELPERS_Bool_Bytes: 2
   - mx-semantics/vmhooks/eei-helpers.md :  (73, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (72, 8)
-- Lbl#readableChar(_)_EEI-HELPERS_Bool_Int: mx-semantics/vmhooks/eei-helpers.md :  (66, 8)
-- Lbl#removeEmptyBytes(_)_MANDOS_MapBytesToBytes_MapBytesToBytes: 2
+- F--Lbl#readableChar(_)_EEI-HELPERS_Bool_Int: mx-semantics/vmhooks/eei-helpers.md :  (66, 8)
+- F--Lbl#removeEmptyBytes(_)_MANDOS_MapBytesToBytes_MapBytesToBytes: 2
   - mx-semantics/mandos.md :  (102, 10)
   - mx-semantics/mandos.md :  (104, 10)
-- Lbl#removeReservedKeys(_)_MANDOS_MapBytesToBytes_MapBytesToBytes: 2
+- F--Lbl#removeReservedKeys(_)_MANDOS_MapBytesToBytes_MapBytesToBytes: 2
   - mx-semantics/mandos.md :  (120, 10)
   - mx-semantics/mandos.md :  (122, 10)
-- Lbl#reverseDefns(_,_)_WASM-TEXT_Defns_Defns_Defns: 2
+- F--Lbl#reverseDefns(_,_)_WASM-TEXT_Defns_Defns_Defns: 2
   - wasm-semantics/wasm-text.md :  (749, 10)
   - wasm-semantics/wasm-text.md :  (750, 10)
-- Lbl#reverseInstrs(_,_)_WASM-TEXT_Instrs_Instrs_Instrs: 2
+- F--Lbl#reverseInstrs(_,_)_WASM-TEXT_Instrs_Instrs_Instrs: 2
   - wasm-semantics/wasm-text.md :  (647, 10)
   - wasm-semantics/wasm-text.md :  (648, 10)
-- Lbl#revs(_)_WASM-DATA-COMMON_ValStack_ValStack: wasm-semantics/data.md :  (525, 10)
-- Lbl#revs(_,_)_WASM-DATA-COMMON_ValStack_ValStack_ValStack: 2
+- F--Lbl#revs(_)_WASM-DATA-COMMON_ValStack_ValStack: wasm-semantics/data.md :  (525, 10)
+- F--Lbl#revs(_,_)_WASM-DATA-COMMON_ValStack_ValStack_ValStack: 2
   - wasm-semantics/data.md :  (527, 10)
   - wasm-semantics/data.md :  (528, 10)
-- Lbl#revt(_)_WASM-DATA-COMMON_ValTypes_ValTypes: wasm-semantics/data.md :  (361, 10)
-- Lbl#revt(_,_)_WASM-DATA-COMMON_ValTypes_ValTypes_ValTypes: 2
+- F--Lbl#revt(_)_WASM-DATA-COMMON_ValTypes_ValTypes: wasm-semantics/data.md :  (361, 10)
+- F--Lbl#revt(_,_)_WASM-DATA-COMMON_ValTypes_ValTypes_ValTypes: 2
   - wasm-semantics/data.md :  (363, 10)
   - wasm-semantics/data.md :  (364, 10)
-- Lbl#round(_,_)_WASM-DATA-COMMON_FVal_FValType_Number: 4
+- F--Lbl#round(_,_)_WASM-DATA-COMMON_FVal_FValType_Number: 4
   - wasm-semantics/data.md :  (426, 10)
   - wasm-semantics/data.md :  (428, 10)
   - wasm-semantics/data.md :  (425, 10)
   - wasm-semantics/data.md :  (427, 10)
-- Lbl#sameType(_,_)_WASM-DATA-INTERNAL-SYNTAX_Bool_Val_Val: 5
+- F--Lbl#sameType(_,_)_WASM-DATA-INTERNAL-SYNTAX_Bool_Val_Val: 5
   - wasm-semantics/data.md :  (188, 10)
   - wasm-semantics/data.md :  (187, 10)
   - wasm-semantics/data.md :  (189, 10)
   - wasm-semantics/data.md :  (190, 10)
   - wasm-semantics/data.md :  (191, 10)
-- Lbl#saveId(_,_,_)_WASM-DATA-COMMON_Map_Map_OptionalId_Int: 2
+- F--Lbl#saveId(_,_,_)_WASM-DATA-COMMON_Map_Map_OptionalId_Int: 2
   - wasm-semantics/data.md :  (276, 10)
   - wasm-semantics/data.md :  (277, 10)
-- Lbl#setBytesRange(_,_,_)_WASM-DATA-COMMON_SparseBytes_SparseBytes_Int_Bytes: wasm-semantics/data.md :  (640, 10)
-- Lbl#setRange(_,_,_,_)_WASM-DATA-COMMON_SparseBytes_SparseBytes_Int_Int_Int: wasm-semantics/data.md :  (644, 10)
-- Lbl#signed(_,_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType_Int: 2
+- F--Lbl#setBytesRange(_,_,_)_WASM-DATA-COMMON_SparseBytes_SparseBytes_Int_Bytes: wasm-semantics/data.md :  (640, 10)
+- F--Lbl#setRange(_,_,_,_)_WASM-DATA-COMMON_SparseBytes_SparseBytes_Int_Int_Int: wasm-semantics/data.md :  (644, 10)
+- F--Lbl#signed(_,_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType_Int: 2
   - wasm-semantics/data.md :  (442, 10)
   - wasm-semantics/data.md :  (443, 10)
-- Lbl#signedWidth(_,_)_WASM-DATA-INTERNAL-SYNTAX_Int_Int_Int: 5
+- F--Lbl#signedWidth(_,_)_WASM-DATA-INTERNAL-SYNTAX_Int_Int_Int: 5
   - wasm-semantics/data.md :  (448, 10)
   - wasm-semantics/data.md :  (449, 10)
   - wasm-semantics/data.md :  (450, 10)
   - wasm-semantics/data.md :  (451, 10)
   - wasm-semantics/data.md :  (452, 10)
-- Lbl#sliceBytesInBounds(_,_,_)_MANBUFOPS_Bool_Bytes_Int_Int: mx-semantics/vmhooks/manBufOps.md :  (74, 10)
-- Lbl#stderr_K-IO_Int: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2584, 8)
-- Lbl#stdin_K-IO_Int: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2582, 8)
-- Lbl#stdout_K-IO_Int: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2583, 8)
-- Lbl#storageStatus(_,_,_)_ELROND-CONFIG_Int_MapBytesToBytes_Bytes_Bytes: 5
+- F--Lbl#sliceBytesInBounds(_,_,_)_MANBUFOPS_Bool_Bytes_Int_Int: mx-semantics/vmhooks/manBufOps.md :  (74, 10)
+- F--Lbl#stderr_K-IO_Int: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2584, 8)
+- F--Lbl#stdin_K-IO_Int: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2582, 8)
+- F--Lbl#stdout_K-IO_Int: /nix/store/kczin6jrjj1d1s40xbwpmfhanlsp1df0-k-7.0.40-be1acaf3f66f7d296024e9e7aaee8a24d9481475/include/kframework/builtin/domains.md :  (2583, 8)
+- F--Lbl#storageStatus(_,_,_)_ELROND-CONFIG_Int_MapBytesToBytes_Bytes_Bytes: 5
   - mx-semantics/elrond-config.md :  (245, 10)
   - mx-semantics/elrond-config.md :  (246, 10)
   - mx-semantics/elrond-config.md :  (244, 10)
   - mx-semantics/elrond-config.md :  (242, 10)
   - mx-semantics/elrond-config.md :  (243, 10)
-- Lbl#stripQuotes(_)_WASM-AUTO-ALLOCATE_String_String: mx-semantics/auto-allocate.md :  (81, 10)
-- Lbl#structureModule(_,_)_WASM-TEXT_ModuleDecl_Defns_ModuleDecl: 11
+- F--Lbl#stripQuotes(_)_WASM-AUTO-ALLOCATE_String_String: mx-semantics/auto-allocate.md :  (81, 10)
+- F--Lbl#structureModule(_,_)_WASM-TEXT_ModuleDecl_Defns_ModuleDecl: 11
   - wasm-semantics/wasm-text.md :  (734, 10)
   - wasm-semantics/wasm-text.md :  (743, 10)
   - wasm-semantics/wasm-text.md :  (744, 10)
@@ -5758,7 +5761,7 @@ Function equations by term index:
   - wasm-semantics/wasm-text.md :  (745, 10)
   - wasm-semantics/wasm-text.md :  (740, 10)
   - wasm-semantics/wasm-text.md :  (736, 10)
-- Lbl#t2aDefn<_>(_)_WASM-TEXT_Defn_Context_Defn: 25
+- F--Lbl#t2aDefn<_>(_)_WASM-TEXT_Defn_Context_Defn: 25
   - wasm-semantics/wasm-text.md :  (883, 10)
   - wasm-semantics/wasm-text.md :  (940, 10)
   - wasm-semantics/wasm-text.md :  (989, 10)
@@ -5784,24 +5787,24 @@ Function equations by term index:
   - wasm-semantics/wasm-text.md :  (862, 10)
   - wasm-semantics/wasm-text.md :  (861, 10)
   - wasm-semantics/wasm-text.md :  (1007, 10)
-- Lbl#t2aDefns<_>(_)_WASM-TEXT_Defns_Context_Defns: 2
+- F--Lbl#t2aDefns<_>(_)_WASM-TEXT_Defns_Context_Defns: 2
   - wasm-semantics/wasm-text.md :  (1194, 10)
   - wasm-semantics/wasm-text.md :  (1195, 10)
-- Lbl#t2aElemExpr<_>(_)_WASM-TEXT_RefVal_Context_ElemExpr: 3
+- F--Lbl#t2aElemExpr<_>(_)_WASM-TEXT_RefVal_Context_ElemExpr: 3
   - wasm-semantics/wasm-text.md :  (979, 10)
   - wasm-semantics/wasm-text.md :  (978, 10)
   - wasm-semantics/wasm-text.md :  (974, 10)
-- Lbl#t2aElemExprs<_>(_)_WASM-TEXT_ListRef_Context_ElemExprs: 2
+- F--Lbl#t2aElemExprs<_>(_)_WASM-TEXT_ListRef_Context_ElemExprs: 2
   - wasm-semantics/wasm-text.md :  (970, 10)
   - wasm-semantics/wasm-text.md :  (972, 10)
-- Lbl#t2aElemList<_>(_)_WASM-TEXT_ListRef_Context_ElemList: 3
+- F--Lbl#t2aElemList<_>(_)_WASM-TEXT_ListRef_Context_ElemList: 3
   - wasm-semantics/wasm-text.md :  (963, 10)
   - wasm-semantics/wasm-text.md :  (961, 10)
   - wasm-semantics/wasm-text.md :  (962, 10)
-- Lbl#t2aElemSegment<_>(_)_WASM-TEXT_ListRef_Context_ElemSegment: 2
+- F--Lbl#t2aElemSegment<_>(_)_WASM-TEXT_ListRef_Context_ElemSegment: 2
   - wasm-semantics/wasm-text.md :  (966, 10)
   - wasm-semantics/wasm-text.md :  (965, 10)
-- Lbl#t2aInstr<_>(_)_WASM-TEXT_Instr_Context_Instr: 63
+- F--Lbl#t2aInstr<_>(_)_WASM-TEXT_Instr_Context_Instr: 63
   - wasm-semantics/wasm-text.md :  (1175, 10)
   - wasm-semantics/wasm-text.md :  (1162, 10)
   - wasm-semantics/wasm-text.md :  (1164, 10)
@@ -5865,34 +5868,34 @@ Function equations by term index:
   - wasm-semantics/wasm-text.md :  (1076, 10)
   - wasm-semantics/wasm-text.md :  (1084, 10)
   - wasm-semantics/wasm-text.md :  (1080, 10)
-- Lbl#t2aInstrs<_>(_)_WASM-TEXT_Instrs_Context_Instrs: 2
+- F--Lbl#t2aInstrs<_>(_)_WASM-TEXT_Instrs_Context_Instrs: 2
   - wasm-semantics/wasm-text.md :  (1197, 10)
   - wasm-semantics/wasm-text.md :  (1198, 10)
-- Lbl#t2aModule<_>(_)_WASM-TEXT_ModuleDecl_Context_ModuleDecl: wasm-semantics/wasm-text.md :  (837, 10)
-- Lbl#t2aModuleDecl<_>(_)_WASM-TEXT_ModuleDecl_Context_ModuleDecl: wasm-semantics/wasm-text.md :  (829, 10)
-- Lbl#t2aStmt<_>(_)_WASM-TEXT_Stmt_Context_Stmt: 4
+- F--Lbl#t2aModule<_>(_)_WASM-TEXT_ModuleDecl_Context_ModuleDecl: wasm-semantics/wasm-text.md :  (837, 10)
+- F--Lbl#t2aModuleDecl<_>(_)_WASM-TEXT_ModuleDecl_Context_ModuleDecl: wasm-semantics/wasm-text.md :  (829, 10)
+- F--Lbl#t2aStmt<_>(_)_WASM-TEXT_Stmt_Context_Stmt: 4
   - wasm-semantics/wasm-text.md :  (825, 10)
   - wasm-semantics/wasm-text.md :  (826, 10)
   - wasm-semantics/wasm-text.md :  (824, 10)
   - wasm-semantics/wasm-text.md :  (827, 10)
-- Lbl#t2aStmts<_>(_)_WASM-TEXT_Stmts_Context_Stmts: 2
+- F--Lbl#t2aStmts<_>(_)_WASM-TEXT_Stmts_Context_Stmts: 2
   - wasm-semantics/wasm-text.md :  (1191, 10)
   - wasm-semantics/wasm-text.md :  (1192, 10)
-- Lbl#take(_,_)_WASM-DATA-COMMON_ValStack_Int_ValStack: 3
+- F--Lbl#take(_,_)_WASM-DATA-COMMON_ValStack_Int_ValStack: 3
   - wasm-semantics/data.md :  (518, 10)
   - wasm-semantics/data.md :  (517, 10)
   - wasm-semantics/data.md :  (519, 10)
-- Lbl#typeMatches(_,_)_WASM-DATA-INTERNAL-SYNTAX_Bool_ValType_Val: 5
+- F--Lbl#typeMatches(_,_)_WASM-DATA-INTERNAL-SYNTAX_Bool_ValType_Val: 5
   - wasm-semantics/data.md :  (180, 10)
   - wasm-semantics/data.md :  (179, 10)
   - wasm-semantics/data.md :  (181, 10)
   - wasm-semantics/data.md :  (182, 10)
   - wasm-semantics/data.md :  (183, 10)
-- Lbl#types2indices(_,_)_WASM-TEXT_TypesInfo_Defns_TypesInfo: 3
+- F--Lbl#types2indices(_,_)_WASM-TEXT_TypesInfo_Defns_TypesInfo: 3
   - wasm-semantics/wasm-text.md :  (488, 10)
   - wasm-semantics/wasm-text.md :  (490, 10)
   - wasm-semantics/wasm-text.md :  (493, 10)
-- Lbl#unfoldDefns(_,_,_)_WASM-TEXT_Defns_Defns_Int_TypesInfo: 31
+- F--Lbl#unfoldDefns(_,_,_)_WASM-TEXT_Defns_Defns_Int_TypesInfo: 31
   - wasm-semantics/wasm-text.md :  (439, 10)
   - wasm-semantics/wasm-text.md :  (623, 10)
   - wasm-semantics/wasm-text.md :  (625, 10)
@@ -5924,14 +5927,14 @@ Function equations by term index:
   - wasm-semantics/wasm-text.md :  (514, 10)
   - wasm-semantics/wasm-text.md :  (538, 10)
   - wasm-semantics/wasm-text.md :  (440, 10)
-- Lbl#unfoldElemExpr(_)_WASM-TEXT_ElemExpr_ElemExpr: wasm-semantics/wasm-text.md :  (616, 10)
-- Lbl#unfoldElemExprs(_)_WASM-TEXT_ElemExprs_ElemExprs: 2
+- F--Lbl#unfoldElemExpr(_)_WASM-TEXT_ElemExpr_ElemExpr: wasm-semantics/wasm-text.md :  (616, 10)
+- F--Lbl#unfoldElemExprs(_)_WASM-TEXT_ElemExprs_ElemExprs: 2
   - wasm-semantics/wasm-text.md :  (613, 10)
   - wasm-semantics/wasm-text.md :  (614, 10)
-- Lbl#unfoldElemList(_)_WASM-TEXT_ElemList_ElemList: 2
+- F--Lbl#unfoldElemList(_)_WASM-TEXT_ElemList_ElemList: 2
   - wasm-semantics/wasm-text.md :  (608, 10)
   - wasm-semantics/wasm-text.md :  (609, 10)
-- Lbl#unfoldInstrs(_,_,_)_WASM-TEXT_Instrs_Instrs_Int_Map: 22
+- F--Lbl#unfoldInstrs(_,_,_)_WASM-TEXT_Instrs_Instrs_Int_Map: 22
   - wasm-semantics/wasm-text.md :  (635, 10)
   - wasm-semantics/wasm-text.md :  (677, 10)
   - wasm-semantics/wasm-text.md :  (676, 10)
@@ -5954,33 +5957,33 @@ Function equations by term index:
   - wasm-semantics/wasm-text.md :  (661, 10)
   - wasm-semantics/wasm-text.md :  (662, 10)
   - wasm-semantics/wasm-text.md :  (636, 10)
-- Lbl#unsigned(_,_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType_Int: 2
+- F--Lbl#unsigned(_,_)_WASM-DATA-INTERNAL-SYNTAX_Int_IValType_Int: 2
   - wasm-semantics/data.md :  (445, 10)
   - wasm-semantics/data.md :  (446, 10)
-- Lbl#updateFuncIds(_,_)_WASM-TEXT_Context_Context_Map: wasm-semantics/wasm-text.md :  (792, 10)
-- Lbl#updateFuncIdsAux(_,_,_)_WASM-TEXT_Context_Context_Map_Bool: 2
+- F--Lbl#updateFuncIds(_,_)_WASM-TEXT_Context_Context_Map: wasm-semantics/wasm-text.md :  (792, 10)
+- F--Lbl#updateFuncIdsAux(_,_,_)_WASM-TEXT_Context_Context_Map_Bool: 2
   - wasm-semantics/wasm-text.md :  (794, 10)
   - wasm-semantics/wasm-text.md :  (793, 10)
-- Lbl#updateLocalIds(_,_)_WASM-TEXT_Context_Context_Map: wasm-semantics/wasm-text.md :  (788, 10)
-- Lbl#updateLocalIdsAux(_,_,_)_WASM-TEXT_Context_Context_Map_Bool: 2
+- F--Lbl#updateLocalIds(_,_)_WASM-TEXT_Context_Context_Map: wasm-semantics/wasm-text.md :  (788, 10)
+- F--Lbl#updateLocalIdsAux(_,_,_)_WASM-TEXT_Context_Context_Map_Bool: 2
   - wasm-semantics/wasm-text.md :  (790, 10)
   - wasm-semantics/wasm-text.md :  (789, 10)
-- Lbl#validArgIdx(_,_)_BASEOPS_Bool_Int_ListBytes: mx-semantics/vmhooks/baseOps.md :  (113, 10)
-- Lbl#validBufferId(_,_)_MANBUFOPS_Bool_Int_MapIntToBytes: mx-semantics/vmhooks/manBufOps.md :  (23, 10)
-- Lbl#validRandom(_)_EEI-HELPERS_Bool_Int: mx-semantics/vmhooks/eei-helpers.md :  (83, 8)
-- Lbl#validateToken(_)_EEI-HELPERS_Bool_Bytes: 2
+- F--Lbl#validArgIdx(_,_)_BASEOPS_Bool_Int_ListBytes: mx-semantics/vmhooks/baseOps.md :  (113, 10)
+- F--Lbl#validBufferId(_,_)_MANBUFOPS_Bool_Int_MapIntToBytes: mx-semantics/vmhooks/manBufOps.md :  (23, 10)
+- F--Lbl#validRandom(_)_EEI-HELPERS_Bool_Int: mx-semantics/vmhooks/eei-helpers.md :  (83, 8)
+- F--Lbl#validateToken(_)_EEI-HELPERS_Bool_Bytes: 2
   - mx-semantics/vmhooks/eei-helpers.md :  (29, 8)
   - mx-semantics/vmhooks/eei-helpers.md :  (27, 8)
-- Lbl#width(_)_WASM-DATA-COMMON_Int_IValType: 2
+- F--Lbl#width(_)_WASM-DATA-COMMON_Int_IValType: 2
   - wasm-semantics/data.md :  (375, 10)
   - wasm-semantics/data.md :  (376, 10)
-- Lbl#wrap(_,_)_WASM-DATA-COMMON_Int_Int_Int: wasm-semantics/data.md :  (410, 10)
-- Lbl#zero(_)_WASM-DATA-COMMON_ValStack_ValTypes: 4
+- F--Lbl#wrap(_,_)_WASM-DATA-COMMON_Int_Int_Int: wasm-semantics/data.md :  (410, 10)
+- F--Lbl#zero(_)_WASM-DATA-COMMON_ValStack_ValTypes: 4
   - wasm-semantics/data.md :  (512, 10)
   - wasm-semantics/data.md :  (514, 10)
   - wasm-semantics/data.md :  (513, 10)
   - wasm-semantics/data.md :  (515, 10)
-- append: 2
+- F--append: 2
   - UNKNOWN
   - UNKNOWN
 Simplifications by term index:

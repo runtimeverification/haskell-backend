@@ -18,37 +18,37 @@ Subsorts:
 - SortBool: SortBool
 Rewrite rules by term index:
 Function equations by term index:
-- Lbl_=/=Bool_: /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (960, 8)
-- Lbl_andBool_: 4
+- F--Lbl_=/=Bool_: /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (960, 8)
+- F--Lbl_andBool_: 4
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (933, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (932, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (934, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (931, 8)
-- Lbl_andThenBool_: 4
+- F--Lbl_andThenBool_: 4
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (938, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (937, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (939, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (936, 8)
-- Lbl_impliesBool_: 4
+- F--Lbl_impliesBool_: 4
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (958, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (957, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (956, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (955, 8)
-- Lbl_orBool_: 4
+- F--Lbl_orBool_: 4
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (948, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (946, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (947, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (945, 8)
-- Lbl_orElseBool_: 4
+- F--Lbl_orElseBool_: 4
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (953, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (951, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (952, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (950, 8)
-- Lbl_xorBool_: 3
+- F--Lbl_xorBool_: 3
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (943, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (942, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (941, 8)
-- LblnotBool_: 2
+- F--LblnotBool_: 2
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (929, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (928, 8)
 Simplifications by term index:

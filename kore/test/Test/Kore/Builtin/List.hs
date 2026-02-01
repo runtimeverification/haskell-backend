@@ -17,6 +17,7 @@ module Test.Kore.Builtin.List (
     test_updateAll,
     hprop_unparse,
     test_size,
+    test_range,
     --
     asInternal,
     asTermLike,
@@ -480,6 +481,36 @@ test_updateAll =
     ]
   where
     original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]
+
+test_range :: [TestTree]
+test_range =
+    [ testCaseWithoutSMT "range([1, 2, 3], 4, 5) === \\bottom" $
+        assertBottom =<< evaluateTerm (rangeList onetwothree (mkInt 4) (mkInt 5))
+    , testCaseWithoutSMT "range([1, 2, 3], -1, 1) === \\bottom" $
+        assertBottom =<< evaluateTerm (rangeList onetwothree (mkInt $ negate 1) (mkInt 1))
+    , testCaseWithoutSMT "range([1, 2, 3], 1, -1) === \\bottom" $
+        assertBottom =<< evaluateTerm (rangeList onetwothree (mkInt 1) (mkInt $ negate 1))
+    , testCaseWithoutSMT "range([1, 2, 3], 2, 2) === \\bottom" $
+        assertBottom =<< evaluateTerm (rangeList onetwothree (mkInt 2) (mkInt 2))
+    , testCaseWithoutSMT "range([1, 2, 3], 0, 0) === [1, 2, 3]" $ do
+        result <- evaluateTerm (rangeList onetwothree (mkInt 0) (mkInt 0))
+        assertEqual' "" (OrPattern.fromTermLike onetwothree) result
+    , testCaseWithoutSMT "range([1, 2, 3], 1, 1) === [2]" $ do
+        result <- evaluateTerm (rangeList onetwothree (mkInt 1) (mkInt 1))
+        let expected = asInternal . fmap mkInt $ Seq.singleton 2
+        assertEqual' "" (OrPattern.fromTermLike expected) result
+    , testCaseWithoutSMT "range([1, 2, 3], 0, 3) === []" $ do
+        result <- evaluateTerm (rangeList onetwothree (mkInt 0) (mkInt 3))
+        let expected = asInternal Seq.empty
+        assertEqual' "" (OrPattern.fromTermLike expected) result
+    , testCaseWithoutSMT "range([1, 2, 3], 2, 1) === []" $ do
+        result <- evaluateTerm (rangeList onetwothree (mkInt 2) (mkInt 1))
+        let expected = asInternal Seq.empty
+        assertEqual' "" (OrPattern.fromTermLike expected) result
+    ]
+  where
+    onetwothree = asInternal . fmap mkInt $ Seq.fromList [1 .. 3]
+    assertBottom = assertEqual' "expected bottom" OrPattern.bottom
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike ::

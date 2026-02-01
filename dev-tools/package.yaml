@@ -8,7 +8,6 @@ synopsis: Dev-tools for hs-backend-booster
 category: Language
 
 extra-source-files:
-- LICENSE
 - package.yaml
 
 default-extensions:
@@ -119,23 +118,6 @@ executables:
       - optparse-applicative
       - text
       - time
-    ghc-options:
-      - -rtsopts
-  time-profile:
-    source-dirs: time-profile
-    main: Main.hs
-    dependencies:
-      - aeson
-      - base
-      - bytestring
-      - containers
-      - directory
-      - filepath
-      - kore-rpc-types
-      - profiteur
-      - text
-      - unordered-containers
-      - vector
     ghc-options:
       - -rtsopts
   parsetest-binary:

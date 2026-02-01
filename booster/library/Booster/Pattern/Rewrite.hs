@@ -38,9 +38,9 @@ import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Sequence (Seq, (|>))
+import Data.Sequence as Seq (Seq, fromList, (|>))
 import Data.Set qualified as Set
-import Data.Text as Text (Text, pack)
+import Data.Text as Text (Text, pack, unpack)
 import Numeric.Natural
 import Prettyprinter
 
@@ -55,9 +55,12 @@ import Booster.LLVM as LLVM (API)
 import Booster.Log
 import Booster.Pattern.ApplyEquations (
     CacheTag (Equations),
+    Direction (..),
     EquationFailure (..),
     SimplifierCache (..),
+    evaluateConstraints,
     evaluatePattern,
+    evaluateTerm,
     simplifyConstraint,
  )
 import Booster.Pattern.Base
@@ -176,7 +179,13 @@ rewriteStep cutLabels terminalLabels pat = do
         termIdx = getIndex pat.term
     when (Idx.hasNone termIdx) $ throw (TermIndexIsNone pat.term)
     let
-        indexes = Set.toList $ Idx.coveringIndexes termIdx
+        indexes =
+            Set.toList $ Map.keysSet def.rewriteTheory `Idx.covering` Idx.noFunctions termIdx
+        -- Function calls in the index have to be generalised to
+        -- `Anything` for rewriting because they may evaluate to any
+        -- category of terms. If there are any function calls in the
+        -- subject, the rewrite can only succeed if the function call
+        -- is matched to a variable.
         rulesFor i = fromMaybe Map.empty $ Map.lookup i def.rewriteTheory
         rules =
             map snd . Map.toAscList . Map.unionsWith (<>) $ map rulesFor indexes
@@ -516,9 +525,16 @@ applyRule pat@Pattern{ceilConditions} rule =
                                                 , rulePredicate = Just rulePredicate
                                                 }
   where
-    filterOutKnownConstraints :: Set.Set Predicate -> [Predicate] -> RewriteT io [Predicate]
-    filterOutKnownConstraints priorKnowledge constraitns = do
-        let (knownTrue, toCheck) = partition (`Set.member` priorKnowledge) constraitns
+    -- These predicates are known (and do not change) during the
+    -- entire rewrite step. The simplifier cache cannot be retained
+    -- when additional predicates are used (see 'checkConstraint').
+    knownPatternPredicates =
+        pat.constraints <> (Set.fromList . asEquations $ pat.substitution)
+
+    filterOutKnownConstraints :: [Predicate] -> RewriteT io [Predicate]
+    filterOutKnownConstraints constraints = do
+        let (knownTrue, toCheck) =
+                partition (`Set.member` knownPatternPredicates) constraints
         unless (null knownTrue) $
             getPrettyModifiers >>= \case
                 ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
@@ -537,14 +553,16 @@ applyRule pat@Pattern{ceilConditions} rule =
         Set.Set Predicate ->
         Predicate ->
         RewriteRuleAppT (RewriteT io) (Maybe a)
-    checkConstraint onUnclear onBottom knownPredicates p = do
+    checkConstraint onUnclear onBottom extraPredicates p = do
         RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
-        RewriteState{cache = oldCache} <- lift . RewriteT . lift $ get
-        (simplified, cache) <-
+        RewriteState{cache} <- lift . RewriteT . lift $ get
+        let knownPredicates = knownPatternPredicates <> extraPredicates
+        (simplified, newCache) <-
             withContext CtxConstraint $
-                simplifyConstraint definition llvmApi smtSolver oldCache knownPredicates p
-        -- update cache
-        lift $ updateRewriterCache cache
+                simplifyConstraint definition llvmApi smtSolver cache knownPredicates p
+        -- Important: only retain new cache if no extraPredicates were supplied!
+        when (Set.null extraPredicates) $
+            lift (updateRewriterCache newCache)
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing
@@ -559,14 +577,9 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- apply substitution to rule requires
         let ruleRequires =
                 concatMap (splitBoolPredicates . substituteInPredicate matchingSubst) rule.requires
-            knownConstraints = pat.constraints <> (Set.fromList . asEquations $ pat.substitution)
 
         -- filter out any predicates known to be _syntactically_ present in the known prior
-        toCheck <-
-            lift $
-                filterOutKnownConstraints
-                    knownConstraints
-                    ruleRequires
+        toCheck <- lift $ filterOutKnownConstraints ruleRequires
 
         -- simplify the constraints (one by one in isolation). Stop if false, abort rewrite if indeterminate.
         unclearRequires <-
@@ -575,17 +588,13 @@ applyRule pat@Pattern{ceilConditions} rule =
                     ( checkConstraint
                         id
                         returnNotApplied
-                        knownConstraints
+                        mempty -- checkConstraint already considers knownConstraints
                     )
                     toCheck
 
         -- unclear conditions may have been simplified and
         -- could now be syntactically present in the path constraints, filter again
-        stillUnclear <-
-            lift $
-                filterOutKnownConstraints
-                    knownConstraints
-                    unclearRequires
+        stillUnclear <- lift $ filterOutKnownConstraints unclearRequires
 
         -- check unclear requires-clauses in the context of known constraints (priorKnowledge)
         solver <- lift $ RewriteT $ (.smtSolver) <$> ask
@@ -614,17 +623,14 @@ applyRule pat@Pattern{ceilConditions} rule =
         -- apply substitution to rule ensures
         let ruleEnsures =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.ensures
-            knownConstraints =
-                pat.constraints
-                    <> (Set.fromList . asEquations $ pat.substitution)
-                    <> Set.fromList unclearRequiresAfterSmt
         newConstraints <-
             catMaybes
                 <$> mapM
                     ( checkConstraint
                         id
                         returnTrivial
-                        knownConstraints
+                        -- supply required path conditions as extra constraints
+                        (Set.fromList unclearRequiresAfterSmt)
                     )
                     ruleEnsures
 
@@ -672,7 +678,7 @@ applyRule pat@Pattern{ceilConditions} rule =
         let ruleRequires =
                 concatMap (splitBoolPredicates . coerce . substituteInTerm matchingSubst . coerce) rule.requires
         collapseAndBools . catMaybes
-            <$> mapM (checkConstraint id returnNotApplied pat.constraints) ruleRequires
+            <$> mapM (checkConstraint id returnNotApplied mempty) ruleRequires
 
 ruleGroupPriority :: [RewriteRule a] -> Maybe Priority
 ruleGroupPriority = \case
@@ -761,7 +767,7 @@ data RewriteFailed k
       RewriteSortError (RewriteRule k) Term SortError
     | -- | An error was detected during matching
       InternalMatchError Text
-    | -- | Term has index 'None', no rule should apply
+    | -- | Term has index 'IdxNone', no rule should apply
       TermIndexIsNone Term
     deriving stock (Eq, Show)
 
@@ -817,7 +823,7 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods (RewriteFailed 
                 , pretty $ show sortError
                 ]
         TermIndexIsNone term ->
-            "Term index is None for term " <> pretty' @mods term
+            "Term index is IdxNone for term " <> pretty' @mods term
         InternalMatchError err -> "An internal error occured" <> pretty err
 
 ruleLabelOrLoc :: RewriteRule k -> Doc a
@@ -1001,8 +1007,31 @@ performRewrite ::
     Pattern ->
     io (Natural, Seq (RewriteTrace ()), RewriteResult Pattern)
 performRewrite rewriteConfig pat = do
+    -- simplify all constraints (individually) before starting to rewrite
+    simplifiedConstraints <-
+        withContext CtxSimplify $ evaluateConstraints definition llvmApi smtSolver pat.constraints
     (rr, RewriteStepsState{counter, traces}) <-
-        flip runStateT rewriteStart $ doSteps False pat
+        case simplifiedConstraints of
+            Right constraints ->
+                flip runStateT rewriteStart $ doSteps False pat{constraints}
+            Left r@SideConditionFalse{} ->
+                -- a side condition was found to be false, return a vacuous state
+                pure (RewriteTrivial pat, rewriteStart{traces = Seq.fromList [RewriteSimplified (Just r)]})
+            Left (InternalError msg) -> do
+                -- fail hard on internal errors
+                withContext CtxSimplify $ withContext CtxError $ logMessage msg
+                error $ Text.unpack msg
+            Left err -> do
+                -- log but ignore other actual errors (IndexIsNone,
+                -- TooManyIterations, EquationLoop, TooManyRecursions,
+                -- EquationLoop, UndefinedTerm), proceeding with the
+                -- original constraints (to fail later when processing
+                -- the constraints during rewriting or at the end).
+                getPrettyModifiers >>= \case
+                    ModifiersRep (_ :: FromModifiersT mods => Proxy mods) ->
+                        withContext CtxSimplify . withContext CtxWarn . logMessage $
+                            renderOneLineText (pretty' @mods err)
+                flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
     RewriteConfig
@@ -1034,6 +1063,27 @@ performRewrite rewriteConfig pat = do
 
     updateCache simplifierCache = modify $ \rss -> (rss :: RewriteStepsState){simplifierCache}
 
+    -- only simplifies the _term_ of the pattern
+    simplifyT :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
+    simplifyT p = withContext CtxSimplify $ do
+        cache <- simplifierCache <$> get
+        evaluateTerm BottomUp definition llvmApi smtSolver cache p.constraints p.term >>= \(res, newCache) -> do
+            updateCache newCache
+            case res of
+                Right newTerm -> do
+                    emitRewriteTrace $ RewriteSimplified Nothing
+                    pure $ Just p{term = newTerm}
+                Left r@SideConditionFalse{} -> do
+                    emitRewriteTrace $ RewriteSimplified (Just r)
+                    pure Nothing
+                Left r@UndefinedTerm{} -> do
+                    emitRewriteTrace $ RewriteSimplified (Just r)
+                    pure Nothing
+                Left other -> do
+                    emitRewriteTrace $ RewriteSimplified (Just other)
+                    pure $ Just p
+
+    -- simplifies term and constraints of the pattern
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
     simplifyP p = withContext CtxSimplify $ do
         st <- get
@@ -1228,7 +1278,7 @@ performRewrite rewriteConfig pat = do
                                 else withSimplified pat' msg (pure . RewriteAborted failure)
       where
         withSimplified p msg cont = do
-            (withPatternContext p $ simplifyP p) >>= \case
+            (withPatternContext p $ simplifyT p) >>= \case
                 Nothing -> do
                     logMessage ("Rewrite stuck after simplification." :: Text)
                     pure $ RewriteStuck p
