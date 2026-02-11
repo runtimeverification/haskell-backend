@@ -105,7 +105,7 @@
 - ignore: {name: "Functor law"}
 - ignore: {name: "Move filter"}
 - ignore: {name: "Move mapMaybe"}
-
+- ignore: {name: "Move reverse out"}
 
 # Haskell names match K names
 - ignore:
