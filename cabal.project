@@ -10,3 +10,5 @@ package *
 package kore
   ghc-options: -Wall -Werror
   profiling-detail: exported-functions
+
+allow-newer: hashtables
