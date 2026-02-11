@@ -108,9 +108,13 @@
         self = final;
         overrides = {
           # custom versions of packages go here
+
+          # decision-diagrams needs to jail-break and is marked broken (which it is)
+          allowBroken = "true";
+          decision-diagrams =
+            pkgsClean.haskell.lib.doJailbreak ( pkgsClean.haskell.packages.${ghcVer}.decision-diagrams );
         };
         # packages with un-met dependency versions need to jail-break
-        self.haskellPackages.your-package-name = self.haskell.lib.doJailbreak ( decision-diagrams );
       });
       pkgs = import nixpkgs {
         inherit system;
