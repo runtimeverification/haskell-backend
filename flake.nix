@@ -107,20 +107,7 @@
       someCabalHashesOverlay = makeOverlayForHaskell (final: prev: some-cabal-hashes {
         self = final;
         overrides = {
-          # note: fetchFromGitHub should be replaced by a flake input
-          # tasty-test-reporter = final.fetchFromGitHub {
-          #   owner = "goodlyrottenapple";
-          #   repo = "tasty-test-reporter";
-          #   rev = "b704130545aa3925a8487bd3e92f1dd5ce0512e2";
-          #   sha256 = "sha256-uOQYsTecYgAKhL+DIgHLAfh2DAv+ye1JWqcQGRdpiMA=";
-          # };
-
-          # a custom older version of hashable
-          hashable = "1.4.2.0";
-
-          # custom version of tar. We would want 0.6.3.0 but the
-          # currently-used nixpkgs cabal hashes don't provide that
-          tar = "0.6.2.0";
+          # custom versions of packages go here
         };
       });
       pkgs = import nixpkgs {
@@ -137,7 +124,7 @@
         inherit system;
       };
       # ghc compiler revision
-      ghcVer = "ghc965";
+      ghcVer = "ghc9103";
 
       withZ3 = pkgs: pkg: exe: pkgs.stdenv.mkDerivation {
         name = exe;
@@ -145,7 +132,7 @@
         dontPatch = true;
         dontConfigure = true;
         dontBuild = true;
-        
+
         buildInputs = with pkgs; [ makeWrapper ];
         installPhase = ''
           mkdir -p $out/bin
