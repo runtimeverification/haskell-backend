@@ -619,8 +619,9 @@ Otherwise, the result is Applied.
 -}
 data AttemptedAxiom variable
     = NotApplicable
-    | -- | The axiom(s) can't be applied with the given side condition, but
-      -- we may be able to apply them when the side condition changes.
+    | {- | The axiom(s) can't be applied with the given side condition, but
+      we may be able to apply them when the side condition changes.
+      -}
       NotApplicableUntilConditionChanges !SideCondition.Representation
     | Applied !(AttemptedAxiomResults variable)
     deriving stock (Eq, Ord, Show)

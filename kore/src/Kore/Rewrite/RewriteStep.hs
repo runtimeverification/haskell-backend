@@ -453,8 +453,9 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel ::
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
-    -- | If set, assume that @initial@ and its every sub-term is defined,
-    --   see @enumerateSubtermsNeedingCeil@ for details
+    {- | If set, assume that @initial@ and its every sub-term is defined,
+    see @enumerateSubtermsNeedingCeil@ for details
+    -}
     EnableAssumeInitialDefined ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->

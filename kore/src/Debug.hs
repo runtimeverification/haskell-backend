@@ -415,8 +415,9 @@ class Diff a where
     diff :: a -> a -> Maybe (Doc ann)
     diff a b = ($ 0) <$> diffPrec a b
 
-    -- | Display the difference of two values. If the values are different,
-    --    the difference is displayed given the surrounding precedence.
+    {- | Display the difference of two values. If the values are different,
+    the difference is displayed given the surrounding precedence.
+    -}
     diffPrec :: a -> a -> Maybe (Int -> Doc ann)
     default diffPrec ::
         (Debug a, HasDatatypeInfo a, All2 Diff (Code a)) =>

@@ -108,8 +108,7 @@ test_applicationSimplification =
             evaluate
                 ( Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
-                    ( [axiom_ (Mock.f Mock.a) (term gOfAExpanded)]
-                    )
+                    ([axiom_ (Mock.f Mock.a) (term gOfAExpanded)])
                 )
                 (makeApplication Mock.fSymbol [[aExpanded]])
         assertEqual "" expect actual

@@ -68,15 +68,16 @@ import SQL.SQL
 -- * Column
 
 class Column a where
-    -- | Return a 'ColumnDef' suitable for defining the column in a table.
-    --
-    --    If the column is a foreign key reference, the referenced table will be
-    --    defined if it does not exist. The 'TableName' will be used to detect
-    --    possible cycles when defining tables for recursive datatypes. The
-    --    'TableName' should be the name of the table for the type; for sum types, it
-    --    should be the name of the type table, not the name of a constructor table,
-    --    because the constructor tables are only referenced by the type table and all
-    --    foreign keys are references to the type table.
+    {- | Return a 'ColumnDef' suitable for defining the column in a table.
+
+    If the column is a foreign key reference, the referenced table will be
+    defined if it does not exist. The 'TableName' will be used to detect
+    possible cycles when defining tables for recursive datatypes. The
+    'TableName' should be the name of the table for the type; for sum types, it
+    should be the name of the type table, not the name of a constructor table,
+    because the constructor tables are only referenced by the type table and all
+    foreign keys are references to the type table.
+    -}
     defineColumn :: TableName -> proxy a -> SQL ColumnDef
 
     toColumn :: a -> SQL SQLite.SQLData
@@ -196,9 +197,10 @@ class Typeable a => Table a where
         SQL ()
     createTable = createTableGeneric
 
-    -- | Insert the @a@ as a new row in the table.
-    --
-    --    Returns the 'Key' of the inserted row.
+    {- | Insert the @a@ as a new row in the table.
+
+    Returns the 'Key' of the inserted row.
+    -}
     insertRow :: a -> SQL (Key a)
     default insertRow ::
         SOP.HasDatatypeInfo a =>

@@ -198,14 +198,14 @@ respond reqId serverState moduleName runSMT =
                     | fromMaybe False logSuccessfulRewrites =
                         Just . concat $
                             [ [ Rewrite
-                                { result =
-                                    Success
-                                        { rewrittenTerm = Nothing
-                                        , substitution = Nothing
-                                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
-                                        }
-                                , origin = KoreRpc
-                                }
+                                    { result =
+                                        Success
+                                            { rewrittenTerm = Nothing
+                                            , substitution = Nothing
+                                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
+                                            }
+                                    , origin = KoreRpc
+                                    }
                               | fromMaybe False logSuccessfulRewrites
                               ]
                             | Exec.RuleTrace{ruleId} <- toList rules

@@ -64,8 +64,9 @@ data FailReason
       DifferentSymbols Term Term
     | -- | The unificands have different sorts
       DifferentSorts Term Term
-    | -- | Variable would refer to itself. This should not happen
-      -- because we rename rule variables to avoid it.
+    | {- | Variable would refer to itself. This should not happen
+      because we rename rule variables to avoid it.
+      -}
       VariableRecursion Variable Term
     | -- | Variable reassigned
       VariableConflict Variable Term Term
@@ -401,8 +402,7 @@ matchSymbolAplications
     args2
         | symbol1.name /= symbol2.name =
             failWith
-                ( DifferentSymbols (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)
-                )
+                (DifferentSymbols (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2))
         | length args1 /= length args2 =
             failWith $
                 ArgLengthsDiffer (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)

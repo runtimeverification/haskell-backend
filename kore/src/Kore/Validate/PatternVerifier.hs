@@ -527,8 +527,7 @@ verifyDomainValue domain = do
     verified <- Internal.DomainValueF <$> sequence domain
     let freeVariables' :: FreeVariables VariableName =
             foldMap
-                ( freeVariables . Internal.extractAttributes
-                )
+                (freeVariables . Internal.extractAttributes)
                 verified
     unless
         (nullFreeVariables freeVariables')

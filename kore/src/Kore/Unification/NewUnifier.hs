@@ -1240,7 +1240,11 @@ solveDiophantineEquations system =
     vk' :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
     vk' vk mk =
         Set.fromList
-            [ add v (e j) | v <- Set.toList $ Set.difference vk mk, j <- [0 .. m - 1], isMinimal v (e j) mk, dot (defect' v) (defect' (e j)) < 0
+            [ add v (e j)
+            | v <- Set.toList $ Set.difference vk mk
+            , j <- [0 .. m - 1]
+            , isMinimal v (e j) mk
+            , dot (defect' v) (defect' (e j)) < 0
             ]
 
     isMinimal :: Vector Int -> Vector Int -> Set (Vector Int) -> Bool

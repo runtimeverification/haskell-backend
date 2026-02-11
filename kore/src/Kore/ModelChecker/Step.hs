@@ -84,8 +84,9 @@ type CommonModalPattern = ModalPattern RewritingVariableName
 data ProofState patt
     = Proven
     | Unprovable !patt
-    | -- | State on which a normal 'Rewrite' can be applied. Also used
-      -- for the start patterns.
+    | {- | State on which a normal 'Rewrite' can be applied. Also used
+      for the start patterns.
+      -}
       GoalLHS !patt
     | -- | State which can't be rewritten anymore.
       GoalRemLHS !patt

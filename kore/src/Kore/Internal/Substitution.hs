@@ -780,8 +780,9 @@ variable is preferred for the left-hand side.
 orientSubstitution ::
     forall variable.
     InternalVariable variable =>
-    -- | Orientation: Is the named variable preferred on the left-hand side of
-    -- variable-renaming substitution pairs?
+    {- | Orientation: Is the named variable preferred on the left-hand side of
+    variable-renaming substitution pairs?
+    -}
     (SomeVariableName variable -> Bool) ->
     -- | Normalized substitution
     Map (SomeVariableName variable) (TermLike variable) ->

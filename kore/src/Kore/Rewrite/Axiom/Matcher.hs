@@ -598,8 +598,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
     decomposeBinder var1 term1 var2 term2 =
         patternMatch'
             sideCondition
-            ( (MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest
-            )
+            ((MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest)
             deferred
             predicate
             subst

@@ -78,8 +78,9 @@ jsonRpcServer ::
     (MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
     -- | Connection settings
     ServerSettings ->
-    -- | run workers in bound threads (required if worker below uses
-    -- foreign calls with thread-local state)
+    {- | run workers in bound threads (required if worker below uses
+    foreign calls with thread-local state)
+    -}
     Bool ->
     -- | Action to perform on connecting client thread
     (Request -> Respond q IO r) ->

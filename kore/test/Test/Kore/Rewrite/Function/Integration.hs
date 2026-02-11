@@ -1139,8 +1139,7 @@ verify ::
     ParsedDefinition ->
     Either
         (Kore.Error.Error VerifyError)
-        ( Map ModuleName (VerifiedModule Attribute.Symbol)
-        )
+        (Map ModuleName (VerifiedModule Attribute.Symbol))
 verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules ::

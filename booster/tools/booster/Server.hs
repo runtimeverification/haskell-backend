@@ -174,8 +174,7 @@ main = do
                 not contextLoggingEnabled
                     || ( let contextStrs =
                                 concatMap
-                                    ( \(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c
-                                    )
+                                    (\(Log.SomeEntry _ c) -> BS.pack . show <$> Log.oneLineContextDoc c)
                                     ctxt
                           in any (flip Ctxt.mustMatch contextStrs) logContextsWithcustomLevelContexts
                        )

@@ -852,11 +852,13 @@ data RewriteResult pat
       RewriteTerminal Text UniqueId pat
     | -- | stopping because maximum depth has been reached (label and unique id may be empty if no steps were taken)
       RewriteFinished (Maybe Text) (Maybe UniqueId) pat
-    | -- | unable to handle the current case with this rewriter
-      -- (signalled by exceptions)
+    | {- | unable to handle the current case with this rewriter
+      (signalled by exceptions)
+      -}
       RewriteAborted (RewriteFailed "Rewrite") pat
-    | -- | All applicable rules returned a pattern with a False
-      -- ensures clause
+    | {- | All applicable rules returned a pattern with a False
+      ensures clause
+      -}
       RewriteTrivial pat
     deriving stock (Eq, Show)
     deriving (Functor, Foldable, Traversable)
@@ -1119,8 +1121,7 @@ performRewrite rewriteConfig pat = do
                 Just p' -> do
                     -- simplify the next-state pattern inside a branch payload
                     let simplifyRewritten (rewrittenPat, mRuleMetadata) = do
-                            ( fmap @Maybe (,mRuleMetadata)
-                                )
+                            (fmap @Maybe (,mRuleMetadata))
                                 <$> simplifyP rewrittenPat
                     nexts' <- catMaybes <$> mapM simplifyRewritten (toList nexts)
                     pure $ case nexts' of

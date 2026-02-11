@@ -109,6 +109,8 @@
         overrides = {
           # custom versions of packages go here
         };
+        # packages with un-met dependency versions need to jail-break
+        self.haskellPackages.your-package-name = self.haskell.lib.doJailbreak ( decision-diagrams );
       });
       pkgs = import nixpkgs {
         inherit system;

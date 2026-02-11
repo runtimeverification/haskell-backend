@@ -1075,8 +1075,7 @@ applyEquation term rule =
                             ctx . logMessage $
                                 WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
                                     renderOneLineText
-                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
-                                        )
+                                        ("Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear))
                         , IndeterminateCondition stillUnclear
                         )
                 SMT.IsInvalid -> do

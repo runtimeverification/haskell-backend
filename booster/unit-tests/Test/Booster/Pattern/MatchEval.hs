@@ -246,8 +246,7 @@ kmapTerms =
             "Variable key ~= concrete key (and common element) without rest: match key"
             concreteAndSymbolicKMapWithTwoItems
             concreteKMapWithTwoItems
-            ( success [("A", kmapKeySort, dv kmapKeySort "key2")]
-            )
+            (success [("A", kmapKeySort, dv kmapKeySort "key2")])
         , let patMap =
                 kmap [([trm| K:SortTestKMapKey{} |], var "V" kmapElementSort)] (Just "PATTERN")
            in test

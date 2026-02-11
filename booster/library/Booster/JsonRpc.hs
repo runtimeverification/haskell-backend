@@ -498,8 +498,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates =
                         Just
                             $ map
-                                ( \(rewritten, ruleMetadata) -> toExecState rewritten (Just ruleMetadata) unsupported
-                                )
+                                (\(rewritten, ruleMetadata) -> toExecState rewritten (Just ruleMetadata) unsupported)
                             $ toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing

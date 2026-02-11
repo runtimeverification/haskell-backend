@@ -96,8 +96,9 @@ data TermF t
     | SymbolApplicationF Symbol [Sort] [t]
     | DomainValueF Sort ByteString
     | VarF Variable
-    | -- | injection node with source and target sort: "intermediate"
-      -- sorts between source and target are shortened out.
+    | {- | injection node with source and target sort: "intermediate"
+      sorts between source and target are shortened out.
+      -}
       InjectionF Sort Sort t
     | KMapF KMapDefinition [(t, t)] (Maybe t)
     | -- | internal List
@@ -121,13 +122,15 @@ data TermF t
 data TermAttributes = TermAttributes
     { variables :: !(Set Variable)
     , isEvaluated :: !Bool
-    -- ^ false for function calls, true for
-    -- variables, recursive through AndTerm
+    {- ^ false for function calls, true for
+    variables, recursive through AndTerm
+    -}
     , hash :: !Int
     , isConstructorLike :: !Bool
-    -- ^ Means that logic equality is the same as syntactic equality.
-    -- True for domain values and constructor symbols (recursive
-    -- through arg.s), recursive through AndTerm.
+    {- ^ Means that logic equality is the same as syntactic equality.
+    True for domain values and constructor symbols (recursive
+    through arg.s), recursive through AndTerm.
+    -}
     , canBeEvaluated :: !Bool
     -- ^ false for function calls, variables, and AndTerms
     }

@@ -122,17 +122,18 @@ data ParseError
 type Parser = Either (Error ParseError)
 
 class (Default attrs, From attrs Attributes) => ParseAttributes attrs where
-    -- | Parse a 'AttributePattern' from 'Attributes' to produce @attrs@.
-    --
-    --    Attributes are parsed individually and the list of attributes is parsed by
-    --    folding over the list; @parseAttributes@ takes a second argument which is
-    --    the partial result obtained by folding over the preceeding attributes of the
-    --    list.
-    --
-    --    Ignore unrecognized attributes by 'return'-ing the partial result. Signal
-    --    errors with 'Control.Monad.Except.throwError' to abort parsing.
-    --
-    --    See also: 'parseAttributes', 'withApplication', 'runParser'
+    {- | Parse a 'AttributePattern' from 'Attributes' to produce @attrs@.
+
+    Attributes are parsed individually and the list of attributes is parsed by
+    folding over the list; @parseAttributes@ takes a second argument which is
+    the partial result obtained by folding over the preceeding attributes of the
+    list.
+
+    Ignore unrecognized attributes by 'return'-ing the partial result. Signal
+    errors with 'Control.Monad.Except.throwError' to abort parsing.
+
+    See also: 'parseAttributes', 'withApplication', 'runParser'
+    -}
     parseAttribute ::
         -- | attribute
         AttributePattern ->
