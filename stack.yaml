@@ -28,6 +28,7 @@ allow-newer-deps:
   - data-fix
   - text-short
   - these
+  - decision-diagrams
 
 ghc-options:
   "$everything": -haddock
