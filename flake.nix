@@ -84,11 +84,7 @@
       in {
         json-rpc = hlib.dontCheck (hlib.markUnbroken hprev.json-rpc);
         smtlib-backends-process = hlib.dontCheck (hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process));
-        decision-diagrams = hlib.dontCheck (hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams));
-
-        # dependencies on the "wrong" version of hashable
-        data-fix = hlib.doJailbreak hprev.data-fix;
-        text-short = hlib.doJailbreak hprev.text-short;
+        decision-diagrams = hlib.doJailbreak (hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams));
 
         # skip some package tests (might cause issues on CI)
         crypton-x509 = hlib.dontCheck hprev.crypton-x509;
@@ -108,11 +104,6 @@
         self = final;
         overrides = {
           # custom versions of packages go here
-
-          # decision-diagrams needs to jail-break and is marked broken (which it is)
-          allowBroken = "true";
-          decision-diagrams =
-            pkgsClean.haskell.lib.doJailbreak ( pkgsClean.haskell.packages.${ghcVer}.decision-diagrams );
         };
         # packages with un-met dependency versions need to jail-break
       });
