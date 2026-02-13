@@ -17,7 +17,7 @@ env:
 jobs:
   formatting:
     name: 'Formatting and Style'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
@@ -75,8 +75,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            os: ubuntu-22.04
+          - runner: ubuntu-24.04
+            os: ubuntu-24.04
             nix: x86_64-linux
           - runner: self-macos-latest
             os: self-macos-latest
@@ -187,7 +187,7 @@ jobs:
   stack:
     name: 'Stack / Unit Tests'
     needs: formatting
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Install prerequisites
         run: |
@@ -231,12 +231,12 @@ jobs:
         run: stack test kore:kore-test hs-backend-booster:unit-tests
 
       - name: Build Ubuntu package
-        run: ./package/debian/build-package jammy k-haskell-backend.deb
+        run: ./package/debian/build-package noble k-haskell-backend.deb
 
   hlint:
     name: 'HLint'
     needs: formatting
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
