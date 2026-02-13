@@ -35,7 +35,7 @@ import Data.Data (Data)
 import Data.Functor.Foldable
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
-import Data.List as List (foldl', foldl1', sort)
+import Data.List as List (foldl1', sort)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
 import Data.Set qualified as Set

@@ -29,7 +29,7 @@ import Data.ByteString.Char8 as BS (ByteString, pack)
 import Data.Coerce (coerce)
 import Data.Function (on)
 import Data.Generics (extQ)
-import Data.List (foldl', groupBy, nub, partition, sortOn)
+import Data.List (groupBy, nub, partition, sortOn)
 import Data.List.Extra (groupSort)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map

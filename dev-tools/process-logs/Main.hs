@@ -12,7 +12,7 @@ import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.ByteString.Char8 qualified as BSS
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Foldable (toList)
-import Data.List (foldl', maximumBy, sortBy)
+import Data.List (maximumBy, sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)

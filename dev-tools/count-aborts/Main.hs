@@ -12,7 +12,7 @@ module Main (
 import Control.Monad (foldM, forM_)
 import Data.Aeson (decode)
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.List (foldl', sortOn)
+import Data.List (sortOn)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
