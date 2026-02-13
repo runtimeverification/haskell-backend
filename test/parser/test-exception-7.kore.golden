@@ -1,2 +1,12 @@
 test-exception-7.kore:6:5: unexpected character '`'
 
+HasCallStack backtrace:
+  collectBacktraces, called at libraries/ghc-internal/src/GHC/Internal/Exception.hs:169:13 in ghc-internal:GHC.Internal.Exception
+  toExceptionWithBacktrace, called at libraries/ghc-internal/src/GHC/Internal/IO.hs:260:11 in ghc-internal:GHC.Internal.IO
+  throwIO, called at libraries/exceptions/src/Control/Monad/Catch.hs:308:12 in exceptions-0.10.9-cdd8:Control.Monad.Catch
+  throwM, called at libraries/exceptions/src/Control/Monad/Catch.hs:427:21 in exceptions-0.10.9-cdd8:Control.Monad.Catch
+  throwM, called at src/Log.hs:227:32 in kore-0.1.0-Cfp0Ejbn7kwLcJ2RkqaBxY:Log
+  a type signature in an instance, called at src/Log.hs:227:32 in kore-0.1.0-Cfp0Ejbn7kwLcJ2RkqaBxY:Log
+  throwM, called at src/Kore/Log/ErrorParse.hs:41:5 in kore-0.1.0-Cfp0Ejbn7kwLcJ2RkqaBxY:Kore.Log.ErrorParse
+
+
