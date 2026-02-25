@@ -254,12 +254,13 @@ benchmarkDefinition =
 mkSortDecl :: SortName -> (SortName, (SortAttributes, Set.Set SortName))
 mkSortDecl sortName =
     ( sortName
-    , ( SortAttributes
+    ,
+        ( SortAttributes
             { argCount = 0
             , collectionAttributes = Nothing
             }
-      , Set.singleton sortName
-      )
+        , Set.singleton sortName
+        )
     )
 
 mkSymbolAttributes :: SymbolType -> SymbolAttributes

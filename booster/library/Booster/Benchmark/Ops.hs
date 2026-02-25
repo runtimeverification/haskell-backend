@@ -104,7 +104,10 @@ ksetDifference :: Term -> Term -> Term
 ksetDifference left right =
     case (left, right) of
         (KSet def leftElements Nothing, KSet _ rightElements Nothing) ->
-            KSet def (Set.toList $ Set.fromList leftElements `Set.difference` Set.fromList rightElements) Nothing
+            KSet
+                def
+                (Set.toList $ Set.fromList leftElements `Set.difference` Set.fromList rightElements)
+                Nothing
         _ -> left
 
 ksetUnion :: Term -> Term -> Term
@@ -118,7 +121,10 @@ ksetIntersection :: Term -> Term -> Term
 ksetIntersection left right =
     case (left, right) of
         (KSet def leftElements Nothing, KSet _ rightElements Nothing) ->
-            KSet def (Set.toList $ Set.fromList leftElements `Set.intersection` Set.fromList rightElements) Nothing
+            KSet
+                def
+                (Set.toList $ Set.fromList leftElements `Set.intersection` Set.fromList rightElements)
+                Nothing
         _ -> left
 
 matchMapTerms :: Term -> Term -> MatchResult

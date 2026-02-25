@@ -61,7 +61,8 @@ ksetBenchFor size =
             [ bench "difference" $ nf (\(l, r) -> ksetDifference l r) (leftSet, rightSet)
             , bench "union" $ nf (\(l, r) -> ksetUnion l r) (leftSet, rightSet)
             , bench "intersection" $ nf (\(l, r) -> ksetIntersection l r) (leftSet, rightSet)
-            , bench "sortAndDeduplicate" $ nf (\elements -> KSet benchmarkKSetDef elements Nothing) duplicateElements
+            , bench "sortAndDeduplicate" $
+                nf (\elements -> KSet benchmarkKSetDef elements Nothing) duplicateElements
             ]
      in bgroup
             ("size-" <> show size)
@@ -140,6 +141,8 @@ substitutionBenchFor size =
         changedKeySubst = mkKeySubstitution size
      in bgroup
             ("size-" <> show size)
-            [ bench "unchanged-keys" $ nf (\(subst, term) -> substituteMap subst term) (unchangedKeySubst, unchangedKeyMap)
-            , bench "changed-keys" $ nf (\(subst, term) -> substituteMap subst term) (changedKeySubst, changedKeyMap)
+            [ bench "unchanged-keys" $
+                nf (\(subst, term) -> substituteMap subst term) (unchangedKeySubst, unchangedKeyMap)
+            , bench "changed-keys" $
+                nf (\(subst, term) -> substituteMap subst term) (changedKeySubst, changedKeyMap)
             ]
