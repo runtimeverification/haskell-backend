@@ -54,6 +54,13 @@ ghc-options:
 - -Wpartial-fields
 - -Wredundant-constraints
 - -j6
+
+flags:
+  profiling:
+    description: Enable profiling-friendly build options for benchmark runs.
+    manual: true
+    default: false
+
 library:
   dependencies:
   - aeson
@@ -105,6 +112,11 @@ library:
   build-tools:
     - happy
     - alex
+  when:
+    - condition: flag(profiling)
+      ghc-options:
+      - -prof
+      - -fprof-auto
 
 executables:
   kore-rpc-client:
@@ -236,3 +248,32 @@ tests:
       - process
       - text
       - transformers
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+
+benchmarks:
+  booster-bench:
+    source-dirs: bench
+    main: Main.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - deepseq
+      - hashable
+      - hs-backend-booster
+      - monad-logger
+      - tasty-bench
+      - text
+      - transformers
+    ghc-options:
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
+    when:
+      - condition: flag(profiling)
+        ghc-options:
+          - -prof
+          - -fprof-auto
