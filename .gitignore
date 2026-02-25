@@ -60,3 +60,6 @@ hie.yaml
 
 # the LLVM bindings from ./booster/cbits are symlinked to the root ./cbits to make HLS work
 /cbits
+
+# git worktrees
+/.worktrees/
