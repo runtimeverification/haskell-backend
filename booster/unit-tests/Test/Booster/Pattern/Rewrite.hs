@@ -160,6 +160,7 @@ testConf = do
         RewriteConfig
             { definition = def
             , llvmApi = Nothing
+            , hsOnlySymbols = mempty
             , smtSolver
             , varsToAvoid = mempty
             , doTracing = NoCollectRewriteTraces

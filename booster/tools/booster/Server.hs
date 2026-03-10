@@ -126,6 +126,7 @@ main = do
                     , mainModuleName
                     , port
                     , llvmLibraryFile
+                    , hsOnlySymbols
                     , logOptions =
                         LogOptions
                             { logLevels
@@ -237,7 +238,7 @@ main = do
                 definitionsWithCeilSummaries <-
                     liftIO $
                         loadDefinition rewriteOptions.indexCells definitionFile
-                            >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
+                            >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary hsOnlySymbols))
                             >>= evaluate . force . either (error . show) id
                 unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
                     runBoosterLogger $
@@ -303,6 +304,7 @@ main = do
                                 { definitions = Map.map fst definitionsWithCeilSummaries
                                 , defaultMain = mainModuleName
                                 , mLlvmLibrary
+                                , hsOnlySymbols
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
                                 , rewriteOptions
                                 , addedModules = mempty

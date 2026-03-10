@@ -12,11 +12,13 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplify,
     test_simplifyPattern,
     test_simplifyConstraint,
+    test_hsOnlySymbolGuard,
     test_errors,
 ) where
 
 import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
+import Data.HashSet qualified as HashSet
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -29,10 +31,10 @@ import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
-import Booster.Pattern.Util (sortOfTerm)
+import Booster.Pattern.Util (containsSymbolName, sortOfTerm)
 import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
-import Booster.Util (Flag (..))
+import Booster.Util (Flag (..), decodeLabel')
 import Test.Booster.Fixture hiding (inj)
 import Test.Booster.Util ((@?>>=))
 
@@ -98,7 +100,7 @@ test_evaluateFunction =
   where
     eval direction t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty mempty t
+        runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing mempty ns mempty mempty t
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
@@ -127,7 +129,7 @@ test_simplify =
   where
     simpl direction t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing ns mempty mempty t
+        runNoLoggingT $ fst <$> evaluateTerm direction simplDef Nothing mempty ns mempty mempty t
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
@@ -155,7 +157,7 @@ test_simplifyPattern =
   where
     simpl t = do
         ns <- noSolver
-        runNoLoggingT $ fst <$> evaluatePattern simplDef Nothing ns mempty t
+        runNoLoggingT $ fst <$> evaluatePattern simplDef Nothing mempty ns mempty t
     a = var "A" someSort
 
 test_simplifyConstraint :: TestTree
@@ -224,7 +226,7 @@ test_simplifyConstraint =
     simpl t =
         do
             ns <- noSolver
-            runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
+            runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing mempty ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =
@@ -240,13 +242,42 @@ test_errors =
             isLoop loopTerms
                 =<< ( runNoLoggingT $
                         fst
-                            <$> evaluateTerm TopDown loopDef Nothing ns mempty mempty subj
+                            <$> evaluateTerm TopDown loopDef Nothing mempty ns mempty mempty subj
                     )
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'
     isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
     isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
+
+test_hsOnlySymbolGuard :: TestTree
+test_hsOnlySymbolGuard =
+    testGroup
+        "HS-only symbol guard helper"
+        [ testCase "Empty configuration does not match" $ do
+            let term = [trm| f1{}(con2{}(A:SomeSort{})) |]
+            containsSymbolName mempty term @?= False
+        , testCase "Configured symbol is detected in a candidate subtree" $ do
+            let term = [trm| f2{}(f1{}(con2{}(A:SomeSort{}))) |]
+            containsSymbolName (HashSet.singleton "f1") term @?= True
+        , testCase "Short label matches fully-qualified symbol names" $ do
+            let helperSym = f1{name = "#getBlocks(_)_KMIR-CONTROL-FLOW_List_Ty"}
+                term = app helperSym [var "A" someSort]
+            containsSymbolName (HashSet.singleton "#getBlocks") term @?= True
+        , testCase "Short label matches encoded Lbl symbol names" $ do
+            let encodedName = "Lbl'Hash'getBlocks'LParUndsRParUnds'KMIR-CONTROL-FLOW_List_Ty"
+                helperSym = f1{name = encodedName}
+                term = app helperSym [var "A" someSort]
+            decodeLabel' encodedName @?= "Lbl#getBlocks(_)_KMIR-CONTROL-FLOW_List_Ty"
+            containsSymbolName (HashSet.singleton "#getBlocks") term @?= True
+        , testCase "Guard clears after HS-side simplification removes inner helper" $ do
+            let term = [trm| f2{}(f1{}(con2{}(A:SomeSort{}))) |]
+                expected = [trm| f2{}(con2{}(A:SomeSort{})) |]
+            ns <- noSolver
+            simplified <- runNoLoggingT $ fst <$> evaluateTerm TopDown funDef Nothing mempty ns mempty mempty term
+            simplified @?= Right expected
+            containsSymbolName (HashSet.singleton "f1") expected @?= False
+        ]
 
 ----------------------------------------
 

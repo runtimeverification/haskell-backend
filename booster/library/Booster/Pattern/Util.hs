@@ -18,6 +18,7 @@ module Booster.Pattern.Util (
     checkSymbolIsAc,
     checkTermSymbols,
     isConcrete,
+    containsSymbolName,
     filterTermSymbols,
     sizeOfTerm,
     termVarStats,
@@ -41,6 +42,8 @@ import Data.ByteString qualified as BS
 import Data.Char (ord)
 import Data.Coerce (coerce)
 import Data.Functor.Foldable (Corecursive (embed), cata)
+import Data.HashSet (HashSet)
+import Data.HashSet qualified as HashSet
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
@@ -183,6 +186,53 @@ freeVariables (Term attributes _) = attributes.variables
 
 isConcrete :: Term -> Bool
 isConcrete = Set.null . freeVariables
+
+containsSymbolName :: HashSet SymbolName -> Term -> Bool
+containsSymbolName names
+    | HashSet.null names = const False
+    | otherwise = cata $ \case
+        SymbolApplicationF symbol _ children ->
+            any (`matchesSymbol` symbol.name) configuredLabels || or children
+        other -> or other
+  where
+    configuredLabels =
+        concatMap
+            (HashSet.toList . labelVariants)
+            (HashSet.toList names)
+
+    labelVariants :: SymbolName -> HashSet SymbolName
+    labelVariants label =
+        HashSet.fromList $
+            [ label
+            , stripLblPrefix label
+            ]
+                <> [ "Lbl" <> label | not ("Lbl" `BS.isPrefixOf` label) ]
+                <> [ "Lbl'Hash'" <> rest | Just rest <- [BS.stripPrefix "#" label] ]
+
+    matchesSymbol :: SymbolName -> SymbolName -> Bool
+    matchesSymbol label symbolName =
+        any (isLabelMatch label) symbolNameCandidates
+      where
+        symbolNameCandidates =
+            [ symbolName
+            , stripLblPrefix symbolName
+            ]
+
+    isLabelMatch :: SymbolName -> SymbolName -> Bool
+    isLabelMatch label candidate =
+        candidate == label
+            || case BS.stripPrefix label candidate of
+                Just rest -> isNameBoundary rest
+                Nothing -> False
+
+    stripLblPrefix :: SymbolName -> SymbolName
+    stripLblPrefix name =
+        fromMaybe name (BS.stripPrefix "Lbl" name)
+
+    isNameBoundary :: SymbolName -> Bool
+    isNameBoundary rest = case BS.uncons rest of
+        Nothing -> True
+        Just (c, _) -> c == 0x27 || c == 0x28 || c == 0x5f || c == 0x7b
 
 isConstructorSymbol :: Symbol -> Bool
 isConstructorSymbol symbol =

@@ -33,6 +33,7 @@ import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
 import Data.Data (Proxy)
 import Data.Hashable qualified as Hashable
+import Data.HashSet (HashSet)
 import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
@@ -99,6 +100,7 @@ data RewriteState = RewriteState
 data RewriteConfig = RewriteConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
+    , hsOnlySymbols :: HashSet SymbolName
     , smtSolver :: SMT.SMTContext
     , varsToAvoid :: Set.Set Variable
     , doTracing :: Flag "CollectRewriteTraces"
@@ -554,12 +556,12 @@ applyRule pat@Pattern{ceilConditions} rule =
         Predicate ->
         RewriteRuleAppT (RewriteT io) (Maybe a)
     checkConstraint onUnclear onBottom extraPredicates p = do
-        RewriteConfig{definition, llvmApi, smtSolver} <- lift $ RewriteT ask
+        RewriteConfig{definition, llvmApi, hsOnlySymbols, smtSolver} <- lift $ RewriteT ask
         RewriteState{cache} <- lift . RewriteT . lift $ get
         let knownPredicates = knownPatternPredicates <> extraPredicates
         (simplified, newCache) <-
             withContext CtxConstraint $
-                simplifyConstraint definition llvmApi smtSolver cache knownPredicates p
+                simplifyConstraint definition llvmApi hsOnlySymbols smtSolver cache knownPredicates p
         -- Important: only retain new cache if no extraPredicates were supplied!
         when (Set.null extraPredicates) $
             lift (updateRewriterCache newCache)
@@ -1009,7 +1011,7 @@ performRewrite ::
 performRewrite rewriteConfig pat = do
     -- simplify all constraints (individually) before starting to rewrite
     simplifiedConstraints <-
-        withContext CtxSimplify $ evaluateConstraints definition llvmApi smtSolver pat.constraints
+        withContext CtxSimplify $ evaluateConstraints definition llvmApi hsOnlySymbols smtSolver pat.constraints
     (rr, RewriteStepsState{counter, traces}) <-
         case simplifiedConstraints of
             Right constraints ->
@@ -1037,6 +1039,7 @@ performRewrite rewriteConfig pat = do
     RewriteConfig
         { definition
         , llvmApi
+        , hsOnlySymbols
         , smtSolver
         , doTracing
         , mbMaxDepth
@@ -1067,7 +1070,7 @@ performRewrite rewriteConfig pat = do
     simplifyT :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
     simplifyT p = withContext CtxSimplify $ do
         cache <- simplifierCache <$> get
-        evaluateTerm BottomUp definition llvmApi smtSolver cache p.constraints p.term >>= \(res, newCache) -> do
+        evaluateTerm BottomUp definition llvmApi hsOnlySymbols smtSolver cache p.constraints p.term >>= \(res, newCache) -> do
             updateCache newCache
             case res of
                 Right newTerm -> do
@@ -1088,7 +1091,7 @@ performRewrite rewriteConfig pat = do
     simplifyP p = withContext CtxSimplify $ do
         st <- get
         let cache = st.simplifierCache
-        evaluatePattern definition llvmApi smtSolver cache p >>= \(res, newCache) -> do
+        evaluatePattern definition llvmApi hsOnlySymbols smtSolver cache p >>= \(res, newCache) -> do
             updateCache newCache
             case res of
                 Right newPattern -> do

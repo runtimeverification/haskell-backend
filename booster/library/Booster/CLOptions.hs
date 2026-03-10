@@ -17,8 +17,11 @@ module Booster.CLOptions (
 ) where
 
 import Control.Monad.Logger (LogLevel (..))
+import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS (pack)
 import Data.Char (isAscii, isPrint)
+import Data.HashSet (HashSet)
+import Data.HashSet qualified as HashSet
 import Data.List (intercalate, partition)
 import Data.List.Extra (splitOn, trim)
 import Data.Map (Map)
@@ -43,6 +46,7 @@ data CLOptions = CLOptions
     { definitionFile :: FilePath
     , mainModuleName :: Text
     , llvmLibraryFile :: Maybe FilePath
+    , hsOnlySymbols :: HashSet ByteString
     , port :: Int
     , logOptions :: LogOptions
     , smtOptions :: Maybe SMTOptions
@@ -109,6 +113,16 @@ clOptionsParser =
                     <> help "Path to the .so/.dylib shared LLVM backend library"
                 )
             )
+        <*> ( HashSet.fromList
+                <$> many
+                    ( option
+                        (eitherReader readHsOnlySymbol)
+                        ( metavar "LABEL"
+                            <> long "hs-only-symbol"
+                            <> help "User-readable label that must stay on the Haskell side before LLVM simplification"
+                        )
+                    )
+            )
         <*> option
             auto
             ( metavar "SERVER_PORT"
@@ -121,6 +135,11 @@ clOptionsParser =
         <*> parseSMTOptions
         <*> parseEquationOptions
         <*> parseRewriteOptions
+
+readHsOnlySymbol :: String -> Either String ByteString
+readHsOnlySymbol raw
+    | null raw = Left "empty label"
+    | otherwise = Right (BS.pack raw)
 
 parseLogOptions :: Parser LogOptions
 parseLogOptions =

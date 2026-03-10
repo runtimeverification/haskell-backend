@@ -40,6 +40,7 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data, Proxy)
 import Data.Foldable (toList, traverse_)
+import Data.HashSet (HashSet)
 import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
@@ -146,6 +147,7 @@ instance Pretty (PrettyWithModifiers mods EquationFailure) where
 data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
+    , hsOnlySymbols :: HashSet SymbolName
     , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
@@ -333,12 +335,13 @@ runEquationT ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     EquationT io a ->
     io (Either EquationFailure a, SimplifierCache)
-runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
+runEquationT definition llvmApi hsOnlySymbols smtSolver sCache known (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
     prettyModifiers <- getPrettyModifiers
@@ -350,6 +353,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                     EquationConfig
                         { definition
                         , llvmApi
+                        , hsOnlySymbols
                         , smtSolver
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
@@ -419,13 +423,17 @@ llvmSimplify term = do
     case config.llvmApi of
         Nothing -> pure term
         Just api -> do
-            let simp = cached LLVM $ evalLlvm config.definition api $ traverseTerm BottomUp simp pure
+            let simp =
+                    cached LLVM $
+                        evalLlvm config.definition config.hsOnlySymbols api $
+                            traverseTerm BottomUp simp pure
              in simp term
   where
-    evalLlvm definition api cb t@(Term attributes _)
+    evalLlvm definition hsOnlySymbols api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
         | isConcrete t
         , attributes.canBeEvaluated
+        , not (containsSymbolName hsOnlySymbols t)
         , isFunctionApp t = withContext CtxLlvm . withTermContext t $ do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
                 >>= \case
@@ -460,13 +468,14 @@ evaluateTerm ::
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     Term ->
     io (Either EquationFailure Term, SimplifierCache)
-evaluateTerm direction def llvmApi smtSolver cache knownPredicates term =
-    runEquationT def llvmApi smtSolver cache knownPredicates $
+evaluateTerm direction def llvmApi hsOnlySymbols smtSolver cache knownPredicates term =
+    runEquationT def llvmApi hsOnlySymbols smtSolver cache knownPredicates $
         withTermContext term $
             evaluateTerm' direction term
 
@@ -488,14 +497,16 @@ evaluatePattern ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, SimplifierCache)
-evaluatePattern def mLlvmLibrary smtSolver cache pat =
+evaluatePattern def mLlvmLibrary hsOnlySymbols smtSolver cache pat =
     runEquationT
         def
         mLlvmLibrary
+        hsOnlySymbols
         smtSolver
         cache
         -- interpret substitution as additional known constraints
@@ -559,11 +570,12 @@ evaluateConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     SMT.SMTContext ->
     Set Predicate ->
     io (Either EquationFailure (Set Predicate))
-evaluateConstraints def mLlvmLibrary smtSolver constraints =
-    fmap fst $ runEquationT def mLlvmLibrary smtSolver mempty constraints $ do
+evaluateConstraints def mLlvmLibrary hsOnlySymbols smtSolver constraints =
+    fmap fst $ runEquationT def mLlvmLibrary hsOnlySymbols smtSolver mempty constraints $ do
         -- evaluate all existing constraints, once
         traverse_ simplifyAssumedPredicate . predicates =<< getState
         -- this may yield additional new constraints, left unevaluated
@@ -1142,13 +1154,14 @@ simplifyConstraint ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     SMT.SMTContext ->
     SimplifierCache ->
     Set Predicate ->
     Predicate ->
     io (Either EquationFailure Predicate, SimplifierCache)
-simplifyConstraint def mbApi smt cache knownPredicates =
-    runEquationT def mbApi smt cache knownPredicates
+simplifyConstraint def mbApi hsOnlySymbols smt cache knownPredicates =
+    runEquationT def mbApi hsOnlySymbols smt cache knownPredicates
         . (coerce <$>)
         . simplifyConstraint' True
         . coerce
@@ -1157,12 +1170,13 @@ simplifyConstraints ::
     LoggerMIO io =>
     KoreDefinition ->
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
     io (Either EquationFailure [Predicate], SimplifierCache)
-simplifyConstraints def mbApi mbSMT cache ps =
-    runEquationT def mbApi mbSMT cache mempty $
+simplifyConstraints def mbApi hsOnlySymbols mbSMT cache ps =
+    runEquationT def mbApi hsOnlySymbols mbSMT cache mempty $
         concatMap splitAndBools
             <$> mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
@@ -1176,8 +1190,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
         | isEvaluated ->
             pure t
         | isConcrete t && canBeEvaluated -> do
-            mbApi <- (.llvmApi) <$> getConfig
+            config <- getConfig
+            let mbApi = config.llvmApi
             case mbApi of
+                _ | containsSymbolName config.hsOnlySymbols t -> evaluateTerm' BottomUp t
                 Just api ->
                     withContext CtxLlvm . withTermContext t $
                         LLVM.simplifyBool api t >>= \case

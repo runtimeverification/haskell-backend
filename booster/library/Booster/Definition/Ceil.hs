@@ -17,7 +17,7 @@ import Booster.LLVM as LLVM (API, simplifyBool)
 import Booster.Log
 import Booster.Pattern.Bool
 import Booster.Pattern.Pretty
-import Booster.Pattern.Util (isConcrete, sortOfTerm)
+import Booster.Pattern.Util (containsSymbolName, isConcrete, sortOfTerm)
 import Booster.SMT.Interface
 import Booster.Util (Flag (..))
 import Control.DeepSeq (NFData)
@@ -29,6 +29,7 @@ import Control.Monad.Trans.Writer (runWriterT, tell)
 import Data.ByteString.Char8 (isPrefixOf)
 import Data.Coerce (coerce)
 import Data.Foldable (toList)
+import Data.HashSet (HashSet)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, maybeToList)
 import Data.Sequence qualified as Seq
@@ -79,13 +80,14 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods ComputeCeilSumm
 computeCeilsDefinition ::
     LoggerMIO io =>
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     KoreDefinition ->
     io (KoreDefinition, [ComputeCeilSummary])
-computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
+computeCeilsDefinition mllvm hsOnlySymbols def@KoreDefinition{rewriteTheory} = do
     (rewriteTheory', ceilSummaries) <-
         runWriterT $
             let ceilComputation r = do
-                    lift (computeCeilRule mllvm def r) >>= \case
+                    lift (computeCeilRule mllvm hsOnlySymbols def r) >>= \case
                         Nothing -> pure r
                         Just summary@ComputeCeilSummary{newRule} -> do
                             tell (Seq.singleton summary)
@@ -96,14 +98,15 @@ computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
 computeCeilRule ::
     LoggerMIO io =>
     Maybe LLVM.API ->
+    HashSet SymbolName ->
     KoreDefinition ->
     RewriteRule.RewriteRule "Rewrite" ->
     io (Maybe ComputeCeilSummary)
-computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attributes, computedAttributes}
+computeCeilRule mllvm hsOnlySymbols def r@RewriteRule.RewriteRule{lhs, requires, rhs, attributes, computedAttributes}
     | null computedAttributes.notPreservesDefinednessReasons = pure Nothing
     | otherwise = do
         ns <- noSolver
-        (res, _) <- runEquationT def mllvm ns mempty mempty $ do
+        (res, _) <- runEquationT def mllvm hsOnlySymbols ns mempty mempty $ do
             lhsCeils <- Set.fromList <$> computeCeil lhs
             requiresCeils <- Set.fromList <$> concatMapM (computeCeil . coerce) requires
             let subtractLHSAndRequiresCeils = (Set.\\ (lhsCeils `Set.union` requiresCeils)) . Set.fromList
@@ -140,12 +143,16 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
 
     simplifyCeil api p@(Left (Predicate t@(Term TermAttributes{canBeEvaluated} _)))
         | isConcrete t && canBeEvaluated = do
-            simplifyBool api t >>= \case
-                Left{} -> pure $ Just p
-                Right res ->
-                    if res
-                        then pure Nothing
-                        else error "ceil simplified to bottom"
+            hsOnly <- (.hsOnlySymbols) <$> getConfig
+            if containsSymbolName hsOnly t
+                then pure $ Just p
+                else
+                    simplifyBool api t >>= \case
+                        Left{} -> pure $ Just p
+                        Right res ->
+                            if res
+                                then pure Nothing
+                                else error "ceil simplified to bottom"
         | otherwise = pure $ Just p
     simplifyCeil _ other = pure $ Just other
 

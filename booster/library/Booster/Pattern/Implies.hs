@@ -9,6 +9,7 @@ import Control.Monad.Extra (void)
 import Control.Monad.Trans.Except (runExcept)
 import Data.Coerce (coerce)
 import Data.Data (Proxy)
+import Data.HashSet (HashSet)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -20,7 +21,7 @@ import Booster.LLVM qualified
 import Booster.Log (getPrettyModifiers)
 import Booster.Log qualified
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Predicate (..))
+import Booster.Pattern.Base (Pattern (..), Predicate (..), SymbolName)
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Match (FailReason (..), MatchResult (..), MatchType (Implies), matchTerms)
 import Booster.Pattern.Pretty (FromModifiersT, ModifiersRep (..), pretty')
@@ -53,11 +54,12 @@ runImplies ::
     Booster.Log.LoggerMIO m =>
     KoreDefinition ->
     Maybe Booster.LLVM.API ->
+    HashSet SymbolName ->
     Maybe SMT.SMTOptions ->
     Kore.Syntax.KoreJson ->
     Kore.Syntax.KoreJson ->
     m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
-runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
+runImplies def mLlvmLibrary hsOnlySymbols mSMTOptions antecedent consequent =
     getPrettyModifiers >>= \case
         ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> Booster.Log.withContext Booster.Log.CtxImplies $ do
             solver <- maybe (SMT.noSolver) (SMT.initSolver def) mSMTOptions
@@ -122,7 +124,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (externaliseExistTerm existsL patL.term)
                                 (externaliseExistTerm existsR patR.term)
                         MatchIndeterminate _remainder ->
-                            ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
+                            ApplyEquations.evaluatePattern def mLlvmLibrary hsOnlySymbols solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
                                         then -- we are being conservative here for now and returning "not-implied".
@@ -150,7 +152,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                         subst
                                 else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
 
-                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver filteredConsequentPreds >>= \case
+                                    ApplyEquations.evaluateConstraints def mLlvmLibrary hsOnlySymbols solver filteredConsequentPreds >>= \case
                                         Right newPreds ->
                                             if all (== Predicate TrueBool) newPreds
                                                 then

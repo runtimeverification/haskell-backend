@@ -25,6 +25,7 @@ import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (first, second)
 import Data.Foldable
+import Data.HashSet (HashSet)
 import Data.List (singleton)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -45,7 +46,7 @@ import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM as LLVM (API, llvmReset)
 import Booster.Log
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
-import Booster.Pattern.Base (Pattern (..), Sort (SortApp))
+import Booster.Pattern.Base (Pattern (..), Sort (SortApp), SymbolName)
 import Booster.Pattern.Base qualified as Pattern
 import Booster.Pattern.Bool (isFalse)
 import Booster.Pattern.Bool qualified as Pattern
@@ -110,7 +111,7 @@ respond stateVar request =
                 | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
                 | isJust req.movingAverageStepTimeout ->
                     pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-            RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, rewriteOpts) -> Booster.Log.withContext CtxExecute $ do
+            RpcTypes.Execute req -> withModule req._module $ \(def, mLlvmLibrary, hsOnlySymbolsSet, mSMTOptions, rewriteOpts) -> Booster.Log.withContext CtxExecute $ do
                 -- internalise given constrained term
                 let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
@@ -161,6 +162,7 @@ respond stateVar request =
                                 RewriteConfig
                                     { definition = def
                                     , llvmApi = mLlvmLibrary
+                                    , hsOnlySymbols = hsOnlySymbolsSet
                                     , smtSolver = solver
                                     , varsToAvoid = substVars
                                     , doTracing
@@ -236,7 +238,7 @@ respond stateVar request =
                     Booster.Log.logMessage $
                         "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                     pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
-            RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxSimplify $ do
+            RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, hsOnlySymbolsSet, mSMTOptions, _) -> Booster.Log.withContext CtxSimplify $ do
                 let internalised =
                         runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
 
@@ -257,7 +259,7 @@ respond stateVar request =
                         unless (null unsupported) $ do
                             withKorePatternContext (KoreJson.KJAnd (externaliseSort $ sortOfPattern pat) unsupported) $ do
                                 logMessage ("ignoring unsupported predicate parts" :: Text)
-                        ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty pat >>= \case
+                        ApplyEquations.evaluatePattern def mLlvmLibrary hsOnlySymbolsSet solver mempty pat >>= \case
                             (Right newPattern, _) ->
                                 if Pattern.isBottom newPattern
                                     then
@@ -293,6 +295,7 @@ respond stateVar request =
                                 ApplyEquations.simplifyConstraints
                                     def
                                     mLlvmLibrary
+                                    hsOnlySymbolsSet
                                     solver
                                     mempty
                                     (predicates <> Substitution.asEquations ps.substitution)
@@ -320,11 +323,11 @@ respond stateVar request =
                             RpcTypes.SimplifyResult{state, logs = Nothing}
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
-                (_, _, Nothing, _) -> do
+                (_, _, _, Nothing, _) -> do
                     withContext CtxGetModel $
                         logMessage' ("get-model request, not supported without SMT solver" :: Text)
                     pure $ Left RpcError.notImplemented
-                (def, _, Just smtOptions, _) -> do
+                (def, _, _, Just smtOptions, _) -> do
                     let internalised =
                             runExcept $
                                 internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -423,13 +426,13 @@ respond stateVar request =
                                             { satisfiable = RpcTypes.Unknown
                                             , substitution = Nothing
                                             }
-            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> runImplies def mLlvmLibrary mSMTOptions req.antecedent req.consequent
+            RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, hsOnlySymbolsSet, mSMTOptions, _) -> runImplies def mLlvmLibrary hsOnlySymbolsSet mSMTOptions req.antecedent req.consequent
             -- this case is only reachable if the cancel appeared as part of a batch request
             RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
   where
     withModule ::
         Maybe Text ->
-        ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions, RewriteOptions) ->
+        ( (KoreDefinition, Maybe LLVM.API, HashSet SymbolName, Maybe SMT.SMTOptions, RewriteOptions) ->
           m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
         ) ->
         m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
@@ -440,7 +443,7 @@ respond stateVar request =
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
             Just d ->
-                action (d, state.mLlvmLibrary, state.mSMTOptions, state.rewriteOptions) <* purgeLlvmLib
+                action (d, state.mLlvmLibrary, state.hsOnlySymbols, state.mSMTOptions, state.rewriteOptions) <* purgeLlvmLib
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
@@ -458,6 +461,8 @@ data ServerState = ServerState
     -- ^ default main module (initially from command line, could be changed later)
     , mLlvmLibrary :: Maybe LLVM.API
     -- ^ Read-only: optional LLVM simplification library
+    , hsOnlySymbols :: HashSet SymbolName
+    -- ^ Read-only: symbols that must stay on the Haskell side before LLVM simplification
     , mSMTOptions :: Maybe SMT.SMTOptions
     -- ^ Read-only: (optional) SMT solver options
     , rewriteOptions :: RewriteOptions
