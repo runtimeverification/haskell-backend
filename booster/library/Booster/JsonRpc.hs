@@ -443,7 +443,8 @@ respond stateVar request =
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
             Just d ->
-                action (d, state.mLlvmLibrary, state.hsOnlySymbols, state.mSMTOptions, state.rewriteOptions) <* purgeLlvmLib
+                action (d, state.mLlvmLibrary, state.hsOnlySymbols, state.mSMTOptions, state.rewriteOptions)
+                    <* purgeLlvmLib
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case

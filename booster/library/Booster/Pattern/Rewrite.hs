@@ -32,8 +32,8 @@ import Data.Aeson (object, (.=))
 import Data.Bifunctor (bimap)
 import Data.Coerce (coerce)
 import Data.Data (Proxy)
-import Data.Hashable qualified as Hashable
 import Data.HashSet (HashSet)
+import Data.Hashable qualified as Hashable
 import Data.List (intersperse, partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
@@ -1011,7 +1011,8 @@ performRewrite ::
 performRewrite rewriteConfig pat = do
     -- simplify all constraints (individually) before starting to rewrite
     simplifiedConstraints <-
-        withContext CtxSimplify $ evaluateConstraints definition llvmApi hsOnlySymbols smtSolver pat.constraints
+        withContext CtxSimplify $
+            evaluateConstraints definition llvmApi hsOnlySymbols smtSolver pat.constraints
     (rr, RewriteStepsState{counter, traces}) <-
         case simplifiedConstraints of
             Right constraints ->

@@ -274,7 +274,8 @@ test_hsOnlySymbolGuard =
             let term = [trm| f2{}(f1{}(con2{}(A:SomeSort{}))) |]
                 expected = [trm| f2{}(con2{}(A:SomeSort{})) |]
             ns <- noSolver
-            simplified <- runNoLoggingT $ fst <$> evaluateTerm TopDown funDef Nothing mempty ns mempty mempty term
+            simplified <-
+                runNoLoggingT $ fst <$> evaluateTerm TopDown funDef Nothing mempty ns mempty mempty term
             simplified @?= Right expected
             containsSymbolName (HashSet.singleton "f1") expected @?= False
         ]

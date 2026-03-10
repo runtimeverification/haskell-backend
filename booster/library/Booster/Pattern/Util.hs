@@ -206,8 +206,8 @@ containsSymbolName names
             [ label
             , stripLblPrefix label
             ]
-                <> [ "Lbl" <> label | not ("Lbl" `BS.isPrefixOf` label) ]
-                <> [ "Lbl'Hash'" <> rest | Just rest <- [BS.stripPrefix "#" label] ]
+                <> ["Lbl" <> label | not ("Lbl" `BS.isPrefixOf` label)]
+                <> ["Lbl'Hash'" <> rest | Just rest <- [BS.stripPrefix "#" label]]
 
     matchesSymbol :: SymbolName -> SymbolName -> Bool
     matchesSymbol label symbolName =
