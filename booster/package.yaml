@@ -184,6 +184,7 @@ tests:
     - hs-backend-booster
     - kore-rpc-types
     - monad-logger
+    - optparse-applicative
     - process
     - tasty
     - tasty-golden
@@ -191,6 +192,7 @@ tests:
     - tasty-hunit
     - text
     - transformers
+    - unordered-containers
     ghc-options:
     - -rtsopts
     - -threaded
