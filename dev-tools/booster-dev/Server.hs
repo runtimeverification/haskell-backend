@@ -51,6 +51,7 @@ main = do
             { definitionFile
             , mainModuleName
             , llvmLibraryFile
+            , hsOnlySymbols
             , port
             , logOptions =
                 LogOptions
@@ -76,7 +77,7 @@ main = do
     withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
         definitionMap <-
             loadDefinition rewriteOptions.indexCells definitionFile
-                >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
+                >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary hsOnlySymbols))
                 >>= evaluate . force . either (error . show) id
         -- ensure the (default) main module is present in the definition
         when (isNothing $ Map.lookup mainModuleName definitionMap) $
@@ -91,6 +92,7 @@ main = do
             definitionMap
             mainModuleName
             mLlvmLibrary
+            hsOnlySymbols
             rewriteOptions
             logFile
             smtOptions
@@ -118,22 +120,7 @@ parserInfoModifiers =
         <> header
             "Haskell Backend Booster - a JSON RPC server for quick symbolic execution of Kore definitions"
 
-runServer ::
-    Int ->
-    Map Text KoreDefinition ->
-    Text ->
-    Maybe LLVM.API ->
-    RewriteOptions ->
-    Maybe FilePath ->
-    Maybe SMT.SMTOptions ->
-    (LogLevel, [LogLevel]) ->
-    [Booster.Log.ContextFilter] ->
-    Bool ->
-    TimestampFormat ->
-    LogFormat ->
-    [ModifierT] ->
-    IO ()
-runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
+runServer port definitions defaultMain mLlvmLibrary hsOnlySymbols rewriteOpts logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
     do
         let timestampFlag = case timeStampsFormat of
                 Pretty -> PrettyTimestamps
@@ -157,6 +144,7 @@ runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOpti
                         { definitions
                         , defaultMain
                         , mLlvmLibrary
+                        , hsOnlySymbols
                         , mSMTOptions
                         , rewriteOptions = rewriteOpts
                         , addedModules = mempty

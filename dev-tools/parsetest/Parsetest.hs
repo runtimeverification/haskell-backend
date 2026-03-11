@@ -58,7 +58,7 @@ testParse verbose veryVerbose file = do
     report = runExceptT $ do
         parsedDef <- liftIO (Text.readFile file) >>= except . parseKoreDefinition file
         internalDef' <- except (first (renderDefault . pretty' @'[Decoded]) $ internalise Nothing parsedDef)
-        (internalDef, ceilSummary) <- runNoLoggingT $ computeCeilsDefinition Nothing internalDef'
+        (internalDef, ceilSummary) <- runNoLoggingT $ computeCeilsDefinition Nothing mempty internalDef'
         pure $ mkSummary file internalDef ceilSummary
 
 findByExtension ::
