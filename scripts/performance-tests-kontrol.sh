@@ -128,7 +128,7 @@ first_existing_file() {
 # Keep nix develop as the primary environment, and add missing tool binaries
 # needed by blockchain-k-plugin (k tools + clang + cmake from ~/.local/bin).
 K_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths "github:runtimeverification/k/v$(cat deps/k_release)#k")/bin"
-CLANG_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#clang)/bin"
+CLANG_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths github:NixOS/nixpkgs/nixos-24.05#clang_14)/bin"
 OPENSSL_OUT_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#openssl.out)"
 OPENSSL_DEV_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#openssl.dev)"
 GMP_OUT_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#gmp.out)"
