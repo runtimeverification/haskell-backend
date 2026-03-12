@@ -140,7 +140,7 @@ jobs:
     name: 'KEVM downstream performance'
     needs: select
     if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kevm == 'true' }}
-    runs-on: [self-hosted, linux, normal]
+    runs-on: [self-hosted, linux]
     timeout-minutes: 180
     steps:
       - name: 'Check out code'
@@ -218,9 +218,9 @@ jobs:
 
   kontrol:
     name: 'Kontrol downstream performance'
-    needs: select
-    if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kontrol == 'true' }}
-    runs-on: [self-hosted, linux, normal]
+    needs: [select, kevm]
+    if: ${{ always() && needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kontrol == 'true' && (needs.select.outputs.run_kevm != 'true' || needs.kevm.result != 'cancelled') }}
+    runs-on: [self-hosted, linux]
     timeout-minutes: 180
     steps:
       - name: 'Check out code'
