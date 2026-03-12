@@ -176,12 +176,17 @@ read -r feature_exit feature_duration < <(
     downstream_perf_run_and_log \
         "$FEATURE_LOG" \
         feature_shell \
-        "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+        "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
 )
 FEATURE_DURATION_SECONDS=$feature_duration
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [[ $feature_exit -ne 0 ]]; then
+    if [[ $feature_exit -eq 124 ]]; then
+        FEATURE_STATUS=budget-exceeded
+        SKIP_REASON='feature-run-exceeded-budget'
+        exit 1
+    fi
     FEATURE_STATUS=failure
     if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
         BASELINE_STATUS=skipped
@@ -195,7 +200,7 @@ if [[ $feature_exit -ne 0 ]]; then
         downstream_perf_run_and_log \
             "$BASELINE_LOG" \
             master_shell \
-            "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+            "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
     )
     BASELINE_DURATION_SECONDS=$baseline_duration
     killall kore-rpc-booster || echo "no zombie processes found"
@@ -237,7 +242,7 @@ if [ -z "$BUG_REPORT" ]; then
           downstream_perf_run_and_log \
               "$BASELINE_LOG" \
               master_shell \
-              "make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+              "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
       )
       BASELINE_DURATION_SECONDS=$baseline_duration
       killall kore-rpc-booster || echo "no zombie processes found"

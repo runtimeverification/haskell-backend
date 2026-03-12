@@ -162,12 +162,17 @@ read -r feature_exit feature_duration < <(
     downstream_perf_run_and_log \
         "$FEATURE_LOG" \
         feature_shell \
-        "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR'"
+        "timeout ${FEATURE_BUDGET_SECONDS}s make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR'"
 )
 FEATURE_DURATION_SECONDS=$feature_duration
 killall kore-rpc-booster || echo "No zombie processes found"
 
 if [[ $feature_exit -ne 0 ]]; then
+    if [[ $feature_exit -eq 124 ]]; then
+        FEATURE_STATUS=budget-exceeded
+        SKIP_REASON='feature-run-exceeded-budget'
+        exit 1
+    fi
     FEATURE_STATUS=failure
     if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
         BASELINE_STATUS=skipped
@@ -180,7 +185,7 @@ if [[ $feature_exit -ne 0 ]]; then
         downstream_perf_run_and_log \
             "$BASELINE_LOG" \
             master_shell \
-            "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR'"
+            "timeout ${FEATURE_BUDGET_SECONDS}s make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR'"
     )
     BASELINE_DURATION_SECONDS=$baseline_duration
     killall kore-rpc-booster || echo "No zombie processes found"
@@ -221,7 +226,7 @@ if [ -z "$BUG_REPORT" ]; then
             downstream_perf_run_and_log \
                 "$BASELINE_LOG" \
                 master_shell \
-                "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR'"
+                "timeout ${FEATURE_BUDGET_SECONDS}s make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR'"
         )
         BASELINE_DURATION_SECONDS=$baseline_duration
         killall kore-rpc-booster || echo "No zombie processes found"
