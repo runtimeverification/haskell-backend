@@ -169,7 +169,32 @@ killall kore-rpc-booster || echo "No zombie processes found"
 
 if [[ $feature_exit -ne 0 ]]; then
     FEATURE_STATUS=failure
-    SKIP_REASON='feature-run-failed'
+    if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
+        BASELINE_STATUS=skipped
+        COMPARE_STATUS=skipped
+        SKIP_REASON='feature-run-failed-baseline-same-as-head'
+        exit "$feature_exit"
+    fi
+
+    read -r baseline_exit baseline_duration < <(
+        downstream_perf_run_and_log \
+            "$BASELINE_LOG" \
+            master_shell \
+            "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR'"
+    )
+    BASELINE_DURATION_SECONDS=$baseline_duration
+    killall kore-rpc-booster || echo "No zombie processes found"
+
+    if [[ $baseline_exit -ne 0 ]]; then
+        BASELINE_STATUS=failure
+        COMPARE_STATUS=skipped
+        SKIP_REASON='feature-and-baseline-run-failed'
+        exit 0
+    fi
+
+    BASELINE_STATUS=success
+    COMPARE_STATUS=skipped
+    SKIP_REASON='feature-run-failed-baseline-succeeded'
     exit "$feature_exit"
 fi
 
