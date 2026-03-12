@@ -50,7 +50,7 @@ runs:
       id: suite
       shell: bash
       env:
-        DOWNSTREAM_PERF_MANIFEST: scripts/logs/downstream-perf-${{ inputs.suite }}.manifest
+        DOWNSTREAM_PERF_MANIFEST: ${{ github.workspace }}/scripts/logs/downstream-perf-${{ inputs.suite }}.manifest
         DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS: ${{ inputs.feature-budget-seconds }}
         FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
       run: |
