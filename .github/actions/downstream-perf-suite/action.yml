@@ -40,10 +40,10 @@ runs:
         name: k-framework
         skipPush: true
 
-    - name: 'Install uv'
+    - name: 'Install uv and cmake3'
       shell: bash
       run: |
-        python3 -m pip install --user uv
+        python3 -m pip install --user uv "cmake<4"
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
     - name: 'Run suite'

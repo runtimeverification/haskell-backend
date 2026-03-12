@@ -116,7 +116,7 @@ master_shell() {
 
 # kompile Kontrol's K dependencies
 # Ensure plugin build prerequisites are available on self-hosted runners.
-feature_shell "nix shell github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k nixpkgs#cmake nixpkgs#clang --command bash -c 'uv run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.* --jobs 4'"
+feature_shell "export PATH=\"\$HOME/.local/bin:\$PATH\"; nix shell github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k nixpkgs#clang --command bash -c 'uv run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.* --jobs 4'"
 
 # kompile the test contracts, to be reused in feature_shell and master_shell. Copy the result from pytest's temp directory
 PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir
