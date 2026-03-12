@@ -59,11 +59,11 @@ trap "exit 1"  HUP INT PIPE QUIT TERM
 trap clean_up  EXIT
 
 feature_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --ignore-environment --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --ignore-environment --command bash -c "export PATH=\"$DOWNSTREAM_PERF_RUNTIME_PATH:\$PATH\"; $1"
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$BASELINE_COMMIT --ignore-environment --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$BASELINE_COMMIT --ignore-environment --command bash -c "export PATH=\"$DOWNSTREAM_PERF_RUNTIME_PATH:\$PATH\"; $1"
 }
 
 first_existing_file() {
@@ -89,6 +89,7 @@ OPENSSL_CRYPTO_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libcrypto.so" "$
 OPENSSL_SSL_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libssl.so" "$OPENSSL_OUT_DIR/lib/libssl.so.3" "$OPENSSL_OUT_DIR/lib/libssl.dylib" "$OPENSSL_OUT_DIR/lib/libssl.a")"
 GMP_LIB="$(first_existing_file "$GMP_OUT_DIR/lib/libgmp.so" "$GMP_OUT_DIR/lib/libgmp.so.10" "$GMP_OUT_DIR/lib/libgmp.dylib" "$GMP_OUT_DIR/lib/libgmp.a")"
 PLUGIN_TOOLCHAIN_PATH="$HOME/.local/bin:$K_BIN_DIR:$CLANG_BIN_DIR"
+DOWNSTREAM_PERF_RUNTIME_PATH="$PLUGIN_TOOLCHAIN_PATH"
 PLUGIN_CMAKE_PREFIX_PATH="$OPENSSL_OUT_DIR:$OPENSSL_DEV_DIR:$GMP_OUT_DIR:$GMP_DEV_DIR"
 PLUGIN_LIBFF_FLAGS="-DOPENSSL_ROOT_DIR=$OPENSSL_OUT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_DEV_DIR/include -DOPENSSL_CRYPTO_LIBRARY=$OPENSSL_CRYPTO_LIB -DOPENSSL_SSL_LIBRARY=$OPENSSL_SSL_LIB -DGMP_INCLUDE_DIR=$GMP_DEV_DIR/include -DGMP_LIBRARY=$GMP_LIB"
 
@@ -134,7 +135,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 # kompile evm-semantics or skip kompilation if using an existing TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
     # Ensure plugin build prerequisites are available on self-hosted runners.
-    feature_shell "export PATH=\"$PLUGIN_TOOLCHAIN_PATH:\$PATH\"; export CMAKE_PREFIX_PATH=\"$PLUGIN_CMAKE_PREFIX_PATH\"; export LIBFF_CMAKE_FLAGS=\"$PLUGIN_LIBFF_FLAGS\"; make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+    feature_shell "export CMAKE_PREFIX_PATH=\"$PLUGIN_CMAKE_PREFIX_PATH\"; export LIBFF_CMAKE_FLAGS=\"$PLUGIN_LIBFF_FLAGS\"; make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
 fi
 
 # kompile all verification K definitions and specs
