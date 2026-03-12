@@ -245,6 +245,9 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: 'Test downstream perf shell helpers'
+        run: bash scripts/test-downstream-perf-lib.sh
+
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v25
         with:

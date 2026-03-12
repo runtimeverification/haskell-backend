@@ -65,6 +65,10 @@ jobs:
               - 'scripts/performance-tests-kevm.sh'
               - 'scripts/performance-tests-kontrol.sh'
               - 'scripts/compare.py'
+              - 'scripts/collect-downstream-perf-results.sh'
+              - 'scripts/downstream-perf-lib.sh'
+              - '.github/actions/downstream-perf-suite/**'
+              - '.github/actionlint.yaml'
               - '.github/workflows/downstream-perf.yml'
 
       - name: 'Decide suites'
@@ -199,6 +203,7 @@ jobs:
       - name: 'Download KEVM results'
         if: ${{ needs.select.outputs.run_kevm == 'true' && needs.kevm.result != 'cancelled' && needs.kevm.result != 'skipped' }}
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: kevm-downstream-perf-${{ github.run_id }}
           path: downstream-perf/kevm
@@ -206,6 +211,7 @@ jobs:
       - name: 'Download Kontrol results'
         if: ${{ needs.select.outputs.run_kontrol == 'true' && needs.kontrol.result != 'cancelled' && needs.kontrol.result != 'skipped' }}
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: kontrol-downstream-perf-${{ github.run_id }}
           path: downstream-perf/kontrol

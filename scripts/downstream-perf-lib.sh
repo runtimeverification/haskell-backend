@@ -44,7 +44,7 @@ downstream_perf_write_manifest_snapshot() {
 
 downstream_perf_baseline_commit() {
     local baseline_ref=$1
-    git merge-base "$baseline_ref" HEAD
+    git rev-parse "$baseline_ref"
 }
 
 downstream_perf_run_and_log() {
@@ -55,7 +55,9 @@ downstream_perf_run_and_log() {
     start_time=$(date +%s)
 
     set +e
-    "$@" | tee "$logfile"
+    # Keep stdout reserved for machine-readable "status duration" output.
+    # Stream command output to the console via stderr while preserving a full log file.
+    "$@" 2>&1 | tee "$logfile" >&2
     status=${PIPESTATUS[0]}
     set -e
 
