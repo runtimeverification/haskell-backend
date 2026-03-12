@@ -73,6 +73,8 @@ copy_if_present "${COMPARE_FILE:-}"
         else
             echo "No significant performance deltas above the current compare thresholds."
         fi
+    elif [[ ${FEATURE_STATUS:-unknown} == "budget-exceeded" && ${BASELINE_STATUS:-not-run} == "budget-exceeded" ]]; then
+        echo "Feature and baseline runs both exceeded the configured budget, so compare output is unavailable."
     elif [[ ${FEATURE_STATUS:-unknown} == "budget-exceeded" ]]; then
         echo "Feature run exceeded the configured budget, so baseline comparison was skipped."
     elif [[ ${FEATURE_STATUS:-unknown} != "success" ]]; then

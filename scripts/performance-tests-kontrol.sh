@@ -184,7 +184,40 @@ killall kore-rpc-booster || echo "no zombie processes found"
 if [[ $feature_exit -ne 0 ]]; then
     if [[ $feature_exit -eq 124 ]]; then
         FEATURE_STATUS=budget-exceeded
-        SKIP_REASON='feature-run-exceeded-budget'
+        if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
+            BASELINE_STATUS=skipped
+            COMPARE_STATUS=skipped
+            SKIP_REASON='feature-run-exceeded-budget-baseline-same-as-head'
+            exit 1
+        fi
+
+        rm -rf $FOUNDRY_DIR/out/proofs
+        read -r baseline_exit baseline_duration < <(
+            downstream_perf_run_and_log \
+                "$BASELINE_LOG" \
+                master_shell \
+                "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+        )
+        BASELINE_DURATION_SECONDS=$baseline_duration
+        killall kore-rpc-booster || echo "no zombie processes found"
+
+        if [[ $baseline_exit -eq 124 ]]; then
+            BASELINE_STATUS=budget-exceeded
+            COMPARE_STATUS=skipped
+            SKIP_REASON='feature-and-baseline-run-exceeded-budget'
+            exit 0
+        fi
+
+        if [[ $baseline_exit -ne 0 ]]; then
+            BASELINE_STATUS=failure
+            COMPARE_STATUS=skipped
+            SKIP_REASON='feature-budget-exceeded-baseline-failed'
+            exit 0
+        fi
+
+        BASELINE_STATUS=success
+        COMPARE_STATUS=skipped
+        SKIP_REASON='feature-run-exceeded-budget-baseline-succeeded'
         exit 1
     fi
     FEATURE_STATUS=failure

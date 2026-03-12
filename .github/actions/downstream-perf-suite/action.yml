@@ -18,9 +18,9 @@ inputs:
     description: 'Trigger reason emitted by the select job'
     required: true
   feature-budget-seconds:
-    description: 'If the feature run takes longer than this, skip baseline comparison and fail the suite'
+    description: 'Per-command timeout budget used for feature and baseline classification runs'
     required: false
-    default: '5400'
+    default: '3600'
 
 runs:
   using: 'composite'
