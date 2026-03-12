@@ -138,10 +138,11 @@ OPENSSL_SSL_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libssl.so" "$OPENSS
 GMP_LIB="$(first_existing_file "$GMP_OUT_DIR/lib/libgmp.so" "$GMP_OUT_DIR/lib/libgmp.so.10" "$GMP_OUT_DIR/lib/libgmp.dylib" "$GMP_OUT_DIR/lib/libgmp.a")"
 PLUGIN_TOOLCHAIN_PATH="$HOME/.local/bin:$K_BIN_DIR:$CLANG_BIN_DIR"
 PLUGIN_CMAKE_PREFIX_PATH="$OPENSSL_OUT_DIR:$OPENSSL_DEV_DIR:$GMP_OUT_DIR:$GMP_DEV_DIR"
+PLUGIN_LIBFF_FLAGS="-DOPENSSL_ROOT_DIR=$OPENSSL_OUT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_DEV_DIR/include -DOPENSSL_CRYPTO_LIBRARY=$OPENSSL_CRYPTO_LIB -DOPENSSL_SSL_LIBRARY=$OPENSSL_SSL_LIB -DGMP_INCLUDE_DIR=$GMP_DEV_DIR/include -DGMP_LIBRARY=$GMP_LIB"
 
 # kompile Kontrol's K dependencies
 # Ensure plugin build prerequisites are available on self-hosted runners.
-feature_shell "export PATH=\"$PLUGIN_TOOLCHAIN_PATH:\$PATH\"; export CMAKE_PREFIX_PATH=\"$PLUGIN_CMAKE_PREFIX_PATH\"; export OPENSSL_ROOT_DIR=\"$OPENSSL_OUT_DIR\"; export OPENSSL_INCLUDE_DIR=\"$OPENSSL_DEV_DIR/include\"; export OPENSSL_CRYPTO_LIBRARY=\"$OPENSSL_CRYPTO_LIB\"; export OPENSSL_SSL_LIBRARY=\"$OPENSSL_SSL_LIB\"; export GMP_INCLUDE_DIR=\"$GMP_DEV_DIR/include\"; export GMP_LIBRARY=\"$GMP_LIB\"; uv run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.* --jobs 4"
+feature_shell "export PATH=\"$PLUGIN_TOOLCHAIN_PATH:\$PATH\"; export CMAKE_PREFIX_PATH=\"$PLUGIN_CMAKE_PREFIX_PATH\"; export LIBFF_CMAKE_FLAGS=\"$PLUGIN_LIBFF_FLAGS\"; uv run kdist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.* --jobs 4"
 
 # kompile the test contracts, to be reused in feature_shell and master_shell. Copy the result from pytest's temp directory
 PYTEST_TEMP_DIR=$TEMPD/pytest-temp-dir
