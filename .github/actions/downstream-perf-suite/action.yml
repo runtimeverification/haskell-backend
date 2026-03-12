@@ -1,0 +1,84 @@
+name: 'Downstream Perf Suite'
+description: 'Run one downstream performance suite, preserve artifacts, and fail only after collection/upload.'
+
+inputs:
+  suite:
+    description: 'Suite id, for example kevm or kontrol'
+    required: true
+  script:
+    description: 'Path to the suite runner script'
+    required: true
+  artifact-name:
+    description: 'Artifact name to upload'
+    required: true
+  feature-branch-name:
+    description: 'Raw feature branch name from GitHub context'
+    required: true
+  reason:
+    description: 'Trigger reason emitted by the select job'
+    required: true
+  feature-budget-seconds:
+    description: 'If the feature run takes longer than this, skip baseline comparison and fail the suite'
+    required: false
+    default: '5400'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Install Nix'
+      uses: cachix/install-nix-action@v26
+      with:
+        install_url: https://releases.nixos.org/nix/nix-2.30.1/install
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
+          substituters = http://cache.nixos.org https://cache.iog.io
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+    - name: 'Install Cachix'
+      uses: cachix/cachix-action@v14
+      with:
+        name: k-framework
+        skipPush: true
+
+    - name: 'Install uv'
+      shell: bash
+      run: |
+        python3 -m pip install --user uv
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: 'Run suite'
+      id: suite
+      shell: bash
+      env:
+        DOWNSTREAM_PERF_MANIFEST: scripts/logs/downstream-perf-${{ inputs.suite }}.manifest
+        DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS: ${{ inputs.feature-budget-seconds }}
+        FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
+      run: |
+        set +e
+        bash "${{ inputs.script }}"
+        status=$?
+        echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - name: 'Collect suite results'
+      if: ${{ always() }}
+      shell: bash
+      env:
+        FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
+        REASON: ${{ inputs.reason }}
+      run: |
+        bash scripts/collect-downstream-perf-results.sh "${{ inputs.suite }}" "scripts/logs/downstream-perf-${{ inputs.suite }}.manifest" "$REASON" "$FEATURE_BRANCH_NAME"
+
+    - name: 'Upload suite results'
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: downstream-perf/${{ inputs.suite }}
+        if-no-files-found: error
+
+    - name: 'Fail if suite failed'
+      if: ${{ steps.suite.outputs.exit_code != '0' }}
+      shell: bash
+      run: |
+        exit "${{ steps.suite.outputs.exit_code }}"

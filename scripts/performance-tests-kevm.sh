@@ -8,18 +8,28 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 KEVM_VERSION=${KEVM_VERSION:-'master'}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+. "$SCRIPT_DIR/downstream-perf-lib.sh"
 
-MASTER_COMMIT="$(git rev-parse origin/master)"
-MASTER_COMMIT_SHORT="$(git rev-parse --short origin/master)"
+BASELINE_REF=${BASELINE_REF:-origin/master}
+HEAD_COMMIT="$(git rev-parse HEAD)"
+BASELINE_COMMIT=${BASELINE_COMMIT:-"$(downstream_perf_baseline_commit "$BASELINE_REF")"}
+BASELINE_COMMIT_SHORT="$(git rev-parse --short "$BASELINE_COMMIT")"
 
 FEATURE_BRANCH_NAME=${FEATURE_BRANCH_NAME:-"$(git rev-parse --abbrev-ref HEAD)"}
-FEATURE_BRANCH_NAME="${FEATURE_BRANCH_NAME//\//-}"
+FEATURE_BRANCH_NAME="$(downstream_perf_normalize_feature_branch "$FEATURE_BRANCH_NAME")"
 
 PYTEST_PARALLEL=${PYTEST_PARALLEL:-3}
-
-if [[ $FEATURE_BRANCH_NAME == "master" ]]; then
-  FEATURE_BRANCH_NAME="feature"
-fi
+FEATURE_BUDGET_SECONDS=${DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS:-5400}
+DOWNSTREAM_PERF_SUITE=kevm
+FEATURE_STATUS=running
+BASELINE_STATUS=not-run
+COMPARE_STATUS=not-run
+SKIP_REASON=''
+FEATURE_DURATION_SECONDS=''
+BASELINE_DURATION_SECONDS=''
+FEATURE_LOG=''
+BASELINE_LOG=''
+COMPARE_FILE=''
 
 # Create a temporary directory (or use the one provided) and store its name in a variable.
 KEEP_TEMPD=${KEEP_TEMPD:-''}
@@ -37,6 +47,7 @@ if [ ! -e "$TEMPD" ]; then
 fi
 
 clean_up () {
+    downstream_perf_write_manifest_snapshot "${DOWNSTREAM_PERF_MANIFEST:-}"
     if [ -z "$KEEP_TEMPD" ]; then
         rm -rf "$TEMPD"
     fi
@@ -52,7 +63,7 @@ feature_shell() {
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --ignore-environment --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$BASELINE_COMMIT --ignore-environment --command bash -c "$1"
 }
 
 cd $TEMPD
@@ -105,6 +116,9 @@ mkdir -p $PREKOMPILED_DIR
 feature_shell "uv --directory kevm-pyk run -- pytest src/tests/integration/test_prove.py::test_kompile_targets -vv --maxfail=0 --kompiled-targets-dir $PREKOMPILED_DIR"
 
 mkdir -p $SCRIPT_DIR/logs
+FEATURE_LOG="$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+BASELINE_LOG="$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-baseline-$BASELINE_COMMIT_SHORT.log"
+COMPARE_FILE="$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-baseline-$BASELINE_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare"
 
 # use special options if given, but restore KORE_RPC_OPTS afterwards
 FEATURE_SERVER_OPTS=${FEATURE_SERVER_OPTS:-''}
@@ -116,9 +130,28 @@ if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
 fi
 
-feature_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+read -r feature_exit feature_duration < <(
+    downstream_perf_run_and_log \
+        "$FEATURE_LOG" \
+        feature_shell \
+        "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR'"
+)
+FEATURE_DURATION_SECONDS=$feature_duration
 killall kore-rpc-booster || echo "No zombie processes found"
 
+if [[ $feature_exit -ne 0 ]]; then
+    FEATURE_STATUS=failure
+    SKIP_REASON='feature-run-failed'
+    exit "$feature_exit"
+fi
+
+if [[ $FEATURE_DURATION_SECONDS -gt $FEATURE_BUDGET_SECONDS ]]; then
+    FEATURE_STATUS=budget-exceeded
+    SKIP_REASON='feature-run-exceeded-budget'
+    exit 1
+fi
+
+FEATURE_STATUS=success
 
 if [ -z "$BUG_REPORT" ]; then
     if [ ! -z "${PRIOR_OPTS:-}" ]; then
@@ -126,11 +159,31 @@ if [ -z "$BUG_REPORT" ]; then
     else
         unset KORE_RPC_OPTS
     fi
-    if [ ! -e "$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-        master_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
+    if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
+        BASELINE_STATUS=skipped
+        COMPARE_STATUS=skipped
+        SKIP_REASON='baseline-same-as-head'
+    else
+        read -r baseline_exit baseline_duration < <(
+            downstream_perf_run_and_log \
+                "$BASELINE_LOG" \
+                master_shell \
+                "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR'"
+        )
+        BASELINE_DURATION_SECONDS=$baseline_duration
         killall kore-rpc-booster || echo "No zombie processes found"
-    fi
 
-    cd $SCRIPT_DIR
-    python3 compare.py logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log > logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare
+        if [[ $baseline_exit -ne 0 ]]; then
+            BASELINE_STATUS=failure
+            COMPARE_STATUS=skipped
+            SKIP_REASON='baseline-run-failed'
+            exit "$baseline_exit"
+        fi
+
+        BASELINE_STATUS=success
+
+        cd "$SCRIPT_DIR"
+        python3 compare.py "$FEATURE_LOG" "$BASELINE_LOG" > "$COMPARE_FILE"
+        COMPARE_STATUS=success
+    fi
 fi

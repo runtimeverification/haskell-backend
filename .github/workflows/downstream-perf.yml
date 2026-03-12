@@ -27,8 +27,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name || github.run_id }}
@@ -46,10 +44,11 @@ jobs:
       target_pr: ${{ steps.decide.outputs.target_pr }}
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: 'Detect relevant changes'
         if: ${{ github.event_name == 'pull_request' }}
@@ -144,77 +143,21 @@ jobs:
     timeout-minutes: 180
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           submodules: recursive
+          persist-credentials: false
 
-      - name: 'Install Nix'
-        uses: cachix/install-nix-action@v26
+      - name: 'Run KEVM downstream suite'
+        uses: ./.github/actions/downstream-perf-suite
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.30.1/install
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-
-      - name: 'Install Cachix'
-        uses: cachix/cachix-action@v14
-        with:
-          name: k-framework
-          skipPush: true
-
-      - name: 'Install uv'
-        run: |
-          python3 -m pip install --user uv
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: 'Run KEVM performance test'
-        env:
-          FEATURE_BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
-        run: |
-          scripts/performance-tests-kevm.sh
-
-      - name: 'Collect KEVM results'
-        env:
-          FEATURE_BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          REASON: ${{ needs.select.outputs.reason }}
-        run: |
-          set -euo pipefail
-
-          branch_slug="${FEATURE_BRANCH_NAME//\//-}"
-          mkdir -p downstream-perf/kevm
-
-          compare_file="$(find scripts/logs -maxdepth 1 -type f -name "kevm-*-$branch_slug-compare" -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
-          feature_log="$(find scripts/logs -maxdepth 1 -type f -name "kevm-*-$branch_slug.log" -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
-          master_log="$(find scripts/logs -maxdepth 1 -type f -name 'kevm-*-master-*.log' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
-          summary_file="downstream-perf/kevm/summary.md"
-
-          cp "$compare_file" downstream-perf/kevm/
-          cp "$feature_log" downstream-perf/kevm/
-          cp "$master_log" downstream-perf/kevm/
-
-          {
-            echo "## KEVM downstream performance"
-            echo
-            echo "- Trigger: $REASON"
-            echo "- Feature branch: $FEATURE_BRANCH_NAME"
-            echo "- Compare file: $(basename "$compare_file")"
-            echo
-            if [ -s "$compare_file" ]; then
-              cat "$compare_file"
-            else
-              echo "No significant performance deltas above the current compare thresholds."
-            fi
-          } | tee "$summary_file" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 'Upload KEVM results'
-        uses: actions/upload-artifact@v4
-        with:
-          name: kevm-downstream-perf-${{ github.run_id }}
-          path: downstream-perf/kevm
-          if-no-files-found: error
+          suite: kevm
+          script: scripts/performance-tests-kevm.sh
+          artifact-name: kevm-downstream-perf-${{ github.run_id }}
+          feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          reason: ${{ needs.select.outputs.reason }}
 
   kontrol:
     name: 'Kontrol downstream performance'
@@ -224,77 +167,21 @@ jobs:
     timeout-minutes: 180
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           submodules: recursive
+          persist-credentials: false
 
-      - name: 'Install Nix'
-        uses: cachix/install-nix-action@v26
+      - name: 'Run Kontrol downstream suite'
+        uses: ./.github/actions/downstream-perf-suite
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.30.1/install
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-
-      - name: 'Install Cachix'
-        uses: cachix/cachix-action@v14
-        with:
-          name: k-framework
-          skipPush: true
-
-      - name: 'Install uv'
-        run: |
-          python3 -m pip install --user uv
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: 'Run Kontrol performance test'
-        env:
-          FEATURE_BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
-        run: |
-          scripts/performance-tests-kontrol.sh
-
-      - name: 'Collect Kontrol results'
-        env:
-          FEATURE_BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          REASON: ${{ needs.select.outputs.reason }}
-        run: |
-          set -euo pipefail
-
-          branch_slug="${FEATURE_BRANCH_NAME//\//-}"
-          mkdir -p downstream-perf/kontrol
-
-          compare_file="$(find scripts/logs -maxdepth 1 -type f -name "kontrol-*-$branch_slug-compare" -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
-          feature_log="$(find scripts/logs -maxdepth 1 -type f -name "kontrol-*-$branch_slug.log" -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
-          master_log="$(find scripts/logs -maxdepth 1 -type f -name 'kontrol-*-master-*.log' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
-          summary_file="downstream-perf/kontrol/summary.md"
-
-          cp "$compare_file" downstream-perf/kontrol/
-          cp "$feature_log" downstream-perf/kontrol/
-          cp "$master_log" downstream-perf/kontrol/
-
-          {
-            echo "## Kontrol downstream performance"
-            echo
-            echo "- Trigger: $REASON"
-            echo "- Feature branch: $FEATURE_BRANCH_NAME"
-            echo "- Compare file: $(basename "$compare_file")"
-            echo
-            if [ -s "$compare_file" ]; then
-              cat "$compare_file"
-            else
-              echo "No significant performance deltas above the current compare thresholds."
-            fi
-          } | tee "$summary_file" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: 'Upload Kontrol results'
-        uses: actions/upload-artifact@v4
-        with:
-          name: kontrol-downstream-perf-${{ github.run_id }}
-          path: downstream-perf/kontrol
-          if-no-files-found: error
+          suite: kontrol
+          script: scripts/performance-tests-kontrol.sh
+          artifact-name: kontrol-downstream-perf-${{ github.run_id }}
+          feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          reason: ${{ needs.select.outputs.reason }}
 
   report:
     name: 'Publish downstream perf PR comment'
@@ -304,16 +191,20 @@ jobs:
       - kontrol
     if: ${{ always() && needs.select.outputs.should_run == 'true' && needs.select.outputs.target_pr != '' && (needs.select.outputs.run_kevm != 'true' || needs.kevm.result != 'cancelled') && (needs.select.outputs.run_kontrol != 'true' || needs.kontrol.result != 'cancelled') }}
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - name: 'Download KEVM results'
-        if: ${{ needs.select.outputs.run_kevm == 'true' && needs.kevm.result == 'success' }}
+        if: ${{ needs.select.outputs.run_kevm == 'true' && needs.kevm.result != 'cancelled' && needs.kevm.result != 'skipped' }}
         uses: actions/download-artifact@v4
         with:
           name: kevm-downstream-perf-${{ github.run_id }}
           path: downstream-perf/kevm
 
       - name: 'Download Kontrol results'
-        if: ${{ needs.select.outputs.run_kontrol == 'true' && needs.kontrol.result == 'success' }}
+        if: ${{ needs.select.outputs.run_kontrol == 'true' && needs.kontrol.result != 'cancelled' && needs.kontrol.result != 'skipped' }}
         uses: actions/download-artifact@v4
         with:
           name: kontrol-downstream-perf-${{ github.run_id }}
