@@ -43,7 +43,17 @@ runs:
     - name: 'Install uv and cmake3'
       shell: bash
       run: |
-        python3 -m pip install --user uv "cmake<4"
+        python3 -m pip install --user uv
+        mkdir -p "$HOME/.local/bin" "$HOME/.local"
+        CMAKE_VERSION=3.31.6
+        CMAKE_ROOT="$HOME/.local/cmake-${CMAKE_VERSION}-linux-x86_64"
+        if [ ! -x "$CMAKE_ROOT/bin/cmake" ]; then
+          curl -fsSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" \
+            | tar -xz -C "$HOME/.local"
+        fi
+        ln -sf "$CMAKE_ROOT/bin/cmake" "$HOME/.local/bin/cmake"
+        ln -sf "$CMAKE_ROOT/bin/ctest" "$HOME/.local/bin/ctest"
+        ln -sf "$CMAKE_ROOT/bin/cpack" "$HOME/.local/bin/cpack"
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
     - name: 'Run suite'
