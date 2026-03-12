@@ -108,7 +108,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 # kompile evm-semantics or skip kompilation if using an existing TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
     # Ensure plugin build prerequisites are available on self-hosted runners.
-    feature_shell "export PATH=\"\$HOME/.local/bin:\$PATH\"; nix shell github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k nixpkgs#clang --command bash -c 'make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4'"
+    feature_shell "export PATH=\"\$HOME/.local/bin:\$PATH\"; nix shell github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k nixpkgs#clang nixpkgs#openssl nixpkgs#gmp nixpkgs#pkg-config --command bash -c 'make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4'"
 fi
 
 # kompile all verification K definitions and specs
