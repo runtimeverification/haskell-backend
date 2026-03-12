@@ -66,11 +66,30 @@ master_shell() {
   GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$BASELINE_COMMIT --ignore-environment --command bash -c "$1"
 }
 
+first_existing_file() {
+  local candidate=''
+  for candidate in "$@"; do
+    if [ -e "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
 # Keep nix develop as the primary environment, and add missing tool binaries
 # needed by blockchain-k-plugin (k tools + clang + cmake from ~/.local/bin).
 K_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths "github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k")/bin"
 CLANG_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#clang)/bin"
+OPENSSL_OUT_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#openssl.out)"
+OPENSSL_DEV_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#openssl.dev)"
+GMP_OUT_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#gmp.out)"
+GMP_DEV_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#gmp.dev)"
+OPENSSL_CRYPTO_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libcrypto.so" "$OPENSSL_OUT_DIR/lib/libcrypto.so.3" "$OPENSSL_OUT_DIR/lib/libcrypto.dylib" "$OPENSSL_OUT_DIR/lib/libcrypto.a")"
+OPENSSL_SSL_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libssl.so" "$OPENSSL_OUT_DIR/lib/libssl.so.3" "$OPENSSL_OUT_DIR/lib/libssl.dylib" "$OPENSSL_OUT_DIR/lib/libssl.a")"
+GMP_LIB="$(first_existing_file "$GMP_OUT_DIR/lib/libgmp.so" "$GMP_OUT_DIR/lib/libgmp.so.10" "$GMP_OUT_DIR/lib/libgmp.dylib" "$GMP_OUT_DIR/lib/libgmp.a")"
 PLUGIN_TOOLCHAIN_PATH="$HOME/.local/bin:$K_BIN_DIR:$CLANG_BIN_DIR"
+PLUGIN_CMAKE_PREFIX_PATH="$OPENSSL_OUT_DIR:$OPENSSL_DEV_DIR:$GMP_OUT_DIR:$GMP_DEV_DIR"
 
 cd $TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
@@ -114,7 +133,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 # kompile evm-semantics or skip kompilation if using an existing TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
     # Ensure plugin build prerequisites are available on self-hosted runners.
-    feature_shell "export PATH=\"$PLUGIN_TOOLCHAIN_PATH:\$PATH\"; make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+    feature_shell "export PATH=\"$PLUGIN_TOOLCHAIN_PATH:\$PATH\"; export CMAKE_PREFIX_PATH=\"$PLUGIN_CMAKE_PREFIX_PATH\"; export OPENSSL_ROOT_DIR=\"$OPENSSL_OUT_DIR\"; export OPENSSL_INCLUDE_DIR=\"$OPENSSL_DEV_DIR/include\"; export OPENSSL_CRYPTO_LIBRARY=\"$OPENSSL_CRYPTO_LIB\"; export OPENSSL_SSL_LIBRARY=\"$OPENSSL_SSL_LIB\"; export GMP_INCLUDE_DIR=\"$GMP_DEV_DIR/include\"; export GMP_LIBRARY=\"$GMP_LIB\"; make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
 fi
 
 # kompile all verification K definitions and specs
