@@ -15,24 +15,20 @@ import Control.Monad.Logger qualified as Log
 import Control.Monad.Logger.CallStack (LogLevel)
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Conduit.Network (serverSettings)
-import Data.Map (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing)
-import Data.Text (Text, unpack)
+import Data.Text (unpack)
 import Data.Text.Encoding qualified as Text
 import Options.Applicative
 
 import Booster.CLOptions
-import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Ceil (computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc (ServerState (..), handleSmtError, respond)
-import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Log qualified
 import Booster.Log.Context qualified as Booster.Log
 import Booster.Pattern.Pretty
-import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Util (
     newTimeCache,
@@ -87,15 +83,20 @@ main = do
         writeGlobalEquationOptions equationOptions
 
         putStrLn "Starting RPC server"
+        let initialServerState =
+                ServerState
+                    { definitions = definitionMap
+                    , defaultMain = mainModuleName
+                    , mLlvmLibrary
+                    , hsOnlySymbols
+                    , mSMTOptions = smtOptions
+                    , rewriteOptions
+                    , addedModules = mempty
+                    }
         runServer
             port
-            definitionMap
-            mainModuleName
-            mLlvmLibrary
-            hsOnlySymbols
-            rewriteOptions
+            initialServerState
             logFile
-            smtOptions
             (adjustLogLevels logLevels)
             logContexts
             logTimeStamps
@@ -120,7 +121,18 @@ parserInfoModifiers =
         <> header
             "Haskell Backend Booster - a JSON RPC server for quick symbolic execution of Kore definitions"
 
-runServer port definitions defaultMain mLlvmLibrary hsOnlySymbols rewriteOpts logFile mSMTOptions (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
+runServer ::
+    Int ->
+    ServerState ->
+    Maybe FilePath ->
+    (LogLevel, [LogLevel]) ->
+    [Booster.Log.ContextFilter] ->
+    Bool ->
+    TimestampFormat ->
+    LogFormat ->
+    [ModifierT] ->
+    IO ()
+runServer port initialState logFile (_logLevel, customLevels) logContexts logTimeStamps timeStampsFormat logFormat prettyPrintOptions =
     do
         let timestampFlag = case timeStampsFormat of
                 Pretty -> PrettyTimestamps
@@ -140,18 +152,10 @@ runServer port definitions defaultMain mLlvmLibrary hsOnlySymbols rewriteOpts lo
                                         <> concatMap (\case Log.LevelOther o -> fromMaybe [] $ levelToContext Map.!? o; _ -> []) customLevels
             stateVar <-
                 newMVar
-                    ServerState
-                        { definitions
-                        , defaultMain
-                        , mLlvmLibrary
-                        , hsOnlySymbols
-                        , mSMTOptions
-                        , rewriteOptions = rewriteOpts
-                        , addedModules = mempty
-                        }
+                    initialState
             jsonRpcServer
                 (serverSettings port "*")
-                (isJust mLlvmLibrary) -- run in bound threads if LLVM library in use
+                (isJust initialState.mLlvmLibrary) -- run in bound threads if LLVM library in use
                 ( \rawReq req ->
                     flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                         . Booster.Log.unLoggerT
