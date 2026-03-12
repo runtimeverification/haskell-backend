@@ -66,6 +66,12 @@ master_shell() {
   GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$BASELINE_COMMIT --ignore-environment --command bash -c "$1"
 }
 
+# Keep nix develop as the primary environment, and add missing tool binaries
+# needed by blockchain-k-plugin (k tools + clang + cmake from ~/.local/bin).
+K_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths "github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k")/bin"
+CLANG_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#clang)/bin"
+PLUGIN_TOOLCHAIN_PATH="$HOME/.local/bin:$K_BIN_DIR:$CLANG_BIN_DIR"
+
 cd $TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
     git clone --depth 1 --branch $KEVM_VERSION https://github.com/runtimeverification/evm-semantics.git
@@ -108,7 +114,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 # kompile evm-semantics or skip kompilation if using an existing TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
     # Ensure plugin build prerequisites are available on self-hosted runners.
-    feature_shell "export PATH=\"\$HOME/.local/bin:\$PATH\"; nix shell github:runtimeverification/k/v$(cat "$SCRIPT_DIR/../deps/k_release")#k nixpkgs#clang nixpkgs#openssl nixpkgs#gmp nixpkgs#pkg-config --command bash -c 'make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4'"
+    feature_shell "export PATH=\"$PLUGIN_TOOLCHAIN_PATH:\$PATH\"; make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
 fi
 
 # kompile all verification K definitions and specs
