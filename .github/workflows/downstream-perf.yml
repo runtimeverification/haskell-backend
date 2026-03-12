@@ -165,6 +165,11 @@ jobs:
           name: k-framework
           skipPush: true
 
+      - name: 'Install uv'
+        run: |
+          python3 -m pip install --user uv
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: 'Run KEVM performance test'
         env:
           FEATURE_BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
@@ -239,6 +244,11 @@ jobs:
         with:
           name: k-framework
           skipPush: true
+
+      - name: 'Install uv'
+        run: |
+          python3 -m pip install --user uv
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: 'Run Kontrol performance test'
         env:
