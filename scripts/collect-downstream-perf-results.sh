@@ -47,22 +47,22 @@ copy_if_present "${COMPARE_FILE:-}"
     echo "## $TITLE"
     echo
     echo "- Trigger: $REASON"
-    echo "- Feature branch: $FEATURE_BRANCH_NAME"
+    echo "- Current branch: $FEATURE_BRANCH_NAME"
     if [[ -n ${HEAD_COMMIT:-} ]]; then
         echo "- Head commit: $HEAD_COMMIT"
     fi
     if [[ -n ${BASELINE_COMMIT_SHORT:-} ]]; then
         echo "- Baseline commit: $BASELINE_COMMIT_SHORT"
     fi
-    echo "- Feature status: ${FEATURE_STATUS:-unknown}"
+    echo "- Current status: ${FEATURE_STATUS:-unknown}"
     if [[ -n ${FEATURE_DURATION_SECONDS:-} ]]; then
-        echo "- Feature duration (seconds): $FEATURE_DURATION_SECONDS"
+        echo "- Current duration (seconds): $FEATURE_DURATION_SECONDS"
     fi
     if [[ ${BASELINE_STATUS:-not-run} != "not-run" ]]; then
-        echo "- Baseline status: $BASELINE_STATUS"
+        echo "- Master status: $BASELINE_STATUS"
     fi
     if [[ -n ${BASELINE_DURATION_SECONDS:-} ]]; then
-        echo "- Baseline duration (seconds): $BASELINE_DURATION_SECONDS"
+        echo "- Master duration (seconds): $BASELINE_DURATION_SECONDS"
     fi
     if [[ -n ${TIMEOUT_SECONDS:-} ]]; then
         echo "- Timeout (seconds): $TIMEOUT_SECONDS"
@@ -78,13 +78,13 @@ copy_if_present "${COMPARE_FILE:-}"
             echo "No significant performance deltas above the current compare thresholds."
         fi
     elif [[ ${FEATURE_STATUS:-unknown} == "timeout" && ${BASELINE_STATUS:-not-run} == "timeout" ]]; then
-        echo "Feature and baseline runs both timed out, so compare output is unavailable."
+        echo "Current and master runs both timed out, so compare output is unavailable."
     elif [[ ${FEATURE_STATUS:-unknown} == "timeout" ]]; then
-        echo "Feature run timed out, so baseline comparison was skipped."
+        echo "Current run timed out, so master comparison was skipped."
     elif [[ ${FEATURE_STATUS:-unknown} != "success" ]]; then
-        echo "Feature run failed before a compare artifact could be produced."
+        echo "Current run failed before a compare artifact could be produced."
     elif [[ ${BASELINE_STATUS:-not-run} != "success" ]]; then
-        echo "Baseline run did not complete, so compare output is unavailable."
+        echo "Master run did not complete, so compare output is unavailable."
     else
         echo "No compare artifact was produced."
     fi

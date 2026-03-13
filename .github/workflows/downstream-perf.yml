@@ -148,13 +148,13 @@ jobs:
       matrix:
         include:
           - shard: 1
-            k_expr: 'test_prove_rules and benchmarks'
+            target: test-prove-rules
           - shard: 2
-            k_expr: 'test_prove_rules and erc20'
+            target: test-prove-functional
           - shard: 3
-            k_expr: 'test_prove_rules and (examples or kontrol)'
+            target: test-prove-optimizations
           - shard: 4
-            k_expr: 'test_prove_rules and mcd'
+            target: test-prove-dss
     runs-on: [self-hosted, linux, normal]
     timeout-minutes: 240
     steps:
@@ -170,7 +170,7 @@ jobs:
         uses: ./.github/actions/downstream-perf-suite
         env:
           PYTEST_PARALLEL: 1
-          KEVM_RULES_K_EXPR: ${{ matrix.k_expr }}
+          KEVM_TEST_TARGET: ${{ matrix.target }}
         with:
           suite: kevm
           script: scripts/performance-tests-kevm.sh
@@ -362,7 +362,7 @@ jobs:
               echo "- Artifacts: ${KEVM_ARTIFACT_LINK:-$RUN_URL#artifacts}"
               echo
               if compgen -G 'downstream-perf/kevm/*/manifest.env' > /dev/null; then
-                echo '| Shard | Feature | Feature Seconds | Baseline | Baseline Seconds | Compare |'
+                echo '| Shard | Current | Current Seconds | Master | Master Seconds | Compare |'
                 echo '| --- | --- | ---: | --- | ---: | --- |'
                 for manifest in $(find downstream-perf/kevm -mindepth 2 -maxdepth 2 -name manifest.env | sort); do
                   shard_name="$(basename "$(dirname "$manifest")")"
@@ -380,7 +380,7 @@ jobs:
               echo "- Artifacts: ${KONTROL_ARTIFACT_LINK:-$RUN_URL#artifacts}"
               echo
               if [ -f downstream-perf/kontrol/manifest.env ]; then
-                echo '| Feature | Feature Seconds | Baseline | Baseline Seconds | Compare |'
+                echo '| Current | Current Seconds | Master | Master Seconds | Compare |'
                 echo '| --- | ---: | --- | ---: | --- |'
                 emit_summary_values downstream-perf/kontrol/manifest.env
               else

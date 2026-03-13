@@ -158,7 +158,40 @@ FEATURE_LOG="$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
 BASELINE_LOG="$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-baseline-$BASELINE_COMMIT_SHORT.log"
 COMPARE_FILE="$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-baseline-$BASELINE_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare"
 
-# use special options if given, but restore KORE_RPC_OPTS afterwards
+# set test arguments and select which tests to run
+QUOTE='"'
+TEST_ARGS="--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT -k 'not (test_kontrol_cse or test_foundry_minimize_proof or test_kontrol_end_to_end)'"
+
+status_from_exit() {
+    local exit_code=$1
+    if [[ $exit_code -eq 0 ]]; then
+        printf 'success\n'
+    elif [[ $exit_code -eq 124 ]]; then
+        printf 'timeout\n'
+    else
+        printf 'failure\n'
+    fi
+}
+
+baseline_exit=0
+if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
+    BASELINE_STATUS=skipped
+    COMPARE_STATUS=skipped
+    SKIP_REASON='baseline-same-as-head'
+else
+    rm -rf $FOUNDRY_DIR/out/proofs
+    read -r baseline_exit baseline_duration < <(
+        downstream_perf_run_and_log \
+            "$BASELINE_LOG" \
+            master_shell \
+            "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+    )
+    BASELINE_DURATION_SECONDS=$baseline_duration
+    BASELINE_STATUS="$(status_from_exit "$baseline_exit")"
+    killall kore-rpc-booster || echo "no zombie processes found"
+fi
+
+# use special options if given for the current-branch run only, then restore.
 FEATURE_SERVER_OPTS=${FEATURE_SERVER_OPTS:-''}
 if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     echo "Using special options '${FEATURE_SERVER_OPTS}' via KORE_RPC_OPTS"
@@ -168,10 +201,6 @@ if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
 fi
 
-# set test arguments and select which tests to run
-QUOTE='"'
-TEST_ARGS="--foundry-root $FOUNDRY_DIR --maxfail=0 --numprocesses=$PYTEST_PARALLEL -vv $BUG_REPORT -k 'not (test_kontrol_cse or test_foundry_minimize_proof or test_kontrol_end_to_end)'"
-
 read -r feature_exit feature_duration < <(
     downstream_perf_run_and_log \
         "$FEATURE_LOG" \
@@ -179,114 +208,45 @@ read -r feature_exit feature_duration < <(
         "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
 )
 FEATURE_DURATION_SECONDS=$feature_duration
+FEATURE_STATUS="$(status_from_exit "$feature_exit")"
 killall kore-rpc-booster || echo "no zombie processes found"
 
-if [[ $feature_exit -ne 0 ]]; then
-    if [[ $feature_exit -eq 124 ]]; then
-        FEATURE_STATUS=timeout
-        if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
-            BASELINE_STATUS=skipped
-            COMPARE_STATUS=skipped
-            SKIP_REASON='feature-run-timeout-baseline-same-as-head'
-            exit 1
-        fi
-
-        rm -rf $FOUNDRY_DIR/out/proofs
-        read -r baseline_exit baseline_duration < <(
-            downstream_perf_run_and_log \
-                "$BASELINE_LOG" \
-                master_shell \
-                "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
-        )
-        BASELINE_DURATION_SECONDS=$baseline_duration
-        killall kore-rpc-booster || echo "no zombie processes found"
-
-        if [[ $baseline_exit -eq 124 ]]; then
-            BASELINE_STATUS=timeout
-            COMPARE_STATUS=skipped
-            SKIP_REASON='feature-and-baseline-run-timeout'
-            exit 0
-        fi
-
-        if [[ $baseline_exit -ne 0 ]]; then
-            BASELINE_STATUS=failure
-            COMPARE_STATUS=skipped
-            SKIP_REASON='feature-timeout-baseline-failed'
-            exit 0
-        fi
-
-        BASELINE_STATUS=success
-        COMPARE_STATUS=skipped
-        SKIP_REASON='feature-run-timeout-baseline-succeeded'
-        exit 1
-    fi
-    FEATURE_STATUS=failure
-    if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
-        BASELINE_STATUS=skipped
-        COMPARE_STATUS=skipped
-        SKIP_REASON='feature-run-failed-baseline-same-as-head'
-        exit "$feature_exit"
-    fi
-
-    rm -rf $FOUNDRY_DIR/out/proofs
-    read -r baseline_exit baseline_duration < <(
-        downstream_perf_run_and_log \
-            "$BASELINE_LOG" \
-            master_shell \
-            "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
-    )
-    BASELINE_DURATION_SECONDS=$baseline_duration
-    killall kore-rpc-booster || echo "no zombie processes found"
-
-    if [[ $baseline_exit -ne 0 ]]; then
-        BASELINE_STATUS=failure
-        COMPARE_STATUS=skipped
-        SKIP_REASON='feature-and-baseline-run-failed'
-        exit 0
-    fi
-
-    BASELINE_STATUS=success
-    COMPARE_STATUS=skipped
-    SKIP_REASON='feature-run-failed-baseline-succeeded'
-    exit "$feature_exit"
-fi
-
-FEATURE_STATUS=success
-
-if [ -z "$BUG_REPORT" ]; then
+if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     if [ ! -z "${PRIOR_OPTS:-}" ]; then
         export KORE_RPC_OPTS=${PRIOR_OPTS}
     else
         unset KORE_RPC_OPTS
     fi
-    if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
-      BASELINE_STATUS=skipped
-      COMPARE_STATUS=skipped
-      SKIP_REASON='baseline-same-as-head'
+fi
+
+if [[ $FEATURE_STATUS != success ]]; then
+    COMPARE_STATUS=skipped
+    if [[ $BASELINE_STATUS == success ]]; then
+        SKIP_REASON="feature-run-${FEATURE_STATUS}-baseline-succeeded"
+    elif [[ $BASELINE_STATUS == skipped ]]; then
+        SKIP_REASON="feature-run-${FEATURE_STATUS}-baseline-skipped"
     else
-      rm -rf $FOUNDRY_DIR/out/proofs
-      read -r baseline_exit baseline_duration < <(
-          downstream_perf_run_and_log \
-              "$BASELINE_LOG" \
-              master_shell \
-              "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
-      )
-      BASELINE_DURATION_SECONDS=$baseline_duration
-      killall kore-rpc-booster || echo "no zombie processes found"
-
-      if [[ $baseline_exit -ne 0 ]]; then
-        BASELINE_STATUS=failure
-        COMPARE_STATUS=skipped
-        SKIP_REASON='baseline-run-failed'
-        exit "$baseline_exit"
-      fi
-
-      BASELINE_STATUS=success
+        SKIP_REASON="feature-and-baseline-run-${FEATURE_STATUS}-${BASELINE_STATUS}"
     fi
+    exit 1
+fi
+
+if [[ -n $BUG_REPORT ]]; then
+    COMPARE_STATUS=skipped
+    SKIP_REASON='bug-report-mode'
+    exit 0
 fi
 
 cd $SCRIPT_DIR
 if [[ $BASELINE_STATUS == success ]]; then
     python3 compare.py "$FEATURE_LOG" "$BASELINE_LOG" > "$COMPARE_FILE"
     COMPARE_STATUS=success
+    exit 0
+fi
+
+COMPARE_STATUS=skipped
+if [[ $BASELINE_STATUS == skipped ]]; then
+    SKIP_REASON='baseline-same-as-head'
+else
+    SKIP_REASON="baseline-run-${BASELINE_STATUS}"
 fi
