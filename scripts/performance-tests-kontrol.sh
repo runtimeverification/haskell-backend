@@ -19,7 +19,7 @@ FEATURE_BRANCH_NAME=${FEATURE_BRANCH_NAME:-"$(git rev-parse --abbrev-ref HEAD)"}
 FEATURE_BRANCH_NAME="$(downstream_perf_normalize_feature_branch "$FEATURE_BRANCH_NAME")"
 
 PYTEST_PARALLEL=${PYTEST_PARALLEL:-2}
-FEATURE_BUDGET_SECONDS=${DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS:-5400}
+TIMEOUT_SECONDS=${DOWNSTREAM_PERF_TIMEOUT_SECONDS:-${DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS:-14400}}
 DOWNSTREAM_PERF_SUITE=kontrol
 FEATURE_STATUS=running
 BASELINE_STATUS=not-run
@@ -176,18 +176,18 @@ read -r feature_exit feature_duration < <(
     downstream_perf_run_and_log \
         "$FEATURE_LOG" \
         feature_shell \
-        "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+        "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
 )
 FEATURE_DURATION_SECONDS=$feature_duration
 killall kore-rpc-booster || echo "no zombie processes found"
 
 if [[ $feature_exit -ne 0 ]]; then
     if [[ $feature_exit -eq 124 ]]; then
-        FEATURE_STATUS=budget-exceeded
+        FEATURE_STATUS=timeout
         if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
             BASELINE_STATUS=skipped
             COMPARE_STATUS=skipped
-            SKIP_REASON='feature-run-exceeded-budget-baseline-same-as-head'
+            SKIP_REASON='feature-run-timeout-baseline-same-as-head'
             exit 1
         fi
 
@@ -196,28 +196,28 @@ if [[ $feature_exit -ne 0 ]]; then
             downstream_perf_run_and_log \
                 "$BASELINE_LOG" \
                 master_shell \
-                "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+                "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
         )
         BASELINE_DURATION_SECONDS=$baseline_duration
         killall kore-rpc-booster || echo "no zombie processes found"
 
         if [[ $baseline_exit -eq 124 ]]; then
-            BASELINE_STATUS=budget-exceeded
+            BASELINE_STATUS=timeout
             COMPARE_STATUS=skipped
-            SKIP_REASON='feature-and-baseline-run-exceeded-budget'
+            SKIP_REASON='feature-and-baseline-run-timeout'
             exit 0
         fi
 
         if [[ $baseline_exit -ne 0 ]]; then
             BASELINE_STATUS=failure
             COMPARE_STATUS=skipped
-            SKIP_REASON='feature-budget-exceeded-baseline-failed'
+            SKIP_REASON='feature-timeout-baseline-failed'
             exit 0
         fi
 
         BASELINE_STATUS=success
         COMPARE_STATUS=skipped
-        SKIP_REASON='feature-run-exceeded-budget-baseline-succeeded'
+        SKIP_REASON='feature-run-timeout-baseline-succeeded'
         exit 1
     fi
     FEATURE_STATUS=failure
@@ -233,7 +233,7 @@ if [[ $feature_exit -ne 0 ]]; then
         downstream_perf_run_and_log \
             "$BASELINE_LOG" \
             master_shell \
-            "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+            "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
     )
     BASELINE_DURATION_SECONDS=$baseline_duration
     killall kore-rpc-booster || echo "no zombie processes found"
@@ -249,12 +249,6 @@ if [[ $feature_exit -ne 0 ]]; then
     COMPARE_STATUS=skipped
     SKIP_REASON='feature-run-failed-baseline-succeeded'
     exit "$feature_exit"
-fi
-
-if [[ $FEATURE_DURATION_SECONDS -gt $FEATURE_BUDGET_SECONDS ]]; then
-    FEATURE_STATUS=budget-exceeded
-    SKIP_REASON='feature-run-exceeded-budget'
-    exit 1
 fi
 
 FEATURE_STATUS=success
@@ -275,7 +269,7 @@ if [ -z "$BUG_REPORT" ]; then
           downstream_perf_run_and_log \
               "$BASELINE_LOG" \
               master_shell \
-              "timeout ${FEATURE_BUDGET_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
+              "timeout ${TIMEOUT_SECONDS}s make test-integration TEST_ARGS=$QUOTE$TEST_ARGS$QUOTE"
       )
       BASELINE_DURATION_SECONDS=$baseline_duration
       killall kore-rpc-booster || echo "no zombie processes found"

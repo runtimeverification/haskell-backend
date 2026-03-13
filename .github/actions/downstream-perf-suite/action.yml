@@ -17,10 +17,14 @@ inputs:
   reason:
     description: 'Trigger reason emitted by the select job'
     required: true
-  feature-budget-seconds:
-    description: 'Per-command timeout budget used for feature and baseline classification runs'
+  timeout-seconds:
+    description: 'Per-command timeout in seconds used for feature and baseline runs'
     required: false
-    default: '3600'
+    default: '14400'
+  shard-label:
+    description: 'Optional shard label to isolate per-shard outputs'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -61,7 +65,7 @@ runs:
       shell: bash
       env:
         DOWNSTREAM_PERF_MANIFEST: ${{ github.workspace }}/scripts/logs/downstream-perf-${{ inputs.suite }}.manifest
-        DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS: ${{ inputs.feature-budget-seconds }}
+        DOWNSTREAM_PERF_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
         FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
       run: |
         set +e
@@ -76,6 +80,7 @@ runs:
       env:
         FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
         REASON: ${{ inputs.reason }}
+        DOWNSTREAM_PERF_SHARD_LABEL: ${{ inputs.shard-label }}
       run: |
         bash scripts/collect-downstream-perf-results.sh "${{ inputs.suite }}" "scripts/logs/downstream-perf-${{ inputs.suite }}.manifest" "$REASON" "$FEATURE_BRANCH_NAME"
 

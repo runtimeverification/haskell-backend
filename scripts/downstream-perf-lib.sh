@@ -37,7 +37,7 @@ downstream_perf_write_manifest_snapshot() {
     downstream_perf_write_kv "$manifest" "BASELINE_STATUS" "${BASELINE_STATUS-not-run}"
     downstream_perf_write_kv "$manifest" "FEATURE_DURATION_SECONDS" "${FEATURE_DURATION_SECONDS-}"
     downstream_perf_write_kv "$manifest" "BASELINE_DURATION_SECONDS" "${BASELINE_DURATION_SECONDS-}"
-    downstream_perf_write_kv "$manifest" "FEATURE_BUDGET_SECONDS" "${FEATURE_BUDGET_SECONDS-}"
+    downstream_perf_write_kv "$manifest" "TIMEOUT_SECONDS" "${TIMEOUT_SECONDS-}"
     downstream_perf_write_kv "$manifest" "COMPARE_STATUS" "${COMPARE_STATUS-not-run}"
     downstream_perf_write_kv "$manifest" "SKIP_REASON" "${SKIP_REASON-}"
 }

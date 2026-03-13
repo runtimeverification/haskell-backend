@@ -8,6 +8,7 @@ SUITE=$1
 MANIFEST_PATH=$2
 REASON=$3
 RAW_FEATURE_BRANCH=$4
+SHARD_LABEL=${DOWNSTREAM_PERF_SHARD_LABEL:-}
 
 if [[ -f $MANIFEST_PATH ]]; then
     # shellcheck disable=SC1090
@@ -16,6 +17,9 @@ fi
 
 FEATURE_BRANCH_NAME=${FEATURE_BRANCH_NAME:-"$(downstream_perf_normalize_feature_branch "$RAW_FEATURE_BRANCH")"}
 OUTPUT_DIR="downstream-perf/$SUITE"
+if [[ -n $SHARD_LABEL ]]; then
+    OUTPUT_DIR="$OUTPUT_DIR/$SHARD_LABEL"
+fi
 SUMMARY_FILE="$OUTPUT_DIR/summary.md"
 TITLE="KEVM downstream performance"
 if [[ $SUITE == "kontrol" ]]; then
@@ -60,8 +64,8 @@ copy_if_present "${COMPARE_FILE:-}"
     if [[ -n ${BASELINE_DURATION_SECONDS:-} ]]; then
         echo "- Baseline duration (seconds): $BASELINE_DURATION_SECONDS"
     fi
-    if [[ -n ${SKIP_REASON:-} ]]; then
-        echo "- Skip reason: $SKIP_REASON"
+    if [[ -n ${TIMEOUT_SECONDS:-} ]]; then
+        echo "- Timeout (seconds): $TIMEOUT_SECONDS"
     fi
     echo
 
@@ -73,10 +77,10 @@ copy_if_present "${COMPARE_FILE:-}"
         else
             echo "No significant performance deltas above the current compare thresholds."
         fi
-    elif [[ ${FEATURE_STATUS:-unknown} == "budget-exceeded" && ${BASELINE_STATUS:-not-run} == "budget-exceeded" ]]; then
-        echo "Feature and baseline runs both exceeded the configured budget, so compare output is unavailable."
-    elif [[ ${FEATURE_STATUS:-unknown} == "budget-exceeded" ]]; then
-        echo "Feature run exceeded the configured budget, so baseline comparison was skipped."
+    elif [[ ${FEATURE_STATUS:-unknown} == "timeout" && ${BASELINE_STATUS:-not-run} == "timeout" ]]; then
+        echo "Feature and baseline runs both timed out, so compare output is unavailable."
+    elif [[ ${FEATURE_STATUS:-unknown} == "timeout" ]]; then
+        echo "Feature run timed out, so baseline comparison was skipped."
     elif [[ ${FEATURE_STATUS:-unknown} != "success" ]]; then
         echo "Feature run failed before a compare artifact could be produced."
     elif [[ ${BASELINE_STATUS:-not-run} != "success" ]]; then

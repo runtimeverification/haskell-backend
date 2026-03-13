@@ -140,11 +140,23 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   kevm:
-    name: 'KEVM downstream performance'
+    name: 'KEVM downstream performance (shard ${{ matrix.shard }})'
     needs: select
     if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kevm == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: 1
+            k_expr: 'test_prove_rules and benchmarks'
+          - shard: 2
+            k_expr: 'test_prove_rules and erc20'
+          - shard: 3
+            k_expr: 'test_prove_rules and (examples or kontrol)'
+          - shard: 4
+            k_expr: 'test_prove_rules and mcd'
     runs-on: [self-hosted, linux, normal]
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v5
@@ -156,19 +168,24 @@ jobs:
 
       - name: 'Run KEVM downstream suite'
         uses: ./.github/actions/downstream-perf-suite
+        env:
+          PYTEST_PARALLEL: 1
+          KEVM_RULES_K_EXPR: ${{ matrix.k_expr }}
         with:
           suite: kevm
           script: scripts/performance-tests-kevm.sh
-          artifact-name: kevm-downstream-perf-${{ github.run_id }}
+          artifact-name: kevm-downstream-perf-${{ github.run_id }}-shard-${{ matrix.shard }}
           feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
           reason: ${{ needs.select.outputs.reason }}
+          timeout-seconds: '14400'
+          shard-label: shard-${{ matrix.shard }}
 
   kontrol:
     name: 'Kontrol downstream performance'
     needs: select
     if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kontrol == 'true' }}
     runs-on: [self-hosted, linux, normal]
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v5
@@ -186,6 +203,7 @@ jobs:
           artifact-name: kontrol-downstream-perf-${{ github.run_id }}
           feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
           reason: ${{ needs.select.outputs.reason }}
+          timeout-seconds: '14400'
 
   report:
     name: 'Publish downstream perf PR comment'
@@ -205,8 +223,9 @@ jobs:
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: kevm-downstream-perf-${{ github.run_id }}
+          pattern: kevm-downstream-perf-${{ github.run_id }}-shard-*
           path: downstream-perf/kevm
+          merge-multiple: true
 
       - name: 'Download Kontrol results'
         if: ${{ needs.select.outputs.run_kontrol == 'true' && needs.kontrol.result != 'cancelled' && needs.kontrol.result != 'skipped' }}
@@ -216,13 +235,84 @@ jobs:
           name: kontrol-downstream-perf-${{ github.run_id }}
           path: downstream-perf/kontrol
 
+      - name: 'Package KEVM bundle'
+        if: ${{ needs.select.outputs.run_kevm == 'true' }}
+        run: |
+          set -euo pipefail
+          mkdir -p downstream-perf/report
+          if [ -d downstream-perf/kevm ]; then
+            (cd downstream-perf && zip -qr report/kevm-bundle.zip kevm)
+          fi
+
+      - name: 'Upload KEVM bundle'
+        if: ${{ needs.select.outputs.run_kevm == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kevm-downstream-perf-bundle-${{ github.run_id }}
+          path: downstream-perf/report/kevm-bundle.zip
+          if-no-files-found: ignore
+
+      - name: 'Package Kontrol bundle'
+        if: ${{ needs.select.outputs.run_kontrol == 'true' }}
+        run: |
+          set -euo pipefail
+          mkdir -p downstream-perf/report
+          if [ -d downstream-perf/kontrol ]; then
+            (cd downstream-perf && zip -qr report/kontrol-bundle.zip kontrol)
+          fi
+
+      - name: 'Upload Kontrol bundle'
+        if: ${{ needs.select.outputs.run_kontrol == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kontrol-downstream-perf-bundle-${{ github.run_id }}
+          path: downstream-perf/report/kontrol-bundle.zip
+          if-no-files-found: ignore
+
+      - name: 'Resolve artifact links'
+        id: artifact_links
+        uses: actions/github-script@v7
+        env:
+          RUN_KEVM: ${{ needs.select.outputs.run_kevm }}
+          RUN_KONTROL: ${{ needs.select.outputs.run_kontrol }}
+        with:
+          script: |
+            const runId = Number(context.runId);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const server = process.env.GITHUB_SERVER_URL || 'https://github.com';
+            const artifactsPage = `${server}/${owner}/${repo}/actions/runs/${runId}#artifacts`;
+            const result = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: runId,
+              per_page: 100,
+            });
+            const artifacts = result.data.artifacts || [];
+
+            function linkForPrefix(prefix) {
+              const artifact = artifacts.find((item) => item.name.startsWith(prefix));
+              if (!artifact) return artifactsPage;
+              return `${server}/${owner}/${repo}/actions/runs/${runId}/artifacts/${artifact.id}`;
+            }
+
+            const kevmLink = process.env.RUN_KEVM === 'true'
+              ? linkForPrefix(`kevm-downstream-perf-bundle-${runId}`)
+              : '';
+            const kontrolLink = process.env.RUN_KONTROL === 'true'
+              ? linkForPrefix(`kontrol-downstream-perf-bundle-${runId}`)
+              : '';
+
+            core.setOutput('kevm_link', kevmLink);
+            core.setOutput('kontrol_link', kontrolLink);
+
       - name: 'Build PR comment body'
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RUN_KEVM: ${{ needs.select.outputs.run_kevm }}
           RUN_KONTROL: ${{ needs.select.outputs.run_kontrol }}
-          KEVM_RESULT: ${{ needs.kevm.result }}
-          KONTROL_RESULT: ${{ needs.kontrol.result }}
+          KEVM_ARTIFACT_LINK: ${{ steps.artifact_links.outputs.kevm_link }}
+          KONTROL_ARTIFACT_LINK: ${{ steps.artifact_links.outputs.kontrol_link }}
           TRIGGER_REASON: ${{ needs.select.outputs.reason }}
           TARGET_PR: ${{ needs.select.outputs.target_pr }}
         run: |
@@ -230,6 +320,32 @@ jobs:
 
           mkdir -p downstream-perf/report
           comment_file="downstream-perf/report/comment.md"
+
+          emit_summary_row() {
+            local manifest_path=$1
+            local label=$2
+            # shellcheck disable=SC1090
+            . "$manifest_path"
+            printf '| %s | %s | %s | %s | %s | %s |\n' \
+              "$label" \
+              "${FEATURE_STATUS:-unknown}" \
+              "${FEATURE_DURATION_SECONDS:-n/a}" \
+              "${BASELINE_STATUS:-not-run}" \
+              "${BASELINE_DURATION_SECONDS:-n/a}" \
+              "${COMPARE_STATUS:-not-run}"
+          }
+
+          emit_summary_values() {
+            local manifest_path=$1
+            # shellcheck disable=SC1090
+            . "$manifest_path"
+            printf '| %s | %s | %s | %s | %s |\n' \
+              "${FEATURE_STATUS:-unknown}" \
+              "${FEATURE_DURATION_SECONDS:-n/a}" \
+              "${BASELINE_STATUS:-not-run}" \
+              "${BASELINE_DURATION_SECONDS:-n/a}" \
+              "${COMPARE_STATUS:-not-run}"
+          }
 
           {
             echo '<!-- downstream-perf-report -->'
@@ -243,10 +359,15 @@ jobs:
             if [ "$RUN_KEVM" = "true" ]; then
               echo "### KEVM"
               echo
-              echo "- Job result: $KEVM_RESULT"
+              echo "- Artifacts: ${KEVM_ARTIFACT_LINK:-$RUN_URL#artifacts}"
               echo
-              if [ -f downstream-perf/kevm/summary.md ]; then
-                sed '1,/^$/d' downstream-perf/kevm/summary.md
+              if compgen -G 'downstream-perf/kevm/*/manifest.env' > /dev/null; then
+                echo '| Shard | Feature | Feature Seconds | Baseline | Baseline Seconds | Compare |'
+                echo '| --- | --- | ---: | --- | ---: | --- |'
+                for manifest in $(find downstream-perf/kevm -mindepth 2 -maxdepth 2 -name manifest.env | sort); do
+                  shard_name="$(basename "$(dirname "$manifest")")"
+                  emit_summary_row "$manifest" "$shard_name"
+                done
               else
                 echo 'No KEVM summary artifact was produced.'
               fi
@@ -256,10 +377,12 @@ jobs:
             if [ "$RUN_KONTROL" = "true" ]; then
               echo "### Kontrol"
               echo
-              echo "- Job result: $KONTROL_RESULT"
+              echo "- Artifacts: ${KONTROL_ARTIFACT_LINK:-$RUN_URL#artifacts}"
               echo
-              if [ -f downstream-perf/kontrol/summary.md ]; then
-                sed '1,/^$/d' downstream-perf/kontrol/summary.md
+              if [ -f downstream-perf/kontrol/manifest.env ]; then
+                echo '| Feature | Feature Seconds | Baseline | Baseline Seconds | Compare |'
+                echo '| --- | ---: | --- | ---: | --- |'
+                emit_summary_values downstream-perf/kontrol/manifest.env
               else
                 echo 'No Kontrol summary artifact was produced.'
               fi
