@@ -140,20 +140,20 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   kevm:
-    name: 'KEVM downstream performance (shard ${{ matrix.shard }})'
+    name: 'KEVM downstream performance (${{ matrix.proof }})'
     needs: select
     if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kevm == 'true' }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - shard: 1
+          - proof: rules
             target: test-prove-rules
-          - shard: 2
+          - proof: functional
             target: test-prove-functional
-          - shard: 3
+          - proof: optimizations
             target: test-prove-optimizations
-          - shard: 4
+          - proof: dss
             target: test-prove-dss
     runs-on: [self-hosted, linux, normal]
     timeout-minutes: 240
@@ -174,11 +174,11 @@ jobs:
         with:
           suite: kevm
           script: scripts/performance-tests-kevm.sh
-          artifact-name: kevm-downstream-perf-${{ github.run_id }}-shard-${{ matrix.shard }}
+          artifact-name: kevm-downstream-perf-${{ github.run_id }}-${{ matrix.proof }}
           feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
           reason: ${{ needs.select.outputs.reason }}
           timeout-seconds: '14400'
-          shard-label: shard-${{ matrix.shard }}
+          shard-label: ${{ matrix.proof }}
 
   kontrol:
     name: 'Kontrol downstream performance'
@@ -223,7 +223,7 @@ jobs:
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          pattern: kevm-downstream-perf-${{ github.run_id }}-shard-*
+          pattern: kevm-downstream-perf-${{ github.run_id }}-*
           path: downstream-perf/kevm
           merge-multiple: true
 
@@ -362,11 +362,11 @@ jobs:
               echo "- Artifacts: ${KEVM_ARTIFACT_LINK:-$RUN_URL#artifacts}"
               echo
               if compgen -G 'downstream-perf/kevm/*/manifest.env' > /dev/null; then
-                echo '| Shard | Current | Current Seconds | Master | Master Seconds | Compare |'
+                echo '| Proof | Current | Current Seconds | Master | Master Seconds | Compare |'
                 echo '| --- | --- | ---: | --- | ---: | --- |'
                 for manifest in $(find downstream-perf/kevm -mindepth 2 -maxdepth 2 -name manifest.env | sort); do
-                  shard_name="$(basename "$(dirname "$manifest")")"
-                  emit_summary_row "$manifest" "$shard_name"
+                  proof_name="$(basename "$(dirname "$manifest")")"
+                  emit_summary_row "$manifest" "$proof_name"
                 done
               else
                 echo 'No KEVM summary artifact was produced.'
