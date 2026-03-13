@@ -147,13 +147,27 @@ jobs:
     runs-on: [self-hosted, linux, normal]
     timeout-minutes: 240
     steps:
-      - name: 'Check out master'
+      - name: 'Check out workflow code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Check out master source tree'
         uses: actions/checkout@v5
         with:
           ref: refs/heads/master
+          path: haskell-backend-master
           fetch-depth: 0
           submodules: recursive
           persist-credentials: false
+
+      - name: 'Sync downstream perf scripts into master tree'
+        run: |
+          install -m 755 scripts/performance-tests-kevm.sh haskell-backend-master/scripts/performance-tests-kevm.sh
+          install -m 644 scripts/downstream-perf-lib.sh haskell-backend-master/scripts/downstream-perf-lib.sh
+          install -m 644 scripts/compare.py haskell-backend-master/scripts/compare.py
 
       - name: 'Run KEVM master raw run'
         uses: ./.github/actions/downstream-perf-suite
@@ -162,7 +176,7 @@ jobs:
           PYTEST_PARALLEL: 1
         with:
           suite: kevm
-          script: scripts/performance-tests-kevm.sh
+          script: haskell-backend-master/scripts/performance-tests-kevm.sh
           artifact-name: kevm-master-raw-${{ github.run_id }}
           feature-branch-name: master
           reason: ${{ needs.select.outputs.reason }}
@@ -205,13 +219,27 @@ jobs:
     runs-on: [self-hosted, linux, normal]
     timeout-minutes: 240
     steps:
-      - name: 'Check out master'
+      - name: 'Check out workflow code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Check out master source tree'
         uses: actions/checkout@v5
         with:
           ref: refs/heads/master
+          path: haskell-backend-master
           fetch-depth: 0
           submodules: recursive
           persist-credentials: false
+
+      - name: 'Sync downstream perf scripts into master tree'
+        run: |
+          install -m 755 scripts/performance-tests-kontrol.sh haskell-backend-master/scripts/performance-tests-kontrol.sh
+          install -m 644 scripts/downstream-perf-lib.sh haskell-backend-master/scripts/downstream-perf-lib.sh
+          install -m 644 scripts/compare.py haskell-backend-master/scripts/compare.py
 
       - name: 'Run Kontrol master raw run'
         uses: ./.github/actions/downstream-perf-suite
@@ -219,7 +247,7 @@ jobs:
           BASELINE_COMMIT: HEAD
         with:
           suite: kontrol
-          script: scripts/performance-tests-kontrol.sh
+          script: haskell-backend-master/scripts/performance-tests-kontrol.sh
           artifact-name: kontrol-master-raw-${{ github.run_id }}
           feature-branch-name: master
           reason: ${{ needs.select.outputs.reason }}
