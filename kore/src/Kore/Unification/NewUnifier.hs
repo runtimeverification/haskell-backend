@@ -473,6 +473,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
             (_, _) | first == second -> discharge
             (InternalInt_ _, InternalInt_ _) -> failUnify "Distinct integer domain values"
             (InternalBool_ _, InternalBool_ _) -> failUnify "Distinct Boolean domain values"
+            (InternalFloat_ _, InternalFloat_ _) -> failUnify "Distinct floating-point domain values"
             (InternalString_ _, InternalString_ _) -> failUnify "Distinct string domain values"
             (DV_ _ _, DV_ _ _) -> failUnify "Distinct domain values"
             (StringLiteral_ _, StringLiteral_ _) -> failUnify "Distinct string literals"

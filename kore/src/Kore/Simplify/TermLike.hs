@@ -68,6 +68,9 @@ import Kore.Simplify.InternalBool qualified as InternalBool (
 import Kore.Simplify.InternalBytes qualified as InternalBytes (
     simplify,
  )
+import Kore.Simplify.InternalFloat qualified as InternalFloat (
+    simplify,
+ )
 import Kore.Simplify.InternalInt qualified as InternalInt (
     simplify,
  )
@@ -183,6 +186,9 @@ simplify sideCondition =
                         & return
                 InternalBytesF internalBytesF ->
                     InternalBytes.simplify (getConst internalBytesF)
+                        & return
+                InternalFloatF internalFloatF ->
+                    InternalFloat.simplify (getConst internalFloatF)
                         & return
                 InternalIntF internalIntF ->
                     InternalInt.simplify (getConst internalIntF)

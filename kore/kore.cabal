@@ -268,6 +268,8 @@ library
     Kore.Builtin.Endianness.Endianness
     Kore.Builtin.EqTerm
     Kore.Builtin.Error
+    Kore.Builtin.Float
+    Kore.Builtin.Float.Float
     Kore.Builtin.Inj
     Kore.Builtin.Int
     Kore.Builtin.Int.Int
@@ -316,6 +318,7 @@ library
     Kore.Internal.Inj
     Kore.Internal.InternalBool
     Kore.Internal.InternalBytes
+    Kore.Internal.InternalFloat
     Kore.Internal.InternalInt
     Kore.Internal.InternalList
     Kore.Internal.InternalMap
@@ -473,6 +476,7 @@ library
     Kore.Simplify.InjSimplifier
     Kore.Simplify.InternalBool
     Kore.Simplify.InternalBytes
+    Kore.Simplify.InternalFloat
     Kore.Simplify.InternalInt
     Kore.Simplify.InternalList
     Kore.Simplify.InternalMap
@@ -697,6 +701,7 @@ test-suite kore-test
     Test.Kore.Builtin.Encoding
     Test.Kore.Builtin.Endianness
     Test.Kore.Builtin.External
+    Test.Kore.Builtin.Float
     Test.Kore.Builtin.Inj
     Test.Kore.Builtin.Int
     Test.Kore.Builtin.InternalBytes

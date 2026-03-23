@@ -376,6 +376,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (IffF _) = term
     checkTermF (ImpliesF _) = term
     checkTermF (InF _) = term
+    checkTermF (InternalFloatF _) = term
     checkTermF (MuF _) = term
     checkTermF (NextF _) = term
     checkTermF (NotF _) = term

@@ -352,6 +352,7 @@ makeSimplifiedCeil
             StringLiteralF _ -> unexpectedError
             InternalBoolF _ -> unexpectedError
             InternalBytesF _ -> unexpectedError
+            InternalFloatF _ -> unexpectedError
             InternalIntF _ -> unexpectedError
             InternalListF _ -> True
             InternalMapF _ -> True
@@ -411,6 +412,7 @@ enumerateSubtermsNeedingCeil
             StringLiteralF _ -> unexpectedError
             InternalBoolF _ -> unexpectedError
             InternalBytesF _ -> unexpectedError
+            InternalFloatF _ -> unexpectedError
             InternalIntF _ -> unexpectedError
             InternalListF _ -> True
             InternalMapF _ -> True
