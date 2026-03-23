@@ -114,7 +114,8 @@ test_float2int =
 
 test_float2string :: TestTree
 test_float2string =
-    testSymbolWithoutSolver evaluateTerm
+    testSymbolWithoutSolver
+        evaluateTerm
         "STRING.float2string preserves concrete float syntax"
         float2StringSymbol
         [asInternal "1.5f"]
