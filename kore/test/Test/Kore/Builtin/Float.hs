@@ -132,12 +132,14 @@ test_string2float =
 
 test_nan_roundtrip :: [TestTree]
 test_nan_roundtrip =
-    [ testSymbolWithoutSolver evaluateTerm
+    [ testSymbolWithoutSolver
+        evaluateTerm
         "STRING.float2string preserves NaN payloads via exact bit syntax"
         float2StringSymbol
         [Float.asInternal floatSort (Float32 0x7fc00001)]
         (Test.String.asOrPattern "bits32(2143289345)")
-    , testSymbolWithoutSolver evaluateTerm
+    , testSymbolWithoutSolver
+        evaluateTerm
         "STRING.string2float parses exact NaN bit syntax"
         string2FloatSymbol
         [Test.String.asInternal "bits32(2143289345)"]
