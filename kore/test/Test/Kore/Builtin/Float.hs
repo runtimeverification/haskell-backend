@@ -8,6 +8,7 @@ module Test.Kore.Builtin.Float (
     test_float2int,
     test_float2string,
     test_string2float,
+    test_nan_roundtrip,
 ) where
 
 import Data.Maybe (
@@ -128,6 +129,20 @@ test_string2float =
         string2FloatSymbol
         [Test.String.asInternal "1.5f"]
         (asOrPattern "1.5f")
+
+test_nan_roundtrip :: [TestTree]
+test_nan_roundtrip =
+    [ testSymbolWithoutSolver evaluateTerm
+        "STRING.float2string preserves NaN payloads via exact bit syntax"
+        float2StringSymbol
+        [Float.asInternal floatSort (Float32 0x7fc00001)]
+        (Test.String.asOrPattern "bits32(2143289345)")
+    , testSymbolWithoutSolver evaluateTerm
+        "STRING.string2float parses exact NaN bit syntax"
+        string2FloatSymbol
+        [Test.String.asInternal "bits32(2143289345)"]
+        (MultiOr.singleton $ Float.asPattern floatSort (Float32 0x7fc00001))
+    ]
 
 asInternal :: Text -> TermLike variable
 asInternal =

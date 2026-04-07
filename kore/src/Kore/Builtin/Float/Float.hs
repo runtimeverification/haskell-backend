@@ -167,8 +167,8 @@ minValueForFormat = \case
 
 integerToFormat :: FloatFormat -> Integer -> FloatValue
 integerToFormat = \case
-    Binary32 -> \integerValue -> Float32 (castFloatToWord32 (fromInteger integerValue))
-    Binary64 -> \integerValue -> Float64 (castDoubleToWord64 (fromInteger integerValue))
+    Binary32 -> Float32 . castFloatToWord32 . fromInteger
+    Binary64 -> Float64 . castDoubleToWord64 . fromInteger
 
 floatToInteger :: FloatValue -> Maybe Integer
 floatToInteger = \case
@@ -251,12 +251,31 @@ binaryCompareSameFormat onFloat onDouble first second =
 
 parseText :: Text -> Maybe FloatValue
 parseText input = do
-    (body, format) <- parseFormat input
-    case format of
-        Binary32 ->
-            Float32 . castFloatToWord32 <$> readMaybe (Text.unpack body)
-        Binary64 ->
-            Float64 . castDoubleToWord64 <$> readMaybe (Text.unpack body)
+    case parseExactBits input of
+        Just exact -> Just exact
+        Nothing -> do
+            (body, format) <- parseFormat input
+            case format of
+                Binary32 ->
+                    Float32 . castFloatToWord32 <$> readMaybe (Text.unpack body)
+                Binary64 ->
+                    Float64 . castDoubleToWord64 <$> readMaybe (Text.unpack body)
+
+parseExactBits :: Text -> Maybe FloatValue
+parseExactBits input =
+    parseBits "bits32(" Float32 input
+        <|> parseBits "bits64(" Float64 input
+  where
+    parseBits ::
+        Read word =>
+        Text ->
+        (word -> FloatValue) ->
+        Text ->
+        Maybe FloatValue
+    parseBits prefix wrap text = do
+        body <- Text.stripPrefix prefix text
+        digits <- Text.stripSuffix ")" body
+        wrap <$> readMaybe (Text.unpack digits)
 
 parseFormat :: Text -> Maybe (Text, FloatFormat)
 parseFormat input =

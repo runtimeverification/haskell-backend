@@ -7,6 +7,7 @@ module Kore.Internal.InternalFloat (
     InternalFloat (..),
     precisionBits,
     exponentBits,
+    renderExactFloatValue,
     renderFloatValue,
 ) where
 
@@ -62,6 +63,7 @@ exponentBits = \case
 
 renderFloatValue :: FloatValue -> Text
 renderFloatValue = \case
+    value | isNaNValue value -> renderExactFloatValue value
     Float32 value ->
         prettyRealFloat (castWord32ToFloat value) <> "f"
     Float64 value ->
@@ -69,6 +71,18 @@ renderFloatValue = \case
   where
     prettyRealFloat :: RealFloat a => a -> Text
     prettyRealFloat value = Text.pack (showGFloat Nothing value "")
+
+    isNaNValue = \case
+        Float32 value -> isNaN (castWord32ToFloat value)
+        Float64 value -> isNaN (castWord64ToDouble value)
+
+renderExactFloatValue :: FloatValue -> Text
+renderExactFloatValue = \case
+    Float32 value -> "bits32(" <> showDecimal value <> ")"
+    Float64 value -> "bits64(" <> showDecimal value <> ")"
+  where
+    showDecimal :: Show a => a -> Text
+    showDecimal = Text.pack . show
 
 -- | Internal representation of the builtin @FLOAT.Float@ domain.
 data InternalFloat = InternalFloat
