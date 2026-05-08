@@ -629,9 +629,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         , logsOnly <> filteredNextLogs <> [proxyRewriteStepLogs]
                                         )
                         -- otherwise falling through to _otherReason
-                        CutPointRule
-                            | null filteredNexts ->
-                                pure $ Right $ makeVacuous (combineLogs $ res.logs : newLogs) res
                         _otherReason ->
                             pure $
                                 Right $

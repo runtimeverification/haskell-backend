@@ -528,7 +528,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , rule = Nothing
                     , unknownPredicate = Nothing
                     }
-    RewriteCutPoint lbl _ p next ->
+    RewriteCutPoint lbl _ p ->
         Right $
             RpcTypes.Execute
                 RpcTypes.ExecuteResult
@@ -536,7 +536,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , depth
                     , logs
                     , state = toExecState p Nothing unsupported
-                    , nextStates = Just [toExecState next Nothing unsupported]
+                    , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }

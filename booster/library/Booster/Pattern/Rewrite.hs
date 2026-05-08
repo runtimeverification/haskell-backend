@@ -239,7 +239,7 @@ rewriteStep cutLabels terminalLabels pat = do
                     -- only one rule applies, see if it's special and return an appropriate result
                     if
                         | labelOf rule `elem` cutLabels ->
-                            pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat applied.rewritten
+                            pure $ RewriteCutPoint (labelOf rule) (uniqueId rule) pat
                         | labelOf rule `elem` terminalLabels ->
                             pure $ RewriteTerminal (labelOf rule) (uniqueId rule) applied.rewritten
                         | otherwise ->
@@ -846,8 +846,8 @@ data RewriteResult pat
       RewriteBranch pat (NonEmpty (pat, AppliedRuleMetadata))
     | -- | no rules could be applied, config is stuck
       RewriteStuck pat
-    | -- | cut point rule, return current (lhs) and single next state
-      RewriteCutPoint Text UniqueId pat pat
+    | -- | cut point rule, return current (lhs) only
+      RewriteCutPoint Text UniqueId pat
     | -- | terminal rule, return rhs (final state reached)
       RewriteTerminal Text UniqueId pat
     | -- | stopping because maximum depth has been reached (label and unique id may be empty if no steps were taken)
@@ -935,7 +935,7 @@ mkDiffTerms = \case
 
   * multiple results: a branch point, return current and all results
   * RewriteTrivial: config simplified to #Bottom, return current
-  * RewriteCutPoint: a cut-point rule was applied, return lhs and rhs
+  * RewriteCutPoint: a cut-point rule was applied, return lhs
   * RewriteTerminal: a terminal rule was applied, return rhs
   * RewriteStuck: config could not be re-written by any rule, return current
   * RewriteFailed: rewriter cannot handle the case, return current
@@ -1132,14 +1132,8 @@ performRewrite rewriteConfig pat = do
                         ns -> RewriteBranch p' $ NE.fromList ns
         r@RewriteStuck{} -> pure r
         r@RewriteTrivial{} -> pure r
-        RewriteCutPoint lbl uId p next -> do
-            simplifyP p >>= \case
-                Nothing -> pure $ RewriteTrivial orig
-                Just p' -> do
-                    next' <- simplifyP next
-                    pure $ case next' of
-                        Nothing -> RewriteTrivial next
-                        Just n -> RewriteCutPoint lbl uId p' n
+        RewriteCutPoint lbl uId p -> do
+            maybe (RewriteTrivial orig) (RewriteCutPoint lbl uId) <$> simplifyP p
         RewriteTerminal lbl uId p ->
             maybe (RewriteTrivial orig) (RewriteTerminal lbl uId) <$> simplifyP p
         RewriteFinished lbl uId p ->
@@ -1209,7 +1203,7 @@ performRewrite rewriteConfig pat = do
                                                 branches
                                     pure simplified
                                 _other -> withPatternContext pat' $ error "simplifyResult: Unexpected return value"
-                        Right (cutPoint@(RewriteCutPoint lbl _ _ _), _) -> withPatternContext pat' $ do
+                        Right (cutPoint@(RewriteCutPoint lbl _ _), _) -> withPatternContext pat' $ do
                             simplified <- simplifyResult pat' cutPoint
                             case simplified of
                                 RewriteCutPoint{} ->
