@@ -169,6 +169,7 @@ testConf = do
             , mbSimplify = Nothing
             , cutLabels = []
             , terminalLabels = []
+            , simplifyCutPointRhs = True
             }
 
 ----------------------------------------

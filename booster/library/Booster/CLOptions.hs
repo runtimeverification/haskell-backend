@@ -87,6 +87,7 @@ instance Show TimestampFormat where
 data RewriteOptions = RewriteOptions
     { indexCells :: [Text]
     , interimSimplification :: Maybe Natural
+    , simplifyCutPointRhs :: Bool
     }
     deriving stock (Show, Eq)
 
@@ -421,6 +422,12 @@ parseRewriteOptions =
                     <> long "simplify-each"
                     <> help "If given: Simplify the term each time the given rewrite depth is reached"
                 )
+            )
+        <*> flag
+            True
+            False
+            ( long "no-simplify-cut-point-rhs"
+                <> help "Skip simplification of the RHS payload of cut-point rules (in both the rewriter and the proxy's post-exec simplify pass)"
             )
   where
     readCellName :: String -> Either String Text

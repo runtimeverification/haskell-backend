@@ -107,6 +107,7 @@ data RewriteConfig = RewriteConfig
     , -- below: parameters used only in performRewrite
       mbMaxDepth, mbSimplify :: Maybe Natural
     , cutLabels, terminalLabels :: [Text]
+    , simplifyCutPointRhs :: Bool
     }
 
 instance MonadIO io => LoggerMIO (RewriteT io) where
@@ -1043,6 +1044,7 @@ performRewrite rewriteConfig pat = do
         , mbSimplify
         , cutLabels
         , terminalLabels
+        , simplifyCutPointRhs
         } = rewriteConfig
 
     logDepth = withContext CtxDepth . logMessage
@@ -1135,11 +1137,14 @@ performRewrite rewriteConfig pat = do
         RewriteCutPoint lbl uId p next -> do
             simplifyP p >>= \case
                 Nothing -> pure $ RewriteTrivial orig
-                Just p' -> do
-                    next' <- simplifyP next
-                    pure $ case next' of
-                        Nothing -> RewriteTrivial next
-                        Just n -> RewriteCutPoint lbl uId p' n
+                Just p'
+                    | not simplifyCutPointRhs ->
+                        pure $ RewriteCutPoint lbl uId p' next
+                    | otherwise -> do
+                        next' <- simplifyP next
+                        pure $ case next' of
+                            Nothing -> RewriteTrivial next
+                            Just n -> RewriteCutPoint lbl uId p' n
         RewriteTerminal lbl uId p ->
             maybe (RewriteTrivial orig) (RewriteTerminal lbl uId) <$> simplifyP p
         RewriteFinished lbl uId p ->

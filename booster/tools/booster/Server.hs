@@ -329,6 +329,7 @@ main = do
                             , fallbackReasons
                             , simplifyAtEnd
                             , simplifyBeforeFallback
+                            , simplifyCutPointRhs = rewriteOptions.simplifyCutPointRhs
                             , customLogLevels = customLevels
                             }
                     server =

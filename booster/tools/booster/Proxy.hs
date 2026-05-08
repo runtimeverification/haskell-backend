@@ -70,6 +70,7 @@ data ProxyConfig = ProxyConfig
     , fallbackReasons :: [HaltReason]
     , simplifyAtEnd :: Bool
     , simplifyBeforeFallback :: Bool
+    , simplifyCutPointRhs :: Bool
     , customLogLevels :: ![Log.LogLevel]
     }
 
@@ -577,11 +578,16 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                         "Vacuous after simplifying result state"
                     pure . Right $ makeVacuous logsOnly res
                 Right (simplifiedState, simplifiedStateLogs) -> do
+                    let skipNextSimplify =
+                            reason == CutPointRule && not cfg.simplifyCutPointRhs
                     simplifiedNexts <-
-                        maybe
-                            (pure [])
-                            (mapM $ simplifyExecuteState mbModule def)
-                            nextStates
+                        if skipNextSimplify
+                            then pure $ map (\s -> Right (s, Nothing)) (fromMaybe [] nextStates)
+                            else
+                                maybe
+                                    (pure [])
+                                    (mapM $ simplifyExecuteState mbModule def)
+                                    nextStates
                     let (logsOnly, (filteredNexts, filteredNextLogs)) =
                             second unzip $ partitionEithers simplifiedNexts
                         newLogs = simplifiedStateLogs : logsOnly <> filteredNextLogs

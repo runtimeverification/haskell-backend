@@ -170,6 +170,7 @@ respond stateVar request =
                                     , mbSimplify = rewriteOpts.interimSimplification
                                     , cutLabels = cutPoints
                                     , terminalLabels = terminals
+                                    , simplifyCutPointRhs = rewriteOpts.simplifyCutPointRhs
                                     }
                         result <-
                             performRewrite rewriteConfig substPat
