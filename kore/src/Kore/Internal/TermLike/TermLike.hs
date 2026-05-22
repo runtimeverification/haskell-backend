@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -64,6 +65,7 @@ import Data.Set (
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (absurd)
+import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
 import GHC.Generics qualified as GHC
 import GHC.Stack qualified as GHC
 import Generics.SOP qualified as SOP
@@ -676,16 +678,21 @@ instance (Debug variable, Diff variable) => Diff (TermLike variable) where
             <|> diffPrecGeneric termLike1 termLike2
 
 instance Eq variable => Eq (TermLike variable) where
-    (==)
-        (Recursive.project -> _ :< pat1)
-        (Recursive.project -> _ :< pat2) =
-            pat1 == pat2
+    (==) t1@(TermLike__ _ h1 _) t2@(TermLike__ _ h2 _)
+        | isTrue# (reallyUnsafePtrEquality# t1 t2) = True
+        | h1 /= h2 = False
+        | otherwise =
+            let _ :< pat1 = Recursive.project t1
+                _ :< pat2 = Recursive.project t2
+             in pat1 == pat2
 
 instance Ord variable => Ord (TermLike variable) where
-    compare
-        (Recursive.project -> _ :< pat1)
-        (Recursive.project -> _ :< pat2) =
-            compare pat1 pat2
+    compare t1 t2
+        | isTrue# (reallyUnsafePtrEquality# t1 t2) = EQ
+        | otherwise =
+            let _ :< pat1 = Recursive.project t1
+                _ :< pat2 = Recursive.project t2
+             in compare pat1 pat2
 
 instance Eq variable => Hashable (TermLike variable) where
     hashWithSalt salt (TermLike__ _ hsh _) =
