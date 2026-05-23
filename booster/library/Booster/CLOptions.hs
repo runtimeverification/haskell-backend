@@ -313,6 +313,12 @@ levelToContext =
                 [ [ctxt| request*,proxy,detail. |]
                 ]
             )
+        ,
+            ( "SimplifyKore"
+            ,
+                [ [ctxt| request*>simplification*|function*,success |]
+                ]
+            )
         ]
 
 -- Partition provided log levels into standard and custom ones, and

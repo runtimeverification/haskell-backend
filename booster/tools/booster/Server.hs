@@ -390,7 +390,7 @@ koreExtraLogs =
 logLevelToKoreLogEntryMap :: Map.Map LogLevel [Text]
 logLevelToKoreLogEntryMap =
     Map.fromList
-        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugTerm"])
+        [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation", "DebugTerm"])
         ,
             ( LevelOther "RewriteKore"
             ,
