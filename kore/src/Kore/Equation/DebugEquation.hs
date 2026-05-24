@@ -465,7 +465,8 @@ instance Entry DebugApplyEquation where
         JSON.object
             [ "label" JSON..= ruleLabel equation
             , "location" JSON..= fmap (renderDefault . pretty) (srcLoc equation)
-            , "result" JSON..= (JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result)
+            , "result"
+                JSON..= (JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result)
             ]
 
 {- | Log when an 'Equation' is actually applied.
