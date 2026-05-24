@@ -238,6 +238,7 @@ allowedLogLevels =
         )
     , ("TimeProfile", "Logs for timing analysis")
     , ("Timing", "Formerly --print-stats")
+    , ("KoreCalls", "Log structured input/output for every Kore backend invocation (simplify and execute-fallback)")
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -304,6 +305,12 @@ levelToContext =
             ( "Timing"
             ,
                 [ [ctxt| *>timing |]
+                ]
+            )
+        ,
+            ( "KoreCalls"
+            ,
+                [ [ctxt| request*,proxy,detail. |]
                 ]
             )
         ]

@@ -17,7 +17,7 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Trans.Except (runExcept)
-import Data.Aeson (ToJSON (..))
+import Data.Aeson (ToJSON (..), object, (.=))
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Aeson.Types (Value (..))
@@ -183,6 +183,17 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                 case koreResult of
                     Right (Simplify koreRes) -> do
                         logStats SimplifyM (boosterTime + koreTime, koreTime)
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.withContext CtxDetail $
+                                Booster.Log.logMessage $
+                                    WithJsonMessage
+                                        ( object
+                                            [ "tag" .= ("kore-simplify" :: Text)
+                                            , "input" .= boosterRes.state
+                                            , "output" .= koreRes.state
+                                            ]
+                                        )
+                                        ("kore-simplify" :: Text)
                         when (koreRes.state /= boosterRes.state) $ do
                             bState <- liftIO (MVar.readMVar boosterState)
 
@@ -371,6 +382,18 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         ("Kore fall-back in " <> secWithUnit kTime)
                             case kResult of
                                 Right (Execute koreResult) -> do
+                                    Booster.Log.withContext CtxProxy $
+                                        Booster.Log.withContext CtxDetail $
+                                            Booster.Log.logMessage $
+                                                WithJsonMessage
+                                                    ( object
+                                                        [ "tag" .= ("kore-execute-fallback" :: Text)
+                                                        , "input" .= execStateToKoreJson simplifiedBoosterState
+                                                        , "output" .= execStateToKoreJson koreResult.state
+                                                        , "kore_reason" .= koreResult.reason
+                                                        ]
+                                                    )
+                                                    ("kore-execute-fallback" :: Text)
                                     let
                                         accumulatedLogs =
                                             combineLogs
