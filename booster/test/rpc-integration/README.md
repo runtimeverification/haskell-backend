@@ -42,6 +42,12 @@ NOTE: You may need to specify `--host 127.0.0.1` on Arch Linux.
 
 Step 2 above can be run using `--expect response-NAME.json --regenerate` to (over-)write the output file.
 
+## How to import a bug-report tarball as a test
+
+See `docs/submitting-test-cases.md` for the full workflow: generating bug-report tarballs,
+replaying them quickly, converting them into a `test-*` directory here, and rebuilding
+the LLVM `.dylib` when the definition changes.
+
 ## How to pretty-print Kore
 
 Use `tools/rpc-kast.sh` to pretty-print the kore terms from JSON requests and responses into pretty K. Specify the compiled K definition as `K_DEFINITION`. For example:

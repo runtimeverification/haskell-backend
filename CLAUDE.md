@@ -184,11 +184,12 @@ PYTEST_PARALLEL=8 scripts/performance-tests-kevm.sh --bug-report
 # Analyse fallback/abort reasons across bug reports
 scripts/booster-analysis.sh scripts/bug-reports/kevm-v1.0.417-main
 
-# Convert a bug-report tarball into an RPC integration test
-cd test/rpc-integration
-./generateDirectoryTest.sh issue-123.tar.gz
-./runDirectoryTest test-issue-123
+# Run a specific RPC regression test
+cd booster/test/rpc-integration && ./runDirectoryTest.sh test-issue-123
 ```
+
+See `docs/submitting-test-cases.md` for the full tarball workflow (generating reports,
+replaying quickly, converting to tests, rebuilding the LLVM library).
 
 ---
 
