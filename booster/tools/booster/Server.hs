@@ -337,7 +337,7 @@ main = do
                             (isJust mLlvmLibrary) -- run with bound threads if LLVM API in use
                             ( \addr ->
                                 runBoosterLogger . Booster.Log.withContext CtxProxy $
-                                    Booster.Log.logMessage' ("New connection from " <> addr :: Text)
+                                    Booster.Log.logMessage ("New connection from " <> addr :: Text)
                             )
                             ( \rawReq req ->
                                 let reqId = getReqId rawReq
