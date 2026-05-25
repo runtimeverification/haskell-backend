@@ -44,7 +44,7 @@ Step 2 above can be run using `--expect response-NAME.json --regenerate` to (ove
 
 ## How to import a bug-report tarball as a test
 
-See `docs/submitting-test-cases.md` for the full workflow: generating bug-report tarballs,
+See `docs/2026-05-25-submitting-test-cases.md` for the full workflow: generating bug-report tarballs,
 replaying them quickly, converting them into a `test-*` directory here, and rebuilding
 the LLVM `.dylib` when the definition changes.
 

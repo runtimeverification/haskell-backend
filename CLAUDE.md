@@ -188,7 +188,7 @@ scripts/booster-analysis.sh scripts/bug-reports/kevm-v1.0.417-main
 cd booster/test/rpc-integration && ./runDirectoryTest.sh test-issue-123
 ```
 
-See `docs/submitting-test-cases.md` for the full tarball workflow (generating reports,
+See `docs/2026-05-25-submitting-test-cases.md` for the full tarball workflow (generating reports,
 replaying quickly, converting to tests, rebuilding the LLVM library).
 
 ---
