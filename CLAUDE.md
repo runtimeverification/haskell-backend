@@ -35,8 +35,8 @@ deps/k_release      Pins the required K framework version
 ## Building
 
 ```sh
-# Standard build (with optimisations)
-stack build all
+# Standard build (with optimisations); --copy-bins puts executables on $PATH
+stack build --test --copy-bins all
 # or
 cabal build all
 
@@ -101,8 +101,11 @@ cabal test llvm-integration
 
 ### 4. Booster RPC integration tests (~minutes, needs K binaries)
 ```sh
-# From inside the integration nix shell (see below):
-cd booster/test/rpc-integration && ./runDirectoryTest test-<name>
+# Run the full booster integration test suite:
+scripts/booster-integration-tests.sh
+
+# Or run a single directory from inside the integration nix shell (see below):
+cd booster/test/rpc-integration && ./runDirectoryTest.sh test-<name>
 ```
 
 ### 5. Full K integration tests (~many minutes, needs K framework)
@@ -151,6 +154,8 @@ data ProxyConfig = ProxyConfig
   , ...
   }
 ```
+CLI flags for these fields are defined in `booster/tools/booster/Server.hs` in
+`clProxyOptionsParser`.
 
 ---
 
