@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Rebuild the LLVM backend .so for this test's definition.
+# Run from inside booster/test/rpc-integration/resources/ with PLUGIN_DIR set.
+# See docs/2026-05-25-submitting-test-cases.md for the full workflow.
+set -euo pipefail
+name=$(basename "$0" .kompile)
+mkdir -p dt
+llvm-kompile-matching "$name.llvm.kore" qbaL ./dt 1/2
+for lib in libff libcryptopp blake2; do
+    LIBFILE=$(find "${PLUGIN_DIR}" -name "${lib}.a" | head -1)
+    [ -z "$LIBFILE" ] && { echo "[Error] Unable to locate ${lib}.a" >&2; exit 1; }
+    PLUGIN_LIBS+="$LIBFILE "
+    PLUGIN_INCLUDE+="-I$(dirname "$LIBFILE")/../include "
+done
+PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
+llvm-kompile "$name.llvm.kore" ./dt c -- \
+    -fPIC -std=c++20 -o interpreter \
+    $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
+    -lcrypto -lssl -lprocps
+cp interpreter.so "$name.so"

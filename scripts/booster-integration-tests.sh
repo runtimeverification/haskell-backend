@@ -37,7 +37,7 @@ for dir in $(ls -d test-*); do
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
-        "get-model" | "collectiontest" | "implies" | "implies2" | "implies-issue-3941" | "implies-smt" | "remainder-predicates" | "use-path-condition-in-equations" | "issue3764-vacuous-branch" | "3934-smt")
+        "get-model" | "collectiontest" | "implies" | "implies2" | "implies-issue-3941" | "implies-smt" | "remainder-predicates" | "use-path-condition-in-equations" | "issue3764-vacuous-branch" | "3934-smt" | "booster-implies-consequent-simplification")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
