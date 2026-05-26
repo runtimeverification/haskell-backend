@@ -117,22 +117,38 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                             pure . Left . RpcError.backendError . RpcError.ImplicationCheckError . RpcError.ErrorOnly . pack $
                                 show sortError
                         MatchFailed{} ->
-                            doesNotImply
-                                (sortOfPattern patL)
-                                (externaliseExistTerm existsL patL.term)
-                                (externaliseExistTerm existsR patR.term)
+                            -- Before giving up, try simplifying the consequent: function/simplification
+                            -- equations may rewrite the consequent to a form that matches the antecedent.
+                            -- Example: hashLoc(...) => keccak(...) under range constraints on free variables.
+                            -- Use evaluatePatternForImplies to allow non-total symbols whose definedness
+                            -- is guaranteed by the pattern constraints.
+                            ApplyEquations.evaluatePatternForImplies def mLlvmLibrary solver mempty patR >>= \case
+                                (Right simplifiedPatR, _)
+                                    | patR /= simplifiedPatR ->
+                                        checkImpliesMatchTerms existsL patL existsR simplifiedPatR
+                                _ ->
+                                    doesNotImply
+                                        (sortOfPattern patL)
+                                        (externaliseExistTerm existsL patL.term)
+                                        (externaliseExistTerm existsR patR.term)
                         MatchIndeterminate _partialSubst _remainder ->
                             ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
-                                        then -- we are being conservative here for now and returning "not-implied".
-                                        -- We could return implies, but the condition will contain the remainder
-                                        -- as an equality contraint, predicating the implication on that equality being true.
+                                        then -- patL is already fully simplified; try simplifying the consequent
+                                        -- before giving up, as equations may rewrite it to match the antecedent.
+                                        -- Use evaluatePatternForImplies to allow non-total symbols whose
+                                        -- definedness is guaranteed by the pattern constraints.
 
-                                            doesNotImply
-                                                (sortOfPattern patL)
-                                                (externaliseExistTerm existsL patL.term)
-                                                (externaliseExistTerm existsR patR.term)
+                                            ApplyEquations.evaluatePatternForImplies def mLlvmLibrary solver mempty patR >>= \case
+                                                (Right simplifiedPatR, _)
+                                                    | patR /= simplifiedPatR ->
+                                                        checkImpliesMatchTerms existsL patL existsR simplifiedPatR
+                                                _ ->
+                                                    doesNotImply
+                                                        (sortOfPattern patL)
+                                                        (externaliseExistTerm existsL patL.term)
+                                                        (externaliseExistTerm existsR patR.term)
                                         else checkImpliesMatchTerms existsL simplifedSubstPatL existsR patR
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)

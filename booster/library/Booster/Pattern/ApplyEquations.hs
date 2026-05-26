@@ -10,6 +10,7 @@ License     : BSD-3-Clause
 module Booster.Pattern.ApplyEquations (
     evaluateTerm,
     evaluatePattern,
+    evaluatePatternForImplies,
     Direction (..),
     EquationT (..),
     runEquationT,
@@ -151,6 +152,10 @@ data EquationConfig = EquationConfig
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , ignoreDefinedness :: Bool
+    -- ^ When True, skip the notPreservesDefinednessReasons check in equation
+    -- application. Used in the implication check to allow simplifying
+    -- non-total function symbols when constraints guarantee definedness.
     }
 
 data EquationState = EquationState
@@ -338,7 +343,30 @@ runEquationT ::
     Set Predicate ->
     EquationT io a ->
     io (Either EquationFailure a, SimplifierCache)
-runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
+runEquationT = runEquationT' False
+
+runEquationTRelaxed ::
+    LoggerMIO io =>
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SMT.SMTContext ->
+    SimplifierCache ->
+    Set Predicate ->
+    EquationT io a ->
+    io (Either EquationFailure a, SimplifierCache)
+runEquationTRelaxed = runEquationT' True
+
+runEquationT' ::
+    LoggerMIO io =>
+    Bool ->
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SMT.SMTContext ->
+    SimplifierCache ->
+    Set Predicate ->
+    EquationT io a ->
+    io (Either EquationFailure a, SimplifierCache)
+runEquationT' ignDef definition llvmApi smtSolver sCache known (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
     prettyModifiers <- getPrettyModifiers
@@ -355,6 +383,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , maxRecursion = globalEquationOptions.maxRecursion
                         , logger
                         , prettyModifiers
+                        , ignoreDefinedness = ignDef
                         }
     -- NB the returned cache assumes the known predicates
     pure (res, endState.cache)
@@ -499,6 +528,30 @@ evaluatePattern def mLlvmLibrary smtSolver cache pat =
         smtSolver
         cache
         -- interpret substitution as additional known constraints
+        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+        . evaluatePattern'
+        $ pat
+
+{- | Like 'evaluatePattern' but skips the definedness check for equations whose
+   RHS contains non-total symbols. Used in the implication check when
+   simplifying the consequent: the antecedent's constraints can guarantee
+   definedness of non-total operations even though Booster cannot prove this
+   statically.
+-}
+evaluatePatternForImplies ::
+    LoggerMIO io =>
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SMT.SMTContext ->
+    SimplifierCache ->
+    Pattern ->
+    io (Either EquationFailure Pattern, SimplifierCache)
+evaluatePatternForImplies def mLlvmLibrary smtSolver cache pat =
+    runEquationTRelaxed
+        def
+        mLlvmLibrary
+        smtSolver
+        cache
         (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
         . evaluatePattern'
         $ pat
@@ -863,7 +916,8 @@ applyEquation term rule =
                     lift . throw . InternalError $
                         "Equation with existentials: " <> Text.pack (show rule)
                 -- immediately cancel if not preserving definedness
-                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+                cfg <- lift getConfig
+                unless (cfg.ignoreDefinedness || null rule.computedAttributes.notPreservesDefinednessReasons) $ do
                     throwE
                         ( \ctxt ->
                             ctxt $
