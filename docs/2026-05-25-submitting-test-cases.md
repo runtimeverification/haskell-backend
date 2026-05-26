@@ -35,18 +35,22 @@ automatically on an unexpected crash (`BugReportOnError` default).
 
 ## Replaying a bug report quickly
 
-The `kore-rpc-client run-tarball` subcommand starts a server, replays all requests, and
-prints any mismatches:
+Use `scripts/run-with-tarball.sh` to start a server and replay all requests in one step:
 
 ```sh
 cabal build kore-rpc-client kore-rpc-booster
 
-kore-rpc-client run-tarball my-issue.tar.gz
+scripts/run-with-tarball.sh my-issue.tar.gz
 ```
 
-For the LLVM library, either set `LLVM_LIB` (path to a compatible pre-built `.so`) or
+For the LLVM library, set `LLVM_LIB` (path to a compatible pre-built `.so`) or
 `PLUGIN_DIR` (path to `blockchain-k-plugin`, used to compile the LLVM backend on the
 fly). See `scripts/run-with-tarball.sh` for the full set of environment variables.
+
+Alternatively, start the server manually and use `kore-rpc-client run-tarball` to replay
+requests against it.
+Note: `kore-rpc-client run-tarball` does **not** start a server — it connects to an
+already-running one.
 
 ---
 
