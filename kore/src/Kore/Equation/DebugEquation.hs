@@ -462,12 +462,12 @@ instance Entry DebugApplyEquation where
             ]
 
     oneLineJson (DebugApplyEquation equation result) =
-        JSON.object
-            [ "label" JSON..= ruleLabel equation
-            , "location" JSON..= fmap (renderDefault . pretty) (srcLoc equation)
-            , "result"
-                JSON..= (JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result)
-            ]
+        JSON.object $
+            maybe [] (\lbl -> ["label" JSON..= lbl]) (ruleLabel equation)
+                <> [ "location" JSON..= fmap (renderDefault . pretty) (srcLoc equation)
+                   , "result"
+                        JSON..= (JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result)
+                   ]
 
 {- | Log when an 'Equation' is actually applied.
 
