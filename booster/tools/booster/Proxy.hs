@@ -114,6 +114,22 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                             Booster.Log.logMessage . Text.pack $
                                 "Implies abort in booster (booster-only mode): "
                                     <> fromError err
+                        -- Emit a structured proxy-level closing event so that
+                        -- pyk's group_kore_calls() can finalise the KoreCall for
+                        -- this request.  Without this, the accumulated
+                        -- BoosterEquationFailed data stays orphaned in the
+                        -- pending dict because no result event ever closes it.
+                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                            Booster.Log.logMessage $
+                                WithJsonMessage
+                                    ( object
+                                        [ "tag" .= ("booster-implies-invalid" :: Text)
+                                        , "antecedent" .= impliesReq.antecedent
+                                        , "consequent" .= impliesReq.consequent
+                                        , "valid" .= False
+                                        ]
+                                    )
+                                    ("booster-implies-invalid" :: Text)
                         logStats ImpliesM (boosterTime, 0)
                         pure $ Left err
                     | otherwise -> do
