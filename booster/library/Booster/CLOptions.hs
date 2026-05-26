@@ -286,6 +286,7 @@ levelToContext =
                 , [ctxt| request*,booster>rewrite*,match|definedness|constraint,abort. |]
                 , [ctxt| request*,proxy. |]
                 , [ctxt| request*,proxy,abort. |]
+                , [ctxt| request*,proxy>abort,detail. |]
                 , [ctxt| request*,booster>failure,abort |]
                 ]
             )
@@ -313,7 +314,7 @@ levelToContext =
         ,
             ( "KoreCalls"
             ,
-                [ [ctxt| request*,proxy,detail. |]
+                [ [ctxt| request*,proxy>detail. |]
                 ]
             )
         ,

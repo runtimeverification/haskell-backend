@@ -124,20 +124,19 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                     <> ". Falling back to kore."
                         (koreRes, koreTime) <- Stats.timed $ kore req
                         logStats ImpliesM (boosterTime + koreTime, koreTime)
-                        Booster.Log.withContext CtxProxy $
-                            Booster.Log.withContext CtxDetail $
-                                Booster.Log.logMessage $
-                                    WithJsonMessage
-                                        ( object $
-                                            [ "tag" .= ("kore-implies-fallback" :: Text)
-                                            , "antecedent" .= impliesReq.antecedent
-                                            , "consequent" .= impliesReq.consequent
-                                            ]
-                                                <> case koreRes of
-                                                    Right (Implies r) -> ["valid" .= r.valid]
-                                                    _ -> []
-                                        )
-                                        ("kore-implies-fallback" :: Text)
+                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                            Booster.Log.logMessage $
+                                WithJsonMessage
+                                    ( object $
+                                        [ "tag" .= ("kore-implies-fallback" :: Text)
+                                        , "antecedent" .= impliesReq.antecedent
+                                        , "consequent" .= impliesReq.consequent
+                                        ]
+                                            <> case koreRes of
+                                                Right (Implies r) -> ["valid" .= r.valid]
+                                                _ -> []
+                                    )
+                                    ("kore-implies-fallback" :: Text)
                         pure koreRes
         | otherwise -> do
             (koreRes, koreTime) <- Stats.timed $ kore req
@@ -180,19 +179,18 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                             Text.pack $
                                 "get-model error in booster: " <> fromError err
                     (kRes, kTime) <- Stats.timed $ kore req
-                    Booster.Log.withContext CtxProxy $
-                        Booster.Log.withContext CtxDetail $
-                            Booster.Log.logMessage $
-                                WithJsonMessage
-                                    ( object $
-                                        [ "tag" .= ("kore-get-model-fallback" :: Text)
-                                        , "state" .= getModelReq.state
-                                        ]
-                                            <> case kRes of
-                                                Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
-                                                _ -> []
-                                    )
-                                    ("kore-get-model-fallback" :: Text)
+                    Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                        Booster.Log.logMessage $
+                            WithJsonMessage
+                                ( object $
+                                    [ "tag" .= ("kore-get-model-fallback" :: Text)
+                                    , "state" .= getModelReq.state
+                                    ]
+                                        <> case kRes of
+                                            Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
+                                            _ -> []
+                                )
+                                ("kore-get-model-fallback" :: Text)
                     pure (kRes, kTime)
                 Right (GetModel res@GetModelResult{})
                     -- re-check with legacy-kore if result is unknown
@@ -206,19 +204,18 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                             Booster.Log.withContext CtxAbort $
                                 Booster.Log.logMessage $
                                     "Double-check returned " <> toStrict (encodeToLazyText kResult)
-                        Booster.Log.withContext CtxProxy $
-                            Booster.Log.withContext CtxDetail $
-                                Booster.Log.logMessage $
-                                    WithJsonMessage
-                                        ( object $
-                                            [ "tag" .= ("kore-get-model-recheck" :: Text)
-                                            , "state" .= getModelReq.state
-                                            ]
-                                                <> case kResult of
-                                                    Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
-                                                    _ -> []
-                                        )
-                                        ("kore-get-model-recheck" :: Text)
+                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                            Booster.Log.logMessage $
+                                WithJsonMessage
+                                    ( object $
+                                        [ "tag" .= ("kore-get-model-recheck" :: Text)
+                                        , "state" .= getModelReq.state
+                                        ]
+                                            <> case kResult of
+                                                Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
+                                                _ -> []
+                                    )
+                                    ("kore-get-model-recheck" :: Text)
                         pure (kResult, kTime)
                     -- keep other results
                     | otherwise ->
@@ -454,18 +451,17 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         ("Kore fall-back in " <> secWithUnit kTime)
                             case kResult of
                                 Right (Execute koreResult) -> do
-                                    Booster.Log.withContext CtxProxy $
-                                        Booster.Log.withContext CtxDetail $
-                                            Booster.Log.logMessage $
-                                                WithJsonMessage
-                                                    ( object
-                                                        [ "tag" .= ("kore-execute-fallback" :: Text)
-                                                        , "input" .= execStateToKoreJson simplifiedBoosterState
-                                                        , "output" .= execStateToKoreJson koreResult.state
-                                                        , "kore_reason" .= koreResult.reason
-                                                        ]
-                                                    )
-                                                    ("kore-execute-fallback" :: Text)
+                                    Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                                        Booster.Log.logMessage $
+                                            WithJsonMessage
+                                                ( object
+                                                    [ "tag" .= ("kore-execute-fallback" :: Text)
+                                                    , "input" .= execStateToKoreJson simplifiedBoosterState
+                                                    , "output" .= execStateToKoreJson koreResult.state
+                                                    , "kore_reason" .= koreResult.reason
+                                                    ]
+                                                )
+                                                ("kore-execute-fallback" :: Text)
                                     let
                                         accumulatedLogs =
                                             combineLogs
