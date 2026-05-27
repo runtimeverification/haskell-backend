@@ -28,6 +28,7 @@ import Test.Tasty.Hedgehog
 
 import Booster.Builtin qualified as Builtin (hooks)
 import Booster.Builtin.BOOL qualified as Builtin
+import Booster.Builtin.BYTES qualified as Builtin
 import Booster.Builtin.Base qualified as Builtin (BuiltinFunction)
 import Booster.Builtin.INT qualified as Builtin
 import Booster.Builtin.LIST qualified as Builtin (kItemListDef)
@@ -39,6 +40,7 @@ import Test.Booster.Fixture as Fixture
 test_builtins :: [TestTree]
 test_builtins =
     [ testIntHooks
+    , testBytesHooks
     , testListHooks
     , testMapHooks
     ]
@@ -57,9 +59,15 @@ testIntHooks =
         , testIntHook2 "INT.le" (<=) Builtin.boolTerm
         , testIntHook2 "INT.eq" (==) Builtin.boolTerm
         , testIntHook2 "INT.ne" (/=) Builtin.boolTerm
+        , -- unary
+          testIntAbsHook
+        , -- truncating division and modulo
+          testIntTdivHook
+        , testIntTmodHook
+        , -- exponentiation
+          testIntPowHook
         ]
   where
-    -- testIntHook2 :: ByteString -> (Int -> Int -> a) -> (a -> Term) -> TestTree
     testIntHook2 name op result =
         testProperty ("Hook " <> show name) . property $ do
             let f = runHook name
@@ -80,6 +88,294 @@ testIntHooks =
             assertException $ f []
             assertException $ f [dv_a]
             assertException $ f [dv_a, dv_a, dv_a]
+    testIntAbsHook =
+        testProperty "Hook \"INT.abs\"" . property $ do
+            let f = runHook "INT.abs"
+                run args = either (error . Text.unpack) id . runExcept $ f args
+            a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+            let dv_a = Builtin.intTerm a
+            Just (Builtin.intTerm $ abs a) === run [dv_a]
+            let fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+            Nothing === run [app fct [dv_a]]
+            let assertException = assert . isLeft . runExcept
+            assertException $ f []
+            assertException $ f [dv_a, dv_a]
+    testIntTdivHook =
+        testGroup
+            "INT.tdiv"
+            [ testProperty "truncates toward zero (not floor)" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.tdiv" args
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Just (Builtin.intTerm $ quot a b) === run [Builtin.intTerm a, Builtin.intTerm b]
+            , testCase "(-7) `tdiv` 2 = -3, not -4 as floor division gives" $ do
+                result <- evalHook "INT.tdiv" [Builtin.intTerm (-7), Builtin.intTerm 2]
+                Just (Builtin.intTerm (-3)) @=? result
+            , testCase "division by zero returns Nothing" $ do
+                result <- evalHook "INT.tdiv" [Builtin.intTerm 42, Builtin.intTerm 0]
+                Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.tdiv" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Nothing === run [app fct [Builtin.intTerm a], Builtin.intTerm b]
+                Nothing === run [Builtin.intTerm a, app fct [Builtin.intTerm b]]
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.tdiv" []
+                assertException $ runHook "INT.tdiv" [Builtin.intTerm 1]
+                assertException $
+                    runHook "INT.tdiv" [Builtin.intTerm 1, Builtin.intTerm 2, Builtin.intTerm 3]
+            ]
+    testIntTmodHook =
+        testGroup
+            "INT.tmod"
+            [ testProperty "remainder has sign of dividend" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.tmod" args
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Just (Builtin.intTerm $ rem a b) === run [Builtin.intTerm a, Builtin.intTerm b]
+            , testCase "(-7) `tmod` 2 = -1, not 1 as Euclidean division gives" $ do
+                result <- evalHook "INT.tmod" [Builtin.intTerm (-7), Builtin.intTerm 2]
+                Just (Builtin.intTerm (-1)) @=? result
+            , testCase "modulo by zero returns Nothing" $ do
+                result <- evalHook "INT.tmod" [Builtin.intTerm 42, Builtin.intTerm 0]
+                Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.tmod" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Nothing === run [app fct [Builtin.intTerm a], Builtin.intTerm b]
+                Nothing === run [Builtin.intTerm a, app fct [Builtin.intTerm b]]
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.tmod" []
+                assertException $ runHook "INT.tmod" [Builtin.intTerm 1]
+                assertException $
+                    runHook "INT.tmod" [Builtin.intTerm 1, Builtin.intTerm 2, Builtin.intTerm 3]
+            ]
+    testIntPowHook =
+        testGroup
+            "INT.pow"
+            [ testProperty "non-negative exponents compute correctly" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.pow" args
+                -- use small exponents to keep computation fast
+                base <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear (-10) 10)
+                exp_ <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear 0 10)
+                Just (Builtin.intTerm $ base ^ exp_)
+                    === run [Builtin.intTerm base, Builtin.intTerm exp_]
+            , testCase "any base to power 0 is 1" $ do
+                result <- evalHook "INT.pow" [Builtin.intTerm 42, Builtin.intTerm 0]
+                Just (Builtin.intTerm 1) @=? result
+            , testCase "negative exponent returns Nothing" $ do
+                result <- evalHook "INT.pow" [Builtin.intTerm 2, Builtin.intTerm (-1)]
+                Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.pow" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                base <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear (-10) 10)
+                Nothing === run [app fct [Builtin.intTerm base], Builtin.intTerm 2]
+                Nothing === run [Builtin.intTerm base, app fct [Builtin.intTerm 2]]
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.pow" []
+                assertException $ runHook "INT.pow" [Builtin.intTerm 2]
+                assertException $
+                    runHook "INT.pow" [Builtin.intTerm 2, Builtin.intTerm 3, Builtin.intTerm 4]
+            ]
+
+testBytesHooks :: TestTree
+testBytesHooks =
+    testGroup
+        "BYTES hooks"
+        [ testBytesEmptyHook
+        , testBytesPadLeftHook
+        , testBytesPadRightHook
+        , testBytesConcatHook
+        , testBytesLengthHook
+        ]
+
+testBytesEmptyHook :: TestTree
+testBytesEmptyHook =
+    testGroup
+        "BYTES.empty"
+        [ testCase "zero arguments returns empty byte string" $ do
+            result <- evalHook "BYTES.empty" []
+            Just (Builtin.bytesTerm "") @=? result
+        , testCase "arity error on non-empty argument list" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.empty" [Builtin.bytesTerm "x"]
+        ]
+
+testBytesPadLeftHook :: TestTree
+testBytesPadLeftHook =
+    testGroup
+        "BYTES.padLeft"
+        [ testProperty "pads shorter input on the left with fill byte" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 0 10) Gen.latin1
+            extra <- forAll $ between1And 20
+            let n = BS.length bs + extra
+                nTerm = Builtin.intTerm $ fromIntegral n
+                fillTerm = Builtin.intTerm 0
+            result <- evalHook "BYTES.padLeft" [Builtin.bytesTerm bs, nTerm, fillTerm]
+            Just (Builtin.bytesTerm $ BS.replicate extra '\NUL' <> bs) === result
+        , testProperty "no padding when input is at or beyond target length" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 20) Gen.latin1
+            shortN <- forAll $ between0And (BS.length bs)
+            let nTerm = Builtin.intTerm $ fromIntegral shortN
+                fillTerm = Builtin.intTerm 0
+            result <- evalHook "BYTES.padLeft" [Builtin.bytesTerm bs, nTerm, fillTerm]
+            Just (Builtin.bytesTerm bs) === result
+        , testCase "unevaluated first argument returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.padLeft"
+                    [[trm| X:SortBytes{} |], Builtin.intTerm 10, Builtin.intTerm 0]
+            Nothing @=? result
+        , testCase "fill byte > 255 returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.padLeft"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 10, Builtin.intTerm 256]
+            Nothing @=? result
+        , testCase "negative fill byte returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.padLeft"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 10, Builtin.intTerm (-1)]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.padLeft" []
+            assertException $ runHook "BYTES.padLeft" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook "BYTES.padLeft" [Builtin.bytesTerm "x", Builtin.intTerm 5]
+            assertException $
+                runHook
+                    "BYTES.padLeft"
+                    [ Builtin.bytesTerm "x"
+                    , Builtin.intTerm 5
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 0
+                    ]
+        ]
+
+testBytesPadRightHook :: TestTree
+testBytesPadRightHook =
+    testGroup
+        "BYTES.padRight"
+        [ testProperty "pads shorter input on the right with fill byte" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 0 10) Gen.latin1
+            extra <- forAll $ between1And 20
+            let n = BS.length bs + extra
+                nTerm = Builtin.intTerm $ fromIntegral n
+                fillTerm = Builtin.intTerm 0
+            result <- evalHook "BYTES.padRight" [Builtin.bytesTerm bs, nTerm, fillTerm]
+            Just (Builtin.bytesTerm $ bs <> BS.replicate extra '\NUL') === result
+        , testProperty "no padding when input is at or beyond target length" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 20) Gen.latin1
+            shortN <- forAll $ between0And (BS.length bs)
+            let nTerm = Builtin.intTerm $ fromIntegral shortN
+                fillTerm = Builtin.intTerm 0
+            result <- evalHook "BYTES.padRight" [Builtin.bytesTerm bs, nTerm, fillTerm]
+            Just (Builtin.bytesTerm bs) === result
+        , testCase "unevaluated first argument returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.padRight"
+                    [[trm| X:SortBytes{} |], Builtin.intTerm 10, Builtin.intTerm 0]
+            Nothing @=? result
+        , testCase "fill byte > 255 returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.padRight"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 10, Builtin.intTerm 256]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.padRight" []
+            assertException $ runHook "BYTES.padRight" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook "BYTES.padRight" [Builtin.bytesTerm "x", Builtin.intTerm 5]
+            assertException $
+                runHook
+                    "BYTES.padRight"
+                    [ Builtin.bytesTerm "x"
+                    , Builtin.intTerm 5
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 0
+                    ]
+        ]
+
+testBytesConcatHook :: TestTree
+testBytesConcatHook =
+    testGroup
+        "BYTES.concat"
+        [ testProperty "concatenates two concrete byte strings" . property $ do
+            bs1 <- forAll $ fmap BS.pack $ Gen.string (Range.linear 0 10) Gen.latin1
+            bs2 <- forAll $ fmap BS.pack $ Gen.string (Range.linear 0 10) Gen.latin1
+            result <-
+                evalHook "BYTES.concat" [Builtin.bytesTerm bs1, Builtin.bytesTerm bs2]
+            Just (Builtin.bytesTerm $ bs1 <> bs2) === result
+        , testCase "unevaluated first argument returns Nothing" $ do
+            result <-
+                evalHook "BYTES.concat" [[trm| X:SortBytes{} |], Builtin.bytesTerm "abc"]
+            Nothing @=? result
+        , testCase "unevaluated second argument returns Nothing" $ do
+            result <-
+                evalHook "BYTES.concat" [Builtin.bytesTerm "abc", [trm| X:SortBytes{} |]]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.concat" []
+            assertException $ runHook "BYTES.concat" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook
+                    "BYTES.concat"
+                    [Builtin.bytesTerm "x", Builtin.bytesTerm "y", Builtin.bytesTerm "z"]
+        ]
+
+testBytesLengthHook :: TestTree
+testBytesLengthHook =
+    testGroup
+        "BYTES.length"
+        [ testProperty "returns byte count as integer" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 0 32) Gen.latin1
+            result <- evalHook "BYTES.length" [Builtin.bytesTerm bs]
+            Just (Builtin.intTerm $ fromIntegral $ BS.length bs) === result
+        , testCase "unevaluated argument returns Nothing" $ do
+            result <- evalHook "BYTES.length" [[trm| X:SortBytes{} |]]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.length" []
+            assertException $
+                runHook "BYTES.length" [Builtin.bytesTerm "x", Builtin.bytesTerm "y"]
+        ]
 
 testListHooks :: TestTree
 testListHooks =
