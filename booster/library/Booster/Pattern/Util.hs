@@ -19,6 +19,7 @@ module Booster.Pattern.Util (
     checkTermSymbols,
     isConcrete,
     filterTermSymbols,
+    collectUndefinedSubterms,
     sizeOfTerm,
     termVarStats,
     termSymbolStats,
@@ -267,6 +268,18 @@ filterTermSymbols check = cata $ \case
                         <> maybe [elemSym | check elemSym] (filter check [concatSym, elemSym] <>) rest
                 more ->
                     filter check [concatSym, elemSym] <> fromMaybe [] rest <> concat more
+
+{- | Collect all maximal sub-terms rooted at a partial (non-total, non-constructor) symbol.
+   These represent the definedness conditions: each collected sub-term must be defined
+   (i.e. not evaluate to bottom) for the overall term to be defined.
+-}
+collectUndefinedSubterms :: Term -> [Term]
+collectUndefinedSubterms t@(SymbolApplication sym _ args)
+    | not (isDefinedSymbol sym) = [t]
+    | otherwise = concatMap collectUndefinedSubterms args
+collectUndefinedSubterms (AndTerm l r) = collectUndefinedSubterms l <> collectUndefinedSubterms r
+collectUndefinedSubterms (Injection _ _ inner) = collectUndefinedSubterms inner
+collectUndefinedSubterms _ = []
 
 -- | Calculate size of a term in bytes
 sizeOfTerm :: Term -> Int
