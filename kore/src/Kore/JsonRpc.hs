@@ -732,6 +732,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
         jsonRpcServer
             srvSettings
             False -- no bound threads
+            (\_ -> return ())
             ( \req parsed ->
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond (fromId $ getReqId req) serverState mainModule runSMT parsed
