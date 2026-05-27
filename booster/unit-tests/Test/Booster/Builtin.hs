@@ -10,6 +10,7 @@ module Test.Booster.Builtin (
 
 import Control.Monad.Trans.Except
 import Data.Bifunctor (second)
+import Data.Bits (complement, shiftL, shiftR, xor, (.&.), (.|.))
 import Data.ByteString.Char8 qualified as BS
 import Data.Either (isLeft)
 import Data.Function (on)
@@ -64,8 +65,20 @@ testIntHooks =
         , -- truncating division and modulo
           testIntTdivHook
         , testIntTmodHook
-        , -- exponentiation
+        , -- euclidean division and modulo
+          testIntEdivHook
+        , testIntEmodHook
+        , -- bitwise operations
+          testIntHook2 "INT.and" (.&.) Builtin.intTerm
+        , testIntHook2 "INT.or" (.|.) Builtin.intTerm
+        , testIntHook2 "INT.xor" xor Builtin.intTerm
+        , testIntNotHook
+        , testIntShlHook
+        , testIntShrHook
+        , -- exponentiation and logarithm
           testIntPowHook
+        , testIntPowModHook
+        , testIntLog2Hook
         ]
   where
     testIntHook2 name op result =
@@ -207,16 +220,194 @@ testIntHooks =
                 assertException $
                     runHook "INT.pow" [Builtin.intTerm 2, Builtin.intTerm 3, Builtin.intTerm 4]
             ]
+    testIntEdivHook =
+        testGroup
+            "INT.ediv"
+            [ testProperty "quotient satisfies a = ediv*b + emod" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.ediv" args
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Just (Builtin.intTerm $ euclidDiv a b) === run [Builtin.intTerm a, Builtin.intTerm b]
+            , testCase "(-7) `ediv` 2 = -4 (floor, unlike tdiv which gives -3)" $ do
+                result <- evalHook "INT.ediv" [Builtin.intTerm (-7), Builtin.intTerm 2]
+                Just (Builtin.intTerm (-4)) @=? result
+            , testCase "division by zero returns Nothing" $ do
+                result <- evalHook "INT.ediv" [Builtin.intTerm 42, Builtin.intTerm 0]
+                Nothing @=? result
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.ediv" []
+                assertException $ runHook "INT.ediv" [Builtin.intTerm 1]
+                assertException $
+                    runHook "INT.ediv" [Builtin.intTerm 1, Builtin.intTerm 2, Builtin.intTerm 3]
+            ]
+    testIntEmodHook =
+        testGroup
+            "INT.emod"
+            [ testProperty "remainder is always non-negative" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.emod" args
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                let r = euclidMod a b
+                assert (r >= 0)
+                Just (Builtin.intTerm r) === run [Builtin.intTerm a, Builtin.intTerm b]
+            , testCase "(-7) `emod` 2 = 1 (non-negative, unlike tmod which gives -1)" $ do
+                result <- evalHook "INT.emod" [Builtin.intTerm (-7), Builtin.intTerm 2]
+                Just (Builtin.intTerm 1) @=? result
+            , testCase "modulo by zero returns Nothing" $ do
+                result <- evalHook "INT.emod" [Builtin.intTerm 42, Builtin.intTerm 0]
+                Nothing @=? result
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.emod" []
+                assertException $ runHook "INT.emod" [Builtin.intTerm 1]
+                assertException $
+                    runHook "INT.emod" [Builtin.intTerm 1, Builtin.intTerm 2, Builtin.intTerm 3]
+            ]
+    testIntNotHook =
+        testProperty "Hook \"INT.not\"" . property $ do
+            let f = runHook "INT.not"
+                run args = either (error . Text.unpack) id . runExcept $ f args
+            a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+            let dv_a = Builtin.intTerm a
+            Just (Builtin.intTerm $ complement a) === run [dv_a]
+            let fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+            Nothing === run [app fct [dv_a]]
+            let assertException = assert . isLeft . runExcept
+            assertException $ f []
+            assertException $ f [dv_a, dv_a]
+    testIntShlHook =
+        testGroup
+            "INT.shl"
+            [ testProperty "shifts left by non-negative amount" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.shl" args
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                n <- forAll $ Gen.int (Range.linear 0 63)
+                Just (Builtin.intTerm $ shiftL a n) === run [Builtin.intTerm a, Builtin.intTerm (fromIntegral n)]
+            , testCase "negative shift amount returns Nothing" $ do
+                result <- evalHook "INT.shl" [Builtin.intTerm 1, Builtin.intTerm (-1)]
+                Nothing @=? result
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.shl" []
+                assertException $ runHook "INT.shl" [Builtin.intTerm 1]
+                assertException $
+                    runHook "INT.shl" [Builtin.intTerm 1, Builtin.intTerm 2, Builtin.intTerm 3]
+            ]
+    testIntShrHook =
+        testGroup
+            "INT.shr"
+            [ testProperty "shifts right by non-negative amount" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.shr" args
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                n <- forAll $ Gen.int (Range.linear 0 63)
+                Just (Builtin.intTerm $ shiftR a n) === run [Builtin.intTerm a, Builtin.intTerm (fromIntegral n)]
+            , testCase "negative shift amount returns Nothing" $ do
+                result <- evalHook "INT.shr" [Builtin.intTerm 8, Builtin.intTerm (-1)]
+                Nothing @=? result
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.shr" []
+                assertException $ runHook "INT.shr" [Builtin.intTerm 1]
+                assertException $
+                    runHook "INT.shr" [Builtin.intTerm 1, Builtin.intTerm 2, Builtin.intTerm 3]
+            ]
+    testIntPowModHook =
+        testGroup
+            "INT.powmod"
+            [ testProperty "b^e mod m for small values" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.powmod" args
+                b <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear (-10) 10)
+                e <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear 0 10)
+                m <- fmap fromIntegral $ forAll $ Gen.filter (/= 0) $ Gen.int64 (Range.linear 1 100)
+                let expected = powMod b e m
+                Just (Builtin.intTerm expected) === run [Builtin.intTerm b, Builtin.intTerm e, Builtin.intTerm m]
+            , testCase "any base to power 0 mod m is 1 mod m" $ do
+                result <- evalHook "INT.powmod" [Builtin.intTerm 42, Builtin.intTerm 0, Builtin.intTerm 7]
+                Just (Builtin.intTerm 1) @=? result
+            , testCase "negative exponent returns Nothing" $ do
+                result <- evalHook "INT.powmod" [Builtin.intTerm 2, Builtin.intTerm (-1), Builtin.intTerm 5]
+                Nothing @=? result
+            , testCase "zero modulus returns Nothing" $ do
+                result <- evalHook "INT.powmod" [Builtin.intTerm 2, Builtin.intTerm 3, Builtin.intTerm 0]
+                Nothing @=? result
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.powmod" []
+                assertException $ runHook "INT.powmod" [Builtin.intTerm 2]
+                assertException $
+                    runHook "INT.powmod" [Builtin.intTerm 2, Builtin.intTerm 3]
+                assertException $
+                    runHook
+                        "INT.powmod"
+                        [Builtin.intTerm 2, Builtin.intTerm 3, Builtin.intTerm 4, Builtin.intTerm 5]
+            ]
+    testIntLog2Hook =
+        testGroup
+            "INT.log2"
+            [ testProperty "floor of log base 2 for positive integers" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.log2" args
+                n <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear 1 maxBound)
+                let expected = floor (logBase 2 (fromIntegral n) :: Double)
+                Just (Builtin.intTerm expected) === run [Builtin.intTerm n]
+            , testCase "log2(1) = 0" $ do
+                result <- evalHook "INT.log2" [Builtin.intTerm 1]
+                Just (Builtin.intTerm 0) @=? result
+            , testCase "log2(2) = 1" $ do
+                result <- evalHook "INT.log2" [Builtin.intTerm 2]
+                Just (Builtin.intTerm 1) @=? result
+            , testCase "log2(1024) = 10" $ do
+                result <- evalHook "INT.log2" [Builtin.intTerm 1024]
+                Just (Builtin.intTerm 10) @=? result
+            , testCase "zero returns Nothing" $ do
+                result <- evalHook "INT.log2" [Builtin.intTerm 0]
+                Nothing @=? result
+            , testCase "negative returns Nothing" $ do
+                result <- evalHook "INT.log2" [Builtin.intTerm (-1)]
+                Nothing @=? result
+            , testCase "arity error on wrong argument count" $ do
+                let assertException = assertBool "Unexpected success" . isLeft . runExcept
+                assertException $ runHook "INT.log2" []
+                assertException $ runHook "INT.log2" [Builtin.intTerm 1, Builtin.intTerm 2]
+            ]
+    -- Euclidean helpers (mirror the implementation for property checking)
+    euclidMod a b = let r = a `rem` b in if r < 0 then r + abs b else r
+    euclidDiv a b = (a - euclidMod a b) `div` b
+    powMod _ 0 m = 1 `mod` m
+    powMod b e m
+        | even e = let half = powMod b (e `div` 2) m in (half * half) `mod` m
+        | otherwise = (b * powMod b (e - 1) m) `mod` m
 
 testBytesHooks :: TestTree
 testBytesHooks =
     testGroup
         "BYTES hooks"
         [ testBytesEmptyHook
-        , testBytesPadLeftHook
-        , testBytesPadRightHook
         , testBytesConcatHook
         , testBytesLengthHook
+        , testBytesReverseHook
+        , testBytesUpdateHook
+        , testBytesGetHook
+        , testBytesSubstrHook
+        , testBytesReplaceAtHook
+        , testBytesPadLeftHook
+        , testBytesPadRightHook
+        , testBytesInt2BytesHook
+        , testBytesBytes2IntHook
         ]
 
 testBytesEmptyHook :: TestTree
@@ -376,6 +567,329 @@ testBytesLengthHook =
             assertException $
                 runHook "BYTES.length" [Builtin.bytesTerm "x", Builtin.bytesTerm "y"]
         ]
+
+testBytesReverseHook :: TestTree
+testBytesReverseHook =
+    testGroup
+        "BYTES.reverse"
+        [ testProperty "reverses a byte string" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 0 20) Gen.latin1
+            result <- evalHook "BYTES.reverse" [Builtin.bytesTerm bs]
+            Just (Builtin.bytesTerm $ BS.reverse bs) === result
+        , testCase "reverse of empty is empty" $ do
+            result <- evalHook "BYTES.reverse" [Builtin.bytesTerm ""]
+            Just (Builtin.bytesTerm "") @=? result
+        , testCase "unevaluated argument returns Nothing" $ do
+            result <- evalHook "BYTES.reverse" [[trm| X:SortBytes{} |]]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.reverse" []
+            assertException $
+                runHook "BYTES.reverse" [Builtin.bytesTerm "x", Builtin.bytesTerm "y"]
+        ]
+
+testBytesUpdateHook :: TestTree
+testBytesUpdateHook =
+    testGroup
+        "BYTES.update"
+        [ testProperty "replaces byte at valid index" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 20) Gen.latin1
+            i <- forAll $ between0And (BS.length bs - 1)
+            let iTerm = Builtin.intTerm $ fromIntegral i
+            result <- evalHook "BYTES.update" [Builtin.bytesTerm bs, iTerm, Builtin.intTerm 0x42]
+            let expected =
+                    BS.take i bs <> BS.singleton '\x42' <> BS.drop (i + 1) bs
+            Just (Builtin.bytesTerm expected) === result
+        , testCase "index out of range returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 5, Builtin.intTerm 0]
+            Nothing @=? result
+        , testCase "negative index returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm (-1), Builtin.intTerm 0]
+            Nothing @=? result
+        , testCase "unevaluated first argument returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.update"
+                    [[trm| X:SortBytes{} |], Builtin.intTerm 0, Builtin.intTerm 0]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.update" []
+            assertException $ runHook "BYTES.update" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook "BYTES.update" [Builtin.bytesTerm "x", Builtin.intTerm 0]
+            assertException $
+                runHook
+                    "BYTES.update"
+                    [ Builtin.bytesTerm "x"
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 0
+                    ]
+        ]
+
+testBytesGetHook :: TestTree
+testBytesGetHook =
+    testGroup
+        "BYTES.get"
+        [ testProperty "returns byte at valid index as integer" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 20) Gen.latin1
+            i <- forAll $ between0And (BS.length bs - 1)
+            result <- evalHook "BYTES.get" [Builtin.bytesTerm bs, Builtin.intTerm $ fromIntegral i]
+            Just (Builtin.intTerm . fromIntegral . fromEnum $ BS.index bs i) === result
+        , testCase "index out of range returns Nothing" $ do
+            result <- evalHook "BYTES.get" [Builtin.bytesTerm "abc", Builtin.intTerm 5]
+            Nothing @=? result
+        , testCase "negative index returns Nothing" $ do
+            result <- evalHook "BYTES.get" [Builtin.bytesTerm "abc", Builtin.intTerm (-1)]
+            Nothing @=? result
+        , testCase "unevaluated argument returns Nothing" $ do
+            result <- evalHook "BYTES.get" [[trm| X:SortBytes{} |], Builtin.intTerm 0]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.get" []
+            assertException $ runHook "BYTES.get" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook
+                    "BYTES.get"
+                    [Builtin.bytesTerm "x", Builtin.intTerm 0, Builtin.intTerm 0]
+        ]
+
+testBytesSubstrHook :: TestTree
+testBytesSubstrHook =
+    testGroup
+        "BYTES.substr"
+        [ testProperty "extracts [start, end) slice" . property $ do
+            bs <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 20) Gen.latin1
+            start <- forAll $ between0And (BS.length bs)
+            end <- forAll $ Gen.int (Range.linear start (BS.length bs))
+            let result' = BS.take (end - start) (BS.drop start bs)
+            result <-
+                evalHook
+                    "BYTES.substr"
+                    [ Builtin.bytesTerm bs
+                    , Builtin.intTerm $ fromIntegral start
+                    , Builtin.intTerm $ fromIntegral end
+                    ]
+            Just (Builtin.bytesTerm result') === result
+        , testCase "end > length returns Nothing" $ do
+            result <-
+                evalHook "BYTES.substr" [Builtin.bytesTerm "abc", Builtin.intTerm 0, Builtin.intTerm 5]
+            Nothing @=? result
+        , testCase "end < start returns Nothing" $ do
+            result <-
+                evalHook "BYTES.substr" [Builtin.bytesTerm "abc", Builtin.intTerm 2, Builtin.intTerm 1]
+            Nothing @=? result
+        , testCase "negative start returns Nothing" $ do
+            result <-
+                evalHook "BYTES.substr" [Builtin.bytesTerm "abc", Builtin.intTerm (-1), Builtin.intTerm 2]
+            Nothing @=? result
+        , testCase "unevaluated first argument returns Nothing" $ do
+            result <-
+                evalHook "BYTES.substr" [[trm| X:SortBytes{} |], Builtin.intTerm 0, Builtin.intTerm 2]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.substr" []
+            assertException $ runHook "BYTES.substr" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook "BYTES.substr" [Builtin.bytesTerm "x", Builtin.intTerm 0]
+            assertException $
+                runHook
+                    "BYTES.substr"
+                    [ Builtin.bytesTerm "x"
+                    , Builtin.intTerm 0
+                    , Builtin.intTerm 1
+                    , Builtin.intTerm 2
+                    ]
+        ]
+
+testBytesReplaceAtHook :: TestTree
+testBytesReplaceAtHook =
+    testGroup
+        "BYTES.replaceAt"
+        [ testProperty "replaces slice of dest starting at index" . property $ do
+            dest <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 20) Gen.latin1
+            src <- forAll $ fmap BS.pack $ Gen.string (Range.linear 1 (BS.length dest)) Gen.latin1
+            i <- forAll $ between0And (BS.length dest - BS.length src)
+            let delta = BS.length src
+                expected =
+                    BS.take i dest <> src <> BS.drop (i + delta) dest
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [ Builtin.bytesTerm dest
+                    , Builtin.intTerm $ fromIntegral i
+                    , Builtin.bytesTerm src
+                    ]
+            Just (Builtin.bytesTerm expected) === result
+        , testCase "empty replacement returns dest unchanged" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [Builtin.bytesTerm "hello", Builtin.intTerm 2, Builtin.bytesTerm ""]
+            Just (Builtin.bytesTerm "hello") @=? result
+        , testCase "index out of range returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 5, Builtin.bytesTerm "x"]
+            Nothing @=? result
+        , testCase "negative index returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm (-1), Builtin.bytesTerm "x"]
+            Nothing @=? result
+        , testCase "unevaluated first argument returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [[trm| X:SortBytes{} |], Builtin.intTerm 0, Builtin.bytesTerm "x"]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.replaceAt" []
+            assertException $ runHook "BYTES.replaceAt" [Builtin.bytesTerm "x"]
+            assertException $
+                runHook "BYTES.replaceAt" [Builtin.bytesTerm "x", Builtin.intTerm 0]
+            assertException $
+                runHook
+                    "BYTES.replaceAt"
+                    [ Builtin.bytesTerm "x"
+                    , Builtin.intTerm 0
+                    , Builtin.bytesTerm "y"
+                    , Builtin.bytesTerm "z"
+                    ]
+        ]
+
+-- big-endian encoding: [0x00, 0x01] means 1; [0xFF] means 255 unsigned or -1 signed (1 byte)
+testBytesInt2BytesHook :: TestTree
+testBytesInt2BytesHook =
+    testGroup
+        "BYTES.int2bytes"
+        [ testCase "encodes 0 as requested number of zero bytes (big-endian)" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 4, Builtin.intTerm 0, bigEndian]
+            Just (Builtin.bytesTerm $ BS.replicate 4 '\NUL') @=? result
+        , testCase "encodes 1 as big-endian 4-byte value" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 4, Builtin.intTerm 1, bigEndian]
+            Just (Builtin.bytesTerm "\x00\x00\x00\x01") @=? result
+        , testCase "encodes 1 as little-endian 4-byte value" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 4, Builtin.intTerm 1, littleEndian]
+            Just (Builtin.bytesTerm "\x01\x00\x00\x00") @=? result
+        , testCase "encodes 256 = 0x0100 as big-endian 2-byte value" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 2, Builtin.intTerm 256, bigEndian]
+            Just (Builtin.bytesTerm "\x01\x00") @=? result
+        , testCase "negative value uses 0xFF padding (big-endian)" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 2, Builtin.intTerm (-1), bigEndian]
+            Just (Builtin.bytesTerm "\xFF\xFF") @=? result
+        , testCase "unevaluated endianness returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 4, Builtin.intTerm 0, [trm| X:SortEndianness{} |]]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.int2bytes" []
+            assertException $ runHook "BYTES.int2bytes" [Builtin.intTerm 4]
+            assertException $ runHook "BYTES.int2bytes" [Builtin.intTerm 4, Builtin.intTerm 0]
+            assertException $
+                runHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 4, Builtin.intTerm 0, bigEndian, bigEndian]
+        ]
+
+testBytesBytes2IntHook :: TestTree
+testBytesBytes2IntHook =
+    testGroup
+        "BYTES.bytes2int"
+        [ testCase "big-endian unsigned: 0x0001 = 1" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\x00\x01", bigEndian, unsigned]
+            Just (Builtin.intTerm 1) @=? result
+        , testCase "little-endian unsigned: 0x0100 = 1" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\x01\x00", littleEndian, unsigned]
+            Just (Builtin.intTerm 1) @=? result
+        , testCase "big-endian signed: 0xFF = -1 (1-byte two's complement)" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\xFF", bigEndian, signed]
+            Just (Builtin.intTerm (-1)) @=? result
+        , testCase "big-endian signed: 0x7F = 127 (positive)" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\x7F", bigEndian, signed]
+            Just (Builtin.intTerm 127) @=? result
+        , testCase "big-endian unsigned: 0xFF = 255 (not -1)" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\xFF", bigEndian, unsigned]
+            Just (Builtin.intTerm 255) @=? result
+        , testProperty "int2bytes and bytes2int are inverses (unsigned, big-endian)" . property $ do
+            n <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear 0 maxBound)
+            let encoded = Builtin.bytesTerm $ int2bytesBE 8 n
+            result <- evalHook "BYTES.bytes2int" [encoded, bigEndian, unsigned]
+            Just (Builtin.intTerm n) === result
+        , testCase "unevaluated endianness returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\x01", [trm| X:SortEndianness{} |], unsigned]
+            Nothing @=? result
+        , testCase "unevaluated signedness returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\x01", bigEndian, [trm| X:SortSignedness{} |]]
+            Nothing @=? result
+        , testCase "arity error on wrong argument count" $ do
+            let assertException = assertBool "Unexpected success" . isLeft . runExcept
+            assertException $ runHook "BYTES.bytes2int" []
+            assertException $ runHook "BYTES.bytes2int" [Builtin.bytesTerm "\x01"]
+            assertException $
+                runHook "BYTES.bytes2int" [Builtin.bytesTerm "\x01", bigEndian]
+            assertException $
+                runHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\x01", bigEndian, unsigned, unsigned]
+        ]
+  where
+    -- helper to compute expected int2bytes result for round-trip test
+    int2bytesBE len n =
+        BS.reverse . fst $
+            BS.unfoldrN len (\v -> Just (toEnum . fromIntegral $ v `mod` 0x100, v `div` 0x100)) n
 
 testListHooks :: TestTree
 testListHooks =
@@ -1279,6 +1793,16 @@ testMapInclusionHook =
 
 ------------------------------------------------------------
 -- helpers
+
+-- endianness and signedness constructor terms for BYTES.int2bytes / BYTES.bytes2int
+bigEndian, littleEndian :: Term
+bigEndian = app [symb| symbol bigEndianBytes{}() : SortEndianness{} [constructor{}()] |] []
+littleEndian = app [symb| symbol littleEndianBytes{}() : SortEndianness{} [constructor{}()] |] []
+
+signed, unsigned :: Term
+signed = app [symb| symbol signedBytes{}() : SortSignedness{} [constructor{}()] |] []
+unsigned = app [symb| symbol unsignedBytes{}() : SortSignedness{} [constructor{}()] |] []
+
 runHook :: BS.ByteString -> Builtin.BuiltinFunction
 runHook name =
     fromMaybe (error $ show name <> " hook not found") $
