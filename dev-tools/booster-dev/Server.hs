@@ -164,6 +164,7 @@ runServer port definitions defaultMain mLlvmLibrary rewriteOpts logFile mSMTOpti
             jsonRpcServer
                 (serverSettings port "*")
                 (isJust mLlvmLibrary) -- run in bound threads if LLVM library in use
+                (\_ -> return ())
                 ( \rawReq req ->
                     flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                         . Booster.Log.unLoggerT
