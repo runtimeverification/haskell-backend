@@ -21,6 +21,7 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 
 import Booster.Builtin.BOOL
+import Booster.Builtin.BYTES
 import Booster.Builtin.Base
 import Booster.Builtin.INT
 import Booster.Builtin.KEQUAL
@@ -31,6 +32,7 @@ hooks :: Map ByteString BuiltinFunction
 hooks =
     Map.unions
         [ builtinsBOOL
+        , builtinsBYTES
         , builtinsINT
         , builtinsMAP
         , builtinsLIST

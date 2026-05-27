@@ -228,6 +228,7 @@ library
       Booster.Builtin
       Booster.Builtin.Base
       Booster.Builtin.BOOL
+      Booster.Builtin.BYTES
       Booster.Builtin.INT
       Booster.Builtin.KEQUAL
       Booster.Builtin.LIST
