@@ -461,8 +461,13 @@ instance Entry DebugApplyEquation where
             , CLNullary CtxKoreTerm
             ]
 
-    oneLineJson (DebugApplyEquation _ result) =
-        JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result
+    oneLineJson (DebugApplyEquation equation result) =
+        JSON.object $
+            maybe [] (\lbl -> ["label" JSON..= lbl]) (ruleLabel equation)
+                <> [ "location" JSON..= fmap (renderDefault . pretty) (srcLoc equation)
+                   , "result"
+                        JSON..= (JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result)
+                   ]
 
 {- | Log when an 'Equation' is actually applied.
 
