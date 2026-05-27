@@ -124,16 +124,26 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         MatchIndeterminate _partialSubst _remainder ->
                             ApplyEquations.evaluatePatternWithCeils def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
-                                    if patL == simplifedSubstPatL
-                                        then -- we are being conservative here for now and returning "not-implied".
-                                        -- We could return implies, but the condition will contain the remainder
-                                        -- as an equality contraint, predicating the implication on that equality being true.
+                                    if patL /= simplifedSubstPatL
+                                        then checkImpliesMatchTerms existsL simplifedSubstPatL existsR patR
+                                        else -- LHS didn't change; try simplifying RHS under LHS constraints so
+                                        -- that e.g. hashLoc("Solidity",...) can discharge its requires.
 
-                                            doesNotImply
-                                                (sortOfPattern patL)
-                                                (externaliseExistTerm existsL patL.term)
-                                                (externaliseExistTerm existsR patR.term)
-                                        else checkImpliesMatchTerms existsL simplifedSubstPatL existsR patR
+                                            let patRWithLhsContext = patR{constraints = patR.constraints <> patL.constraints}
+                                             in ApplyEquations.evaluatePatternWithCeils def mLlvmLibrary solver mempty patRWithLhsContext >>= \case
+                                                    (Right simplifiedPatR, _) ->
+                                                        if patR.term /= simplifiedPatR.term
+                                                            then checkImpliesMatchTerms existsL patL existsR simplifiedPatR{constraints = patR.constraints}
+                                                            else
+                                                                doesNotImply
+                                                                    (sortOfPattern patL)
+                                                                    (externaliseExistTerm existsL patL.term)
+                                                                    (externaliseExistTerm existsR patR.term)
+                                                    (Left _, _) ->
+                                                        doesNotImply
+                                                            (sortOfPattern patL)
+                                                            (externaliseExistTerm existsL patL.term)
+                                                            (externaliseExistTerm existsR patR.term)
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
