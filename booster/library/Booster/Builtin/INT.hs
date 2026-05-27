@@ -37,11 +37,14 @@ builtinsINT =
             , "sub" ~~> intOperator (-)
             , "mul" ~~> intOperator (*)
             , "abs" ~~> intModifier abs
-            -- tdiv, tmod (truncating toward zero), ediv, emod (euclidian)
-            -- bitwise operations
-            -- and, or, xor, not, shl, shr
-            -- exponentiation
-            -- pow, powmod, log2 (truncating)
+            , -- tdiv, tmod (truncating toward zero), ediv, emod (euclidian)
+              "tdiv" ~~> intTDiv
+            , "tmod" ~~> intTMod
+            , -- bitwise operations
+              -- and, or, xor, not, shl, shr
+              -- exponentiation
+              "pow" ~~> intPow
+              -- powmod, log2 (truncating)
             ]
 
 compareInt :: (Integer -> Integer -> Bool) -> BuiltinFunction
@@ -68,6 +71,39 @@ intModifier f args
     | [arg] <- args
     , Just i <- readIntTerm arg =
         pure . Just . intTerm $ f i
+    | otherwise = pure Nothing
+
+-- | Integer exponentiation (non-negative exponents only; negative exponent returns Nothing)
+intPow :: BuiltinFunction
+intPow args
+    | length args /= 2 = arityError "INT.pow" 2 args
+    | [base, exp_] <- args
+    , Just b <- readIntTerm base
+    , Just e <- readIntTerm exp_
+    , e >= 0 =
+        pure . Just . intTerm $ b ^ e
+    | otherwise = pure Nothing
+
+-- | Truncating integer division (toward zero); division by zero returns Nothing
+intTDiv :: BuiltinFunction
+intTDiv args
+    | length args /= 2 = arityError "INT.tdiv" 2 args
+    | [arg1, arg2] <- args
+    , Just i1 <- readIntTerm arg1
+    , Just i2 <- readIntTerm arg2
+    , i2 /= 0 =
+        pure . Just . intTerm $ quot i1 i2
+    | otherwise = pure Nothing
+
+-- | Truncating integer modulo (toward zero); modulo by zero returns Nothing
+intTMod :: BuiltinFunction
+intTMod args
+    | length args /= 2 = arityError "INT.tmod" 2 args
+    | [arg1, arg2] <- args
+    , Just i1 <- readIntTerm arg1
+    , Just i2 <- readIntTerm arg2
+    , i2 /= 0 =
+        pure . Just . intTerm $ rem i1 i2
     | otherwise = pure Nothing
 
 intTerm :: Integer -> Term
