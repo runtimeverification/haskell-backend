@@ -13,6 +13,7 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplifyPattern,
     test_simplifyConstraint,
     test_errors,
+    test_cycleDetection,
 ) where
 
 import Control.Monad.Logger (runNoLoggingT)
@@ -248,6 +249,36 @@ test_errors =
     isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
     isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
 
+{- | Cycle-detection cases.  Both definitions hold the same two rules on
+f1: R1 at priority 20 whose side condition requires re-evaluating its
+own LHS (creating a recursive (uniqueId, hash) cycle), and R2 at
+priority 30 with no requires.
+
+For function equations, priorities are binding: when R1 trips the
+cycle detector its body cannot be discharged, so applyEquations must
+abort without falling through to R2.  The term is returned unchanged.
+
+For simplification equations, priorities are advisory: when R1 trips
+the cycle detector applyEquations falls through to R2, which fires
+and rewrites f1(a) to con2(a).
+-}
+test_cycleDetection :: TestTree
+test_cycleDetection =
+    testGroup
+        "Cycle detection during recursive side-condition evaluation"
+        [ testCase "Function equations: cycle aborts, priority-30 rule NOT tried" $ do
+            let subj = [trm| f1{}(A:SomeSort{}) |]
+            ns <- noSolver
+            runNoLoggingT (fst <$> evaluateTerm TopDown cycleFunDef Nothing ns mempty mempty subj)
+                @?>>= Right subj
+        , testCase "Simplifications: cycle continues, priority-30 rule fires" $ do
+            let subj = [trm| f1{}(A:SomeSort{}) |]
+                result = [trm| con2{}(A:SomeSort{}) |]
+            ns <- noSolver
+            runNoLoggingT (fst <$> evaluateTerm TopDown cycleSimplDef Nothing ns mempty mempty subj)
+                @?>>= Right result
+        ]
+
 ----------------------------------------
 
 index :: (ByteString -> CellIndex) -> SymbolName -> TermIndex
@@ -327,6 +358,50 @@ loopDef =
                 ]
         }
 
+-- Rules used by the cycle-detection tests.  The high-priority rule R1
+-- requires evaluating @f1(X)@ as part of its side condition, which
+-- causes a (uniqueId, hash)-cycle when the body recursively descends
+-- into f1's argument and re-tries R1 on it.  The right-hand side of
+-- the EqualsK is a constructor so the KEQUAL.eq builtin cannot
+-- syntactically short-circuit -- it has to fall through to equation
+-- evaluation, which is where the cycle is detected.
+--
+-- R2 is a lower-priority rule that would also match f1(X) but has no
+-- recursive side condition.  Priorities are 20 (R1) and 30 (R2); the
+-- two rules have distinct uniqueIds so the cycle detector treats them
+-- as separate.
+cycleR1, cycleR2 :: RewriteRule t
+cycleR1 =
+    equation
+        (Just "cycle-r1")
+        [trm| f1{}(X:SomeSort{}) |]
+        [trm| con3{}(X:SomeSort{}, X:SomeSort{}) |]
+        20
+        `withUniqueId` "CYCLE-R1"
+        `withRequires` [Predicate $ EqualsK (KSeq someSort selfLhs) (KSeq someSort other)]
+  where
+    selfLhs = [trm| f1{}(X:SomeSort{}) |]
+    other = [trm| con1{}(X:SomeSort{}) |]
+cycleR2 =
+    equation
+        (Just "cycle-r2")
+        [trm| f1{}(X:SomeSort{}) |]
+        [trm| con2{}(X:SomeSort{}) |]
+        30
+        `withUniqueId` "CYCLE-R2"
+
+cycleFunDef, cycleSimplDef :: KoreDefinition
+cycleFunDef =
+    testDefinition
+        { functionEquations =
+            mkTheory [(index IdxFun "f1", [cycleR1, cycleR2])]
+        }
+cycleSimplDef =
+    testDefinition
+        { simplifications =
+            mkTheory [(index IdxFun "f1", [cycleR1, cycleR2])]
+        }
+
 f1Equations, f2Equations :: [RewriteRule t]
 f1Equations =
     [ equation -- f1(con1(X)) == con2(f1(X))
@@ -391,6 +466,16 @@ r@RewriteRule{lhs, attributes, computedAttributes} `withAttributes` f =
 withComputedAttributes :: RewriteRule t -> ComputedAxiomAttributes -> RewriteRule t
 r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
     r{lhs, computedAttributes}
+
+-- Give a rule a distinct UniqueId. Cycle detection uses (uniqueId, term hash);
+-- without a distinct id the default mockUniqueId would conflate every rule.
+withUniqueId :: RewriteRule t -> Text -> RewriteRule t
+r@RewriteRule{lhs, attributes, computedAttributes} `withUniqueId` uid =
+    r{lhs, computedAttributes, attributes = attributes{uniqueId = UniqueId uid}}
+
+withRequires :: RewriteRule t -> [Predicate] -> RewriteRule t
+r@RewriteRule{lhs, computedAttributes} `withRequires` rq =
+    r{lhs, computedAttributes, requires = rq}
 
 mkTheory :: [(TermIndex, [RewriteRule t])] -> Theory (RewriteRule t)
 mkTheory = Map.map mkPriorityGroups . Map.fromList
