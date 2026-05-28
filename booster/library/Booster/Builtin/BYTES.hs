@@ -83,7 +83,7 @@ bytesUpdate args
     , Just i <- readIntTerm iArg
     , Just byte <- readFillByte byteArg
     , i >= 0
-    , fromIntegral i < BS.length bs =
+    , i < toInteger (BS.length bs) =
         let idx = fromIntegral i
          in pure . Just . bytesTerm $
                 BS.take idx bs <> BS.singleton byte <> BS.drop (idx + 1) bs
@@ -97,7 +97,7 @@ bytesGet args
     , Just bs <- readBytesTerm bsArg
     , Just i <- readIntTerm iArg
     , i >= 0
-    , fromIntegral i < BS.length bs =
+    , i < toInteger (BS.length bs) =
         pure . Just . intTerm . toInteger $ BS.index bs (fromIntegral i)
     | otherwise = pure Nothing
 
@@ -111,15 +111,15 @@ bytesSubstr args
     , Just end <- readIntTerm endArg
     , start >= 0
     , end >= start
-    , fromIntegral end <= BS.length bs =
+    , end <= toInteger (BS.length bs) =
         pure . Just . bytesTerm $
             BS.take (fromIntegral (end - start)) (BS.drop (fromIntegral start) bs)
     | otherwise = pure Nothing
 
 {- | replaceAt(dest, i, src): overwrite dest starting at offset i with src bytes.
-Returns Nothing if i is out of bounds or src would not fit cleanly. Matches
-Kore semantics: result length is len(dest) - len(src) + len(src), i.e. the
-replaced slice is exactly len(src) bytes long.
+Per K's BYTES.replaceAt (domains.md), the result is `#False` if `i + length(src)`
+is not a valid end index, i.e. unless `0 <= i && i + length(src) <= length(dest)`.
+The result length therefore always equals length(dest).
 -}
 bytesReplaceAt :: BuiltinFunction
 bytesReplaceAt args
@@ -127,18 +127,13 @@ bytesReplaceAt args
     | [bsArg, iArg, srcArg] <- args
     , Just dest <- readBytesTerm bsArg
     , Just i <- readIntTerm iArg
-    , Just src <- readBytesTerm srcArg =
+    , Just src <- readBytesTerm srcArg
+    , i >= 0
+    , i + toInteger (BS.length src) <= toInteger (BS.length dest) =
         let delta = BS.length src
-            destLen = BS.length dest
             idx = fromIntegral i
-         in if delta == 0
-                then pure . Just $ bytesTerm dest
-                else
-                    if idx < 0 || idx >= destLen || destLen == 0
-                        then pure Nothing
-                        else
-                            pure . Just . bytesTerm $
-                                BS.take idx dest <> src <> BS.drop (idx + delta) dest
+         in pure . Just . bytesTerm $
+                BS.take idx dest <> src <> BS.drop (idx + delta) dest
     | otherwise = pure Nothing
 
 -- | padLeftBytes(BS, N, fill): left-pad BS with fill bytes to reach length N
@@ -148,10 +143,11 @@ bytesPadLeft args
     | [bsArg, nArg, fillArg] <- args
     , Just bs <- readBytesTerm bsArg
     , Just n <- readIntTerm nArg
-    , Just fill <- readFillByte fillArg =
-        let len = BS.length bs
-            padLen = max 0 (fromIntegral n - len)
-         in pure . Just . bytesTerm $ BS.replicate padLen fill <> bs
+    , Just fill <- readFillByte fillArg
+    , n >= 0 =
+        let len = toInteger (BS.length bs)
+            padLen = max 0 (n - len)
+         in pure . Just . bytesTerm $ BS.replicate (fromIntegral padLen) fill <> bs
     | otherwise = pure Nothing
 
 -- | padRightBytes(BS, N, fill): right-pad BS with fill bytes to reach length N
@@ -161,14 +157,18 @@ bytesPadRight args
     | [bsArg, nArg, fillArg] <- args
     , Just bs <- readBytesTerm bsArg
     , Just n <- readIntTerm nArg
-    , Just fill <- readFillByte fillArg =
-        let len = BS.length bs
-            padLen = max 0 (fromIntegral n - len)
-         in pure . Just . bytesTerm $ bs <> BS.replicate padLen fill
+    , Just fill <- readFillByte fillArg
+    , n >= 0 =
+        let len = toInteger (BS.length bs)
+            padLen = max 0 (n - len)
+         in pure . Just . bytesTerm $ bs <> BS.replicate (fromIntegral padLen) fill
     | otherwise = pure Nothing
 
 {- | int2bytes(len, val, endianness): encode val as len bytes in the given byte order.
-Positive values are zero-padded; negative values use 0xFF padding (two's complement).
+Per K's Int2Bytes (domains.md), when `len` is smaller than the magnitude of `val`,
+the most-significant bits of `val` are silently truncated; when larger, positive
+values are zero-padded and negative values use 0xFF padding (two's complement).
+A negative `len` returns Nothing rather than silently producing an empty result.
 -}
 bytesInt2Bytes :: BuiltinFunction
 bytesInt2Bytes args
@@ -176,7 +176,8 @@ bytesInt2Bytes args
     | [lenArg, valArg, endArg] <- args
     , Just len <- readIntTerm lenArg
     , Just val <- readIntTerm valArg
-    , Just end <- readEndianness endArg =
+    , Just end <- readEndianness endArg
+    , len >= 0 =
         let pad = if val < 0 then 0xFF else 0x00
             (littleEndian, _) = BS.unfoldrN (fromIntegral len) go val
             go v
@@ -228,16 +229,18 @@ readFillByte t = do
 
 data Endianness = BigEndian | LittleEndian
 
+-- K compiles `syntax Endianness ::= "BE" [symbol(bigEndianBytes)]` (etc.) into a
+-- kore constructor whose name is `LblbigEndianBytes`. We match the kore name.
 readEndianness :: Term -> Maybe Endianness
 readEndianness (SymbolApplication sym [] [])
-    | sym.name == "bigEndianBytes" = Just BigEndian
-    | sym.name == "littleEndianBytes" = Just LittleEndian
+    | sym.name == "LblbigEndianBytes" = Just BigEndian
+    | sym.name == "LbllittleEndianBytes" = Just LittleEndian
 readEndianness _ = Nothing
 
 data Signedness = Signed | Unsigned
 
 readSignedness :: Term -> Maybe Signedness
 readSignedness (SymbolApplication sym [] [])
-    | sym.name == "signedBytes" = Just Signed
-    | sym.name == "unsignedBytes" = Just Unsigned
+    | sym.name == "LblsignedBytes" = Just Signed
+    | sym.name == "LblunsignedBytes" = Just Unsigned
 readSignedness _ = Nothing
