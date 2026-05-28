@@ -400,7 +400,7 @@ parseSMTOptions =
 
 parseEquationOptions :: Parser EquationOptions
 parseEquationOptions =
-    (\x y -> EquationOptions (Bound x) (Bound y))
+    (\x y z -> EquationOptions (Bound x) (Bound y) z)
         <$> option
             nonnegativeInt
             ( metavar "ITERATION_LIMIT"
@@ -417,9 +417,21 @@ parseEquationOptions =
                 <> value defaultMaxRecursion
                 <> showDefault
             )
+        <*> option
+            nonnegativeInt
+            ( metavar "CYCLE_WINDOW"
+                <> long "equation-cycle-window"
+                <> help
+                    "Size of the sliding window used to detect cycles of rule \
+                    \applications during recursive side-condition evaluation. \
+                    \0 disables cycle detection."
+                <> value defaultCycleWindow
+                <> showDefault
+            )
   where
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
+    defaultCycleWindow = 15
 
 parseRewriteOptions :: Parser RewriteOptions
 parseRewriteOptions =
