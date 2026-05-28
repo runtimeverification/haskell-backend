@@ -478,6 +478,7 @@ test-suite unit-tests
       Test.Booster.Pattern.Util
       Test.Booster.SMT.LowLevel
       Test.Booster.Syntax.Json
+      Test.Booster.Syntax.Json.Externalise
       Test.Booster.Syntax.Json.Internalise
       Test.Booster.Syntax.ParsedKore.Parser
       Test.Booster.Util
