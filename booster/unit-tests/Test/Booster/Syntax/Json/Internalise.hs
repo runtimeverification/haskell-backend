@@ -25,6 +25,7 @@ test_internalise =
         "Internalising patterns"
         [ testBasicPredicates
         , testSubstitutions
+        , testReservedVariablePrefixes
         ]
 
 testBasicPredicates :: TestTree
@@ -124,6 +125,39 @@ testSubstitutions =
 
     hasEquations pairs =
         InternalisedPredicates [t ==. t' | (t, t') <- pairs] mempty mempty mempty
+
+{- | Internalising user-supplied terms whose variable names begin with a
+booster-internal prefix should fail loudly rather than silently colliding
+with rule-bound names. Names without the reserved prefix — even ones that
+merely contain the reserved substring mid-name — must still internalise
+normally.
+-}
+testReservedVariablePrefixes :: TestTree
+testReservedVariablePrefixes =
+    testGroup
+        "Rejecting reserved booster-internal variable prefixes at input"
+        [ reject "EVar named Eq#VarX" (KJEVar (Id "Eq#VarX") someSort')
+        , reject "EVar named EqInternalVarX" (KJEVar (Id "EqInternalVarX") someSort')
+        , reject "SVar named @Eq#VarK0" (KJSVar (Id "@Eq#VarK0") someSort')
+        , reject "SVar named @EqInternalVarK0" (KJSVar (Id "@EqInternalVarK0") someSort')
+        , accept "EVar named EqFoo (no '#', no 'Internal' suffix)" (KJEVar (Id "EqFoo") someSort')
+        , accept
+            "EVar named MyEqInternalThing (reserved string only mid-name)"
+            (KJEVar (Id "MyEqInternalThing") someSort')
+        , accept "Plain EVar VarX" (KJEVar (Id "VarX") someSort')
+        ]
+  where
+    internalise = runExcept . internaliseTerm DisallowAlias IgnoreSubsorts Nothing testDefinition
+
+    reject name pat = testCase ("reject: " <> name) $
+        case internalise pat of
+            Left (ReservedVariablePrefix _ _) -> pure ()
+            other -> assertFailure $ "expected ReservedVariablePrefix, got: " <> show other
+
+    accept name pat = testCase ("accept: " <> name) $
+        case internalise pat of
+            Right _ -> pure ()
+            Left err -> assertFailure $ "expected acceptance, got error: " <> show err
 
 -- basically a semigroup instance but in the general case the
 -- substitutions would have to be trimmed. We don't need it in the
