@@ -32,7 +32,7 @@ import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, withReaderT)
+import Control.Monad.Trans.Reader (ReaderT (..), ask, asks, local, withReaderT)
 import Control.Monad.Trans.State
 import Data.Aeson (object, (.=))
 import Data.Bifunctor (bimap)
@@ -151,6 +151,13 @@ data EquationConfig = EquationConfig
     , maxIterations :: Bound "Iterations"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , cycleWindow :: !Int
+    -- ^ Maximum size of 'activeApplications' kept for cycle detection. 0 disables.
+    , activeApplications :: ![(UniqueId, Int)]
+    -- ^ Stack of @(rule uniqueId, term hash)@ pairs for rule applications whose
+    -- 'applyEquation' body is currently in progress (newest first). Extended via
+    -- 'local' so the stack tracks the active recursive descent and naturally
+    -- restores on return, giving per-evaluation (not global) scope.
     }
 
 data EquationState = EquationState
@@ -355,6 +362,8 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , maxRecursion = globalEquationOptions.maxRecursion
                         , logger
                         , prettyModifiers
+                        , cycleWindow = globalEquationOptions.cycleWindow
+                        , activeApplications = []
                         }
     -- NB the returned cache assumes the known predicates
     pure (res, endState.cache)
@@ -752,6 +761,10 @@ data ApplyEquationFailure
     | EnsuresFalse Predicate
     | RuleNotPreservingDefinedness
     | MatchConstraintViolated Constrained VarName
+    | -- | Detected an active rule application for the same @(uniqueId, term hash)@
+      -- pair as the current attempt. Carries the closing entry and the chain of
+      -- active applications (newest first) for diagnostic logging.
+      RuleCycleDetected (UniqueId, Int) [(UniqueId, Int)]
     deriving stock (Eq, Show)
 
 type ResultHandler io =
@@ -774,6 +787,10 @@ handleFunctionEquation continue abort = \case
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> abort
     MatchConstraintViolated{} -> continue
+    -- Function rule priorities are semantically binding, so we cannot fall
+    -- through to a lower priority rule when we cannot tell whether this rule
+    -- should apply.  Treated like IndeterminateMatch.
+    RuleCycleDetected{} -> abort
 
 handleSimplificationEquation :: LoggerMIO io => ResultHandler io
 handleSimplificationEquation continue _abort = \case
@@ -787,6 +804,9 @@ handleSimplificationEquation continue _abort = \case
         throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> continue
     MatchConstraintViolated{} -> continue
+    -- Simplification priorities are advisory; a cycle on one rule just means
+    -- we skip it and let the next equation attempt to fire.
+    RuleCycleDetected{} -> continue
 
 applyEquations ::
     forall io tag.
@@ -907,41 +927,80 @@ applyEquation term rule =
                             , IndeterminateMatch
                             )
                     MatchSuccess subst -> do
-                        -- cancel if condition
-                        -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
-                        --                        symbolic(v) -> not $ t isConstructorLike(t)
-                        -- is violated
-                        withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
+                        -- Cycle detection: if this same (rule, term-hash) is already on the
+                        -- Reader-scoped active stack, evaluating this rule will recursively
+                        -- require evaluating the same rule on the same term -- i.e. an
+                        -- infinite descent. Raise RuleCycleDetected; the result handler routes
+                        -- it to 'abort' (function rules, priorities binding) or 'continue'
+                        -- (simplification rules, priorities advisory).
+                        cfg <- lift getConfig
+                        let key = (rule.attributes.uniqueId, (getAttributes term).hash)
+                        when (cfg.cycleWindow > 0 && key `elem` cfg.activeApplications) $ do
+                            let chainNewestFirst = key : cfg.activeApplications
+                                prettyEntry (UniqueId uid, h) =
+                                    pretty uid <> "@" <> pretty (showHashHex h)
+                            lift $ withContext CtxAbort $ do
+                                logWarn
+                                    "Rule application cycle detected during recursive \
+                                    \equation evaluation."
+                                withContext CtxDetail $
+                                    logMessage $
+                                        renderOneLineText $
+                                            "Active rule applications (newest first):"
+                                                <+> hsep (intersperse "," $ map prettyEntry chainNewestFirst)
+                            throwE
+                                ( \ctxt ->
+                                    ctxt $
+                                        logMessage ("Rule application cycle detected." :: Text)
+                                , RuleCycleDetected key cfg.activeApplications
+                                )
+                        -- Push the new key into the active-applications stack for the
+                        -- duration of this rule's body (concreteness/match/requires/ensures
+                        -- /substitution). The Reader scope pops automatically on return,
+                        -- so sibling subterm evaluations and unrelated callers are unaffected.
+                        let pushKey c
+                                | c.cycleWindow <= 0 = c
+                                | otherwise =
+                                    c
+                                        { activeApplications =
+                                            key : take (c.cycleWindow - 1) c.activeApplications
+                                        }
+                        mapExceptT (\(EquationT m) -> EquationT $ local pushKey m) $ do
+                            -- cancel if condition
+                            -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\
+                            --                        symbolic(v) -> not $ t isConstructorLike(t)
+                            -- is violated
+                            withContext CtxMatch $ checkConcreteness rule.attributes.concreteness subst
 
-                        withContext CtxMatch $ withContext CtxSuccess $ do
-                            logMessage rule
-                            withContext CtxSubstitution
-                                $ logMessage
-                                $ WithJsonMessage
-                                    (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
-                                $ renderOneLineText
-                                $ "Substitution:"
-                                    <+> ( hsep $
-                                            intersperse "," $
-                                                map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
-                                                    Map.toList subst
-                                        )
+                            withContext CtxMatch $ withContext CtxSuccess $ do
+                                logMessage rule
+                                withContext CtxSubstitution
+                                    $ logMessage
+                                    $ WithJsonMessage
+                                        (object ["substitution" .= (bimap (externaliseTerm . Var) externaliseTerm <$> Map.toList subst)])
+                                    $ renderOneLineText
+                                    $ "Substitution:"
+                                        <+> ( hsep $
+                                                intersperse "," $
+                                                    map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
+                                                        Map.toList subst
+                                            )
 
-                        -- check required constraints from lhs.
-                        -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
-                        -- see @handleSimplificationEquation@ and @handleFunctionEquation@
-                        checkRequires subst
+                            -- check required constraints from lhs.
+                            -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
+                            -- see @handleSimplificationEquation@ and @handleFunctionEquation@
+                            checkRequires subst
 
-                        -- check ensured conditions, filter any true ones, prune if any is false
-                        ensuredConditions <- checkEnsures subst
-                        lift $ pushConstraints $ Set.fromList ensuredConditions
+                            -- check ensured conditions, filter any true ones, prune if any is false
+                            ensuredConditions <- checkEnsures subst
+                            lift $ pushConstraints $ Set.fromList ensuredConditions
 
-                        -- when a new path condition is added, invalidate the equation cache
-                        unless (null ensuredConditions) $ do
-                            withContextFor Equations . logMessage $
-                                ("New ensured condition from evaluation, invalidating cache" :: Text)
-                            lift cacheReset
-                        pure $ substituteInTerm subst rule.rhs
+                            -- when a new path condition is added, invalidate the equation cache
+                            unless (null ensuredConditions) $ do
+                                withContextFor Equations . logMessage $
+                                    ("New ensured condition from evaluation, invalidating cache" :: Text)
+                                lift cacheReset
+                            pure $ substituteInTerm subst rule.rhs
   where
     filterOutKnownConstraints :: Set Predicate -> [Predicate] -> EquationT io [Predicate]
     filterOutKnownConstraints priorKnowledge constraitns = do
