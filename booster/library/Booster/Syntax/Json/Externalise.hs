@@ -12,6 +12,7 @@ module Booster.Syntax.Json.Externalise (
     externaliseExistTerm,
 ) where
 
+import Data.ByteString.Char8 qualified as BS
 import Data.Foldable ()
 import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
@@ -132,7 +133,28 @@ externaliseSubstitution sort Internal.Variable{variableSort = iSort, variableNam
             externaliseTerm $ Internal.Injection termSort iSort t
 
 varNameToId :: Internal.VarName -> Syntax.Id
-varNameToId = Syntax.Id . Text.decodeLatin1
+varNameToId = Syntax.Id . Text.decodeLatin1 . renameInternal
+
+{- | Rewrite booster's internal rule-bound-variable prefix @Eq#@ into the
+   kore-grammar-conformant form @EqInternal@ at the JSON-externalisation
+   boundary. The @#@ character is outside the kore identifier grammar
+   (@[a-zA-Z][a-zA-Z0-9'\-]*@) — emitting it in kore-JSON would crash any
+   standards-conforming downstream parser (e.g. pyk's @Pattern.from_dict@).
+
+   For set variables the variable name carries a leading @\@@; we preserve that
+   marker at position 0 so @Eq#\@VarK0@ becomes @\@EqInternalVarK0@ instead of
+   @EqInternal\@VarK0@.
+
+   The companion guard in "Booster.Syntax.Json.Internalise" rejects user-supplied
+   input whose variable names begin with @Eq#@ or @EqInternal@, so this rewrite
+   has a single source (booster's own axiom internalisation) and cannot collide
+   with anything entering through the input boundary.
+-}
+renameInternal :: Internal.VarName -> Internal.VarName
+renameInternal name
+    | Just rest <- BS.stripPrefix "Eq#@" name = "@EqInternal" <> rest
+    | Just rest <- BS.stripPrefix "Eq#" name = "EqInternal" <> rest
+    | otherwise = name
 
 sortNameToId :: Internal.SortName -> Syntax.Id
 sortNameToId = Syntax.Id . Text.decodeLatin1
