@@ -226,6 +226,7 @@ internalisePatternOrTopOrBottom allowAlias checkSubsorts sortVars definition exi
             Nothing -> do
                 existentialVars <- forM existentials $ \(var, sort) -> do
                     variableSort <- lookupInternalSort sortVars definition.sorts p sort
+                    validateUserVarName p var
                     let variableName = textToBS var.getId
                     pure $ Internal.Variable{variableSort, variableName}
                 (term, preds, ceilConditions, subst, unknown) <-
@@ -310,10 +311,12 @@ internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinitio
     case pat of
         Syntax.KJEVar{name, sort} -> do
             variableSort <- lookupInternalSort' sort
+            validateUserVarName pat name
             let variableName = textToBS name.getId
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
         Syntax.KJSVar{name, sort} -> do
             variableSort <- lookupInternalSort' sort
+            validateUserVarName pat name
             let variableName = textToBS name.getId
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
         Syntax.KJApp{name, sorts = [from, to], args = [arg]}
@@ -780,7 +783,45 @@ data PatternError
     | PredicateNotAllowed
     | CeilNotAllowed
     | IncorrectSymbolArity Syntax.KorePattern Syntax.Id Int Int
+    | -- | The user-supplied variable name begins with a prefix reserved for
+      --   booster's internal disambiguation of rule-bound variables (see
+      --   'reservedVarPrefixes'). The 'Syntax.Id' is the offending name and the
+      --   'Syntax.KorePattern' is the enclosing pattern (for context in logs).
+      ReservedVariablePrefix Syntax.Id Syntax.KorePattern
     deriving stock (Eq, Show)
+
+{- | Prefixes that booster reserves for its own use when internalising
+   axioms — see 'internaliseSimpleEquation', 'internaliseFunctionEquation', and
+   'internaliseCeil', all of which prepend @Eq#@ to rule-bound variable names
+   to keep them disjoint from user-supplied variables.
+
+   @Eq#@ is also outside the kore identifier grammar (@[a-zA-Z][a-zA-Z0-9'\-]*@),
+   which historically gave the prefix a safety-by-construction guarantee — no
+   standards-conforming parser could produce such a name. We keep the @Eq#@
+   form internally and additionally reserve @EqInternal@ as the
+   grammar-conformant form used by 'Booster.Syntax.Json.Externalise' so that
+   JSON-encoded kore on the way out is parseable by downstream tools.
+
+   Rejecting user input whose variable name begins with either prefix turns a
+   would-be silent namespace collision into a clear error.
+-}
+reservedVarPrefixes :: [ByteString]
+reservedVarPrefixes = ["Eq#", "EqInternal"]
+
+{- | Reject any user-supplied variable name beginning with a reserved internal
+   prefix. The check tolerates a leading @'@'@ (set-variable marker) so that
+   @\@EqInternalFoo@ is rejected the same as @EqInternalFoo@.
+-}
+validateUserVarName :: Syntax.KorePattern -> Syntax.Id -> Except PatternError ()
+validateUserVarName parent name =
+    when (any (`isPrefixOf` body) reservedVarPrefixes) $
+        throwE $
+            ReservedVariablePrefix name parent
+  where
+    raw = textToBS (Syntax.getId name)
+    body = case BS.uncons raw of
+        Just ('@', rest) -> rest
+        _ -> raw
 
 {- | ToJson instance (user-facing):
 
@@ -824,6 +865,13 @@ patternErrorToRpcError = \case
                 <> (pack $ show got)
             )
             p
+    ReservedVariablePrefix sym p ->
+        wrap
+            ( "Variable name '"
+                <> Syntax.getId sym
+                <> "' begins with a prefix reserved for booster-internal use"
+            )
+            p
   where
     wrap :: Text -> Syntax.KorePattern -> RpcError.ErrorWithTermAndContext
     wrap err p = RpcError.ErrorWithTerm err $ addHeader p
@@ -850,6 +898,12 @@ logPatternError = \case
                     <> (pack $ show expected)
                     <> " arguments but got "
                     <> (pack $ show got)
+    ReservedVariablePrefix sym p ->
+        withKorePatternContext p $
+            logMessage $
+                "Variable name '"
+                    <> Syntax.getId sym
+                    <> "' begins with a prefix reserved for booster-internal use"
 
 data SortError
     = UnknownSort Syntax.Sort
