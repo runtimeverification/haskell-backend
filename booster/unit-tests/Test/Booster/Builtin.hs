@@ -239,6 +239,18 @@ testIntHooks =
             , testCase "division by zero returns Nothing" $ do
                 result <- evalHook "INT.ediv" [Builtin.intTerm 42, Builtin.intTerm 0]
                 Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.ediv" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Nothing === run [app fct [Builtin.intTerm a], Builtin.intTerm b]
+                Nothing === run [Builtin.intTerm a, app fct [Builtin.intTerm b]]
             , testCase "arity error on wrong argument count" $ do
                 let assertException = assertBool "Unexpected success" . isLeft . runExcept
                 assertException $ runHook "INT.ediv" []
@@ -267,6 +279,18 @@ testIntHooks =
             , testCase "modulo by zero returns Nothing" $ do
                 result <- evalHook "INT.emod" [Builtin.intTerm 42, Builtin.intTerm 0]
                 Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.emod" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                b <-
+                    fmap fromIntegral $
+                        forAll $
+                            Gen.filter (/= 0) $
+                                Gen.int64 Range.linearBounded
+                Nothing === run [app fct [Builtin.intTerm a], Builtin.intTerm b]
+                Nothing === run [Builtin.intTerm a, app fct [Builtin.intTerm b]]
             , testCase "arity error on wrong argument count" $ do
                 let assertException = assertBool "Unexpected success" . isLeft . runExcept
                 assertException $ runHook "INT.emod" []
@@ -298,6 +322,14 @@ testIntHooks =
             , testCase "negative shift amount returns Nothing" $ do
                 result <- evalHook "INT.shl" [Builtin.intTerm 1, Builtin.intTerm (-1)]
                 Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.shl" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                n <- forAll $ Gen.int (Range.linear 0 63)
+                Nothing === run [app fct [Builtin.intTerm a], Builtin.intTerm (fromIntegral n)]
+                Nothing === run [Builtin.intTerm a, app fct [Builtin.intTerm (fromIntegral n)]]
             , testCase "arity error on wrong argument count" $ do
                 let assertException = assertBool "Unexpected success" . isLeft . runExcept
                 assertException $ runHook "INT.shl" []
@@ -317,6 +349,14 @@ testIntHooks =
             , testCase "negative shift amount returns Nothing" $ do
                 result <- evalHook "INT.shr" [Builtin.intTerm 8, Builtin.intTerm (-1)]
                 Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.shr" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                a <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+                n <- forAll $ Gen.int (Range.linear 0 63)
+                Nothing === run [app fct [Builtin.intTerm a], Builtin.intTerm (fromIntegral n)]
+                Nothing === run [Builtin.intTerm a, app fct [Builtin.intTerm (fromIntegral n)]]
             , testCase "arity error on wrong argument count" $ do
                 let assertException = assertBool "Unexpected success" . isLeft . runExcept
                 assertException $ runHook "INT.shr" []
@@ -344,6 +384,19 @@ testIntHooks =
             , testCase "zero modulus returns Nothing" $ do
                 result <- evalHook "INT.powmod" [Builtin.intTerm 2, Builtin.intTerm 3, Builtin.intTerm 0]
                 Nothing @=? result
+            , testProperty "unevaluated argument returns Nothing" . property $ do
+                let run args =
+                        either (error . Text.unpack) id . runExcept $ runHook "INT.powmod" args
+                    fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                b <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear (-10) 10)
+                e <- fmap fromIntegral $ forAll $ Gen.int64 (Range.linear 0 10)
+                m <- fmap fromIntegral $ forAll $ Gen.filter (/= 0) $ Gen.int64 (Range.linear 1 100)
+                Nothing
+                    === run [app fct [Builtin.intTerm b], Builtin.intTerm e, Builtin.intTerm m]
+                Nothing
+                    === run [Builtin.intTerm b, app fct [Builtin.intTerm e], Builtin.intTerm m]
+                Nothing
+                    === run [Builtin.intTerm b, Builtin.intTerm e, app fct [Builtin.intTerm m]]
             , testCase "arity error on wrong argument count" $ do
                 let assertException = assertBool "Unexpected success" . isLeft . runExcept
                 assertException $ runHook "INT.powmod" []
@@ -378,6 +431,10 @@ testIntHooks =
                 Nothing @=? result
             , testCase "negative returns Nothing" $ do
                 result <- evalHook "INT.log2" [Builtin.intTerm (-1)]
+                Nothing @=? result
+            , testCase "unevaluated argument returns Nothing" $ do
+                let fct = [symb| symbol f{}(SortInt) : SortInt [function{}()] |]
+                result <- evalHook "INT.log2" [app fct [Builtin.intTerm 4]]
                 Nothing @=? result
             , testCase "arity error on wrong argument count" $ do
                 let assertException = assertBool "Unexpected success" . isLeft . runExcept
@@ -459,6 +516,13 @@ testBytesPadLeftHook =
                     "BYTES.padLeft"
                     [Builtin.bytesTerm "abc", Builtin.intTerm 10, Builtin.intTerm (-1)]
             Nothing @=? result
+        , testCase "negative target length returns Nothing" $ do
+            -- per domains.md: padLeft is #False when length is negative
+            result <-
+                evalHook
+                    "BYTES.padLeft"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm (-1), Builtin.intTerm 0]
+            Nothing @=? result
         , testCase "arity error on wrong argument count" $ do
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
             assertException $ runHook "BYTES.padLeft" []
@@ -505,6 +569,13 @@ testBytesPadRightHook =
                 evalHook
                     "BYTES.padRight"
                     [Builtin.bytesTerm "abc", Builtin.intTerm 10, Builtin.intTerm 256]
+            Nothing @=? result
+        , testCase "negative target length returns Nothing" $ do
+            -- per domains.md: padRight is #False when length is negative
+            result <-
+                evalHook
+                    "BYTES.padRight"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm (-1), Builtin.intTerm 0]
             Nothing @=? result
         , testCase "arity error on wrong argument count" $ do
             let assertException = assertBool "Unexpected success" . isLeft . runExcept
@@ -737,6 +808,19 @@ testBytesReplaceAtHook =
                     "BYTES.replaceAt"
                     [Builtin.bytesTerm "hello", Builtin.intTerm 2, Builtin.bytesTerm ""]
             Just (Builtin.bytesTerm "hello") @=? result
+        , testCase "src extending past dest end returns Nothing" $ do
+            -- regression: replaceAt("abc", 2, "xy") must not return "abxy"
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 2, Builtin.bytesTerm "xy"]
+            Nothing @=? result
+        , testCase "src exactly fitting the end of dest succeeds" $ do
+            result <-
+                evalHook
+                    "BYTES.replaceAt"
+                    [Builtin.bytesTerm "abc", Builtin.intTerm 1, Builtin.bytesTerm "xy"]
+            Just (Builtin.bytesTerm "axy") @=? result
         , testCase "index out of range returns Nothing" $ do
             result <-
                 evalHook
@@ -806,6 +890,20 @@ testBytesInt2BytesHook =
                     "BYTES.int2bytes"
                     [Builtin.intTerm 2, Builtin.intTerm (-1), bigEndian]
             Just (Builtin.bytesTerm "\xFF\xFF") @=? result
+        , testCase "value wider than len is silently truncated (per K spec)" $ do
+            -- domains.md: "If the length is less than the highest bit set in the
+            -- magnitude of the integer, the most-significant bits ... will be truncated."
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm 1, Builtin.intTerm 256, bigEndian]
+            Just (Builtin.bytesTerm "\x00") @=? result
+        , testCase "negative len returns Nothing" $ do
+            result <-
+                evalHook
+                    "BYTES.int2bytes"
+                    [Builtin.intTerm (-1), Builtin.intTerm 0, bigEndian]
+            Nothing @=? result
         , testCase "unevaluated endianness returns Nothing" $ do
             result <-
                 evalHook
@@ -862,6 +960,23 @@ testBytesBytes2IntHook =
             let encoded = Builtin.bytesTerm $ int2bytesBE 8 n
             result <- evalHook "BYTES.bytes2int" [encoded, bigEndian, unsigned]
             Just (Builtin.intTerm n) === result
+        , testProperty "int2bytes/bytes2int round-trip for signed 8-byte values" . property $ do
+            -- exercises both endiannesses and signed two's complement
+            n <- fmap fromIntegral $ forAll $ Gen.int64 Range.linearBounded
+            endian <- forAll $ Gen.element [bigEndian, littleEndian]
+            encoded <-
+                evalHook "BYTES.int2bytes" [Builtin.intTerm 8, Builtin.intTerm n, endian]
+            case encoded of
+                Just encodedTerm -> do
+                    result <- evalHook "BYTES.bytes2int" [encodedTerm, endian, signed]
+                    Just (Builtin.intTerm n) === result
+                Nothing -> failure
+        , testCase "little-endian signed: 0xFF = -1 (1-byte two's complement)" $ do
+            result <-
+                evalHook
+                    "BYTES.bytes2int"
+                    [Builtin.bytesTerm "\xFF", littleEndian, signed]
+            Just (Builtin.intTerm (-1)) @=? result
         , testCase "unevaluated endianness returns Nothing" $ do
             result <-
                 evalHook
@@ -1794,14 +1909,17 @@ testMapInclusionHook =
 ------------------------------------------------------------
 -- helpers
 
--- endianness and signedness constructor terms for BYTES.int2bytes / BYTES.bytes2int
+-- endianness and signedness constructor terms for BYTES.int2bytes / BYTES.bytes2int.
+-- K's `[symbol(bigEndianBytes)]` compiles to a kore symbol named `LblbigEndianBytes`,
+-- which is what readEndianness/readSignedness in BYTES.hs match against. The test
+-- fixtures must use the same `Lbl`-prefixed names or they bypass the real code path.
 bigEndian, littleEndian :: Term
-bigEndian = app [symb| symbol bigEndianBytes{}() : SortEndianness{} [constructor{}()] |] []
-littleEndian = app [symb| symbol littleEndianBytes{}() : SortEndianness{} [constructor{}()] |] []
+bigEndian = app [symb| symbol LblbigEndianBytes{}() : SortEndianness{} [constructor{}()] |] []
+littleEndian = app [symb| symbol LbllittleEndianBytes{}() : SortEndianness{} [constructor{}()] |] []
 
 signed, unsigned :: Term
-signed = app [symb| symbol signedBytes{}() : SortSignedness{} [constructor{}()] |] []
-unsigned = app [symb| symbol unsignedBytes{}() : SortSignedness{} [constructor{}()] |] []
+signed = app [symb| symbol LblsignedBytes{}() : SortSignedness{} [constructor{}()] |] []
+unsigned = app [symb| symbol LblunsignedBytes{}() : SortSignedness{} [constructor{}()] |] []
 
 runHook :: BS.ByteString -> Builtin.BuiltinFunction
 runHook name =
