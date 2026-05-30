@@ -261,6 +261,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                 , condition
                 , logs = Nothing
                 , indeterminate
+                , haskellLogEntries = Nothing
                 }
 
     doesNotImply' s condition l r = mkResult s l r False condition Nothing
