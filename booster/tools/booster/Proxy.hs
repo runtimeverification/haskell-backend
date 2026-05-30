@@ -268,6 +268,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                         SimplifyResult
                             { state = boosterRes.state
                             , logs = postProcessLogs <$> boosterRes.logs
+                            , haskellLogEntries = Nothing
                             }
                 | otherwise -> do
                     let koreReq =
@@ -315,6 +316,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 [ boosterRes.logs
                                                 , koreRes.logs
                                                 ]
+                                    , haskellLogEntries = Nothing
                                     }
                         koreError ->
                             -- can only be an error
@@ -679,6 +681,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     { state = execStateToKoreJson state
                     , _module = mbModule
                     , boosterOnly = mbBoosterOnly
+                    , haskellLogging = Nothing
                     }
 
     -- used for post-exec simplification returns either a state to
