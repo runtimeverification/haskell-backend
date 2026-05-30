@@ -475,6 +475,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                     , "input" .= execStateToKoreJson simplifiedBoosterState
                                                     , "output" .= execStateToKoreJson koreResult.state
                                                     , "kore_reason" .= koreResult.reason
+                                                    , "depth_at_fallback" .= (currentDepth + boosterResult.depth)
                                                     ]
                                                 )
                                                 ("kore-execute-fallback" :: Text)
