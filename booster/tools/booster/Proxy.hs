@@ -46,6 +46,7 @@ import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.JsonRpc.Types qualified as SimplifyRequest (SimplifyRequest (..))
 import Kore.JsonRpc.Types.Log qualified as RPCLog
 import Kore.Log qualified
+import Kore.Log.LogCapture (KoreCaptureRegistry)
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 import SMT qualified
@@ -61,6 +62,11 @@ data KoreServer = KoreServer
         SMT.SMT a ->
         IO a
     , loggerEnv :: Kore.Log.LoggerEnv IO
+    , captureRegistry :: KoreCaptureRegistry
+    -- ^ per-request kore log capture registry; the kore log action
+    -- is wired at server startup to consult this registry for the
+    -- calling thread so requests that opt in via @haskell-logging@
+    -- can drain captured entries into their response.
     }
 
 data ProxyConfig = ProxyConfig

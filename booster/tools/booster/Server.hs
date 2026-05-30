@@ -95,6 +95,7 @@ import Kore.Log.BoosterAdaptor (
 import Kore.Log.BoosterAdaptor qualified as Log
 import Kore.Log.DebugContext qualified as Log
 import Kore.Log.DebugSolver qualified as Log
+import Kore.Log.LogCapture (KoreCaptureRegistry, newKoreCaptureRegistry, registryLogAction)
 import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
@@ -162,6 +163,8 @@ main = do
     mTimeCache <-
         if logTimeStamps then Just <$> Booster.newTimeCache timestampFlag else pure Nothing
 
+    koreCaptureRegistry <- newKoreCaptureRegistry
+
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
         let koreLogRenderer = case logFormat of
                 Standard -> renderStandardPretty
@@ -202,7 +205,7 @@ main = do
                     . Booster.Log.unLoggerT
 
             koreLogActions :: forall m. MonadIO m => [Log.LogAction m Log.SomeEntry]
-            koreLogActions = [koreLogAction]
+            koreLogActions = [koreLogAction, registryLogAction koreCaptureRegistry]
               where
                 koreLogAction =
                     koreSomeEntryLogAction
@@ -294,7 +297,7 @@ main = do
                 let logAction = swappableLogger mvarLogAction
 
                 kore@KoreServer{runSMT} <-
-                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                    mkKoreServer Log.LoggerEnv{logAction} koreCaptureRegistry clOPts koreSolverOptions
 
                 boosterState <-
                     liftIO $
@@ -512,8 +515,8 @@ translateSMTOpts = \case
     translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
 
 mkKoreServer ::
-    Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
-mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
+    Log.LoggerEnv IO -> KoreCaptureRegistry -> CLOptions -> KoreSolverOptions -> IO KoreServer
+mkKoreServer loggerEnv@Log.LoggerEnv{logAction} captureRegistry CLOptions{definitionFile, mainModuleName} koreSolverOptions =
     flip Log.runLoggerT logAction $ Log.logWhile (Log.DebugContext $ Log.CLNullary CtxKore) $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
             GlobalMain.deserializeDefinition
@@ -538,6 +541,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , mainModule = mainModuleName
                 , runSMT
                 , loggerEnv
+                , captureRegistry
                 }
   where
     KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic, args} = koreSolverOptions

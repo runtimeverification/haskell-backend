@@ -29,20 +29,23 @@ import Data.Foldable (toList)
 import Data.Sequence (Seq, (|>))
 import Data.Sequence qualified as Seq
 
--- | A per-request buffer for captured log entries (already serialized to
--- 'Value' by the engine-specific renderer).
+{- | A per-request buffer for captured log entries (already serialized to
+'Value' by the engine-specific renderer).
+-}
 newtype Collector = Collector (TVar (Seq Value))
 
 newCollector :: IO Collector
 newCollector = Collector <$> newTVarIO Seq.empty
 
--- | Append a single rendered entry to the buffer.  Non-blocking; safe to
--- call concurrently from any thread.
+{- | Append a single rendered entry to the buffer.  Non-blocking; safe to
+call concurrently from any thread.
+-}
 appendCollector :: Collector -> Value -> IO ()
 appendCollector (Collector tv) v = atomically $ modifyTVar' tv (|> v)
 
--- | Drain the buffer and reset it to empty.  Returns entries in
--- insertion order.
+{- | Drain the buffer and reset it to empty.  Returns entries in
+insertion order.
+-}
 drainCollector :: Collector -> IO [Value]
 drainCollector (Collector tv) = atomically $ do
     s <- readTVar tv
