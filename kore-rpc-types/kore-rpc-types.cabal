@@ -92,6 +92,7 @@ library
     Kore.JsonRpc.Types.Log
     Kore.JsonRpc.Types.ContextLog
     Kore.JsonRpc.Types.Depth
+    Kore.JsonRpc.Types.LogCapture
     Kore.JsonRpc.Server
     Kore.Syntax.Json.Types
   hs-source-dirs:

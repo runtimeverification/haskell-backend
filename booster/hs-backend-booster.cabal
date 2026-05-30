@@ -247,6 +247,7 @@ library
       Booster.LLVM.TH
       Booster.Log
       Booster.Log.Context
+      Booster.Log.LogCapture
       Booster.Pattern.ApplyEquations
       Booster.Pattern.Base
       Booster.Pattern.Binary
