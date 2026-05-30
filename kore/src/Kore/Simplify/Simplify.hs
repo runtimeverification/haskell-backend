@@ -58,6 +58,7 @@ module Kore.Simplify.Simplify (
     MonadSMT,
     MonadLog,
     runSimplifierLogged,
+    runSimplifierCounted,
     SimplifierTrace (..),
 ) where
 
@@ -168,12 +169,12 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 -}
 newtype Simplifier a
-    = Simplifier (StateT (SimplifierCache, Seq SimplifierTrace) (ReaderT Env SMT) a)
+    = Simplifier (StateT (SimplifierCache, Seq SimplifierTrace, Word) (ReaderT Env SMT) a)
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadSMT, MonadLog, MonadProf)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader Env)
-    deriving newtype (MonadState (SimplifierCache, Seq SimplifierTrace))
+    deriving newtype (MonadState (SimplifierCache, Seq SimplifierTrace, Word))
     deriving newtype (MonadBase IO, MonadBaseControl IO)
 
 {- | Run a simplification, returning the result of only one branch.
@@ -184,13 +185,27 @@ that may branch.
 -}
 runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
-    runReaderT (evalStateT simplifier (initCache, mempty)) env
+    runReaderT (evalStateT simplifier (initCache, mempty, 0)) env
 
 runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq SimplifierTrace, a)
 runSimplifierLogged env (Simplifier simplifier) =
     runReaderT
-        ( runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->
+        ( runStateT simplifier (initCache, mempty, 0) >>= \(res, (_, logs, _)) ->
             pure (logs, res)
+        )
+        env
+
+{- | Run a simplification and return the number of equation applications
+performed alongside the result. The counter is incremented in 'applyEquation'
+each time an equation result is committed (i.e. once per call to
+'debugApplyEquation'), so this is the authoritative "how much work did the
+simplifier actually commit" measure.
+-}
+runSimplifierCounted :: Env -> Simplifier a -> SMT (Word, a)
+runSimplifierCounted env (Simplifier simplifier) =
+    runReaderT
+        ( runStateT simplifier (initCache, mempty, 0) >>= \(res, (_, _, n)) ->
+            pure (n, res)
         )
         env
 
@@ -292,10 +307,10 @@ askOverloadSimplifier :: MonadSimplify m => m OverloadSimplifier
 askOverloadSimplifier = liftSimplifier $ asks overloadSimplifier
 
 getCache :: MonadSimplify m => m SimplifierCache
-getCache = fst <$> liftSimplifier get
+getCache = (\(c, _, _) -> c) <$> liftSimplifier get
 
 putCache :: MonadSimplify m => SimplifierCache -> m ()
-putCache c = liftSimplifier $ modify $ \(_c, rules) -> (c, rules)
+putCache c = liftSimplifier $ modify $ \(_c, rules, n) -> (c, rules, n)
 
 askHookedSymbols :: MonadSimplify m => m (Map Id Text)
 askHookedSymbols = liftSimplifier $ asks hookedSymbols

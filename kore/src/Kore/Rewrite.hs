@@ -273,8 +273,8 @@ deriveResults Result.Results{results, remainders} =
     addResult Result.Result{appliedRule, result}
         | isBottom result = empty
         | otherwise = do
-            (_, simplifyRules :: Seq SimplifierTrace) <- lift get
-            lift $ modify $ \(cache, _rules) -> (cache, mempty)
+            (_, simplifyRules :: Seq SimplifierTrace, _) <- lift get
+            lift $ modify $ \(cache, _rules, n) -> (cache, mempty, n)
             let rulePattern = extract appliedRule
             let
                 ruleLabel :: Attribute.Label = from rulePattern

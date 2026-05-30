@@ -97,7 +97,7 @@ import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
  )
-import Kore.Simplify.API (evalSimplifier)
+import Kore.Simplify.API (evalSimplifier, evalSimplifierCounted)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
@@ -488,11 +488,11 @@ respond reqId serverState moduleName runSMT =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
                         sort = TermLike.termLikeSort stateVerified
 
-                    result <-
+                    (equationsAppliedCount, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . withContextLog Log.CtxSimplify
-                            . evalInSimplifierContext serializedModule
+                            . evalInSimplifierContextCounted serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
                     let allLogs = Nothing
@@ -505,6 +505,7 @@ respond reqId serverState moduleName runSMT =
                                             TermLike.mapVariables getRewritingVariable $
                                                 OrPattern.toTermLike sort result
                                     , logs = allLogs
+                                    , equationsApplied = Just (fromIntegral equationsAppliedCount)
                                     }
         AddModule AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
             let nameAsId = fromMaybe False nameAsId'
@@ -703,6 +704,23 @@ respond reqId serverState moduleName runSMT =
             , equations
             } =
             evalSimplifier
+                verifiedModule
+                sortGraph
+                overloadGraph
+                metadataTools
+                equations
+
+    evalInSimplifierContextCounted ::
+        Exec.SerializedModule -> Simplifier a -> SMT.SMT (Word, a)
+    evalInSimplifierContextCounted
+        Exec.SerializedModule
+            { sortGraph
+            , overloadGraph
+            , metadataTools
+            , verifiedModule
+            , equations
+            } =
+            evalSimplifierCounted
                 verifiedModule
                 sortGraph
                 overloadGraph

@@ -13,6 +13,7 @@ module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
     evalSimplifierLogged,
+    evalSimplifierCounted,
 ) where
 
 import Data.Map.Strict (
@@ -187,6 +188,23 @@ evalSimplifierLogged ::
 evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
     env <- mkSimplifierEnv True verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifierLogged env simplifier
+
+{- | Variant of 'evalSimplifier' that also returns the number of equation
+applications committed during the run. Lightweight: the counter is a single
+'Word' field in the simplifier state, bumped once per committed equation in
+'applyEquation' (independent of the heavier 'tracingEnabled' machinery).
+-}
+evalSimplifierCounted ::
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    Simplifier a ->
+    SMT (Word, a)
+evalSimplifierCounted verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <- mkSimplifierEnv False verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    runSimplifierCounted env simplifier
 
 evalSimplifierProofs ::
     VerifiedModule Attribute.Symbol ->
