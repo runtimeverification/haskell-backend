@@ -6,6 +6,7 @@ module Kore.Log.BoosterAdaptor (
     renderStandardPretty,
     renderOnelinePretty,
     renderJson,
+    entryToJsonValue,
     koreSomeEntryLogAction,
     withLogger,
     WithTimestamp (..),
@@ -77,15 +78,21 @@ koreSomeEntryLogAction renderer earlyFilter logger =
                 \mTime -> renderer mTime se <> "\n"
 
 renderJson :: Maybe ByteString -> SomeEntry -> LogStr
-renderJson mTime e@(SomeEntry context actualEntry) =
-    toLogStr . Text.decodeUtf8 . BSL.toStrict . JSON.encodePretty' rpcJsonConfig{confIndent = Spaces 0} $
-        json
-  where
-    jsonContext =
-        Vec.fromList $
-            concatMap (\(SomeEntry _ c) -> map JSON.toJSON (oneLineContextDoc c)) (context <> [e])
+renderJson mTime =
+    toLogStr
+        . Text.decodeUtf8
+        . BSL.toStrict
+        . JSON.encodePretty' rpcJsonConfig{confIndent = Spaces 0}
+        . entryToJsonValue mTime
 
-    json = case oneLineJson actualEntry of
+{- | Build the JSON 'Value' for a 'SomeEntry' in the same shape that
+'renderJson' would serialize to stderr/file (modulo whitespace).
+Shared so per-request log capture writes byte-for-byte equivalent
+entries.
+-}
+entryToJsonValue :: Maybe ByteString -> SomeEntry -> JSON.Value
+entryToJsonValue mTime e@(SomeEntry context actualEntry) =
+    case oneLineJson actualEntry of
         JSON.Object o
             | Just (JSON.Array ctxt) <- JSON.lookup "context" o ->
                 JSON.Object
@@ -102,6 +109,10 @@ renderJson mTime e@(SomeEntry context actualEntry) =
                     <> case mTime of
                         Nothing -> []
                         Just time -> ["timestamp" JSON..= Text.decodeUtf8 time]
+  where
+    jsonContext =
+        Vec.fromList $
+            concatMap (\(SomeEntry _ c) -> map JSON.toJSON (oneLineContextDoc c)) (context <> [e])
 
 renderOnelinePretty :: Maybe ByteString -> SomeEntry -> LogStr
 renderOnelinePretty mTime entry@(SomeEntry entryContext _actualEntry) =
