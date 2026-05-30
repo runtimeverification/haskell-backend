@@ -87,6 +87,7 @@ data AddModuleRequest = AddModuleRequest
 data GetModelRequest = GetModelRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
+    , boosterOnly :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
