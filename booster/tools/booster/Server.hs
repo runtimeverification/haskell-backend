@@ -333,6 +333,7 @@ main = do
                             , simplifyAtEnd
                             , simplifyBeforeFallback
                             , customLogLevels = customLevels
+                            , koreCaptureRegistry
                             }
                     server =
                         jsonRpcServer
