@@ -404,7 +404,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                         MatchFailed reason -> do
                             withContext CtxFailure $ logPretty' @mods reason
                             returnNotApplied
-                        MatchIndeterminate remainder -> do
+                        MatchIndeterminate _partialSubst remainder -> do
                             withContext CtxIndeterminate $
                                 logMessage $
                                     WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $

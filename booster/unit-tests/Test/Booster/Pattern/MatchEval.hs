@@ -53,12 +53,12 @@ symbols =
         , let pat = app con1 [var "X" someSort]
               subj = app f1 [var "Y" someSort]
            in test "constructor and function" pat subj $
-                MatchIndeterminate $
+                MatchIndeterminate mempty $
                     NE.singleton (pat, subj)
         , let pat = app f1 [var "X" someSort]
               subj = app con1 [var "Y" someSort]
            in test "function and constructor" pat subj $
-                MatchIndeterminate $
+                MatchIndeterminate mempty $
                     NE.singleton (pat, subj)
         , let x = var "X" someSort
               d = dv differentSort "something"
@@ -149,12 +149,12 @@ varsAndValues =
               d = dv someSort ""
            in -- see https://github.com/runtimeverification/hs-backend-booster/issues/231
               test "dv matching a var (on RHS): indeterminate" d v $
-                MatchIndeterminate $
+                MatchIndeterminate mempty $
                     NE.singleton (d, v)
         , let d = dv someSort ""
               f = app f1 [d]
            in test "dv matching a function call (on RHS): indeterminate" d f $
-                MatchIndeterminate $
+                MatchIndeterminate mempty $
                     NE.singleton (d, f)
         , let d = dv someSort ""
               c = app con1 [d]
@@ -191,7 +191,7 @@ andTerms =
                 "And-term on the right, indeterminate"
                 d
                 (AndTerm fa fb)
-                (MatchIndeterminate $ NE.singleton (d, AndTerm fa fb))
+                (MatchIndeterminate mempty $ NE.singleton (d, AndTerm fa fb))
         ]
 
 kmapTerms :: TestTree
@@ -254,19 +254,19 @@ kmapTerms =
                 "Variable key ~= concrete key with rest in subject and pattern: indeterminate"
                 patMap
                 functionKMapWithOneItemAndRest
-                (MatchIndeterminate $ NE.singleton (patMap, functionKMapWithOneItemAndRest))
+                (MatchIndeterminate mempty $ NE.singleton (patMap, functionKMapWithOneItemAndRest))
         , let patMap =
                 kmap [(var "K" kmapKeySort, var "V" kmapElementSort)] (Just "PATTERN")
            in test
                 "Variable key and opaque rest ~= two items: indeterminate"
                 patMap
                 concreteKMapWithTwoItems
-                (MatchIndeterminate $ NE.singleton (patMap, concreteKMapWithTwoItems))
+                (MatchIndeterminate mempty $ NE.singleton (patMap, concreteKMapWithTwoItems))
         , test
             "Pattern keys are fully-concrete, subject key function: indeterminate"
             concreteKMapWithOneItemAndRest
             functionKMapWithOneItem
-            (MatchIndeterminate $ NE.singleton (concreteKMapWithOneItemAndRest, functionKMapWithOneItem))
+            (MatchIndeterminate mempty $ NE.singleton (concreteKMapWithOneItemAndRest, functionKMapWithOneItem))
         , let patMap =
                 kmap
                     [ (var "A" kmapKeySort, dv kmapElementSort "a")
@@ -283,7 +283,7 @@ kmapTerms =
                 "Disjoint non-singleton maps, non-concrete keys in pattern: indeterminate"
                 patMap
                 subjMap
-                (MatchIndeterminate $ NE.singleton (patMap, subjMap))
+                (MatchIndeterminate mempty $ NE.singleton (patMap, subjMap))
         ]
   where
     kmap :: [(Term, Term)] -> Maybe VarName -> Term
