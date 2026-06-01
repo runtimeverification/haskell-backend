@@ -284,15 +284,10 @@ match1 Rewrite t1@ConsApplication{}                       (Var t2)              
 match1 _       t1@ConsApplication{}                       t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@FunctionApplication{}                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@FunctionApplication{}                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 Eval    t1@FunctionApplication{}                   t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
 match1 _       t1@FunctionApplication{}                   t2@DomainValue{}                           = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
 match1 _       t1@FunctionApplication{}                   t2@Injection{}                             = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@FunctionApplication{}                   t2@KMap{}                                  = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
 match1 _       t1@FunctionApplication{}                   t2@KList{}                                 = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@FunctionApplication{}                   t2@KSet{}                                  = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
 match1 _       t1@FunctionApplication{}                   t2@ConsApplication{}                       = addIndeterminate t1 t2
@@ -812,18 +807,18 @@ bindVariable matchType var term@(Term termAttrs _) = do
                 failWith $ VariableConflict var oldTerm term
             | otherwise ->
                 -- The term in the binding could be _equivalent_ (not
-                -- necessarily syntactically equal) to 'term'. For 'Rewrite'
-                -- and 'Implies', the indeterminate verdict lets the caller
-                -- attempt to discharge the equivalence — e.g. via the
-                -- 'MatchIndeterminate' simplify-LHS / simplify-RHS retry
-                -- ladder in 'Pattern.Implies', or via the partial-substitution
-                -- pruning in 'Pattern.Rewrite' — instead of committing to a
-                -- (possibly unsound) decisive 'MatchFailed'. 'Eval' keeps
-                -- 'failWith' because the equation evaluator uses priority
-                -- ordering and treats 'MatchFailed' as "skip and try next."
-                case matchType of
-                    Eval -> failWith $ VariableConflict var oldTerm term
-                    _ -> addIndeterminate oldTerm term
+                -- necessarily syntactically equal) to 'term'. Defer to the
+                -- caller via 'addIndeterminate' so it can attempt to
+                -- discharge the equivalence — e.g. via the
+                -- 'MatchIndeterminate' simplify retry ladder in
+                -- 'Pattern.Implies', the partial-substitution pruning in
+                -- 'Pattern.Rewrite', or 'handleFunctionEquation's
+                -- @IndeterminateMatch{} -> abort@ contract in
+                -- 'Pattern.ApplyEquations'. Returning 'MatchFailed' here
+                -- (the previous 'Eval'-only behaviour) silently skipped
+                -- higher-priority function equations and committed to a
+                -- lower-priority catch-all, violating priority semantics.
+                addIndeterminate oldTerm term
         Nothing -> do
             let
                 -- apply existing substitutions to term
