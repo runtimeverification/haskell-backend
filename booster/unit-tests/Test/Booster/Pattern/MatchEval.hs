@@ -70,8 +70,8 @@ symbols =
                 failed (DifferentSorts x d)
         , let pat = app f1 [var "X" someSort]
               subj = dv someSort "something"
-           in test "function and something else" pat subj $
-                failed (DifferentSymbols pat subj)
+           in test "function and something else (indeterminate)" pat subj $
+                remainder [(pat, subj)]
         ]
 
 composite :: TestTree
@@ -99,8 +99,8 @@ composite =
               b = var "B" someSort
               pat = app con3 [var "X" someSort, var "X" someSort] -- same!
               subj = app con3 [a, b]
-           in test "Matching two constructor argument to be the same (failing)" pat subj $
-                failed (VariableConflict (Variable someSort "X") a b)
+           in test "Matching two constructor argument to be the same (indeterminate)" pat subj $
+                remainderWith [("X", someSort, a)] [(a, b)]
         ]
 
 varsAndValues :: TestTree
