@@ -317,7 +317,7 @@ respond stateVar request =
 
                 let mkSimplifyResponse state =
                         RpcTypes.Simplify
-                            RpcTypes.SimplifyResult{state, logs = Nothing, equationsApplied = Nothing}
+                            RpcTypes.SimplifyResult{state, logs = Nothing}
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
                 (_, _, Nothing, _) -> do

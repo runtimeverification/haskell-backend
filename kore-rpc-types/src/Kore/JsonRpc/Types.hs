@@ -171,7 +171,6 @@ data ImpliesResult = ImpliesResult
 data SimplifyResult = SimplifyResult
     { state :: KoreJson
     , logs :: Maybe [LogEntry]
-    , equationsApplied :: Maybe Natural
     }
     deriving stock (Generic, Show, Eq)
     deriving

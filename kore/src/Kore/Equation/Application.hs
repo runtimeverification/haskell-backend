@@ -24,6 +24,7 @@ import Control.Monad (
  )
 import Control.Monad.Reader (asks)
 import Control.Monad.State (modify)
+import Data.Bifunctor
 import Data.Map.Strict (
     Map,
  )
@@ -261,12 +262,9 @@ applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
     debugApplyEquation equation term result
     doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
-    modify $ \(c, traceSeq, n) ->
-        let traceSeq' =
-                if doTracing
-                    then traceSeq |> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result
-                    else traceSeq
-         in (c, traceSeq', n + 1)
+    when doTracing $
+        modify $
+            second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
     pure results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.

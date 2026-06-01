@@ -268,7 +268,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                         SimplifyResult
                             { state = boosterRes.state
                             , logs = postProcessLogs <$> boosterRes.logs
-                            , equationsApplied = Nothing
                             }
                 | otherwise -> do
                     let koreReq =
@@ -288,7 +287,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 [ "tag" .= ("kore-simplify" :: Text)
                                                 , "input" .= boosterRes.state
                                                 , "output" .= koreRes.state
-                                                , "equations_applied" .= koreRes.equationsApplied
                                                 ]
                                             )
                                             ("kore-simplify" :: Text)
@@ -317,7 +315,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 [ boosterRes.logs
                                                 , koreRes.logs
                                                 ]
-                                    , equationsApplied = koreRes.equationsApplied
                                     }
                         koreError ->
                             -- can only be an error
