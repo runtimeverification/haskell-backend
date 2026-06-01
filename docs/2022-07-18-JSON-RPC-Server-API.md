@@ -438,13 +438,10 @@ Same as for execute
   "id": 1,
   "result": {
     "state": {"format": "KORE", "version": 1, "term": {}},
-    "logs": [],
-    "equations-applied": 0
+    "logs": []
   }
 }
 ```
-
-The optional `equations-applied` field is the number of equations the kore simplifier committed while processing this request. It is omitted when booster handles the request entirely on its own (e.g. under `booster-only`). Consumers use it as a cheap signal of whether the kore fallback did any work.
 
 ## Add-module
 
