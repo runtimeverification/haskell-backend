@@ -41,9 +41,11 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
 }
 ```
 
-Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name), `assume-state-defined` (description follows) and all the `log-*` options, which default to false if unspecified.
+Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name), `assume-state-defined` (description follows), `booster-only` (description follows) and all the `log-*` options, which default to false if unspecified.
 
 If `assume-state-defined` is set to `true`, the all sub-terms of `state` will be assumed to be defined before attempting rewrite rules.
+
+If `booster-only` is set to `true`, the proxy will not fall back to the legacy kore backend for any sub-call of this request — whatever booster returns (success, abort, error) is returned to the client as-is. This applies symmetrically to `execute`, `simplify`, `implies`, and `get-model` requests. Defaults to `false`.
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
@@ -318,7 +320,7 @@ where `origin` is one of `kore-rpc`, `booster` or `llvm`. The order of the trace
 }
 ```
 
-Optional parameters: `module` (main module name), `assume-defined`.
+Optional parameters: `module` (main module name), `assume-defined`, `booster-only` (see Execute).
 
 The `assume-defined` flag defaults to `false`. When set to `true`, the server uses the new simplified implication check in booster, which makes the assumption that the antecedent and consequent are bot defined, i.e. don't simplify to `#Bottom`.
 
@@ -422,7 +424,7 @@ indicating that the program configuration can be rewritten further => `valid = F
 }
 ```
 
-Optional parameters: `module` (main module name)
+Optional parameters: `module` (main module name), `booster-only` (see Execute).
 
 ### Error Response:
 
@@ -540,7 +542,7 @@ If the provided `state` _does not contain any predicates_, the endpoint will res
 }
 ```
 
-Optional parameters: `module` (main module name)
+Optional parameters: `module` (main module name), `booster-only` (see Execute).
 
 ### Error Response:
 
