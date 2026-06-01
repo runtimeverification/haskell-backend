@@ -187,30 +187,41 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
     GetModel getModelReq -> do
         -- try the booster end-point first
         (bResult, bTime) <- Stats.timed $ booster req
+        let boosterOnly = fromMaybe False getModelReq.boosterOnly
         (result, kTime) <-
             case bResult of
-                Left err -> do
-                    Booster.Log.withContext CtxProxy $
-                        Booster.Log.logMessage $
-                            Text.pack $
-                                "get-model error in booster: " <> fromError err
-                    (kRes, kTime) <- Stats.timed $ kore req
-                    Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
-                        Booster.Log.logMessage $
-                            WithJsonMessage
-                                ( object $
-                                    [ "tag" .= ("kore-get-model-fallback" :: Text)
-                                    , "state" .= getModelReq.state
-                                    ]
-                                        <> case kRes of
-                                            Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
-                                            _ -> []
-                                )
-                                ("kore-get-model-fallback" :: Text)
-                    pure (kRes, kTime)
+                Left err
+                    -- under booster-only, booster errors are returned as-is — no kore fallback
+                    | boosterOnly -> do
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.logMessage $
+                                Text.pack $
+                                    "get-model error in booster (booster-only mode, not falling back): " <> fromError err
+                        pure (Left err, 0)
+                    | otherwise -> do
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.logMessage $
+                                Text.pack $
+                                    "get-model error in booster: " <> fromError err
+                        (kRes, kTime) <- Stats.timed $ kore req
+                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                            Booster.Log.logMessage $
+                                WithJsonMessage
+                                    ( object $
+                                        [ "tag" .= ("kore-get-model-fallback" :: Text)
+                                        , "state" .= getModelReq.state
+                                        ]
+                                            <> case kRes of
+                                                Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
+                                                _ -> []
+                                    )
+                                    ("kore-get-model-fallback" :: Text)
+                        pure (kRes, kTime)
                 Right (GetModel res@GetModelResult{})
-                    -- re-check with legacy-kore if result is unknown
-                    | Unknown <- res.satisfiable -> do
+                    -- re-check with legacy-kore if result is unknown,
+                    -- unless the request asked us to stay booster-only
+                    | Unknown <- res.satisfiable
+                    , not boosterOnly -> do
                         Booster.Log.withContext CtxProxy $
                             Booster.Log.withContext CtxAbort $
                                 Booster.Log.logMessage $
@@ -233,7 +244,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                     )
                                     ("kore-get-model-recheck" :: Text)
                         pure (kResult, kTime)
-                    -- keep other results
+                    -- keep other results (including Unknown under booster-only)
                     | otherwise ->
                         pure (bResult, 0)
                 other ->
@@ -420,8 +431,12 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                 )
                                 r{ExecuteRequest.state = execStateToKoreJson simplifiedBoosterState}
                 -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck, Branching],
-                -- revert to the old backend to re-confirm and possibly proceed
-                | boosterResult.reason `elem` cfg.fallbackReasons -> do
+                -- revert to the old backend to re-confirm and possibly proceed.
+                -- When the request carries `booster-only: true`, all kore fallbacks
+                -- are suppressed and booster's halt is returned as-is (the
+                -- absence of a kore-execute-fallback event is itself the signal).
+                | not (fromMaybe False r.boosterOnly)
+                , boosterResult.reason `elem` cfg.fallbackReasons -> do
                     Booster.Log.withContext CtxProxy $
                         Booster.Log.logMessage $
                             Text.pack $
@@ -475,6 +490,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                     , "input" .= execStateToKoreJson simplifiedBoosterState
                                                     , "output" .= execStateToKoreJson koreResult.state
                                                     , "kore_reason" .= koreResult.reason
+                                                    , "depth_at_fallback" .= (currentDepth + boosterResult.depth)
                                                     ]
                                                 )
                                                 ("kore-execute-fallback" :: Text)
