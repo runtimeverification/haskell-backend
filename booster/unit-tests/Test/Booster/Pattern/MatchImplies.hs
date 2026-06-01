@@ -127,9 +127,8 @@ constructors =
               z = var "Z" someSort
               t1 = app con3 [var "X" someSort, var "X" someSort]
               t2 = app con3 [y, z]
-           in test "Matching the same variable in a constructor (fail)" t1 t2 $
-                failed $
-                    VariableConflict (Variable someSort "X") y z
+           in test "Matching the same variable in a constructor (indeterminate)" t1 t2 $
+                remainderWith [("X", someSort, y)] [(y, z)]
         ]
 
 functions :: TestTree

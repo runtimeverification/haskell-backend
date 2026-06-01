@@ -811,11 +811,19 @@ bindVariable matchType var term@(Term termAttrs _) = do
             , oldTermAttrs.isConstructorLike ->
                 failWith $ VariableConflict var oldTerm term
             | otherwise ->
-                -- the term in the binding could be _equivalent_
-                -- (not necessarily syntactically equal) to term'
+                -- The term in the binding could be _equivalent_ (not
+                -- necessarily syntactically equal) to 'term'. For 'Rewrite'
+                -- and 'Implies', the indeterminate verdict lets the caller
+                -- attempt to discharge the equivalence — e.g. via the
+                -- 'MatchIndeterminate' simplify-LHS / simplify-RHS retry
+                -- ladder in 'Pattern.Implies', or via the partial-substitution
+                -- pruning in 'Pattern.Rewrite' — instead of committing to a
+                -- (possibly unsound) decisive 'MatchFailed'. 'Eval' keeps
+                -- 'failWith' because the equation evaluator uses priority
+                -- ordering and treats 'MatchFailed' as "skip and try next."
                 case matchType of
-                    Rewrite -> addIndeterminate oldTerm term
-                    _ -> failWith $ VariableConflict var oldTerm term
+                    Eval -> failWith $ VariableConflict var oldTerm term
+                    _ -> addIndeterminate oldTerm term
         Nothing -> do
             let
                 -- apply existing substitutions to term
