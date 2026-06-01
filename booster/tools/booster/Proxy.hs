@@ -149,8 +149,8 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         , "consequent" .= impliesReq.consequent
                                         ]
                                             <> case koreRes of
-                                                Right (Implies r) -> ["valid" .= r.valid, "kore_did_work" .= True]
-                                                _ -> ["kore_did_work" .= False]
+                                                Right (Implies r) -> ["valid" .= r.valid]
+                                                _ -> []
                                     )
                                     ("kore-implies-fallback" :: Text)
                         pure koreRes
@@ -211,8 +211,8 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                     , "state" .= getModelReq.state
                                     ]
                                         <> case kRes of
-                                            Right (GetModel r) -> ["satisfiable" .= r.satisfiable, "kore_did_work" .= True]
-                                            _ -> ["kore_did_work" .= False]
+                                            Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
+                                            _ -> []
                                 )
                                 ("kore-get-model-fallback" :: Text)
                     pure (kRes, kTime)
@@ -238,11 +238,8 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                         , "state" .= getModelReq.state
                                         ]
                                             <> case kResult of
-                                                Right (GetModel r) ->
-                                                    [ "satisfiable" .= r.satisfiable
-                                                    , "kore_did_work" .= (r.satisfiable /= Unknown)
-                                                    ]
-                                                _ -> ["kore_did_work" .= False]
+                                                Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
+                                                _ -> []
                                     )
                                     ("kore-get-model-recheck" :: Text)
                         pure (kResult, kTime)
@@ -290,7 +287,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 [ "tag" .= ("kore-simplify" :: Text)
                                                 , "input" .= boosterRes.state
                                                 , "output" .= koreRes.state
-                                                , "kore_did_work" .= maybe False (> 0) koreRes.equationsApplied
                                                 , "equations_applied" .= koreRes.equationsApplied
                                                 ]
                                             )
@@ -496,7 +492,6 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                     , "input" .= execStateToKoreJson simplifiedBoosterState
                                                     , "output" .= execStateToKoreJson koreResult.state
                                                     , "kore_reason" .= koreResult.reason
-                                                    , "kore_did_work" .= (koreResult.depth /= 0 || koreResult.reason /= boosterResult.reason)
                                                     , "depth_at_fallback" .= (currentDepth + boosterResult.depth)
                                                     ]
                                                 )
