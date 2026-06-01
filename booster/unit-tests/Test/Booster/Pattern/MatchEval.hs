@@ -30,6 +30,8 @@ test_match_eval =
         , composite
         , kmapTerms
         , internalSets
+        , variableRebindMixedDeterminacy
+        , functionApplicationAgainstConcreteCategories
         ]
 
 symbols :: TestTree
@@ -306,6 +308,94 @@ internalSets =
             (success [])
         ]
 
+{- | The matcher in 'Eval' mode currently returns a decisive
+'MatchFailed VariableConflict' when a pattern variable is bound first to
+one term and then to another where the two terms are not both
+constructor-like (e.g. a domain value and a function application). The
+"truth" verdict here is 'MatchIndeterminate', because the function
+application could simplify into the constructor-like term.
+
+Because 'handleFunctionEquation' (Pattern.ApplyEquations) routes
+@FailedMatch _@ to @continue@ but @IndeterminateMatch{}@ to @abort@, the
+current behaviour silently skips a higher-priority equation and commits
+to a lower-priority one — a soundness gap for function-equation
+priorities. The tests below pin both orderings of the rebind; they are
+expected to fail until 'Eval' mode mirrors 'Rewrite' / 'Implies' in
+'Match.bindVariable'.
+
+The companion soundness regression test lives in
+"Test.Booster.Pattern.ApplyEquations.test_soundnessGap".
+-}
+variableRebindMixedDeterminacy :: TestTree
+variableRebindMixedDeterminacy =
+    testGroup
+        "Variable rebinding with mixed-determinacy subject (currently failing)"
+        [ let d = dv someSort "1"
+              fnApp = app f1 [dv someSort "x"]
+              t1 = app con3 [var "X" someSort, var "X" someSort]
+              t2 = app con3 [d, fnApp]
+           in test
+                "Rebind X to a domain value then to a function application is indeterminate"
+                t1
+                t2
+                (remainderWith [("X", someSort, d)] [(d, fnApp)])
+        , let d = dv someSort "1"
+              fnApp = app f1 [dv someSort "x"]
+              t1 = app con3 [var "X" someSort, var "X" someSort]
+              t2 = app con3 [fnApp, d]
+           in test
+                "Rebind X to a function application then to a domain value is indeterminate"
+                t1
+                t2
+                (remainderWith [("X", someSort, fnApp)] [(fnApp, d)])
+        ]
+
+{- | When the pattern (rule LHS) contains a function application and the
+subject in that position is a structured term — an injection, a map, a
+list, or a set — 'Eval' currently returns a decisive
+'MatchFailed DifferentSymbols'. The "truth" verdict is
+'MatchIndeterminate', because the function application could in
+principle simplify into the corresponding category. The four tests
+mirror the four 'match1' lines that currently @failWith@ in Eval mode
+(@FunctionApplication{}@ paired with @Injection{} / KMap{} / KList{} /
+KSet{}@). The companion case for @DomainValue{}@ is covered by an
+existing test in the 'symbols' group; both flips happen in the impl
+commit.
+-}
+functionApplicationAgainstConcreteCategories :: TestTree
+functionApplicationAgainstConcreteCategories =
+    testGroup
+        "FunctionApplication pattern against concrete categories (currently failing)"
+        [ let pat = app f1 [var "X" someSort]
+              subj = Injection aSubsort someSort (dv aSubsort "x")
+           in test
+                "FunctionApplication pattern with Injection subject is indeterminate"
+                pat
+                subj
+                (remainder [(pat, subj)])
+        , let pat = app f1 [var "X" someSort]
+              subj = emptyKMap
+           in test
+                "FunctionApplication pattern with KMap subject is indeterminate"
+                pat
+                subj
+                (remainder [(pat, subj)])
+        , let pat = app f1 [var "X" someSort]
+              subj = emptyList
+           in test
+                "FunctionApplication pattern with KList subject is indeterminate"
+                pat
+                subj
+                (remainder [(pat, subj)])
+        , let pat = app f1 [var "X" someSort]
+              subj = emptySet
+           in test
+                "FunctionApplication pattern with KSet subject is indeterminate"
+                pat
+                subj
+                (remainder [(pat, subj)])
+        ]
+
 ----------------------------------------
 
 test :: String -> Term -> Term -> MatchResult -> TestTree
@@ -322,6 +412,23 @@ success assocs =
 
 failed :: FailReason -> MatchResult
 failed = MatchFailed
+
+remainder :: [(Term, Term)] -> MatchResult
+remainder = MatchIndeterminate mempty . NE.fromList
+
+{- | Like 'remainder' but also asserts a non-empty partial substitution
+from pairs that the matcher resolved before reaching the indeterminate
+pairs.
+-}
+remainderWith :: [(VarName, Sort, Term)] -> [(Term, Term)] -> MatchResult
+remainderWith assocs pairs =
+    MatchIndeterminate
+        ( Map.fromList
+            [ (Variable{variableSort, variableName}, term)
+            | (variableName, variableSort, term) <- assocs
+            ]
+        )
+        (NE.fromList pairs)
 
 errors :: String -> Term -> Term -> TestTree
 errors name pat subj =
