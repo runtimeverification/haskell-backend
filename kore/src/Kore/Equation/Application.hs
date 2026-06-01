@@ -266,7 +266,8 @@ applyEquation _ term equation result = do
                 if doTracing
                     then traceSeq |> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result
                     else traceSeq
-         in (c, traceSeq', n + 1)
+            !n' = n + 1
+         in (c, traceSeq', n')
     pure results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
