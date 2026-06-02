@@ -1,0 +1,65 @@
+{
+  "format": "KORE",
+  "version": 1,
+  "term": {
+    "tag": "App",
+    "name": "LblSet'Coln'in",
+    "sorts": [],
+    "args": [
+      {
+        "tag": "App",
+        "name": "inj",
+        "sorts": [
+          {"tag": "SortApp", "name": "SortInt", "args": []},
+          {"tag": "SortApp", "name": "SortKItem", "args": []}
+        ],
+        "args": [
+          {"tag": "DV", "sort": {"tag": "SortApp", "name": "SortInt", "args": []}, "value": "5"}
+        ]
+      },
+      {
+        "tag": "App",
+        "name": "Lbl'Unds'Set'Unds'",
+        "sorts": [],
+        "args": [
+          {
+            "tag": "App",
+            "name": "LblSetItem",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "App",
+                "name": "inj",
+                "sorts": [
+                  {"tag": "SortApp", "name": "SortInt", "args": []},
+                  {"tag": "SortApp", "name": "SortKItem", "args": []}
+                ],
+                "args": [
+                  {"tag": "DV", "sort": {"tag": "SortApp", "name": "SortInt", "args": []}, "value": "5"}
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "App",
+            "name": "LblSetItem",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "App",
+                "name": "inj",
+                "sorts": [
+                  {"tag": "SortApp", "name": "SortInt", "args": []},
+                  {"tag": "SortApp", "name": "SortKItem", "args": []}
+                ],
+                "args": [
+                  {"tag": "DV", "sort": {"tag": "SortApp", "name": "SortInt", "args": []}, "value": "6"}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

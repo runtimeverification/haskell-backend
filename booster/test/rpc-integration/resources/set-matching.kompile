@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+name=$(basename "$0" .kompile)
+kompile --backend haskell "$name.k" --syntax-module SET-MATCHING
+cp "$name-kompiled/definition.kore" "./$name.kore"
+rm -r "$name-kompiled"

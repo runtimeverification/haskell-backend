@@ -472,6 +472,7 @@ test-suite unit-tests
       Test.Booster.Pattern.Binary
       Test.Booster.Pattern.Index
       Test.Booster.Pattern.InternalCollections
+      Test.Booster.Pattern.MatchBuiltins
       Test.Booster.Pattern.MatchEval
       Test.Booster.Pattern.MatchImplies
       Test.Booster.Pattern.MatchRewrite
