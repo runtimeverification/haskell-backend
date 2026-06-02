@@ -1,9 +1,38 @@
 {
     "jsonrpc": "2.0",
     "id": "implies-smt-002",
-    "error": {
-        "code": 6,
-        "data": "unknown constraints",
-        "message": "Aborted"
+    "result": {
+        "valid": false,
+        "implication": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "Implies",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortInt",
+                    "args": []
+                },
+                "first": {
+                    "tag": "EVar",
+                    "name": "VarX",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                },
+                "second": {
+                    "tag": "EVar",
+                    "name": "VarX",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                }
+            }
+        },
+        "indeterminate": true
     }
 }
