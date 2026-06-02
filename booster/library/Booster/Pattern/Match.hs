@@ -662,7 +662,7 @@ containsOtherKeys = \case
 
 {- | Match two internalised 'KSet' values.
 
-   Three shapes are handled; everything else bails to
+   Four shapes are handled; everything else bails to
    'MatchIndeterminate':
 
    1. Both sides empty (no enumerated elements and no frame on either
@@ -673,6 +673,16 @@ containsOtherKeys = \case
       'internaliseKSet' has already sorted and deduplicated each side,
       so equal lists denote equal multisets.  Different lists are a
       decisive 'DifferentValues' failure.
+
+   2'. Frameless singleton on both sides (@KSet [p] Nothing@ ~
+      @KSet [s] Nothing@): recurse on the elements.  No AC search —
+      one option on each side.  This is the shape reached from
+      'matchSymbolApplications'' pairwise descent through
+      @_|Set_(REST, SetItem(Y))@: 'SET.union' is matched structurally
+      (it carries 'comm' but not 'assoc'/'idem'), and the SetItem
+      operand internalises to a frameless singleton 'KSet' via the
+      collection-element smart constructor.  Without this case the
+      whole KEVM '_|Set_'-based membership family of lemmas can't fire.
 
    3. Pattern is a single called-out element + frame variable
       (@KSet [p] (Just (Var frameV))@).  We branch on the subject:
@@ -730,6 +740,13 @@ matchSets matchTy def patElements patRest subjElements subjRest =
                     if patElements == subjElements
                         then pure ()
                         else differentValues
+            ([p], Nothing, [s], Nothing) ->
+                -- Gap C: frameless singleton on both sides. Recurse on the
+                -- elements; no AC search needed (one option each side).  This
+                -- is the shape reached from matchSymbolApplications' pairwise
+                -- descent through '_|Set_(REST, SetItem(Y))' when the SetItem
+                -- operand internalises to a frameless singleton 'KSet'.
+                enqueueRegularProblem p s
             ([p], Just (Var frameV), [s], sRest) -> do
                 enqueueRegularProblem p s
                 bindVariable matchTy frameV $ KSet def [] sRest

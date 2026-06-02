@@ -16,54 +16,13 @@
                         "sorts": [],
                         "args": [
                             {
-                                "tag": "App",
-                                "name": "Lbl'UndsPipe'Set'UndsUnds'SET'Unds'Set'Unds'Set'Unds'Set",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "EVar",
-                                        "name": "VarA",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortSet",
-                                            "args": []
-                                        }
-                                    },
-                                    {
-                                        "tag": "App",
-                                        "name": "LblSetItem",
-                                        "sorts": [],
-                                        "args": [
-                                            {
-                                                "tag": "App",
-                                                "name": "inj",
-                                                "sorts": [
-                                                    {
-                                                        "tag": "SortApp",
-                                                        "name": "SortInt",
-                                                        "args": []
-                                                    },
-                                                    {
-                                                        "tag": "SortApp",
-                                                        "name": "SortKItem",
-                                                        "args": []
-                                                    }
-                                                ],
-                                                "args": [
-                                                    {
-                                                        "tag": "DV",
-                                                        "sort": {
-                                                            "tag": "SortApp",
-                                                            "name": "SortInt",
-                                                            "args": []
-                                                        },
-                                                        "value": "1"
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
+                                "tag": "EVar",
+                                "name": "VarA",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortSet",
+                                    "args": []
+                                }
                             },
                             {
                                 "tag": "App",
@@ -93,7 +52,7 @@
                                                     "name": "SortInt",
                                                     "args": []
                                                 },
-                                                "value": "2"
+                                                "value": "1"
                                             }
                                         ]
                                     }
@@ -129,7 +88,7 @@
                                             "name": "SortInt",
                                             "args": []
                                         },
-                                        "value": "1"
+                                        "value": "2"
                                     }
                                 ]
                             }
