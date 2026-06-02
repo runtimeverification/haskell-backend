@@ -37,7 +37,34 @@ internalSetsMatching :: TestTree
 internalSetsMatching =
     testGroup
         "matchSets"
-        [ -- Concrete singleton ~ concrete singleton: multiset equality decides
+        [ -- Frameless singleton with a non-concrete pattern element against a
+          -- concrete singleton subject.  Today: case (2)'s 'isConcrete patElements'
+          -- guard fails, no other case applies, falls through to indeterminate.
+          -- After the Gap-C fix: recurse on the elements via 'enqueueRegularProblem'
+          -- and bind Y to the subject DV.
+          test
+            "Gap C: variable singleton ~ concrete singleton (frameless)"
+            (kset [var "Y" someSort] Nothing)
+            (kset [dvN 7] Nothing)
+            (success [("Y", someSort, dvN 7)])
+        , -- Same Gap-C shape with the pattern element wrapped in an injection.
+          -- This is the canonical KEVM membership-lemma shape after
+          -- 'matchSymbolApplications' descends through the '_|Set_' operands:
+          -- 'SetItem(inj{Int,KItem}(Y)) ~ SetItem(inj{Int,KItem}(N))' reduces to
+          -- frameless 'KSet [inj Y] Nothing ~ KSet [inj N] Nothing'.
+          test
+            "Gap C: inj-wrapped variable singleton ~ inj-wrapped concrete singleton (frameless)"
+            (kset [inj aSubsort someSort (var "Y" aSubsort)] Nothing)
+            (kset [inj aSubsort someSort (dv aSubsort "7")] Nothing)
+            (success [("Y", aSubsort, dv aSubsort "7")])
+        , -- Gap-C with two distinct variables on opposite sides of a frameless
+          -- singleton match.  Recursion handles it via 'bindVariable'.
+          test
+            "Gap C: variable singleton ~ different variable singleton (frameless)"
+            (kset [var "Y" someSort] Nothing)
+            (kset [var "Z" someSort] Nothing)
+            (success [("Y", someSort, var "Z" someSort)])
+        , -- Concrete singleton ~ concrete singleton: multiset equality decides
           -- it, no new bindings introduced.
           test
             "concrete singleton ~ concrete singleton"
