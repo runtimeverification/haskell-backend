@@ -213,9 +213,11 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         , valid = False
                         , condition
                         , logs = Nothing
+                        , indeterminate = Nothing
                         }
 
     doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
+
     implies' predicate s l r subst =
         pure $
             Right $
@@ -239,5 +241,6 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                             $ subst
                                     }
                         , logs = Nothing
+                        , indeterminate = Nothing
                         }
     implies s' = let s = externaliseSort s' in implies' (Kore.Syntax.KJTop s) s
