@@ -1,0 +1,5 @@
+{
+  "max-depth": 1,
+  "log-successful-rewrites": true,
+  "log-failed-rewrites": true
+}

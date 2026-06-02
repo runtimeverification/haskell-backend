@@ -53,6 +53,7 @@ testDefinition =
                 , ("con2", con2)
                 , ("con3", con3)
                 , ("con4", con4)
+                , ("conBoolPair", conBoolPair)
                 , ("f1", f1)
                 , ("f2", f2)
                 , ("f3", f3)
@@ -92,11 +93,19 @@ app s = SymbolApplication s []
 inj :: Sort -> Sort -> Term -> Term
 inj = Injection
 
-con1, con2, con3, con4, f1, f2, f3, g, eqK, kseq, dotk :: Symbol
+con1, con2, con3, con4, conBoolPair, f1, f2, f3, g, eqK, kseq, dotk :: Symbol
 con1 = [symb| symbol con1{}(SomeSort{}) : SomeSort{} [constructor{}()] |]
 con2 = [symb| symbol con2{}(SomeSort{}) : SomeSort{} [constructor{}()] |]
 con3 = [symb| symbol con3{}(SomeSort{}, SomeSort{}) : SomeSort{} [constructor{}()] |]
 con4 = [symb| symbol con4{}(SomeSort{}, SomeSort{}) : AnotherSort{} [constructor{}()] |]
+
+{- | Two-argument constructor with a Bool in the second position; used by
+the rewrite tests that exercise partial-substitution pruning of an
+indeterminate match (a Bool-sorted rule variable can be bound through the
+match and then drive a `requires` clause to syntactic 'FalseBool').
+-}
+conBoolPair = [symb| symbol conBoolPair{}(SomeSort{}, SortBool{}) : SomeSort{} [constructor{}()] |]
+
 f1 = [symb| symbol f1{}(SomeSort{}) : SomeSort{} [function{}(), total{}()] |]
 f2 = [symb| symbol f2{}(SomeSort{}) : SomeSort{} [function{}()] |]
 f3 = [symb| symbol f3{}(SomeSort{}) : SortTestKMap{} [function{}()] |]
