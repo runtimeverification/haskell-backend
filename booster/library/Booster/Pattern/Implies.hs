@@ -240,18 +240,21 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         antecedent.term
                         consequent.term
   where
-    doesNotImply' s condition l r =
-        pure $
-            Right $
-                RpcTypes.Implies
-                    RpcTypes.ImpliesResult
-                        { implication = addHeader $ Kore.Syntax.KJImplies s l r
-                        , valid = False
-                        , condition
-                        , logs = Nothing
-                        , indeterminate = Nothing
-                        , haskellLogEntries = Nothing
-                        }
+    -- Single construction point for every implies / does-not-imply result.
+    -- The call sites differ only in 'valid', 'condition', and 'indeterminate';
+    -- centralising the record keeps a future field addition a one-line change.
+    mkResult s l r valid condition indeterminate =
+        pure . Right . RpcTypes.Implies $
+            RpcTypes.ImpliesResult
+                { implication = addHeader $ Kore.Syntax.KJImplies s l r
+                , valid
+                , condition
+                , logs = Nothing
+                , indeterminate
+                , haskellLogEntries = Nothing
+                }
+
+    doesNotImply' s condition l r = mkResult s l r False condition Nothing
 
     doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
 
@@ -261,42 +264,23 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
     -- SMT-discharge 'IsUnknown _' branch — so a recover-mode client
     -- escalates to kore rather than trusting @valid: false@.
     doesNotImplyIndeterminate s' l r =
-        let s = externaliseSort s'
-         in pure $
-                Right $
-                    RpcTypes.Implies
-                        RpcTypes.ImpliesResult
-                            { implication = addHeader $ Kore.Syntax.KJImplies s l r
-                            , valid = False
-                            , condition = Nothing
-                            , logs = Nothing
-                            , indeterminate = Just True
-                            }
+        let s = externaliseSort s' in mkResult s l r False Nothing (Just True)
 
     implies' predicate s l r subst =
-        pure $
-            Right $
-                RpcTypes.Implies
-                    RpcTypes.ImpliesResult
-                        { implication = addHeader $ Kore.Syntax.KJImplies s l r
-                        , valid = True
-                        , condition =
-                            Just
-                                RpcTypes.Condition
-                                    { predicate = addHeader predicate
-                                    , substitution =
-                                        addHeader
-                                            $ ( \case
-                                                    [] -> Kore.Syntax.KJTop s
-                                                    [x] -> x
-                                                    xs -> Kore.Syntax.KJAnd s xs
-                                              )
-                                                . map (uncurry $ externaliseSubstitution s)
-                                                . Map.toList
-                                            $ subst
-                                    }
-                        , logs = Nothing
-                        , indeterminate = Nothing
-                        , haskellLogEntries = Nothing
-                        }
+        mkResult s l r True (Just condition) Nothing
+      where
+        condition =
+            RpcTypes.Condition
+                { predicate = addHeader predicate
+                , substitution =
+                    addHeader
+                        $ ( \case
+                                [] -> Kore.Syntax.KJTop s
+                                [x] -> x
+                                xs -> Kore.Syntax.KJAnd s xs
+                          )
+                            . map (uncurry $ externaliseSubstitution s)
+                            . Map.toList
+                        $ subst
+                }
     implies s' = let s = externaliseSort s' in implies' (Kore.Syntax.KJTop s) s
