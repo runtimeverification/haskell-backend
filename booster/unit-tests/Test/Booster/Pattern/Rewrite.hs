@@ -45,6 +45,7 @@ test_rewriteStep =
         , definednessUnclear
         , rewriteStuck
         , rulePriority
+        , indeterminatePruning
         ]
 
 test_performRewrite :: TestTree
@@ -72,6 +73,7 @@ def =
                 [ (indexC "con1", [rule1, rule2, rule1'])
                 , (indexC "con3", [rule3])
                 , (indexC "con4", [rule4])
+                , (indexC "conBoolPair", [ruleBoolGuarded, ruleBoolCatchAll])
                 ]
         }
 
@@ -111,6 +113,37 @@ rule4 =
         42
         `withComputedAttributes` ComputedAxiomAttributes False [UndefinedSymbol "f2"]
 
+{- | High-priority rule for the indeterminate-pruning tests.
+
+LHS expects a concrete @"trigger"@ in the @SomeSort@ slot and binds a
+@SortBool@ rule variable @P@ in the second slot. The rule's @requires@ is
+just that variable: under any substitution that binds @P@ to a concrete
+'FalseBool', the @requires@ trivially evaluates to bottom. Under the
+proposed fix, an indeterminate match on this rule whose partial
+substitution happens to bind @P ↦ FalseBool@ will be pruned ('returnNotApplied')
+rather than aborting the whole rewrite step.
+-}
+ruleBoolGuarded :: RewriteRule "Rewrite"
+ruleBoolGuarded =
+    ( ruleWithRequires
+        (Just "conBoolPair-guarded")
+        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( conBoolPair{}( \dv{SomeSort{}}("trigger"), P:SortBool{} ) ), RuleVar:SortK{}) ) |]
+        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(           \dv{SomeSort{}}("via-guarded")                ) ), RuleVar:SortK{}) ) |]
+        42
+        [Predicate [trm| P:SortBool{} |]]
+    )
+
+{- | Catch-all rule for the indeterminate-pruning tests; lower priority than
+'ruleBoolGuarded' and unconditionally applicable.
+-}
+ruleBoolCatchAll :: RewriteRule "Rewrite"
+ruleBoolCatchAll =
+    rule
+        (Just "conBoolPair-catchall")
+        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( conBoolPair{}( AnyX:SomeSort{}, AnyQ:SortBool{} ) ), RuleVar:SortK{}) ) |]
+        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(           \dv{SomeSort{}}("via-catchall")               ) ), RuleVar:SortK{}) ) |]
+        50
+
 kCell :: Symbol
 kCell =
     [symb| symbol Lbl'-LT-'k'-GT-'{}(SortK{}) : SortKCell{} [constructor{}()] |]
@@ -136,6 +169,10 @@ rule ruleLabel lhs rhs priority =
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
         }
+
+ruleWithRequires :: Maybe Text -> Term -> Term -> Priority -> [Predicate] -> RewriteRule "Rewrite"
+ruleWithRequires lbl lhs rhs prio reqs =
+    (rule lbl lhs rhs prio){requires = reqs}
 
 withComputedAttributes :: RewriteRule r -> ComputedAxiomAttributes -> RewriteRule r
 r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
@@ -177,7 +214,8 @@ errorCases
     , subjectVariables
     , definednessUnclear
     , rewriteStuck
-    , rulePriority ::
+    , rulePriority
+    , indeterminatePruning ::
         TestTree
 errorCases =
     testGroup
@@ -232,6 +270,54 @@ rewriteStuck =
         , testCase "No rules for dotk()" $
             getsStuck
                 [trm| kCell{}( dotk{}() ) |]
+        ]
+indeterminatePruning =
+    testGroup
+        "Pruning indeterminate matches via partial substitution"
+        -- These tests exercise the contract that, when 'matchTerms' returns
+        -- 'MatchIndeterminate' for a rule, 'applyRule' uses the partial
+        -- substitution carried alongside the remainder pairs to evaluate the
+        -- rule's 'requires' clause. If any clause simplifies to syntactic
+        -- 'FalseBool' under that partial substitution, the rule is pruned
+        -- ('returnNotApplied') instead of aborting the whole step. If no
+        -- clause can be proved false, the existing 'RuleApplicationUnclear'
+        -- abort fires as today.
+        --
+        -- Setup (in module 'def'):
+        --   * 'ruleBoolGuarded' (priority 42): matches
+        --     'conBoolPair("trigger", P:SortBool)', 'requires = [P]'.
+        --   * 'ruleBoolCatchAll' (priority 50): matches
+        --     'conBoolPair(_, _)' unconditionally, rewrites to a marker.
+        -- A subject of the form 'conBoolPair(VSub, b)' where VSub is a
+        -- subject-side variable forces 'MatchIndeterminate' against
+        -- 'ruleBoolGuarded' (the pattern's "trigger" cannot unify with the
+        -- variable). The matcher does, however, bind 'P ↦ b' in the partial
+        -- substitution; 'b' decides whether the rule can be pruned.
+        [ testCase "Indeterminate match is pruned when requires under partial sub is FalseBool" $
+            -- Today (no pruning): aborts with RuleApplicationUnclear on ruleBoolGuarded.
+            -- After fix: ruleBoolGuarded is pruned because requires becomes [Predicate FalseBool];
+            -- ruleBoolCatchAll is the only applicable rule and fires.
+            [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( conBoolPair{}( VSub:SomeSort{}, \dv{SortBool{}}("false") ) ), ConfigVar:SortK{}) ) |]
+                `rewritesTo` ( "conBoolPair-catchall"
+                             , [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("via-catchall") ) ), ConfigVar:SortK{}) ) |]
+                             )
+        , -- Note: a third case ("requires under partial sub is a free Bool variable
+          -- — cannot prune, must abort") would exercise the SMT-discharge branch
+          -- of 'checkRequires'. The unit test config uses 'noSolver', so we leave
+          -- that case to the rpc-integration test (the real KEVM `#addr` repro).
+          testCase "Indeterminate match still aborts when requires under partial sub is TrueBool" $
+            -- The partial sub binds P ↦ TrueBool, so the substituted requires is trivially true
+            -- (not bottom). The rule's match is still indeterminate, so the impl must discard the
+            -- "requires is satisfied" outcome and abort — pruning only fires on a *concretely
+            -- false* requires. Behaviour is unchanged from today (abort either way), but this
+            -- locks in that the impl does not accidentally treat the rule as applicable.
+            let t =
+                    [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( conBoolPair{}( VSub:SomeSort{}, \dv{SortBool{}}("true") ) ), ConfigVar:SortK{}) ) |]
+             in t
+                    `failsWith` RuleApplicationUnclear
+                        ruleBoolGuarded
+                        t
+                        (NE.singleton ([trm| \dv{SomeSort{}}("trigger")|], [trm| VSub:SomeSort{} |]))
         ]
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $

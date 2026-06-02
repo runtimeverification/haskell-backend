@@ -515,7 +515,7 @@ failed :: FailReason -> MatchResult
 failed = MatchFailed
 
 remainder :: [(Term, Term)] -> MatchResult
-remainder = MatchIndeterminate . NE.fromList
+remainder = MatchIndeterminate mempty . NE.fromList
 
 sortErr :: SortError -> MatchResult
 sortErr = MatchFailed . SubsortingError
