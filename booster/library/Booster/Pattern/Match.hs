@@ -40,6 +40,7 @@ import Booster.Pattern.Substitution qualified as Substitution
 import Booster.Pattern.Util (
     checkSymbolIsAc,
     freeVariables,
+    isConcrete,
     isConstructorSymbol,
     sortOfTerm,
  )
@@ -265,7 +266,7 @@ match1 Eval    t1@KSet{}                                  t2@Injection{}        
 match1 _       t1@KSet{}                                  t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
+match1 matchTy t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets matchTy def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
 match1 _       t1@KSet{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@KSet{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
 match1 Rewrite t1@KSet{}                                  (Var t2)                                   = subjectVariableMatch t1 t2
@@ -658,23 +659,88 @@ containsOtherKeys = \case
     Rest _ -> False
 
 ------ Internalised Sets
+
+{- | Match two internalised 'KSet' values.
+
+   Three shapes are handled; everything else bails to
+   'MatchIndeterminate':
+
+   1. Both sides empty (no enumerated elements and no frame on either
+      side): trivial success.
+
+   2. Both sides fully concrete (no frame, all enumerated elements are
+      'isConcrete'): multiset equality via direct list comparison.
+      'internaliseKSet' has already sorted and deduplicated each side,
+      so equal lists denote equal multisets.  Different lists are a
+      decisive 'DifferentValues' failure.
+
+   3. Pattern is a single called-out element + frame variable
+      (@KSet [p] (Just (Var frameV))@).  We branch on the subject:
+
+        - Singleton subject (one enumerated element, with or without
+          its own frame): enqueue the pair @(p, s)@ for the regular
+          term matcher and bind the pattern's frame variable to the
+          empty leftover (the 'KSet' smart constructor normalises
+          @KSet _ [] (Just t)@ to @t@, so a frame-bearing subject
+          degenerates to its own frame).  This covers the canonical
+          KEVM lemma shape @SetItem(inj(Y)) REST ~ SetItem(inj(N))@
+          where the pattern element 'inj(Y)' has a variable inside.
+        - Multi-element subject, no subject frame, pattern element
+          'isConcrete' (a literal): partition the subject by syntactic
+          equality with the pattern element.  Exactly one match →
+          commit and bind the frame to the leftover.  Zero matches →
+          decisive 'DifferentValues' failure.  Multiple matches →
+          'MatchIndeterminate' (deliberately bailing on ambiguity
+          rather than committing arbitrarily).
+        - Anything else (multi-element subject with non-literal
+          pattern element, or subject with its own frame): bail
+          'MatchIndeterminate' — a non-literal pattern element could
+          bind to any subject element, so multi-element subjects are
+          ambiguous; subject frames could hide additional matches.
+
+   Anything outside cases 1-3 (multiple called-out pattern elements,
+   pattern frame that isn't a bare variable, ...) returns
+   'MatchIndeterminate'.  The design intent is to capture the rule
+   shapes used by KEVM's set-membership lemmas without doing general
+   AC matching.
+-}
 matchSets ::
+    MatchType ->
     KSetDefinition ->
     [Term] ->
     Maybe Term ->
     [Term] ->
     Maybe Term ->
     StateT MatchState (Except MatchResult) ()
-matchSets
-    def
-    patElements
-    patRest
-    subjElements
-    subjRest = do
-        -- match only empty sets, indeterminate otherwise
-        if null patElements && null subjElements && isNothing patRest && isNothing subjRest
-            then pure ()
-            else addIndeterminate (KSet def patElements patRest) (KSet def subjElements subjRest)
+matchSets matchTy def patElements patRest subjElements subjRest =
+    let indeterminate =
+            addIndeterminate
+                (KSet def patElements patRest)
+                (KSet def subjElements subjRest)
+        differentValues =
+            failWith $
+                DifferentValues
+                    (KSet def patElements patRest)
+                    (KSet def subjElements subjRest)
+     in case (patElements, patRest, subjElements, subjRest) of
+            ([], Nothing, [], Nothing) ->
+                pure ()
+            (_, Nothing, _, Nothing)
+                | all isConcrete patElements && all isConcrete subjElements ->
+                    if patElements == subjElements
+                        then pure ()
+                        else differentValues
+            ([p], Just (Var frameV), [s], sRest) -> do
+                enqueueRegularProblem p s
+                bindVariable matchTy frameV $ KSet def [] sRest
+            ([p], Just (Var frameV), _, Nothing)
+                | isConcrete p ->
+                    case partition (== p) subjElements of
+                        ([_unique], remaining) ->
+                            bindVariable matchTy frameV $ KSet def remaining Nothing
+                        ([], _) -> differentValues
+                        _ -> indeterminate
+            _ -> indeterminate
 
 ------ Internalised Maps
 matchMaps ::

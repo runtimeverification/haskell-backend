@@ -32,13 +32,13 @@ module SET-MATCHING
   // Each LHS carries either a non-empty `SetItem(...)` set or the AC `_|Set_`
   // symbol, so booster's matcher bails Indeterminate on every one of them.
 
-  rule X in (SetItem(Y) _   ) => true      requires           X  ==Int Y   [simplification]
-  rule X in (SetItem(Y) REST) => X in REST requires notBool ( X  ==Int Y ) [simplification]
+  rule X in (SetItem(Y) _   ) => true      requires           X  ==Int Y   [simplification, preserves-definedness]
+  rule X in (SetItem(Y) REST) => X in REST requires notBool ( X  ==Int Y ) [simplification, preserves-definedness]
 
-  rule X:Int in (REST:Set |Set SetItem(Y:Int)) => true      requires           X  ==Int Y   [simplification]
-  rule X:Int in (REST:Set |Set SetItem(Y:Int)) => X in REST requires notBool ( X  ==Int Y ) [simplification]
+  rule X:Int in (REST:Set |Set SetItem(Y:Int)) => true      requires           X  ==Int Y   [simplification, preserves-definedness]
+  rule X:Int in (REST:Set |Set SetItem(Y:Int)) => X in REST requires notBool ( X  ==Int Y ) [simplification, preserves-definedness]
 
-  rule S:Set |Set SetItem(X:Int) => S requires X in S [simplification]
+  rule S:Set |Set SetItem(X:Int) => S requires X in S [simplification, preserves-definedness]
 
   configuration <k> $PGM:KItem </k>
 
