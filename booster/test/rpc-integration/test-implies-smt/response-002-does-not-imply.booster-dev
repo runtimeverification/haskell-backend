@@ -1,0 +1,9 @@
+{
+    "jsonrpc": "2.0",
+    "id": "implies-smt-002",
+    "error": {
+        "code": 6,
+        "data": "unknown constraints",
+        "message": "Aborted"
+    }
+}
