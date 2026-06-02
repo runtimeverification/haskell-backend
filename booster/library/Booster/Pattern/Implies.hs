@@ -135,12 +135,12 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                                         if patR.term /= simplifiedPatR.term
                                                             then checkImpliesMatchTerms existsL patL existsR simplifiedPatR{constraints = patR.constraints}
                                                             else
-                                                                doesNotImply
+                                                                doesNotImplyIndeterminate
                                                                     (sortOfPattern patL)
                                                                     (externaliseExistTerm existsL patL.term)
                                                                     (externaliseExistTerm existsR patR.term)
                                                     (Left _, _) ->
-                                                        doesNotImply
+                                                        doesNotImplyIndeterminate
                                                             (sortOfPattern patL)
                                                             (externaliseExistTerm existsL patL.term)
                                                             (externaliseExistTerm existsR patR.term)
