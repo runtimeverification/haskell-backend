@@ -169,6 +169,18 @@ data ImpliesResult = ImpliesResult
     , valid :: Bool
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
+    , indeterminate :: Maybe Bool
+    -- ^ Booster-only signal: 'Just True' on a 'valid = False' result
+    -- where booster's match check was indeterminate (e.g. an
+    -- unevaluated function blocking unification) and the
+    -- simplify-LHS / simplify-RHS retry ladder did not make
+    -- progress.  Absent ('Nothing') on every decisive outcome
+    -- ('valid = True', or 'valid = False' from a 'MatchFailed{}' /
+    -- bottom-consequent path), all error paths, and every kore-side
+    -- result.  Clients that want to distinguish "couldn't tell" from
+    -- "definitely not implied" should escalate on
+    -- @indeterminate = Just True@ and trust @valid = False@ in every
+    -- other case.
     , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
