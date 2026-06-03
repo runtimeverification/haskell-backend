@@ -122,7 +122,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (externaliseExistTerm existsL patL.term)
                                 (externaliseExistTerm existsR patR.term)
                         MatchIndeterminate _partialSubst _remainder ->
-                            ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
+                            ApplyEquations.evaluatePatternWithCeils def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
                                         then -- we are being conservative here for now and returning "not-implied".
