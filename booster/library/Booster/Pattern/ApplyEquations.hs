@@ -890,7 +890,7 @@ applyEquation term rule =
                                         logPretty' @mods failReason
                             , FailedMatch failReason
                             )
-                    MatchIndeterminate remainder ->
+                    MatchIndeterminate _partialSubst remainder ->
                         throwE
                             ( \ctxt ->
                                 withContext CtxMatch $

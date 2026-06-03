@@ -51,7 +51,12 @@ data MatchResult
     | -- | different constructors or domain values, or sort mismatch
       MatchFailed FailReason
     | -- | (other) cases that are unresolved (offending case in head position).
-      MatchIndeterminate (NonEmpty (Term, Term))
+      --
+      -- The first field carries the /partial/ substitution accumulated from
+      -- pairs that did resolve before the indeterminate pairs were encountered;
+      -- any successful extension of the match must extend this substitution,
+      -- so callers may use it to prune via a side-condition check.
+      MatchIndeterminate Substitution (NonEmpty (Term, Term))
     deriving stock (Eq, Show)
 
 data MatchType = Rewrite | Eval | Implies deriving (Eq)
@@ -138,7 +143,7 @@ matchTerms matchType KoreDefinition{sorts} term1 term2 =
      in if matchType /= Implies && (not $ Set.null sharedVars)
             then case matchType of
                 Rewrite ->
-                    MatchIndeterminate $
+                    MatchIndeterminate Map.empty $
                         NE.fromList
                             [(Var v, Var v) | v <- Set.toList sharedVars]
                 Eval -> MatchFailed $ SharedVariables sharedVars
@@ -182,8 +187,9 @@ match matchType = do
 checkIndeterminate :: StateT MatchState (Except MatchResult) ()
 checkIndeterminate = do
     indeterminate <- gets mIndeterminate
-    unless (null indeterminate) . lift $
-        throwE (MatchIndeterminate $ NE.fromList indeterminate)
+    unless (null indeterminate) $ do
+        partialSubst <- gets mSubstitution
+        lift $ throwE (MatchIndeterminate partialSubst $ NE.fromList indeterminate)
 match1 ::
     MatchType ->
     Term ->

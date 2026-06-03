@@ -121,7 +121,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (sortOfPattern patL)
                                 (externaliseExistTerm existsL patL.term)
                                 (externaliseExistTerm existsR patR.term)
-                        MatchIndeterminate _remainder ->
+                        MatchIndeterminate _partialSubst _remainder ->
                             ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
