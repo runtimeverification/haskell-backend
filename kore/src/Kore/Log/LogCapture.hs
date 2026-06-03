@@ -2,23 +2,25 @@
 Copyright   : (c) Runtime Verification, 2026
 License     : BSD-3-Clause
 
-Kore-side per-request log capture for the @haskell-logging: true@
-JSON-RPC flag.
+Kore-side per-request log capture for the @haskell-logging@ JSON-RPC
+flag.
 
-The 'koreCaptureLogAction' returns a 'LogAction' that fans entries
-matching the bundled set (@DebugAttemptEquation@, @DebugApplyEquation@,
-@DebugTerm@) into a 'Collector'.  The collector is owned by the proxy
-for the lifetime of a single request and is drained when constructing
-the response.  Filtering here is independent of any CLI @-l@ filter so
-the capture is non-lossy regardless of server-startup verbosity.
+A request carries the list of entry-type names to capture.  The proxy
+turns the names this engine recognises into a 'Set' 'SomeTypeRep' (via
+'koreTypesFromNames') and registers it, together with a 'Collector',
+against the request's thread for the duration of the request.
+'registryLogAction' — installed once at server startup, outside the
+@-l@/@--log-entries@ filter — then fans every matching entry into that
+collector.  Because it sits outside the CLI filter, capture is
+independent of server-startup verbosity: the requested entries are
+captured whether or not the server was started with @-l@ for them.
 -}
 module Kore.Log.LogCapture (
     KoreCaptureRegistry,
     newKoreCaptureRegistry,
-    koreCaptureLogAction,
+    koreTypesFromNames,
     registryLogAction,
     withKoreCapture,
-    haskellLoggingBundleKoreTypes,
 ) where
 
 import Control.Concurrent (ThreadId, myThreadId)
@@ -37,76 +39,60 @@ import Kore.Log.BoosterAdaptor (entryToJsonValue)
 import Kore.Log.Registry (registry, textToType, typeOfSomeEntry)
 import Log (LogAction (..), SomeEntry)
 
-{- | The three kore-side entry types pyk's 'HASKELL_LOGGING_ENTRIES'
-@SimplifyKore@ bundle resolves to.  Looked up against the registry
-so a typo or removal would surface as a missing-entry diagnostic at
-module load.
+{- | Resolve requested entry-type names to the kore 'SomeTypeRep's the
+capture should match.  Names not in the log registry — booster context
+tags, or entries this backend version does not know — are skipped, so a
+client can request a superset spanning both engines (and across backend
+versions) without failing the request.
 -}
-haskellLoggingBundleKoreTypes :: Set SomeTypeRep
-haskellLoggingBundleKoreTypes =
-    Set.fromList $ map lookupOrFail bundleNames
-  where
-    bundleNames :: [Text]
-    bundleNames = ["DebugAttemptEquation", "DebugApplyEquation", "DebugTerm"]
-    lookupOrFail name =
-        case Map.lookup name (textToType registry) of
-            Just t -> t
-            Nothing ->
-                error $
-                    "Kore.Log.LogCapture: bundle entry " <> show name <> " not in registry."
-
-{- | A 'LogAction' that writes matching entries (filtered by
-'haskellLoggingBundleKoreTypes') as JSON 'Value's into the given
-'Collector'.  Combine with the engine's existing log action via
-the 'Semigroup' instance of 'LogAction' (fan-out).
--}
-koreCaptureLogAction :: MonadIO m => Collector -> LogAction m SomeEntry
-koreCaptureLogAction collector =
-    LogAction $ \entry ->
-        liftIO $
-            when (typeOfSomeEntry entry `Set.member` haskellLoggingBundleKoreTypes) $
-                appendCollector collector (entryToJsonValue Nothing entry)
+koreTypesFromNames :: [Text] -> Set SomeTypeRep
+koreTypesFromNames names =
+    Set.fromList $ mapMaybe (`Map.lookup` textToType registry) names
 
 ----------------------------------------------------------------------
 -- Per-request capture registry, keyed by the OS thread that owns the
 -- request.  The proxy's main log action is augmented once at server
 -- startup with 'registryLogAction'; each request that opts in
--- registers its own 'Collector' against its 'ThreadId' so concurrent
--- requests do not see each other's logs.
+-- registers its own 'Collector' (and the set of entry types it wants)
+-- against its 'ThreadId' so concurrent requests do not see each
+-- other's logs.
 ----------------------------------------------------------------------
 
-newtype KoreCaptureRegistry = KoreCaptureRegistry (TVar (Map ThreadId Collector))
+newtype KoreCaptureRegistry = KoreCaptureRegistry (TVar (Map ThreadId (Collector, Set SomeTypeRep)))
 
 newKoreCaptureRegistry :: IO KoreCaptureRegistry
 newKoreCaptureRegistry = KoreCaptureRegistry <$> newTVarIO Map.empty
 
 {- | A 'LogAction' that dispatches matching kore entries to whichever
-'Collector' is registered for the calling thread, if any.  Combined
-with the static kore log action via 'mconcat' so capture is purely
-additive.
+'Collector' is registered for the calling thread, if any, filtered by
+that request's requested entry-type set.  Combined with the static kore
+log action via 'mconcat' so capture is purely additive.
 -}
 registryLogAction :: MonadIO m => KoreCaptureRegistry -> LogAction m SomeEntry
 registryLogAction (KoreCaptureRegistry tv) =
     LogAction $ \entry -> liftIO $ do
+        -- Runs for every kore entry (it is composed outside the -l filter).
+        -- Most requests register nothing, so the thread lookup short-circuits.
         tid <- myThreadId
         m <- readTVarIO tv
         case Map.lookup tid m of
             Nothing -> pure ()
-            Just c ->
-                when (typeOfSomeEntry entry `Set.member` haskellLoggingBundleKoreTypes) $
+            Just (c, types)
+                | typeOfSomeEntry entry `Set.member` types ->
                     appendCollector c (entryToJsonValue Nothing entry)
+                | otherwise -> pure ()
 
-{- | Register a collector against the current thread for the duration
-of the inner action.  Existing registrations on the same thread
-(rare but possible if a request is re-entered) are restored on
-exit.  When the collector argument is 'Nothing' the inner action
-runs unchanged.
+{- | Register a collector and its requested entry-type set against the
+current thread for the duration of the inner action.  Existing
+registrations on the same thread (rare but possible if a request is
+re-entered) are restored on exit.  When the argument is 'Nothing' the
+inner action runs unchanged.
 -}
-withKoreCapture :: KoreCaptureRegistry -> Maybe Collector -> IO a -> IO a
+withKoreCapture :: KoreCaptureRegistry -> Maybe (Collector, Set SomeTypeRep) -> IO a -> IO a
 withKoreCapture _ Nothing action = action
-withKoreCapture (KoreCaptureRegistry tv) (Just collector) action = do
+withKoreCapture (KoreCaptureRegistry tv) (Just entry) action = do
     tid <- myThreadId
     bracket_
-        (atomically $ modifyTVar' tv (Map.insert tid collector))
+        (atomically $ modifyTVar' tv (Map.insert tid entry))
         (atomically $ modifyTVar' tv (Map.delete tid))
         action

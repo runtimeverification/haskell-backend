@@ -1,16 +1,23 @@
 # Per-request log capture (`haskell-logging`)
 
 Exercises the `haskell-logging` JSON-RPC request flag and the corresponding
-`haskell-log-entries` response field.
+`haskell-log-entries` response field. The request carries a **list of
+entry/context names** to capture; the matching log entries are returned in-band.
 
-`test.sh` sends two `execute` requests against the small `a-to-f` definition
-(reused via the `resources/haskell-log-capture.kore` symlink):
+`test.sh` sends `execute` requests against the small `a-to-f` definition
+(reused via the `resources/haskell-log-capture.kore` symlink) and asserts:
 
-- one with `haskell-logging: true`, asserting the response carries a non-empty
-  `haskell-log-entries` array;
-- one without the flag, asserting the field is omitted entirely.
+1. a list of booster context names (`params-contexts.json`) yields a non-empty
+   `haskell-log-entries` array;
+2. narrowing the list to just `["Proxy"]` (`params-proxy-only.json`) still
+   captures entries, and *every* captured entry carries a proxy context — i.e.
+   the list selects per request;
+3. omitting the flag (`params-control.json`) omits `haskell-log-entries`.
 
-The capture-and-attach happens in the proxy (`booster/tools/booster/Proxy.hs`),
-so the test only runs under `kore-rpc-booster`. The entries themselves are not
-diffed against a golden file because their content is timing- and
-scheduling-sensitive; the test asserts on presence/absence and non-emptiness.
+Names route across both engines: kore entry-type names (e.g.
+`DebugAttemptEquation`) are resolved against the kore log registry, booster
+context names (e.g. `Proxy`, `Rewrite`) against the message context stack
+(tag-only for id-carrying contexts like `CtxRewrite`); a name unknown to both is
+skipped. The capture happens in the proxy, so the test runs only under
+`kore-rpc-booster`. Entries are not diffed against a golden file because their
+content is timing-sensitive; the test asserts on presence/selection.

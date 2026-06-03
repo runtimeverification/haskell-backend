@@ -48,7 +48,7 @@ import Kore.JsonRpc.Types qualified as SimplifyRequest (SimplifyRequest (..))
 import Kore.JsonRpc.Types.Log qualified as RPCLog
 import Kore.JsonRpc.Types.LogCapture (drainCollector, newCollector)
 import Kore.Log qualified
-import Kore.Log.LogCapture (KoreCaptureRegistry, withKoreCapture)
+import Kore.Log.LogCapture (KoreCaptureRegistry, koreTypesFromNames, withKoreCapture)
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 import SMT qualified
@@ -92,17 +92,18 @@ data ProxyConfig = ProxyConfig
 serverError :: String -> Value -> ErrorObj
 serverError detail = ErrorObj ("Server error: " <> detail) (-32032)
 
-{- | Extract the @haskell-logging@ flag from any request type that
-carries it.  'Cancel' has no payload so always 'False'.
+{- | Extract the @haskell-logging@ entry-name list from any request type
+that carries it.  'Nothing' (and 'Cancel', which has no payload) yields
+the empty list, i.e. capture nothing.
 -}
-haskellLoggingFlag :: API 'Req -> Bool
-haskellLoggingFlag = \case
-    Execute r -> fromMaybe False r.haskellLogging
-    Implies r -> fromMaybe False r.haskellLogging
-    Simplify r -> fromMaybe False r.haskellLogging
-    AddModule r -> fromMaybe False r.haskellLogging
-    GetModel r -> fromMaybe False r.haskellLogging
-    Cancel -> False
+haskellLoggingEntries :: API 'Req -> [Text]
+haskellLoggingEntries = \case
+    Execute r -> fromMaybe [] r.haskellLogging
+    Implies r -> fromMaybe [] r.haskellLogging
+    Simplify r -> fromMaybe [] r.haskellLogging
+    AddModule r -> fromMaybe [] r.haskellLogging
+    GetModel r -> fromMaybe [] r.haskellLogging
+    Cancel -> []
 
 {- | Reconstruct the result variant with its 'haskellLogEntries' field
 set to the captured entries.  Written as full record construction
@@ -121,28 +122,35 @@ injectHaskellLogEntries entries = \case
     GetModel GetModelResult{..} -> GetModel GetModelResult{haskellLogEntries = entries, ..}
 
 {- | Run a request handler with the haskell-logging capture installed
-when the request opted in, then attach the captured entries to the
-response.  Booster-side capture is via 'withBoosterCapture' (a
-ReaderT-overlaid logger tee); kore-side capture is via
-'withKoreCapture' which registers the collector against the
-calling thread in the shared 'KoreCaptureRegistry'.  When the flag
-is off this is the identity.
+when the request asked for any entries, then attach the captured
+entries to the response.  The requested name list is a single flat set
+spanning both engines: it is passed verbatim to the booster capture
+('withBoosterCapture', a ReaderT-overlaid logger tee, which matches by
+context name) and resolved to kore entry types ('koreTypesFromNames')
+for the kore capture ('withKoreCapture', which registers the collector
+and type set against the calling thread in the shared
+'KoreCaptureRegistry').  Each engine ignores names it does not
+recognise, so a name unknown to both is simply never captured.  When
+the list is empty this is the identity.
 -}
 withHaskellLoggingCapture ::
     (Booster.Log.LoggerMIO m, MonadUnliftIO m) =>
     KoreCaptureRegistry ->
-    Bool ->
+    [Text] ->
     m (Either ErrorObj (API 'Res)) ->
     m (Either ErrorObj (API 'Res))
-withHaskellLoggingCapture _ False action = action
-withHaskellLoggingCapture registry True action = do
-    collector <- liftIO newCollector
-    result <-
-        withBoosterCapture (Just collector) $
-            withRunInIO $ \run ->
-                withKoreCapture registry (Just collector) (run action)
-    entries <- liftIO (drainCollector collector)
-    pure $ second (injectHaskellLogEntries (Just entries)) result
+withHaskellLoggingCapture registry names action
+    | null names = action
+    | otherwise = do
+        collector <- liftIO newCollector
+        let boosterNames = Set.fromList names
+            koreTypes = koreTypesFromNames names
+        result <-
+            withBoosterCapture (Just (collector, boosterNames)) $
+                withRunInIO $ \run ->
+                    withKoreCapture registry (Just (collector, koreTypes)) (run action)
+        entries <- liftIO (drainCollector collector)
+        pure $ second (injectHaskellLogEntries (Just entries)) result
 
 respondEither ::
     forall m.
@@ -152,7 +160,7 @@ respondEither ::
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
 respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore req =
-    withHaskellLoggingCapture koreCaptureRegistry (haskellLoggingFlag req) $ case req of
+    withHaskellLoggingCapture koreCaptureRegistry (haskellLoggingEntries req) $ case req of
         Execute execReq
             | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
                 loggedKore ExecuteM req

@@ -204,14 +204,16 @@ main = do
                 flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                     . Booster.Log.unLoggerT
 
-            koreLogActions :: forall m. MonadIO m => [Log.LogAction m Log.SomeEntry]
-            koreLogActions = [koreLogAction, registryLogAction koreCaptureRegistry]
-              where
-                koreLogAction =
-                    koreSomeEntryLogAction
-                        koreLogRenderer
-                        koreLogFilter
-                        (fromMaybe stderrLogger mFileLogger)
+            -- The configured (CLI -l/--log-entries) kore log action that renders
+            -- to stderr/file.  Per-request capture is NOT included here: it is
+            -- composed outside koreLogFilters below (see mvarLogAction) so that
+            -- haskell-logging capture is independent of the server's -l set.
+            koreLogAction :: forall m. MonadIO m => Log.LogAction m Log.SomeEntry
+            koreLogAction =
+                koreSomeEntryLogAction
+                    koreLogRenderer
+                    koreLogFilter
+                    (fromMaybe stderrLogger mFileLogger)
 
         runBoosterLogger $
             Booster.Log.withContext CtxProxy $
@@ -231,7 +233,7 @@ main = do
                         , Log.timestampsSwitch = TimestampsDisable
                         , Log.debugSolverOptions =
                             Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                        , Log.logType = LogProxy (mconcat koreLogActions)
+                        , Log.logType = LogProxy koreLogAction
                         , Log.logFormat = Log.Standard
                         }
                 srvSettings = serverSettings port "*"
@@ -293,7 +295,14 @@ main = do
                                             $ map
                                                 (pretty' @mods)
                                                 s.computedAttributes.notPreservesDefinednessReasons
-                mvarLogAction <- newMVar actualLogAction
+                -- Compose the kore-side per-request capture action *outside* the
+                -- koreLogFilters wrapper that withLogger applied to actualLogAction.
+                -- Kore emits its entries unconditionally (Log.logEntry is not gated
+                -- by logEntries), so capturing here — filtered only by each request's
+                -- own requested entry-type set — makes `haskell-logging` self-sufficient:
+                -- the requested kore entries are captured regardless of the server's
+                -- -l/--log-entries configuration.
+                mvarLogAction <- newMVar (actualLogAction <> registryLogAction koreCaptureRegistry)
                 let logAction = swappableLogger mvarLogAction
 
                 kore@KoreServer{runSMT} <-

@@ -47,7 +47,7 @@ data ExecuteRequest = ExecuteRequest
     , logSuccessfulRewrites :: !(Maybe Bool)
     , logFailedRewrites :: !(Maybe Bool)
     , boosterOnly :: !(Maybe Bool)
-    , haskellLogging :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -60,7 +60,7 @@ data ImpliesRequest = ImpliesRequest
     , _module :: !(Maybe Text)
     , assumeDefined :: !(Maybe Bool)
     , boosterOnly :: !(Maybe Bool)
-    , haskellLogging :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -71,7 +71,7 @@ data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
     , boosterOnly :: !(Maybe Bool)
-    , haskellLogging :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -81,7 +81,7 @@ data SimplifyRequest = SimplifyRequest
 data AddModuleRequest = AddModuleRequest
     { _module :: Text
     , nameAsId :: !(Maybe Bool)
-    , haskellLogging :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -92,7 +92,7 @@ data GetModelRequest = GetModelRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
     , boosterOnly :: !(Maybe Bool)
-    , haskellLogging :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
