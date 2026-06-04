@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 {- |
 Module      : Proxy
@@ -44,12 +45,18 @@ import Kore.JsonRpc qualified as Kore (ServerState)
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.JsonRpc.Types qualified as SimplifyRequest (SimplifyRequest (..))
+import Kore.JsonRpc.Types.ContextLog (LogLine)
 import Kore.JsonRpc.Types.Log qualified as RPCLog
+import Kore.JsonRpc.Types.LogCapture (drainCollector, newCollector)
 import Kore.Log qualified
+import Kore.Log.LogCapture (KoreCaptureRegistry, koreTypesFromNames, withKoreCapture)
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 import SMT qualified
 import Stats (MethodTiming (..), StatsVar, addStats, secWithUnit, timed)
+import UnliftIO (MonadUnliftIO, withRunInIO)
+
+import Booster.Log.LogCapture (withBoosterCapture)
 
 data KoreServer = KoreServer
     { serverState :: MVar.MVar Kore.ServerState
@@ -61,6 +68,11 @@ data KoreServer = KoreServer
         SMT.SMT a ->
         IO a
     , loggerEnv :: Kore.Log.LoggerEnv IO
+    , captureRegistry :: KoreCaptureRegistry
+    -- ^ per-request kore log capture registry; the kore log action
+    -- is wired at server startup to consult this registry for the
+    -- calling thread so requests that opt in via @haskell-logging@
+    -- can drain captured entries into their response.
     }
 
 data ProxyConfig = ProxyConfig
@@ -71,134 +83,199 @@ data ProxyConfig = ProxyConfig
     , simplifyAtEnd :: Bool
     , simplifyBeforeFallback :: Bool
     , customLogLevels :: ![Log.LogLevel]
+    , koreCaptureRegistry :: KoreCaptureRegistry
+    -- ^ shared with 'KoreServer.captureRegistry'; the proxy uses it
+    -- to register a per-request kore-side capture collector for the
+    -- duration of any kore invocation triggered while serving a
+    -- @haskell-logging: true@ request.
     }
 
 serverError :: String -> Value -> ErrorObj
 serverError detail = ErrorObj ("Server error: " <> detail) (-32032)
 
+{- | Extract the @haskell-logging@ entry-name list from any request type
+that carries it.  'Nothing' (and 'Cancel', which has no payload) yields
+the empty list, i.e. capture nothing.
+-}
+haskellLoggingEntries :: API 'Req -> [Text]
+haskellLoggingEntries = \case
+    Execute r -> fromMaybe [] r.haskellLogging
+    Implies r -> fromMaybe [] r.haskellLogging
+    Simplify r -> fromMaybe [] r.haskellLogging
+    AddModule r -> fromMaybe [] r.haskellLogging
+    GetModel r -> fromMaybe [] r.haskellLogging
+    Cancel -> []
+
+{- | Reconstruct the result variant with its 'haskellLogEntries' field
+set to the captured entries.  Written as full record construction
+(via 'RecordWildCards') rather than record-update so that the
+@DuplicateRecordFields@-flagged 'haskellLogEntries' name is
+unambiguously resolved to each concrete constructor.  The 'API' GADT
+hides each result type behind a type family, which interacts poorly
+with record-update sugar.
+-}
+injectHaskellLogEntries :: Maybe [LogLine] -> API 'Res -> API 'Res
+injectHaskellLogEntries entries = \case
+    Execute ExecuteResult{..} -> Execute ExecuteResult{haskellLogEntries = entries, ..}
+    Implies ImpliesResult{..} -> Implies ImpliesResult{haskellLogEntries = entries, ..}
+    Simplify SimplifyResult{..} -> Simplify SimplifyResult{haskellLogEntries = entries, ..}
+    AddModule AddModuleResult{..} -> AddModule AddModuleResult{haskellLogEntries = entries, ..}
+    GetModel GetModelResult{..} -> GetModel GetModelResult{haskellLogEntries = entries, ..}
+
+{- | Run a request handler with the haskell-logging capture installed
+when the request asked for any entries, then attach the captured
+entries to the response.  The requested name list is a single flat set
+spanning both engines: it is passed verbatim to the booster capture
+('withBoosterCapture', a ReaderT-overlaid logger tee, which matches by
+context name) and resolved to kore entry types ('koreTypesFromNames')
+for the kore capture ('withKoreCapture', which registers the collector
+and type set against the calling thread in the shared
+'KoreCaptureRegistry').  Each engine ignores names it does not
+recognise, so a name unknown to both is simply never captured.  When
+the list is empty this is the identity.
+-}
+withHaskellLoggingCapture ::
+    (Booster.Log.LoggerMIO m, MonadUnliftIO m) =>
+    KoreCaptureRegistry ->
+    [Text] ->
+    m (Either ErrorObj (API 'Res)) ->
+    m (Either ErrorObj (API 'Res))
+withHaskellLoggingCapture registry names action
+    | null names = action
+    | otherwise = do
+        collector <- liftIO newCollector
+        let boosterNames = Set.fromList names
+            koreTypes = koreTypesFromNames names
+        result <-
+            withBoosterCapture (Just (collector, boosterNames)) $
+                withRunInIO $ \run ->
+                    withKoreCapture registry (Just (collector, koreTypes)) (run action)
+        entries <- liftIO (drainCollector collector)
+        pure $ second (injectHaskellLogEntries (Just entries)) result
+
 respondEither ::
     forall m.
-    Booster.Log.LoggerMIO m =>
+    (Booster.Log.LoggerMIO m, MonadUnliftIO m) =>
     ProxyConfig ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
-    Execute execReq
-        | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
-            loggedKore ExecuteM req
-        | otherwise ->
-            let logSettings =
-                    LogSettings
-                        { logSuccessfulRewrites = execReq.logSuccessfulRewrites
-                        , logFailedRewrites = execReq.logFailedRewrites
-                        }
-             in do
-                    bState <- liftIO $ MVar.readMVar boosterState
-                    let m = fromMaybe bState.defaultMain execReq._module
-                        def =
-                            fromMaybe (error $ "Module " <> show m <> " not found") $
-                                Map.lookup m bState.definitions
-                    handleExecute logSettings def execReq
-    Implies impliesReq
-        | fromMaybe False impliesReq.assumeDefined || fromMaybe False impliesReq.boosterOnly -> do
-            -- try the booster end-point first
+respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore req =
+    withHaskellLoggingCapture koreCaptureRegistry (haskellLoggingEntries req) $ case req of
+        Execute execReq
+            | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
+                loggedKore ExecuteM req
+            | otherwise ->
+                let logSettings =
+                        LogSettings
+                            { logSuccessfulRewrites = execReq.logSuccessfulRewrites
+                            , logFailedRewrites = execReq.logFailedRewrites
+                            }
+                 in do
+                        bState <- liftIO $ MVar.readMVar boosterState
+                        let m = fromMaybe bState.defaultMain execReq._module
+                            def =
+                                fromMaybe (error $ "Module " <> show m <> " not found") $
+                                    Map.lookup m bState.definitions
+                        handleExecute logSettings def execReq
+        Implies impliesReq
+            | fromMaybe False impliesReq.assumeDefined || fromMaybe False impliesReq.boosterOnly -> do
+                -- try the booster end-point first
+                (boosterResult, boosterTime) <- Stats.timed $ booster req
+                case boosterResult of
+                    res@Right{} -> do
+                        logStats ImpliesM (boosterTime, 0)
+                        pure res
+                    Left err
+                        | fromMaybe False impliesReq.boosterOnly -> do
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage . Text.pack $
+                                    "Implies abort in booster (booster-only mode): "
+                                        <> fromError err
+                            -- Emit a structured proxy-level closing event so that
+                            -- pyk's group_kore_calls() can finalise the KoreCall for
+                            -- this request.  Without this, the accumulated
+                            -- BoosterEquationFailed data stays orphaned in the
+                            -- pending dict because no result event ever closes it.
+                            Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                                Booster.Log.logMessage $
+                                    WithJsonMessage
+                                        ( object
+                                            [ "tag" .= ("booster-implies-invalid" :: Text)
+                                            , "antecedent" .= impliesReq.antecedent
+                                            , "consequent" .= impliesReq.consequent
+                                            , "valid" .= False
+                                            ]
+                                        )
+                                        ("booster-implies-invalid" :: Text)
+                            logStats ImpliesM (boosterTime, 0)
+                            pure $ Left err
+                        | otherwise -> do
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.logMessage . Text.pack $
+                                    "Implies abort in booster: "
+                                        <> fromError err
+                                        <> ". Falling back to kore."
+                            (koreRes, koreTime) <- Stats.timed $ kore req
+                            logStats ImpliesM (boosterTime + koreTime, koreTime)
+                            Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                                Booster.Log.logMessage $
+                                    WithJsonMessage
+                                        ( object $
+                                            [ "tag" .= ("kore-implies-fallback" :: Text)
+                                            , "antecedent" .= impliesReq.antecedent
+                                            , "consequent" .= impliesReq.consequent
+                                            ]
+                                                <> case koreRes of
+                                                    Right (Implies r) -> ["valid" .= r.valid]
+                                                    _ -> []
+                                        )
+                                        ("kore-implies-fallback" :: Text)
+                            pure koreRes
+            | otherwise -> do
+                (koreRes, koreTime) <- Stats.timed $ kore req
+                logStats ImpliesM (koreTime, koreTime)
+                Booster.Log.withContext CtxProxy $
+                    Booster.Log.withContext CtxDetail $
+                        Booster.Log.logMessage $
+                            WithJsonMessage
+                                ( object $
+                                    [ "tag" .= ("kore-implies" :: Text)
+                                    , "antecedent" .= impliesReq.antecedent
+                                    , "consequent" .= impliesReq.consequent
+                                    ]
+                                        <> case koreRes of
+                                            Right (Implies r) -> ["valid" .= r.valid]
+                                            _ -> []
+                                )
+                                ("kore-implies" :: Text)
+                pure koreRes
+        Simplify simplifyReq ->
+            handleSimplify simplifyReq
+        AddModule _ -> do
+            -- execute in booster first, assuming that kore won't throw an
+            -- error if booster did not. The response is empty anyway.
             (boosterResult, boosterTime) <- Stats.timed $ booster req
             case boosterResult of
-                res@Right{} -> do
-                    logStats ImpliesM (boosterTime, 0)
-                    pure res
-                Left err
-                    | fromMaybe False impliesReq.boosterOnly -> do
-                        Booster.Log.withContext CtxProxy $
-                            Booster.Log.logMessage . Text.pack $
-                                "Implies abort in booster (booster-only mode): "
-                                    <> fromError err
-                        -- Emit a structured proxy-level closing event so that
-                        -- pyk's group_kore_calls() can finalise the KoreCall for
-                        -- this request.  Without this, the accumulated
-                        -- BoosterEquationFailed data stays orphaned in the
-                        -- pending dict because no result event ever closes it.
-                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
-                            Booster.Log.logMessage $
-                                WithJsonMessage
-                                    ( object
-                                        [ "tag" .= ("booster-implies-invalid" :: Text)
-                                        , "antecedent" .= impliesReq.antecedent
-                                        , "consequent" .= impliesReq.consequent
-                                        , "valid" .= False
-                                        ]
-                                    )
-                                    ("booster-implies-invalid" :: Text)
-                        logStats ImpliesM (boosterTime, 0)
-                        pure $ Left err
-                    | otherwise -> do
-                        Booster.Log.withContext CtxProxy $
-                            Booster.Log.logMessage . Text.pack $
-                                "Implies abort in booster: "
-                                    <> fromError err
-                                    <> ". Falling back to kore."
-                        (koreRes, koreTime) <- Stats.timed $ kore req
-                        logStats ImpliesM (boosterTime + koreTime, koreTime)
-                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
-                            Booster.Log.logMessage $
-                                WithJsonMessage
-                                    ( object $
-                                        [ "tag" .= ("kore-implies-fallback" :: Text)
-                                        , "antecedent" .= impliesReq.antecedent
-                                        , "consequent" .= impliesReq.consequent
-                                        ]
-                                            <> case koreRes of
-                                                Right (Implies r) -> ["valid" .= r.valid]
-                                                _ -> []
-                                    )
-                                    ("kore-implies-fallback" :: Text)
-                        pure koreRes
-        | otherwise -> do
-            (koreRes, koreTime) <- Stats.timed $ kore req
-            logStats ImpliesM (koreTime, koreTime)
-            Booster.Log.withContext CtxProxy $
-                Booster.Log.withContext CtxDetail $
-                    Booster.Log.logMessage $
-                        WithJsonMessage
-                            ( object $
-                                [ "tag" .= ("kore-implies" :: Text)
-                                , "antecedent" .= impliesReq.antecedent
-                                , "consequent" .= impliesReq.consequent
-                                ]
-                                    <> case koreRes of
-                                        Right (Implies r) -> ["valid" .= r.valid]
-                                        _ -> []
-                            )
-                            ("kore-implies" :: Text)
-            pure koreRes
-    Simplify simplifyReq ->
-        handleSimplify simplifyReq
-    AddModule _ -> do
-        -- execute in booster first, assuming that kore won't throw an
-        -- error if booster did not. The response is empty anyway.
-        (boosterResult, boosterTime) <- Stats.timed $ booster req
-        case boosterResult of
-            Left _err -> pure boosterResult
-            Right _ -> do
-                (koreRes, koreTime) <- Stats.timed $ kore req
-                logStats AddModuleM (boosterTime + koreTime, koreTime)
-                pure koreRes
-    GetModel getModelReq -> do
-        -- try the booster end-point first
-        (bResult, bTime) <- Stats.timed $ booster req
-        let boosterOnly = fromMaybe False getModelReq.boosterOnly
-        (result, kTime) <-
-            case bResult of
-                Left err
+                Left _err -> pure boosterResult
+                Right _ -> do
+                    (koreRes, koreTime) <- Stats.timed $ kore req
+                    logStats AddModuleM (boosterTime + koreTime, koreTime)
+                    pure koreRes
+        GetModel getModelReq -> do
+            -- try the booster end-point first
+            (bResult, bTime) <- Stats.timed $ booster req
+            let boosterOnly = fromMaybe False getModelReq.boosterOnly
+            (result, kTime) <-
+                case bResult of
                     -- under booster-only, booster errors are returned as-is — no kore fallback
-                    | boosterOnly -> do
+                    Left err | boosterOnly -> do
                         Booster.Log.withContext CtxProxy $
                             Booster.Log.logMessage $
                                 Text.pack $
                                     "get-model error in booster (booster-only mode, not falling back): " <> fromError err
                         pure (Left err, 0)
-                    | otherwise -> do
+                    Left err -> do
                         Booster.Log.withContext CtxProxy $
                             Booster.Log.logMessage $
                                 Text.pack $
@@ -217,42 +294,42 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                     )
                                     ("kore-get-model-fallback" :: Text)
                         pure (kRes, kTime)
-                Right (GetModel res@GetModelResult{})
-                    -- re-check with legacy-kore if result is unknown,
-                    -- unless the request asked us to stay booster-only
-                    | Unknown <- res.satisfiable
-                    , not boosterOnly -> do
-                        Booster.Log.withContext CtxProxy $
-                            Booster.Log.withContext CtxAbort $
+                    Right (GetModel res@GetModelResult{})
+                        -- re-check with legacy-kore if result is unknown,
+                        -- unless the request asked us to stay booster-only
+                        | Unknown <- res.satisfiable
+                        , not boosterOnly -> do
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.withContext CtxAbort $
+                                    Booster.Log.logMessage $
+                                        Text.pack "Re-checking a get-model result Unknown"
+                            (kResult, kTime) <- Stats.timed $ kore req
+                            Booster.Log.withContext CtxProxy $
+                                Booster.Log.withContext CtxAbort $
+                                    Booster.Log.logMessage $
+                                        "Double-check returned " <> toStrict (encodeToLazyText kResult)
+                            Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
                                 Booster.Log.logMessage $
-                                    Text.pack "Re-checking a get-model result Unknown"
-                        (kResult, kTime) <- Stats.timed $ kore req
-                        Booster.Log.withContext CtxProxy $
-                            Booster.Log.withContext CtxAbort $
-                                Booster.Log.logMessage $
-                                    "Double-check returned " <> toStrict (encodeToLazyText kResult)
-                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
-                            Booster.Log.logMessage $
-                                WithJsonMessage
-                                    ( object $
-                                        [ "tag" .= ("kore-get-model-recheck" :: Text)
-                                        , "state" .= getModelReq.state
-                                        ]
-                                            <> case kResult of
-                                                Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
-                                                _ -> []
-                                    )
-                                    ("kore-get-model-recheck" :: Text)
-                        pure (kResult, kTime)
-                    -- keep other results (including Unknown under booster-only)
-                    | otherwise ->
-                        pure (bResult, 0)
-                other ->
-                    error $ "Unexpected get-model result " <> show other
-        logStats GetModelM (bTime + kTime, kTime)
-        pure result
-    Cancel ->
-        pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
+                                    WithJsonMessage
+                                        ( object $
+                                            [ "tag" .= ("kore-get-model-recheck" :: Text)
+                                            , "state" .= getModelReq.state
+                                            ]
+                                                <> case kResult of
+                                                    Right (GetModel r) -> ["satisfiable" .= r.satisfiable]
+                                                    _ -> []
+                                        )
+                                        ("kore-get-model-recheck" :: Text)
+                            pure (kResult, kTime)
+                        -- keep other results (including Unknown under booster-only)
+                        | otherwise ->
+                            pure (bResult, 0)
+                    other ->
+                        error $ "Unexpected get-model result " <> show other
+            logStats GetModelM (bTime + kTime, kTime)
+            pure result
+        Cancel ->
+            pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
   where
     handleSimplify :: SimplifyRequest -> m (Either ErrorObj (API 'Res))
     handleSimplify simplifyReq = do
@@ -268,6 +345,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                         SimplifyResult
                             { state = boosterRes.state
                             , logs = postProcessLogs <$> boosterRes.logs
+                            , haskellLogEntries = Nothing
                             }
                 | otherwise -> do
                     let koreReq =
@@ -315,6 +393,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                                                 [ boosterRes.logs
                                                 , koreRes.logs
                                                 ]
+                                    , haskellLogEntries = Nothing
                                     }
                         koreError ->
                             -- can only be an error
@@ -679,6 +758,7 @@ respondEither cfg@ProxyConfig{boosterState} booster kore req = case req of
                     { state = execStateToKoreJson state
                     , _module = mbModule
                     , boosterOnly = mbBoosterOnly
+                    , haskellLogging = Nothing
                     }
 
     -- used for post-exec simplification returns either a state to

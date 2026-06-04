@@ -95,6 +95,7 @@ import Kore.Log.BoosterAdaptor (
 import Kore.Log.BoosterAdaptor qualified as Log
 import Kore.Log.DebugContext qualified as Log
 import Kore.Log.DebugSolver qualified as Log
+import Kore.Log.LogCapture (KoreCaptureRegistry, newKoreCaptureRegistry, registryLogAction)
 import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
@@ -162,6 +163,8 @@ main = do
     mTimeCache <-
         if logTimeStamps then Just <$> Booster.newTimeCache timestampFlag else pure Nothing
 
+    koreCaptureRegistry <- newKoreCaptureRegistry
+
     Booster.withFastLogger mTimeCache logFile $ \stderrLogger mFileLogger -> do
         let koreLogRenderer = case logFormat of
                 Standard -> renderStandardPretty
@@ -201,14 +204,16 @@ main = do
                 flip runReaderT (filteredBoosterContextLogger, toModifiersRep prettyPrintOptions)
                     . Booster.Log.unLoggerT
 
-            koreLogActions :: forall m. MonadIO m => [Log.LogAction m Log.SomeEntry]
-            koreLogActions = [koreLogAction]
-              where
-                koreLogAction =
-                    koreSomeEntryLogAction
-                        koreLogRenderer
-                        koreLogFilter
-                        (fromMaybe stderrLogger mFileLogger)
+            -- The configured (CLI -l/--log-entries) kore log action that renders
+            -- to stderr/file.  Per-request capture is NOT included here: it is
+            -- composed outside koreLogFilters below (see mvarLogAction) so that
+            -- haskell-logging capture is independent of the server's -l set.
+            koreLogAction :: forall m. MonadIO m => Log.LogAction m Log.SomeEntry
+            koreLogAction =
+                koreSomeEntryLogAction
+                    koreLogRenderer
+                    koreLogFilter
+                    (fromMaybe stderrLogger mFileLogger)
 
         runBoosterLogger $
             Booster.Log.withContext CtxProxy $
@@ -228,7 +233,7 @@ main = do
                         , Log.timestampsSwitch = TimestampsDisable
                         , Log.debugSolverOptions =
                             Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
-                        , Log.logType = LogProxy (mconcat koreLogActions)
+                        , Log.logType = LogProxy koreLogAction
                         , Log.logFormat = Log.Standard
                         }
                 srvSettings = serverSettings port "*"
@@ -290,11 +295,18 @@ main = do
                                             $ map
                                                 (pretty' @mods)
                                                 s.computedAttributes.notPreservesDefinednessReasons
-                mvarLogAction <- newMVar actualLogAction
+                -- Compose the kore-side per-request capture action *outside* the
+                -- koreLogFilters wrapper that withLogger applied to actualLogAction.
+                -- Kore emits its entries unconditionally (Log.logEntry is not gated
+                -- by logEntries), so capturing here — filtered only by each request's
+                -- own requested entry-type set — makes `haskell-logging` self-sufficient:
+                -- the requested kore entries are captured regardless of the server's
+                -- -l/--log-entries configuration.
+                mvarLogAction <- newMVar (actualLogAction <> registryLogAction koreCaptureRegistry)
                 let logAction = swappableLogger mvarLogAction
 
                 kore@KoreServer{runSMT} <-
-                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                    mkKoreServer Log.LoggerEnv{logAction} koreCaptureRegistry clOPts koreSolverOptions
 
                 boosterState <-
                     liftIO $
@@ -330,6 +342,7 @@ main = do
                             , simplifyAtEnd
                             , simplifyBeforeFallback
                             , customLogLevels = customLevels
+                            , koreCaptureRegistry
                             }
                     server =
                         jsonRpcServer
@@ -512,8 +525,8 @@ translateSMTOpts = \case
     translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
 
 mkKoreServer ::
-    Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
-mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
+    Log.LoggerEnv IO -> KoreCaptureRegistry -> CLOptions -> KoreSolverOptions -> IO KoreServer
+mkKoreServer loggerEnv@Log.LoggerEnv{logAction} captureRegistry CLOptions{definitionFile, mainModuleName} koreSolverOptions =
     flip Log.runLoggerT logAction $ Log.logWhile (Log.DebugContext $ Log.CLNullary CtxKore) $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
             GlobalMain.deserializeDefinition
@@ -538,6 +551,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , mainModule = mainModuleName
                 , runSMT
                 , loggerEnv
+                , captureRegistry
                 }
   where
     KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic, args} = koreSolverOptions

@@ -246,6 +246,7 @@ library
       Booster.LLVM.TH
       Booster.Log
       Booster.Log.Context
+      Booster.Log.LogCapture
       Booster.Pattern.ApplyEquations
       Booster.Pattern.Base
       Booster.Pattern.Binary
@@ -368,6 +369,7 @@ executable kore-rpc-booster
     , stm
     , text
     , transformers
+    , unliftio
   default-language: Haskell2010
 
 executable kore-rpc-client

@@ -167,6 +167,34 @@ instance FromJSON CLContext where
         other ->
             JSON.typeMismatch "Object or string" other
 
+{- | The capture-selector name of a context: the constructor name with the
+@Ctx@ prefix dropped, ignoring any 'UniqueId' / name payload.  Per-request
+@haskell-logging@ matches requested context names (e.g. @"Proxy"@,
+@"Rewrite"@) against the names of the contexts in a message's stack; for the
+id-carrying contexts ('CtxRewrite', 'CtxFunction', etc.) this is a tag-only match
+(the requested @"Rewrite"@ matches any @CtxRewrite _@).  These are the CamelCase
+constructor names (not the kebab-case JSON tags), which is the form downstream
+sends.
+-}
+clContextName :: CLContext -> Text
+clContextName (CLNullary c) = Text.pack . drop 3 . show $ toConstr c
+clContextName (CLWithId c) = idContextName c
+
+{- | Tag name (constructor minus @Ctx@) of an 'IdContext', discarding its
+'UniqueId' / 'Text' payload.  'IdContext' does not derive 'Data', so this is
+written out explicitly; the wildcard matches keep it total.
+-}
+idContextName :: IdContext -> Text
+idContextName = \case
+    CtxRewrite{} -> "Rewrite"
+    CtxSimplification{} -> "Simplification"
+    CtxFunction{} -> "Function"
+    CtxCeil{} -> "Ceil"
+    CtxTerm{} -> "Term"
+    CtxHook{} -> "Hook"
+    CtxRequest{} -> "Request"
+    CtxCached{} -> "Cached"
+
 ----------------------------------------
 data CLMessage
     = CLText Text -- generic log message

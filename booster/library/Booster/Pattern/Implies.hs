@@ -213,6 +213,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         , valid = False
                         , condition
                         , logs = Nothing
+                        , haskellLogEntries = Nothing
                         }
 
     doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
@@ -239,5 +240,6 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                             $ subst
                                     }
                         , logs = Nothing
+                        , haskellLogEntries = Nothing
                         }
     implies s' = let s = externaliseSort s' in implies' (Kore.Syntax.KJTop s) s

@@ -27,6 +27,7 @@ import Deriving.Aeson (
  )
 import GHC.Generics (Generic)
 import GHC.TypeLits
+import Kore.JsonRpc.Types.ContextLog (LogLine)
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
@@ -47,6 +48,7 @@ data ExecuteRequest = ExecuteRequest
     , logSuccessfulRewrites :: !(Maybe Bool)
     , logFailedRewrites :: !(Maybe Bool)
     , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -59,6 +61,7 @@ data ImpliesRequest = ImpliesRequest
     , _module :: !(Maybe Text)
     , assumeDefined :: !(Maybe Bool)
     , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -69,6 +72,7 @@ data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
     , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -78,6 +82,7 @@ data SimplifyRequest = SimplifyRequest
 data AddModuleRequest = AddModuleRequest
     { _module :: Text
     , nameAsId :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -88,6 +93,7 @@ data GetModelRequest = GetModelRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
     , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -142,6 +148,7 @@ data ExecuteResult = ExecuteResult
     , rule :: Maybe Text
     , logs :: Maybe [LogEntry]
     , unknownPredicate :: Maybe KoreJson
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -162,6 +169,7 @@ data ImpliesResult = ImpliesResult
     , valid :: Bool
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -171,21 +179,26 @@ data ImpliesResult = ImpliesResult
 data SimplifyResult = SimplifyResult
     { state :: KoreJson
     , logs :: Maybe [LogEntry]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
-data AddModuleResult = AddModuleResult {_module :: !Text}
+data AddModuleResult = AddModuleResult
+    { _module :: !Text
+    , haskellLogEntries :: Maybe [LogLine]
+    }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] AddModuleResult
 
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
     , substitution :: Maybe KoreJson
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
