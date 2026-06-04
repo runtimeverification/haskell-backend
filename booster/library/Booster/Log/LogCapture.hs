@@ -18,8 +18,6 @@ contexts like @CtxRewrite@ match by tag).  Names this engine does not
 recognise (e.g. kore entry-type names) simply never match here.
 -}
 module Booster.Log.LogCapture (
-    boosterCaptureLogger,
-    teeLogger,
     withBoosterCapture,
 ) where
 
