@@ -45,6 +45,7 @@ import Kore.JsonRpc qualified as Kore (ServerState)
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.JsonRpc.Types qualified as SimplifyRequest (SimplifyRequest (..))
+import Kore.JsonRpc.Types.ContextLog (LogLine)
 import Kore.JsonRpc.Types.Log qualified as RPCLog
 import Kore.JsonRpc.Types.LogCapture (drainCollector, newCollector)
 import Kore.Log qualified
@@ -113,7 +114,7 @@ unambiguously resolved to each concrete constructor.  The 'API' GADT
 hides each result type behind a type family, which interacts poorly
 with record-update sugar.
 -}
-injectHaskellLogEntries :: Maybe [Value] -> API 'Res -> API 'Res
+injectHaskellLogEntries :: Maybe [LogLine] -> API 'Res -> API 'Res
 injectHaskellLogEntries entries = \case
     Execute ExecuteResult{..} -> Execute ExecuteResult{haskellLogEntries = entries, ..}
     Implies ImpliesResult{..} -> Implies ImpliesResult{haskellLogEntries = entries, ..}

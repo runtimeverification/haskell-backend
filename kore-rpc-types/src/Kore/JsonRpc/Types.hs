@@ -11,7 +11,7 @@ module Kore.JsonRpc.Types (
 
 import Control.Exception (Exception)
 import Data.Aeson.Encode.Pretty qualified as PrettyJson
-import Data.Aeson.Types (FromJSON (..), FromJSONKey (..), ToJSON (..), ToJSONKey (..), Value)
+import Data.Aeson.Types (FromJSON (..), FromJSONKey (..), ToJSON (..), ToJSONKey (..))
 import Data.List.Extra (stripSuffix)
 import Data.Maybe (fromMaybe)
 import Data.Proxy
@@ -27,6 +27,7 @@ import Deriving.Aeson (
  )
 import GHC.Generics (Generic)
 import GHC.TypeLits
+import Kore.JsonRpc.Types.ContextLog (LogLine)
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
@@ -147,7 +148,7 @@ data ExecuteResult = ExecuteResult
     , rule :: Maybe Text
     , logs :: Maybe [LogEntry]
     , unknownPredicate :: Maybe KoreJson
-    , haskellLogEntries :: Maybe [Value]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -168,7 +169,7 @@ data ImpliesResult = ImpliesResult
     , valid :: Bool
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
-    , haskellLogEntries :: Maybe [Value]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -178,7 +179,7 @@ data ImpliesResult = ImpliesResult
 data SimplifyResult = SimplifyResult
     { state :: KoreJson
     , logs :: Maybe [LogEntry]
-    , haskellLogEntries :: Maybe [Value]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -187,7 +188,7 @@ data SimplifyResult = SimplifyResult
 
 data AddModuleResult = AddModuleResult
     { _module :: !Text
-    , haskellLogEntries :: Maybe [Value]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -197,7 +198,7 @@ data AddModuleResult = AddModuleResult
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
     , substitution :: Maybe KoreJson
-    , haskellLogEntries :: Maybe [Value]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving

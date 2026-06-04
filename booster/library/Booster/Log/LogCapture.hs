@@ -24,19 +24,21 @@ module Booster.Log.LogCapture (
 ) where
 
 import Control.Monad (when)
-import Data.Aeson (Value, object, toJSON, (.=))
+import Data.Aeson (Value (String))
+import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 
 import Booster.Log (LogMessage (..), Logger (..), LoggerMIO (..), toJSONLog)
-import Kore.JsonRpc.Types.ContextLog (clContextName)
+import Kore.JsonRpc.Types.ContextLog (CLMessage (..), LogLine (..), clContextName)
 import Kore.JsonRpc.Types.LogCapture (Collector, appendCollector)
 
-{- | A 'Logger' that writes matching 'LogMessage's as JSON 'Value's
-into the given 'Collector'.  A message matches when any context in its
-stack has one of the requested names.  Compose with the existing logger
-via 'teeLogger' to enable capture without losing stderr/file output.
+{- | A 'Logger' that writes matching 'LogMessage's as structured
+'LogLine's into the given 'Collector'.  A message matches when any
+context in its stack has one of the requested names.  Compose with the
+existing logger via 'teeLogger' to enable capture without losing
+stderr/file output.
 -}
 boosterCaptureLogger :: Set Text -> Collector -> Logger LogMessage
 boosterCaptureLogger names collector =
@@ -44,12 +46,20 @@ boosterCaptureLogger names collector =
         when (any ((`Set.member` names) . clContextName) ctxts) $
             appendCollector collector (renderLogMessage msg)
 
-renderLogMessage :: LogMessage -> Value
+{- | Build a 'LogLine' from a booster 'LogMessage'.  The context stack is
+already a list of 'CLContext', so it carries over directly; the message
+is wrapped as 'CLText' when it renders to a JSON string and 'CLValue'
+otherwise.  This is the same content the JSON file logger emits.
+-}
+renderLogMessage :: LogMessage -> LogLine
 renderLogMessage (LogMessage _ ctxts msg) =
-    object
-        [ "context" .= toJSON (map toJSONLog ctxts)
-        , "message" .= toJSONLog msg
-        ]
+    LogLine
+        { timestamp = Nothing
+        , context = Seq.fromList ctxts
+        , message = case toJSONLog msg of
+            String t -> CLText t
+            other -> CLValue other
+        }
 
 {- | Run two loggers on every message.  Order is left-then-right; both
 run unconditionally.

@@ -34,6 +34,9 @@ import Data.Text (Text)
 import Prelude.Kore
 import Type.Reflection (SomeTypeRep)
 
+import Data.Aeson (Result (..), fromJSON)
+
+import Kore.JsonRpc.Types.ContextLog (CLMessage (..), LogLine (..))
 import Kore.JsonRpc.Types.LogCapture (Collector, appendCollector)
 import Kore.Log.BoosterAdaptor (entryToJsonValue)
 import Kore.Log.Registry (registry, textToType, typeOfSomeEntry)
@@ -79,8 +82,22 @@ registryLogAction (KoreCaptureRegistry tv) =
             Nothing -> pure ()
             Just (c, types)
                 | typeOfSomeEntry entry `Set.member` types ->
-                    appendCollector c (entryToJsonValue Nothing entry)
+                    appendCollector c (entryToLogLine entry)
                 | otherwise -> pure ()
+
+{- | Convert a kore 'SomeEntry' to a structured 'LogLine'.  We reuse
+'entryToJsonValue' — the very renderer the JSON file logger uses, so a
+captured entry is identical to its on-disk form — and parse its output
+back into 'LogLine' (kore's context vocabulary is the same 'CLContext'
+the context log models).  Should that parse ever fail, fall back to a
+context-less line carrying the raw value, so capture is total.
+-}
+entryToLogLine :: SomeEntry -> LogLine
+entryToLogLine entry =
+    let value = entryToJsonValue Nothing entry
+     in case fromJSON value of
+            Success logLine -> logLine
+            Error _ -> LogLine{timestamp = Nothing, context = mempty, message = CLValue value}
 
 {- | Register a collector and its requested entry-type set against the
 current thread for the duration of the inner action.  Existing
