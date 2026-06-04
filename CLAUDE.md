@@ -57,7 +57,7 @@ Run `hpack` inside `booster/` if you edit `package.yaml` before cabal sees chang
 ## Linting and Formatting
 
 The CI enforces both — fix them before pushing.
-Fourmolu must pass on **every commit**, not just the final one.
+Both Fourmolu **and** HLint must pass on **every commit**, not just the final one.
 
 ```sh
 # Format all Haskell files (fourmolu)
