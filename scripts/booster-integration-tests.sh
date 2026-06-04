@@ -62,6 +62,10 @@ for dir in $(ls -d test-*); do
         "imp")
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
             ;;
+        "haskell-log-capture")
+            # per-request log capture is a proxy feature, so only kore-rpc-booster
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
+            ;;
         *)
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;

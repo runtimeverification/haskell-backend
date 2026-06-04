@@ -122,6 +122,7 @@ respond kore req = case req of
                     SimplifyResult
                         { state = koreRes.state
                         , logs = koreRes.logs
+                        , haskellLogEntries = Nothing
                         }
             koreError ->
                 pure koreError
