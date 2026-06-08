@@ -227,8 +227,14 @@ match1 Eval    t1@Injection{}                             t2@AndTerm{}          
 match1 _       t1@Injection{}                             (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 _       t1@Injection{}                             t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
 match1 matchTy (Injection source1 target1 trm1)           (Injection source2 target2 trm2)           = matchInj matchTy source1 target1 trm1 source2 target2 trm2
+-- injection-vs-builtin-collection is indeterminate in both directions under Eval: the injected term
+-- may simplify, so a decisive failure would unsoundly skip a higher-priority function equation. This
+-- mirrors the commuted KMap/KList/KSet-vs-Injection Eval rows below; non-Eval modes stay decisive.
+match1 Eval    t1@Injection{}                             t2@KMap{}                                  = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
+match1 Eval    t1@Injection{}                             t2@KList{}                                 = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
+match1 Eval    t1@Injection{}                             t2@KSet{}                                  = addIndeterminate t1 t2
 match1 _       t1@Injection{}                             t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@Injection{}                             t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
 match1 _       t1@Injection{}                             t2@FunctionApplication{}                   = addIndeterminate t1 t2

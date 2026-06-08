@@ -32,6 +32,7 @@ test_match_eval =
         , internalSets
         , variableRebindMixedDeterminacy
         , functionApplicationAgainstConcreteCategories
+        , injectionAgainstBuiltinCollections
         ]
 
 symbols :: TestTree
@@ -392,6 +393,52 @@ functionApplicationAgainstConcreteCategories =
                 subj
                 (remainder [(pat, subj)])
         ]
+
+{- | An injection paired with a builtin collection ('KMap' / 'KList' /
+'KSet') must be 'MatchIndeterminate' in *both* directions under 'Eval':
+the injected term may simplify, so a decisive 'MatchFailed' would
+unsoundly skip a higher-priority function equation. The collection-pattern
+/ injection-subject direction was already indeterminate; the commuted
+injection-pattern / collection-subject direction previously returned a
+decisive 'MatchFailed DifferentSymbols'. Both orderings are pinned here to
+lock in the symmetry.
+-}
+injectionAgainstBuiltinCollections :: TestTree
+injectionAgainstBuiltinCollections =
+    let injection = Injection aSubsort someSort (dv aSubsort "x")
+     in testGroup
+            "Injection against builtin collections (indeterminate both ways)"
+            [ test
+                "Injection pattern with KMap subject is indeterminate"
+                injection
+                emptyKMap
+                (remainder [(injection, emptyKMap)])
+            , test
+                "KMap pattern with Injection subject is indeterminate"
+                emptyKMap
+                injection
+                (remainder [(emptyKMap, injection)])
+            , test
+                "Injection pattern with KList subject is indeterminate"
+                injection
+                emptyList
+                (remainder [(injection, emptyList)])
+            , test
+                "KList pattern with Injection subject is indeterminate"
+                emptyList
+                injection
+                (remainder [(emptyList, injection)])
+            , test
+                "Injection pattern with KSet subject is indeterminate"
+                injection
+                emptySet
+                (remainder [(injection, emptySet)])
+            , test
+                "KSet pattern with Injection subject is indeterminate"
+                emptySet
+                injection
+                (remainder [(emptySet, injection)])
+            ]
 
 ----------------------------------------
 
