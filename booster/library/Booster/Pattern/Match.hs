@@ -806,18 +806,10 @@ bindVariable matchType var term@(Term termAttrs _) = do
             , oldTermAttrs.isConstructorLike ->
                 failWith $ VariableConflict var oldTerm term
             | otherwise ->
-                -- The term in the binding could be _equivalent_ (not
-                -- necessarily syntactically equal) to 'term'. Defer to the
-                -- caller via 'addIndeterminate' so it can attempt to
-                -- discharge the equivalence — e.g. via the
-                -- 'MatchIndeterminate' simplify retry ladder in
-                -- 'Pattern.Implies', the partial-substitution pruning in
-                -- 'Pattern.Rewrite', or 'handleFunctionEquation's
-                -- @IndeterminateMatch{} -> abort@ contract in
-                -- 'Pattern.ApplyEquations'. Returning 'MatchFailed' here
-                -- (the previous 'Eval'-only behaviour) silently skipped
-                -- higher-priority function equations and committed to a
-                -- lower-priority catch-all, violating priority semantics.
+                -- the term in the binding could be _equivalent_
+                -- (not necessarily syntactically equal) to term, so we
+                -- defer rather than fail in every mode: a decisive
+                -- MatchFailed here would skip higher-priority equations.
                 addIndeterminate oldTerm term
         Nothing -> do
             let
