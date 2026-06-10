@@ -31,6 +31,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Time.Clock.System (SystemTime, getSystemTime)
 import Prelude.Kore
 import Type.Reflection (SomeTypeRep)
 
@@ -81,8 +82,9 @@ registryLogAction (KoreCaptureRegistry tv) =
         case Map.lookup tid m of
             Nothing -> pure ()
             Just (c, types)
-                | typeOfSomeEntry entry `Set.member` types ->
-                    appendCollector c (entryToLogLine entry)
+                | typeOfSomeEntry entry `Set.member` types -> do
+                    now <- getSystemTime
+                    appendCollector c (entryToLogLine now entry)
                 | otherwise -> pure ()
 
 {- | Convert a kore 'SomeEntry' to a structured 'LogLine'.  We reuse
@@ -91,13 +93,17 @@ captured entry is identical to its on-disk form — and parse its output
 back into 'LogLine' (kore's context vocabulary is the same 'CLContext'
 the context log models).  Should that parse ever fail, fall back to a
 context-less line carrying the raw value, so capture is total.
+
+Every captured entry is stamped with the capture-time system clock
+(nanosecond resolution), matching the booster-side capture, so spans
+can be derived across both engines' entries in one bundle.
 -}
-entryToLogLine :: SomeEntry -> LogLine
-entryToLogLine entry =
+entryToLogLine :: SystemTime -> SomeEntry -> LogLine
+entryToLogLine now entry =
     let value = entryToJsonValue Nothing entry
      in case fromJSON value of
-            Success logLine -> logLine
-            Error _ -> LogLine{timestamp = Nothing, context = mempty, message = CLValue value}
+            Success logLine -> logLine{timestamp = Just now}
+            Error _ -> LogLine{timestamp = Just now, context = mempty, message = CLValue value}
 
 {- | Register a collector and its requested entry-type set against the
 current thread for the duration of the inner action.  Existing

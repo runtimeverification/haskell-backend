@@ -39,11 +39,12 @@ contexts="$workdir/contexts.json"
 proxy_only="$workdir/proxy-only.json"
 control="$workdir/control.json"
 
-echo "1. execute with a booster-context name list -> non-empty capture"
+echo "1. execute with a booster-context name list -> non-empty capture, every entry timestamped"
 ${client} execute "$dir/state.execute" \
     --param-file "$dir/params-contexts.json" \
     --output "$contexts" ${client_args}
 jq -e '.result["haskell-log-entries"] | type == "array" and length > 0' "$contexts" > /dev/null
+jq -e '.result["haskell-log-entries"] | all(has("timestamp"))' "$contexts" > /dev/null
 
 echo "2. execute selecting only [\"Proxy\"] -> non-empty, and every entry carries a proxy context"
 ${client} execute "$dir/state.execute" \

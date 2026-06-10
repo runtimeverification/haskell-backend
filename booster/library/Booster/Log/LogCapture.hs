@@ -27,6 +27,7 @@ import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Time.Clock.System (SystemTime, getSystemTime)
 
 import Booster.Log (LogMessage (..), Logger (..), LoggerMIO (..), toJSONLog)
 import Kore.JsonRpc.Types.ContextLog (CLMessage (..), LogLine (..), clContextName)
@@ -37,22 +38,31 @@ import Kore.JsonRpc.Types.LogCapture (Collector, appendCollector)
 context in its stack has one of the requested names.  Compose with the
 existing logger via 'teeLogger' to enable capture without losing
 stderr/file output.
+
+Each captured entry is stamped with the (nanosecond-resolution) system
+clock at capture time, turning the per-request bundle into a trace:
+since contexts are stacks, the gap between consecutive entries
+attributes time to the enclosing span.  One clock read per matching
+entry; formatting cost is only paid at response-assembly time when the
+'LogLine' is serialized.
 -}
 boosterCaptureLogger :: Set Text -> Collector -> Logger LogMessage
 boosterCaptureLogger names collector =
     Logger $ \msg@(LogMessage _ ctxts _) ->
-        when (any ((`Set.member` names) . clContextName) ctxts) $
-            appendCollector collector (renderLogMessage msg)
+        when (any ((`Set.member` names) . clContextName) ctxts) $ do
+            now <- getSystemTime
+            appendCollector collector (renderLogMessage now msg)
 
 {- | Build a 'LogLine' from a booster 'LogMessage'.  The context stack is
 already a list of 'CLContext', so it carries over directly; the message
 is wrapped as 'CLText' when it renders to a JSON string and 'CLValue'
-otherwise.  This is the same content the JSON file logger emits.
+otherwise.  This is the same content the JSON file logger emits, plus
+the capture timestamp.
 -}
-renderLogMessage :: LogMessage -> LogLine
-renderLogMessage (LogMessage _ ctxts msg) =
+renderLogMessage :: SystemTime -> LogMessage -> LogLine
+renderLogMessage now (LogMessage _ ctxts msg) =
     LogLine
-        { timestamp = Nothing
+        { timestamp = Just now
         , context = Seq.fromList ctxts
         , message = case toJSONLog msg of
             String t -> CLText t
