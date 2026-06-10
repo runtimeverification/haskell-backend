@@ -171,9 +171,27 @@ data EquationState = EquationState
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache
+    , taintEvents :: Int
+    -- ^ count of events that made the evaluation context-dependent
+    -- (path condition or SMT consultation). A monotone counter rather
+    -- than a flag: an evaluation extent is tainted iff the counter
+    -- increased during it, which stays sound across 'catch_' (a
+    -- rolled-back attempt discards its bumps together with all its
+    -- other state effects, and bumps from before the attempt survive).
     }
 
-data SimplifierCache = SimplifierCache {llvm, equations, pathConditions :: Map Term Term}
+{- | Cache for the simplifier.
+
+'equations' entries may have been derived using the path condition
+(via known-predicate filtering or SMT checks of rule conditions), so
+they are only valid while those assumptions hold and must be dropped
+whenever the predicate set changes ('cacheReset').
+'pureEquations' entries were derived without ever consulting the path
+condition and are valid in any context, like 'llvm' results (LLVM
+evaluation of a concrete term depends on nothing but the term).
+-}
+data SimplifierCache = SimplifierCache
+    {llvm, equations, pureEquations, pathConditions :: Map Term Term}
     deriving stock (Show)
 
 instance Semigroup SimplifierCache where
@@ -181,10 +199,11 @@ instance Semigroup SimplifierCache where
         SimplifierCache
             (cache1.llvm <> cache2.llvm)
             (cache1.equations <> cache2.equations)
+            (cache1.pureEquations <> cache2.pureEquations)
             (cache1.pathConditions <> cache2.pathConditions)
 
 instance Monoid SimplifierCache where
-    mempty = SimplifierCache mempty mempty mempty
+    mempty = SimplifierCache mempty mempty mempty mempty
 
 data CacheTag = LLVM | Equations | PathConditions
     deriving stock (Show)
@@ -210,6 +229,7 @@ startState cache known =
         , predicates = known
         , -- replacements from predicates are rebuilt from the path conditions every time
           cache = cache{pathConditions = buildReplacements known}
+        , taintEvents = 0
         }
 
 buildReplacements :: Set Predicate -> Map Term Term
@@ -223,11 +243,22 @@ buildReplacements = Map.fromList . mapMaybe toReplacement . Set.elems
         Predicate (EqualsBool t (v@DomainValue{})) -> Just (t, v)
         _otherwise -> Nothing
 
+{- | Invalidate everything that may depend on the (changed) predicate
+set: tainted equation entries and the replacement map. Pure
+equation and LLVM entries are context-independent and survive.
+-}
 cacheReset :: Monad io => EquationT io ()
 cacheReset = eqState $ do
     st@EquationState{predicates, cache} <- get
     let newCache = cache{equations = mempty, pathConditions = buildReplacements predicates}
     put st{cache = newCache}
+
+-- | Mark the active evaluation extents as context-dependent (see 'taintEvents').
+markTainted :: Monad io => EquationT io ()
+markTainted = eqState . modify $ \s -> s{taintEvents = s.taintEvents + 1}
+
+getTaintEvents :: Monad io => EquationT io Int
+getTaintEvents = eqState $ gets (.taintEvents)
 
 eqState :: Monad io => StateT EquationState io a -> EquationT io a
 eqState = EquationT . lift . lift
@@ -274,13 +305,18 @@ toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
 toCache PathConditions _ _ = pure () -- never adding to the replacements
 toCache LLVM orig result = eqState . modify $
     \s -> s{cache = s.cache{llvm = Map.insert orig result s.cache.llvm}}
-toCache Equations orig result = eqState $ do
+toCache Equations orig result = toEquationsCache True orig result -- conservative default: tainted
+
+-- | Store an equation-cache entry, routed by the taintedness of its derivation.
+toEquationsCache :: LoggerMIO io => Bool -> Term -> Term -> EquationT io ()
+toEquationsCache tainted orig result = eqState $ do
     s <- get
     -- Check before inserting a new result to avoid creating a
     -- lookup chain e -> result -> olderResult.
-    newEqCache <- case Map.lookup result s.cache.equations of
+    let eqCache = if tainted then s.cache.equations else s.cache.pureEquations
+    newEqCache <- case Map.lookup result eqCache of
         Nothing ->
-            pure $ Map.insert orig result s.cache.equations
+            pure $ Map.insert orig result eqCache
         Just furtherResult -> do
             when (result /= furtherResult) $ do
                 withContextFor Equations . logMessage $
@@ -288,8 +324,14 @@ toCache Equations orig result = eqState $ do
                         <> showHashHex (getAttributes orig).hash
                         <> "->"
                         <> showHashHex (getAttributes furtherResult).hash
-            pure $ Map.insert orig furtherResult s.cache.equations
-    put s{cache = s.cache{equations = newEqCache}}
+            pure $ Map.insert orig furtherResult eqCache
+    put
+        s
+            { cache =
+                if tainted
+                    then s.cache{equations = newEqCache}
+                    else s.cache{pureEquations = newEqCache}
+            }
 
 fromCache :: LoggerMIO io => CacheTag -> Term -> EquationT io (Maybe Term)
 fromCache tag t = eqState $ do
@@ -297,21 +339,34 @@ fromCache tag t = eqState $ do
     case tag of
         LLVM -> pure $ Map.lookup t s.cache.llvm
         PathConditions -> pure $ Map.lookup t s.cache.pathConditions
-        Equations -> do
-            case Map.lookup t s.cache.equations of
-                Nothing -> pure Nothing
-                Just t' -> case Map.lookup t' s.cache.equations of
-                    Nothing -> pure $ Just t'
-                    Just t'' -> do
-                        when (t'' /= t') $ do
-                            withContextFor Equations . logMessage $
-                                "fromCache shortening a chain "
-                                    <> showHashHex (getAttributes t).hash
-                                    <> "->"
-                                    <> showHashHex (getAttributes t'').hash
-                            let newEqCache = Map.insert t t'' s.cache.equations
-                            put s{cache = s.cache{equations = newEqCache}}
-                        pure $ Just t''
+        Equations ->
+            -- prefer pure entries, they are valid in any context
+            lookupShortening (.pureEquations) (\c m -> c{pureEquations = m}) >>= \case
+                Just cachedTerm -> pure $ Just cachedTerm
+                Nothing ->
+                    lookupShortening (.equations) (\c m -> c{equations = m}) >>= \case
+                        Nothing -> pure Nothing
+                        Just cachedTerm -> do
+                            -- the entry depends on the path condition,
+                            -- so the dependent derivation does, too
+                            modify $ \st -> st{taintEvents = st.taintEvents + 1}
+                            pure $ Just cachedTerm
+  where
+    lookupShortening prj upd = do
+        s <- get
+        case Map.lookup t (prj s.cache) of
+            Nothing -> pure Nothing
+            Just t' -> case Map.lookup t' (prj s.cache) of
+                Nothing -> pure $ Just t'
+                Just t'' -> do
+                    when (t'' /= t') $ do
+                        withContextFor Equations . logMessage $
+                            "fromCache shortening a chain "
+                                <> showHashHex (getAttributes t).hash
+                                <> "->"
+                                <> showHashHex (getAttributes t'').hash
+                        put s{cache = upd s.cache (Map.insert t t'' (prj s.cache))}
+                    pure $ Just t''
 
 logWarn :: LoggerMIO m => Text -> m ()
 logWarn msg =
@@ -595,14 +650,32 @@ evaluatePattern' pat@Pattern{term, ceilConditions} = withPatternContext pat $ do
         err -> throw err
 
 -- evaluate the given predicate assuming all others
--- This manipulates the known predicates so it should run without cache
+-- This manipulates the known predicates, so it must run without the
+-- context-dependent caches (tainted equations, path-condition
+-- replacements), and what they accumulate during the run must be
+-- discarded afterwards. The llvm and pure-equation caches are
+-- context-independent: they stay live and their additions are kept.
 simplifyAssumedPredicate :: LoggerMIO io => Predicate -> EquationT io ()
 simplifyAssumedPredicate p = do
     prior <- getState
     let otherPs = Set.delete p (prior.predicates)
-    eqState $ modify $ \s -> s{predicates = otherPs, cache = mempty}
+    eqState $ modify $ \s ->
+        s
+            { predicates = otherPs
+            , cache =
+                SimplifierCache
+                    { llvm = s.cache.llvm
+                    , pureEquations = s.cache.pureEquations
+                    , equations = mempty
+                    , pathConditions = mempty
+                    }
+            }
     newP <- simplifyConstraint' True $ coerce p
-    eqState $ modify $ \s -> s{cache = prior.cache, predicates = otherPs <> Set.singleton (coerce newP)}
+    eqState $ modify $ \s ->
+        s
+            { cache = prior.cache{llvm = s.cache.llvm, pureEquations = s.cache.pureEquations}
+            , predicates = otherPs <> Set.singleton (coerce newP)
+            }
 
 evaluateConstraints ::
     LoggerMIO io =>
@@ -722,8 +795,15 @@ cached cacheTag cb t@(Term attributes _)
     | otherwise =
         fromCache cacheTag t >>= \case
             Nothing -> do
+                taintsBefore <- getTaintEvents
                 simplified <- cb t
-                toCache cacheTag t simplified
+                case cacheTag of
+                    Equations -> do
+                        -- the derivation is pure iff no taint event
+                        -- occurred during this node's evaluation
+                        tainted <- (> taintsBefore) <$> getTaintEvents
+                        toEquationsCache tainted t simplified
+                    _ -> toCache cacheTag t simplified
                 pure simplified
             Just cachedTerm -> do
                 when (t /= cachedTerm) $ do
@@ -1020,6 +1100,15 @@ applyEquation' phaseTimes term rule =
                                                 map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
                                                     Map.toList subst
                                         )
+
+                        -- Conservative taint: condition checking consults the
+                        -- path condition (known-predicate filtering, SMT), so
+                        -- any rule that reaches it makes the surrounding
+                        -- derivation context-dependent, even when the rule
+                        -- ends up not applying (its rejection may itself
+                        -- depend on the path condition).
+                        unless (null rule.requires && null rule.ensures) $
+                            lift markTainted
 
                         -- check required constraints from lhs.
                         -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),

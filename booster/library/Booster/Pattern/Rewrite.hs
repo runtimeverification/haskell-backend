@@ -139,6 +139,9 @@ getDefinition = RewriteT $ definition <$> ask
 getSolver :: Monad m => RewriteT m SMT.SMTContext
 getSolver = RewriteT $ (.smtSolver) <$> ask
 
+{- | Drops the context-dependent (tainted) equation entries when the
+path condition changes; pure-equation and llvm entries survive.
+-}
 invalidateRewriterEquationsCache :: LoggerMIO io => RewriteT io ()
 invalidateRewriterEquationsCache =
     RewriteT . lift . modify $ \s@RewriteState{} ->
@@ -572,9 +575,17 @@ applyRule pat@Pattern{ceilConditions} rule =
         (simplified, newCache) <-
             withContext CtxConstraint $
                 simplifyConstraint definition llvmApi smtSolver cache knownPredicates p
-        -- Important: only retain new cache if no extraPredicates were supplied!
-        when (Set.null extraPredicates) $
-            lift (updateRewriterCache newCache)
+        -- Important: only retain the context-dependent caches if no
+        -- extraPredicates were supplied (their entries may depend on
+        -- assumptions that are later removed)! The llvm and
+        -- pure-equation caches are context-independent and always kept.
+        if Set.null extraPredicates
+            then lift (updateRewriterCache newCache)
+            else
+                lift
+                    ( updateRewriterCache
+                        cache{llvm = newCache.llvm, pureEquations = newCache.pureEquations}
+                    )
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing

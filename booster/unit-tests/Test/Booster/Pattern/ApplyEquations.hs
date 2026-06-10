@@ -13,6 +13,7 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplifyPattern,
     test_simplifyConstraint,
     test_llvmCacheUsedForConstraints,
+    test_equationCacheTaint,
     test_argumentIndexing,
     test_localFixpoint,
     test_ruleMetrics,
@@ -25,6 +26,7 @@ import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -351,6 +353,66 @@ test_ruleMetrics =
                 assertBool "at least one attempt" $ m.attempts >= 1
                 assertBool "at least one success" $ m.successes >= 1
                 assertBool "non-zero total time" $ m.totalNs > 0
+test_equationCacheTaint :: TestTree
+test_equationCacheTaint =
+    testGroup
+        "Pure/tainted equation cache routing and retention"
+        [ testCase "Unconditional equation result is cached as pure" $ do
+            (res, cache) <- evalWithCache funDef mempty subj
+            res @?= Right result
+            Map.lookup subj cache.pureEquations @?= Just result
+            cache.equations @?= mempty
+        , testCase "Result of a rule with requires is cached as tainted" $ do
+            (res, cache) <- evalWithCache requiresDef mempty subj
+            res @?= Right result
+            Map.lookup subj cache.equations @?= Just result
+            Map.lookup subj cache.pureEquations @?= Nothing
+        , testCase "Pure entries are consulted during evaluation" $ do
+            -- seeded with a (deliberately wrong) result that evaluation
+            -- could never produce, proving the entry short-circuits it
+            let seeded = mempty{pureEquations = Map.singleton subj marker}
+            (res, _) <- evalWithCache funDef seeded subj
+            res @?= Right marker
+        , testCase "Tainted entries are consulted during evaluation" $ do
+            let seeded = mempty{equations = Map.singleton subj marker}
+            (res, _) <- evalWithCache funDef seeded subj
+            res @?= Right marker
+        , testCase "New path condition wipes tainted entries but keeps pure ones" $ do
+            -- markers under keys unrelated to the evaluated term, to
+            -- observe what survives the ensures-triggered cache reset
+            let pureMarkerKey = [trm| f1{}(con1{}(B:SomeSort{})) |]
+                taintedMarkerKey = [trm| f2{}(con1{}(B:SomeSort{})) |]
+                seeded =
+                    mempty
+                        { equations = Map.singleton taintedMarkerKey marker
+                        , pureEquations = Map.singleton pureMarkerKey marker
+                        }
+            (res, cache) <- evalWithCache ensuresDef seeded subj
+            res @?= Right result
+            Map.lookup pureMarkerKey cache.pureEquations @?= Just marker
+            Map.lookup taintedMarkerKey cache.equations @?= Nothing
+            -- the rule had an ensures clause, so its own result is tainted
+            Map.lookup subj cache.equations @?= Just result
+        , testCase "Pure entries learned during predicate simplification are kept" $ do
+            ns <- noSolver
+            let predicate =
+                    Predicate $
+                        EqualsK
+                            (KSeq someSort [trm| f1{}(con2{}(B:SomeSort{})) |])
+                            (KSeq someSort [trm| B:SomeSort{} |])
+                pat = (Pattern_ [trm| con1{}(A:SomeSort{}) |]){constraints = Set.singleton predicate}
+            (_, cache) <- runNoLoggingT $ evaluatePattern funDef Nothing ns mempty pat
+            Map.lookup [trm| f1{}(con2{}(B:SomeSort{})) |] cache.pureEquations
+                @?= Just [trm| con2{}(B:SomeSort{}) |]
+        ]
+  where
+    subj = [trm| f1{}(con2{}(A:SomeSort{})) |]
+    result = [trm| con2{}(A:SomeSort{}) |]
+    marker = [trm| con1{}(\dv{SomeSort{}}("marker")) |]
+
+    evalWithCache def cache t = do
+        ns <- noSolver
+        runNoLoggingT $ evaluateTerm BottomUp def Nothing ns cache mempty t
 
 test_errors :: TestTree
 test_errors =
@@ -453,6 +515,61 @@ loopDef =
                 ]
         }
 
+-- f1(X) => X, but guarded by a (trivially true) requires clause,
+-- resp. an (unclear, hence retained) ensures clause
+requiresDef, ensuresDef :: KoreDefinition
+requiresDef =
+    testDefinition
+        { functionEquations =
+            mkTheory
+                [
+                    ( index IdxFun "f1"
+                    ,
+                        [ equation
+                            (Just "f1-is-identity-with-requires")
+                            [trm| f1{}(X:SomeSort{}) |]
+                            [trm| X:SomeSort{} |]
+                            50
+                            `withRequires` [trivialTruth]
+                        ]
+                    )
+                ]
+        }
+ensuresDef =
+    testDefinition
+        { functionEquations =
+            mkTheory
+                [
+                    ( index IdxFun "f1"
+                    ,
+                        [ equation
+                            (Just "f1-is-identity-with-ensures")
+                            [trm| f1{}(X:SomeSort{}) |]
+                            [trm| X:SomeSort{} |]
+                            50
+                            `withEnsures` [unclearCondition]
+                        ]
+                    )
+                ]
+        }
+
+-- X ==K X: simplifies to true via the ==K hook once instantiated
+trivialTruth :: Predicate
+trivialTruth =
+    Predicate $
+        EqualsK
+            (KSeq someSort [trm| X:SomeSort{} |])
+            (KSeq someSort [trm| X:SomeSort{} |])
+
+-- f2(X) ==K X: cannot be decided (f2 is partial and stays
+-- unevaluated), so it is retained as a new path condition
+unclearCondition :: Predicate
+unclearCondition =
+    Predicate $
+        EqualsK
+            (KSeq someSort [trm| f2{}(X:SomeSort{}) |])
+            (KSeq someSort [trm| X:SomeSort{} |])
+
 f1Equations, f2Equations :: [RewriteRule t]
 f1Equations =
     [ equation -- f1(con1(X)) == con2(f1(X))
@@ -517,6 +634,10 @@ r@RewriteRule{lhs, attributes, computedAttributes} `withAttributes` f =
 withComputedAttributes :: RewriteRule t -> ComputedAxiomAttributes -> RewriteRule t
 r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
     r{lhs, computedAttributes}
+
+withRequires, withEnsures :: RewriteRule t -> [Predicate] -> RewriteRule t
+r@RewriteRule{lhs} `withRequires` requires = r{lhs, requires}
+r@RewriteRule{lhs} `withEnsures` ensures = r{lhs, ensures}
 
 mkTheory :: [(TermIndex, [RewriteRule t])] -> Theory (RewriteRule t)
 mkTheory = Map.map mkPriorityGroups . Map.fromList
