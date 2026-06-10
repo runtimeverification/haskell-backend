@@ -109,10 +109,6 @@ test_evaluateFunction =
         ns <- noSolver
         runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty mempty t
 
-    isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
-    isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
-    isTooManyIterations (Right r) = assertFailure $ "Unexpected result" <> show r
-
 test_simplify :: TestTree
 test_simplify =
     testGroup
@@ -249,8 +245,16 @@ test_localFixpoint =
             -- with a budget of 0, evaluation degrades to the
             -- restart-only strategy: one application per pass, so the
             -- depth-101 chain exceeds the pass limit again
+            -- explicit construction instead of record update: the
+            -- field names are shared with EquationConfig, making an
+            -- update ambiguous under DuplicateRecordFields
             defaults <- readGlobalEquationOptions
-            writeGlobalEquationOptions defaults{maxLocalSteps = 0}
+            writeGlobalEquationOptions
+                EquationOptions
+                    { maxIterations = defaults.maxIterations
+                    , maxRecursion = defaults.maxRecursion
+                    , maxLocalSteps = 0
+                    }
             legacyChecks `finally` writeGlobalEquationOptions defaults
   where
     legacyChecks = do
@@ -266,7 +270,12 @@ test_localFixpoint =
         -- partial result: with 10 passes and the default budget of 20,
         -- a chain of depth 300 cannot finish
         defaults <- readGlobalEquationOptions
-        writeGlobalEquationOptions defaults{maxIterations = 10, maxLocalSteps = 20}
+        writeGlobalEquationOptions
+            EquationOptions
+                { maxIterations = 10
+                , maxRecursion = defaults.maxRecursion
+                , maxLocalSteps = 20
+                }
         (isTooMany =<< evalWith funDef (subj 300))
             `finally` writeGlobalEquationOptions defaults
 
