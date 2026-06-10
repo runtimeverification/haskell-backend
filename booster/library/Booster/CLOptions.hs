@@ -400,7 +400,7 @@ parseSMTOptions =
 
 parseEquationOptions :: Parser EquationOptions
 parseEquationOptions =
-    (\x y -> EquationOptions (Bound x) (Bound y))
+    (\x y z -> EquationOptions (Bound x) (Bound y) (Bound z))
         <$> option
             nonnegativeInt
             ( metavar "ITERATION_LIMIT"
@@ -417,15 +417,21 @@ parseEquationOptions =
                 <> value defaultMaxRecursion
                 <> showDefault
             )
-        <*> switch
-            ( long "equation-local-fixpoint"
+        <*> option
+            nonnegativeInt
+            ( metavar "LOCAL_STEP_LIMIT"
+                <> long "equation-max-local-steps"
                 <> help
-                    "Normalize rewritten subterms in place instead of restarting \
-                    \the term traversal from the top after every change"
+                    "Number of equations applied in place at rewritten subterms \
+                    \per traversal pass before restarting the traversal from the \
+                    \top (0 restores restart-only evaluation)"
+                <> value defaultMaxLocalSteps
+                <> showDefault
             )
   where
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
+    defaultMaxLocalSteps = 20
 
 parseRewriteOptions :: Parser RewriteOptions
 parseRewriteOptions =

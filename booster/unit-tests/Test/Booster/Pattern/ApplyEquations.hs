@@ -76,9 +76,11 @@ test_evaluateFunction =
                 n `times` f = foldr (.) id (replicate n $ apply f)
             -- top-down evaluation: a single iteration is enough
             eval TopDown (subj 101) @?>>= Right (101 `times` con2 $ a)
-            -- bottom-up evaluation: `depth` many iterations
+            -- bottom-up evaluation: each pass advances the chain by
+            -- the in-place rewriting budget, so depths beyond the old
+            -- one-application-per-pass limit complete now
             eval BottomUp (subj 100) @?>>= Right (100 `times` con2 $ a)
-            isTooManyIterations =<< eval BottomUp (subj 101)
+            eval BottomUp (subj 101) @?>>= Right (101 `times` con2 $ a)
         , -- con3(f1(con2(a)), f1(con1(con2(b)))) => con3(con2(a), con2(con2(b)))
           testCase "Several function calls inside a constructor" $ do
             eval TopDown [trm| con3{}(f1{}(con2{}(A:SomeSort{})), f1{}(con1{}(con2{}(B:SomeSort{})))) |]
@@ -236,36 +238,46 @@ test_simplifyConstraint =
 test_localFixpoint :: TestTree
 test_localFixpoint =
     -- must run after the iteration-limit test ("Recursive evaluation"),
-    -- whose outcome the temporary flag window below would change if the
-    -- two ran concurrently (the test binary runs tests in parallel)
+    -- whose outcome the temporary budget-0 window below would change
+    -- if the two ran concurrently (the test binary runs tests in
+    -- parallel)
     after AllFinish "Recursive evaluation" $
-        testCase "Local fixpoint mode normalizes causal chains in one pass" $ do
+        testCase "In-place rewriting: loop detection, and budget 0 restores restart-only evaluation" $ do
+            -- with the default budget, node-level oscillation is
+            -- detected per local step (cycle shorter than the budget)
+            isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+            -- with a budget of 0, evaluation degrades to the
+            -- restart-only strategy: one application per pass, so the
+            -- depth-101 chain exceeds the pass limit again
             defaults <- readGlobalEquationOptions
-            writeGlobalEquationOptions defaults{localFixpoint = True}
-            runChecks `finally` writeGlobalEquationOptions defaults
+            writeGlobalEquationOptions defaults{maxLocalSteps = 0}
+            legacyChecks `finally` writeGlobalEquationOptions defaults
   where
-    runChecks = do
-        -- standard scenarios give identical results
-        evalWith funDef [trm| f1{}(con2{}(A:SomeSort{})) |]
-            >>= (@?= Right [trm| con2{}(A:SomeSort{}) |])
-        evalWith simplDef (app con1 [app con2 [app f2 [a]]])
-            >>= (@?= Right (app con2 [app f2 [a]]))
-        -- a causal chain of depth 101 exceeds the global-pass limit
-        -- without local fixpoints (one whole-term pass per chain
-        -- step, see "Recursive evaluation"), but normalizes in a
-        -- single pass here
+    legacyChecks = do
         let subj depth = app f1 [iterate (apply con1) start !! depth]
             start = app con2 [a]
             n `times` f = foldr (.) id (replicate n $ apply f)
-        evalWith funDef (subj 101) >>= (@?= Right (101 `times` con2 $ start))
-        -- node-level oscillation is detected per local step
+        evalWith funDef (subj 100) >>= (@?= Right (100 `times` con2 $ start))
+        isTooMany =<< evalWith funDef (subj 101)
+        -- oscillations are still caught, by the whole-term snapshots
         isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+        -- the combined bound (passes times per-pass budget plus one
+        -- application per node) still terminates evaluation with a
+        -- partial result: with 10 passes and the default budget of 20,
+        -- a chain of depth 300 cannot finish
+        defaults <- readGlobalEquationOptions
+        writeGlobalEquationOptions defaults{maxIterations = 10, maxLocalSteps = 20}
+        (isTooMany =<< evalWith funDef (subj 300))
+            `finally` writeGlobalEquationOptions defaults
 
     a = var "A" someSort
     apply f = app f . (: [])
 
     isLoop (Left (EquationLoop _)) = pure ()
     isLoop other = assertFailure $ "Expected an equation loop, got " <> show other
+
+    isTooMany (Left (TooManyIterations _ _ _)) = pure ()
+    isTooMany other = assertFailure $ "Expected an iteration-limit abort, got " <> show other
 
     evalWith def t = do
         ns <- noSolver

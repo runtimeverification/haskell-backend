@@ -13,9 +13,10 @@ import Booster.Util (Bound (..))
 data EquationOptions = EquationOptions
     { maxIterations :: Bound "Iterations"
     , maxRecursion :: Bound "Recursion"
-    , localFixpoint :: Bool
-    -- ^ normalize rewritten subterms in place instead of restarting
-    -- the traversal from the top after every change
+    , maxLocalSteps :: Bound "LocalSteps"
+    -- ^ how many equations may be applied in place at rewritten
+    -- subterms per traversal pass before falling back to restarting
+    -- the traversal from the top (0 restores restart-only evaluation)
     }
     deriving stock (Show, Eq)
 
@@ -26,7 +27,7 @@ globalEquationOptions =
         EquationOptions
             { maxIterations = 100
             , maxRecursion = 5
-            , localFixpoint = False
+            , maxLocalSteps = 20
             }
 
 readGlobalEquationOptions :: IO EquationOptions

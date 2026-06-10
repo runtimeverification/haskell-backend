@@ -149,7 +149,7 @@ data EquationConfig = EquationConfig
     , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
-    , localFixpoint :: Bool
+    , maxLocalSteps :: Bound "LocalSteps"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
     }
@@ -159,8 +159,11 @@ data EquationState = EquationState
     , recursionStack :: [Term]
     , localSteps :: [Term]
     -- ^ chain of locally-rewritten node values on the current
-    -- traversal path, for loop detection in local-fixpoint mode
+    -- traversal path, for loop detection of in-place rewriting
     -- (path-scoped: saved and restored around each local recursion)
+    , localStepCount :: Int
+    -- ^ in-place rewrites taken in the current traversal pass,
+    -- bounded by 'maxLocalSteps' (reset at the start of each pass)
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache
@@ -199,6 +202,7 @@ startState cache known =
         { termStack = mempty
         , recursionStack = []
         , localSteps = []
+        , localStepCount = 0
         , changed = False
         , predicates = known
         , -- replacements from predicates are rebuilt from the path conditions every time
@@ -359,7 +363,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , smtSolver
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
-                        , localFixpoint = globalEquationOptions.localFixpoint
+                        , maxLocalSteps = globalEquationOptions.maxLocalSteps
                         , logger
                         , prettyModifiers
                         }
@@ -402,6 +406,8 @@ iterateEquations direction preference startTerm = do
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
+            -- each pass gets a fresh in-place rewriting budget
+            eqState . modify $ \s -> s{localStepCount = 0}
             -- simplify the term using the LLVM backend first
             llvmResult <- llvmSimplify currentTerm
             -- NB llvmSimplify is idempotent. No need to iterate if
@@ -414,7 +420,7 @@ iterateEquations direction preference startTerm = do
             -- evaluate functions and simplify (recursively at each level)
             newTerm <-
                 let onEval
-                        | config.localFixpoint && direction == BottomUp = localFixpointEval simp
+                        | direction == BottomUp = localFixpointEval simp
                         | otherwise = applyHooksAndEquations preference
                     simp = cached Equations $ traverseTerm direction simp onEval
                  in simp replacedTerm
@@ -423,20 +429,34 @@ iterateEquations direction preference startTerm = do
                 then checkForLoop newTerm >> resetChanged >> go newTerm
                 else pure llvmResult
 
-    {- Local-fixpoint evaluation (only in BottomUp mode, behind
-       --equation-local-fixpoint): when a node was rewritten, run the
-       LLVM pass on the result (preserving the LLVM-before-equations
-       ordering the global loop provides) and re-enter the cached
-       recursion on it, normalizing the new subtree in place instead
-       of restarting the whole-term traversal. Ancestors then see
-       children in final form and the global loop converges in 1-2
-       passes instead of one per causal chain step.
+    {- Local-fixpoint evaluation (BottomUp mode): when a node was
+       rewritten, run the LLVM pass on the result (preserving the
+       LLVM-before-equations ordering the global loop provides) and
+       re-enter the cached recursion on it, normalizing the new
+       subtree in place instead of restarting the whole-term
+       traversal. Ancestors then see children in final form and the
+       global loop converges in a few passes instead of one per
+       causal chain step.
 
-       The whole-term snapshots on the term stack no longer catch
-       node-level oscillations (a -> b -> a), so the chain of local
-       rewrites along the current path is tracked in 'localSteps' and
-       checked per step. The stack is path-scoped by save/restore;
-       'maxIterations' keeps counting global passes only.
+       The in-place rewriting effort is bounded: at most
+       'maxLocalSteps' rewrites per traversal pass; once the budget
+       is exhausted, rewritten nodes are returned without recursion,
+       which is exactly the restart-only strategy (the changed flag
+       is already set, so the global loop picks the node up on the
+       next pass). Total work per evaluation therefore stays bounded
+       by 'maxIterations' passes times ('maxLocalSteps' plus one
+       application per node), and 'TooManyIterations' with its
+       partial result is reached as before. A budget of 0 restores
+       the restart-only strategy entirely.
+
+       Loop detection is two-layered: the chain of in-place rewrites
+       along the current path is tracked in 'localSteps' (path-scoped
+       by save/restore) and checked per step, catching oscillations
+       shorter than the budget immediately; cycles that survive a
+       pass boundary recur in the whole-term snapshots within at most
+       one cycle period of passes and are caught by 'checkForLoop'
+       (a cycle period dividing the budget repeats the snapshot on
+       the very next pass).
     -}
     localFixpointEval :: LoggerMIO io => (Term -> EquationT io Term) -> Term -> EquationT io Term
     localFixpointEval recurse t = do
@@ -444,15 +464,23 @@ iterateEquations direction preference startTerm = do
         if t' == t
             then pure t
             else do
-                priorSteps <- (.localSteps) <$> getState
-                when (t' `elem` priorSteps) $ do
-                    withContext CtxAbort $ do
-                        logWarn "Equation loop detected (local fixpoint)."
-                    throw . EquationLoop . reverse $ t' : priorSteps
-                eqState . modify $ \s -> s{localSteps = t' : s.localSteps}
-                result <- llvmSimplify t' >>= recurse
-                eqState . modify $ \s -> s{localSteps = priorSteps}
-                pure result
+                config <- getConfig
+                st <- getState
+                if coerce st.localStepCount >= config.maxLocalSteps
+                    then pure t' -- budget exhausted: defer to the global loop
+                    else do
+                        when (t' `elem` st.localSteps) $ do
+                            withContext CtxAbort $ do
+                                logWarn "Equation loop detected (local fixpoint)."
+                            throw . EquationLoop . reverse $ t' : st.localSteps
+                        eqState . modify $ \s ->
+                            s
+                                { localSteps = t' : s.localSteps
+                                , localStepCount = s.localStepCount + 1
+                                }
+                        result <- llvmSimplify t' >>= recurse
+                        eqState . modify $ \s -> s{localSteps = st.localSteps}
+                        pure result
 
 llvmSimplify :: forall io. LoggerMIO io => Term -> EquationT io Term
 llvmSimplify term = do
@@ -1242,10 +1270,15 @@ simplifyConstraint' recurseIntoEvalBool = \case
     evalBool :: LoggerMIO io => Term -> EquationT io Term
     evalBool t = withTermContext t $ do
         prior <- getState -- save prior state so we can revert
-        eqState $ put prior{termStack = mempty, changed = False, localSteps = []}
+        eqState $ put prior{termStack = mempty, changed = False, localSteps = [], localStepCount = 0}
         result <- iterateEquations BottomUp PreferFunctions t
         -- reset change flag, term stack, and local steps to prior values
         -- (keep the updated cache and added predicates, if any)
         eqState $ modify $ \s ->
-            s{changed = prior.changed, termStack = prior.termStack, localSteps = prior.localSteps}
+            s
+                { changed = prior.changed
+                , termStack = prior.termStack
+                , localSteps = prior.localSteps
+                , localStepCount = prior.localStepCount
+                }
         pure result
