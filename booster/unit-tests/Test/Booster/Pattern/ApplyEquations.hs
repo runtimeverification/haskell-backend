@@ -76,11 +76,11 @@ test_evaluateFunction =
                 n `times` f = foldr (.) id (replicate n $ apply f)
             -- top-down evaluation: a single iteration is enough
             eval TopDown (subj 101) @?>>= Right (101 `times` con2 $ a)
-            -- bottom-up evaluation: each pass advances the chain by
-            -- the in-place rewriting budget, so depths beyond the old
-            -- one-application-per-pass limit complete now
+            -- bottom-up evaluation: with the default in-place budget
+            -- of 0, each pass advances the chain by one application,
+            -- so the iteration limit caps the chain depth
             eval BottomUp (subj 100) @?>>= Right (100 `times` con2 $ a)
-            eval BottomUp (subj 101) @?>>= Right (101 `times` con2 $ a)
+            isTooManyIterations =<< eval BottomUp (subj 101)
         , -- con3(f1(con2(a)), f1(con1(con2(b)))) => con3(con2(a), con2(con2(b)))
           testCase "Several function calls inside a constructor" $ do
             eval TopDown [trm| con3{}(f1{}(con2{}(A:SomeSort{})), f1{}(con1{}(con2{}(B:SomeSort{})))) |]
@@ -108,6 +108,10 @@ test_evaluateFunction =
     eval direction t = do
         ns <- noSolver
         runNoLoggingT $ fst <$> evaluateTerm direction funDef Nothing ns mempty mempty t
+
+    isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
+    isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
+    isTooManyIterations (Right r) = assertFailure $ "Unexpected result" <> show r
 
 test_simplify :: TestTree
 test_simplify =
@@ -234,17 +238,15 @@ test_simplifyConstraint =
 test_localFixpoint :: TestTree
 test_localFixpoint =
     -- must run after the iteration-limit test ("Recursive evaluation"),
-    -- whose outcome the temporary budget-0 window below would change
+    -- whose outcome the temporary budget window below would change
     -- if the two ran concurrently (the test binary runs tests in
     -- parallel)
     after AllFinish "Recursive evaluation" $
-        testCase "In-place rewriting: loop detection, and budget 0 restores restart-only evaluation" $ do
-            -- with the default budget, node-level oscillation is
-            -- detected per local step (cycle shorter than the budget)
+        testCase "In-place rewriting: deeper chains, loop detection, and bounded effort" $ do
+            -- at the default budget of 0 (restart-only evaluation),
+            -- node-level oscillation is detected by the whole-term
+            -- snapshots of the global passes
             isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
-            -- with a budget of 0, evaluation degrades to the
-            -- restart-only strategy: one application per pass, so the
-            -- depth-101 chain exceeds the pass limit again
             -- explicit construction instead of record update: the
             -- field names are shared with EquationConfig, making an
             -- update ambiguous under DuplicateRecordFields
@@ -253,31 +255,33 @@ test_localFixpoint =
                 EquationOptions
                     { maxIterations = defaults.maxIterations
                     , maxRecursion = defaults.maxRecursion
-                    , maxLocalSteps = 0
+                    , maxLocalSteps = 20
                     }
-            legacyChecks `finally` writeGlobalEquationOptions defaults
+            budgetChecks defaults `finally` writeGlobalEquationOptions defaults
   where
-    legacyChecks = do
+    budgetChecks :: EquationOptions -> IO ()
+    budgetChecks defaults = do
         let subj depth = app f1 [iterate (apply con1) start !! depth]
             start = app con2 [a]
             n `times` f = foldr (.) id (replicate n $ apply f)
-        evalWith funDef (subj 100) >>= (@?= Right (100 `times` con2 $ start))
-        isTooMany =<< evalWith funDef (subj 101)
-        -- oscillations are still caught, by the whole-term snapshots
+        -- each pass advances a chain by the budget plus one
+        -- application, so depths beyond the restart-only limit of
+        -- maxIterations complete now
+        evalWith funDef (subj 101) >>= (@?= Right (101 `times` con2 $ start))
+        -- node-level oscillation is detected per local step (cycle
+        -- shorter than the budget)
         isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
         -- the combined bound (passes times per-pass budget plus one
         -- application per node) still terminates evaluation with a
-        -- partial result: with 10 passes and the default budget of 20,
-        -- a chain of depth 300 cannot finish
-        defaults <- readGlobalEquationOptions
+        -- partial result: with 10 passes and a budget of 20, a chain
+        -- of depth 300 cannot finish
         writeGlobalEquationOptions
             EquationOptions
                 { maxIterations = 10
                 , maxRecursion = defaults.maxRecursion
                 , maxLocalSteps = 20
                 }
-        (isTooMany =<< evalWith funDef (subj 300))
-            `finally` writeGlobalEquationOptions defaults
+        isTooMany =<< evalWith funDef (subj 300)
 
     a = var "A" someSort
     apply f = app f . (: [])

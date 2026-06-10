@@ -424,14 +424,14 @@ parseEquationOptions =
                 <> help
                     "Number of equations applied in place at rewritten subterms \
                     \per traversal pass before restarting the traversal from the \
-                    \top (0 restores restart-only evaluation)"
+                    \top (0, the default, is restart-only evaluation)"
                 <> value defaultMaxLocalSteps
                 <> showDefault
             )
   where
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
-    defaultMaxLocalSteps = 20
+    defaultMaxLocalSteps = 0
 
 parseRewriteOptions :: Parser RewriteOptions
 parseRewriteOptions =
