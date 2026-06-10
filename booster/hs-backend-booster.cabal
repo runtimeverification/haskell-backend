@@ -247,6 +247,7 @@ library
       Booster.Log
       Booster.Log.Context
       Booster.Log.LogCapture
+      Booster.Metrics
       Booster.Pattern.ApplyEquations
       Booster.Pattern.Base
       Booster.Pattern.Binary

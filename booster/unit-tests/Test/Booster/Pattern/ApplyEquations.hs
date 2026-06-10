@@ -14,10 +14,12 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplifyConstraint,
     test_argumentIndexing,
     test_localFixpoint,
+    test_ruleMetrics,
     test_errors,
 ) where
 
 import Control.Exception (finally)
+import Control.Monad (void)
 import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
 import Data.Map (Map)
@@ -33,6 +35,7 @@ import Booster.GlobalState (
     readGlobalEquationOptions,
     writeGlobalEquationOptions,
  )
+import Booster.Metrics (RuleMetrics (..), flushRuleMetrics)
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
@@ -305,6 +308,24 @@ test_localFixpoint =
     evalWith def t = do
         ns <- noSolver
         runNoLoggingT $ fst <$> evaluateTerm BottomUp def Nothing ns mempty mempty t
+
+test_ruleMetrics :: TestTree
+test_ruleMetrics =
+    testCase "Equation attempts are recorded in the rule metrics accumulator" $ do
+        -- the accumulator is process-global and tests run in
+        -- parallel, so assertions are lower bounds on the fixture
+        -- rules' shared mock unique id
+        void flushRuleMetrics
+        ns <- noSolver
+        void . runNoLoggingT $
+            evaluateTerm BottomUp funDef Nothing ns mempty mempty [trm| f1{}(con2{}(A:SomeSort{})) |]
+        metrics <- flushRuleMetrics
+        case Map.lookup mockUniqueId metrics of
+            Nothing -> assertFailure "no metrics recorded for the fixture rule"
+            Just m -> do
+                assertBool "at least one attempt" $ m.attempts >= 1
+                assertBool "at least one success" $ m.successes >= 1
+                assertBool "non-zero total time" $ m.totalNs > 0
 
 test_errors :: TestTree
 test_errors =

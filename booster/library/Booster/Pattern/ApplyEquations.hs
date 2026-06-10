@@ -27,6 +27,7 @@ module Booster.Pattern.ApplyEquations (
     evaluateConstraints,
 ) where
 
+import Control.Exception (evaluate)
 import Control.Monad
 import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -39,7 +40,9 @@ import Data.Bifunctor (bimap)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data, Proxy)
+import Data.Either (isRight)
 import Data.Foldable (toList, traverse_)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (foldl1', intersperse, partition)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map (Map)
@@ -52,6 +55,8 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
+import Data.Word (Word64)
+import GHC.Clock (getMonotonicTimeNSec)
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -61,6 +66,7 @@ import Booster.GlobalState qualified as GlobalState
 import Booster.LLVM (LlvmError (..))
 import Booster.LLVM qualified as LLVM
 import Booster.Log
+import Booster.Metrics (recordRuleAttempt, ruleAttempt)
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index qualified as Idx
@@ -910,7 +916,31 @@ applyEquation ::
     EquationT
         io
         (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
-applyEquation term rule =
+applyEquation term rule = do
+    -- per-rule cumulative timing (see 'Booster.Metrics'): whole
+    -- attempt span plus match and condition-discharge phases, two
+    -- clock reads per phase. Aborts of the whole evaluation
+    -- (EquationT-level throws) lose the in-flight attempt's record,
+    -- which is fine for attribution data.
+    startNs <- liftIO getMonotonicTimeNSec
+    phaseTimes <- liftIO $ newIORef (0, 0)
+    result <- applyEquation' phaseTimes term rule
+    endNs <- liftIO getMonotonicTimeNSec
+    (matchNs, conditionNs) <- liftIO $ readIORef phaseTimes
+    liftIO . recordRuleAttempt rule.attributes.uniqueId $
+        ruleAttempt (isRight result) (endNs - startNs) matchNs conditionNs
+    pure result
+
+applyEquation' ::
+    forall io tag.
+    LoggerMIO io =>
+    IORef (Word64, Word64) ->
+    Term ->
+    RewriteRule tag ->
+    EquationT
+        io
+        (Either ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure) Term)
+applyEquation' phaseTimes term rule =
     runExceptT $
         getPrettyModifiers >>= \case
             ModifiersRep (_ :: FromModifiersT mods => Proxy mods) -> do
@@ -939,7 +969,13 @@ applyEquation term rule =
                         )
                 -- match lhs
                 koreDef <- (.definition) <$> lift getConfig
-                case matchTerms Eval koreDef rule.lhs term of
+                matchResult <- liftIO $ do
+                    t0 <- getMonotonicTimeNSec
+                    res <- evaluate $ matchTerms Eval koreDef rule.lhs term
+                    t1 <- getMonotonicTimeNSec
+                    modifyIORef' phaseTimes $ \(m, c) -> (m + (t1 - t0), c)
+                    pure res
+                case matchResult of
                     MatchFailed failReason ->
                         throwE
                             ( \ctxt ->
@@ -988,10 +1024,10 @@ applyEquation term rule =
                         -- check required constraints from lhs.
                         -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
                         -- see @handleSimplificationEquation@ and @handleFunctionEquation@
-                        checkRequires subst
+                        timedConditionPhase $ checkRequires subst
 
                         -- check ensured conditions, filter any true ones, prune if any is false
-                        ensuredConditions <- checkEnsures subst
+                        ensuredConditions <- timedConditionPhase $ checkEnsures subst
                         lift $ pushConstraints $ Set.fromList ensuredConditions
 
                         -- when a new path condition is added, invalidate the equation cache
@@ -1033,6 +1069,21 @@ applyEquation term rule =
 
     allMustBeConcrete (AllConstrained Concrete) = True
     allMustBeConcrete _ = False
+
+    -- add the action's time to the condition-discharge phase,
+    -- including the time of attempts that exit via 'throwE'
+    timedConditionPhase ::
+        forall e a.
+        ExceptT e (EquationT io) a ->
+        ExceptT e (EquationT io) a
+    timedConditionPhase act = do
+        t0 <- liftIO getMonotonicTimeNSec
+        let finish = liftIO $ do
+                t1 <- getMonotonicTimeNSec
+                modifyIORef' phaseTimes $ \(m, c) -> (m, c + (t1 - t0))
+        res <- act `catchE` \e -> finish >> throwE e
+        finish
+        pure res
 
     checkConcreteness ::
         Concreteness ->

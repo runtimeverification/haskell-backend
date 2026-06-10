@@ -178,6 +178,21 @@ CLI flags for these fields are defined in `booster/tools/booster/Server.hs` in
   `isDefined`, `isSimplified`, etc.
 - `isSimplified` signals whether any equation could still apply.
 
+**Equation-performance flags and instrumentation:**
+- `--equation-argument-indexing`: depth-1 equation index (per-theory argument-level
+  candidate filtering, `Booster/Pattern/Index.hs`). Off by default, behaviour-preserving.
+- `--equation-local-fixpoint`: normalize rewritten subterms in place instead of
+  restarting the traversal per change. Off by default; changes evaluation order.
+- Per-rule equation timing (`Booster/Metrics.hs`): always collected; one
+  `Equation rule metrics` entry per request under `-l Timing` (context `timing`),
+  with per-rule attempts/successes and total/match/condition nanoseconds.
+  Included in `haskell-logging` capture bundles when `"Timing"` is requested.
+- Per-request capture entries (`haskell-logging` request flag) carry a
+  nanosecond-resolution `timestamp` field (capture-time system clock), making
+  bundles usable as traces. For stderr/file logs,
+  `--log-timestamps --timestamp-format nanoseconds` reads the clock per entry
+  (the pretty format keeps a 100µs cache).
+
 ---
 
 ## Performance Testing and Analysis
