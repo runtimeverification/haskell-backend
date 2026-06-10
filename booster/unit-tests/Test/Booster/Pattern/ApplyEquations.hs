@@ -12,9 +12,11 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplify,
     test_simplifyPattern,
     test_simplifyConstraint,
+    test_localFixpoint,
     test_errors,
 ) where
 
+import Control.Exception (finally)
 import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
 import Data.Map (Map)
@@ -25,6 +27,11 @@ import Test.Tasty.HUnit
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
+import Booster.GlobalState (
+    EquationOptions (..),
+    readGlobalEquationOptions,
+    writeGlobalEquationOptions,
+ )
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
@@ -225,6 +232,44 @@ test_simplifyConstraint =
         do
             ns <- noSolver
             runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
+
+test_localFixpoint :: TestTree
+test_localFixpoint =
+    -- must run after the iteration-limit test ("Recursive evaluation"),
+    -- whose outcome the temporary flag window below would change if the
+    -- two ran concurrently (the test binary runs tests in parallel)
+    after AllFinish "Recursive evaluation" $
+        testCase "Local fixpoint mode normalizes causal chains in one pass" $ do
+            defaults <- readGlobalEquationOptions
+            writeGlobalEquationOptions defaults{localFixpoint = True}
+            runChecks `finally` writeGlobalEquationOptions defaults
+  where
+    runChecks = do
+        -- standard scenarios give identical results
+        evalWith funDef [trm| f1{}(con2{}(A:SomeSort{})) |]
+            >>= (@?= Right [trm| con2{}(A:SomeSort{}) |])
+        evalWith simplDef (app con1 [app con2 [app f2 [a]]])
+            >>= (@?= Right (app con2 [app f2 [a]]))
+        -- a causal chain of depth 101 exceeds the global-pass limit
+        -- without local fixpoints (one whole-term pass per chain
+        -- step, see "Recursive evaluation"), but normalizes in a
+        -- single pass here
+        let subj depth = app f1 [iterate (apply con1) start !! depth]
+            start = app con2 [a]
+            n `times` f = foldr (.) id (replicate n $ apply f)
+        evalWith funDef (subj 101) >>= (@?= Right (101 `times` con2 $ start))
+        -- node-level oscillation is detected per local step
+        isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+
+    a = var "A" someSort
+    apply f = app f . (: [])
+
+    isLoop (Left (EquationLoop _)) = pure ()
+    isLoop other = assertFailure $ "Expected an equation loop, got " <> show other
+
+    evalWith def t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm BottomUp def Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =
