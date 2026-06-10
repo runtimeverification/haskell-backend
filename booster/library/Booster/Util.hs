@@ -170,18 +170,28 @@ withFastLogger mFormattedTime (Just fp) log' =
             | isDoesNotExistError e = return ()
             | otherwise = throwIO e
 
-{- |  Make 'IO' action which get cached formatted local time.
-Use this to avoid the cost of frequently time formatting by caching an
-auto updating formatted time, this cache update every 100 microseconds.
+{- |  Make 'IO' action which gets a formatted time.
 
-Borrowed almost verbatim from the fast-logger package: https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache, but the timestamp resolution and the actions to get and format the time are tweaked.
+For pretty (human-readable) timestamps, the formatted time is cached
+and auto-updated every 100 microseconds to amortize the formatting
+cost — borrowed almost verbatim from the fast-logger package:
+https://hackage.haskell.org/package/fast-logger-3.2.3/docs/src/System.Log.FastLogger.Date.html#newTimeCache,
+with timestamp resolution and the time get/format actions tweaked.
+
+Nanosecond timestamps exist for span analysis (attributing time
+between consecutive log entries), where a 100µs-stale cache would
+quantize exactly the spans being measured; they read the system clock
+per entry instead (a cheap vDSO call, no formatting beyond 'show').
 -}
 newTimeCache :: Flag "PrettyTimestamp" -> IO (IO FormattedTime)
-newTimeCache prettyTimestamp =
-    mkAutoUpdate
-        defaultUpdateSettings{updateFreq = 100}
-            { updateAction = formatSystemTime prettyTimestamp <$> getSystemTime
-            }
+newTimeCache prettyTimestamp
+    | coerce prettyTimestamp =
+        mkAutoUpdate
+            defaultUpdateSettings{updateFreq = 100}
+                { updateAction = formatSystemTime prettyTimestamp <$> getSystemTime
+                }
+    | otherwise =
+        pure $ formatSystemTime prettyTimestamp <$> getSystemTime
 
 pattern PrettyTimestamps, NoPrettyTimestamps :: Flag "PrettyTimestamp"
 pattern PrettyTimestamps = Flag True
