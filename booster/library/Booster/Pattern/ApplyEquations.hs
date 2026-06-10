@@ -1047,6 +1047,9 @@ applyEquation' phaseTimes term rule =
                         ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
                         , MatchConstraintViolated Concrete "* (term has variables)"
                         )
+                -- cancel before matching if a concreteness-constrained
+                -- variable at a direct argument position is violated
+                checkConcretenessPreMatch
                 -- match lhs
                 koreDef <- (.definition) <$> lift getConfig
                 matchResult <- liftIO $ do
@@ -1173,6 +1176,41 @@ applyEquation' phaseTimes term rule =
         res <- act `catchE` \e -> finish >> throwE e
         finish
         pure res
+
+    {- Pre-match concreteness check: any successful match binds a
+       variable at a direct argument position of the LHS to exactly
+       the corresponding subject argument (possibly inside an
+       injection, which preserves isConstructorLike), so a constraint
+       violation there means this rule can never apply to this
+       subject. Checking before matching saves the match attempt, and
+       also skips rules whose match would otherwise abort as
+       indeterminate — sound, because their inapplicability is decided
+       by the forced binding alone. Variables at deeper or
+       non-argument positions are checked after matching as before.
+    -}
+    checkConcretenessPreMatch ::
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
+    checkConcretenessPreMatch
+        | Unconstrained <- rule.attributes.concreteness = pure ()
+        | SymbolApplication ruleSym _ ruleArgs <- rule.lhs
+        , SymbolApplication subjSym _ subjArgs <- term
+        , ruleSym == subjSym
+        , length ruleArgs == length subjArgs =
+            mapM_ checkArgPair (zip ruleArgs subjArgs)
+        | otherwise = pure ()
+      where
+        checkArgPair (Var v, subjArg) =
+            whenJust (constraintFor v) $ \constrained ->
+                mkCheck (toPair v) constrained subjArg
+        checkArgPair _ = pure ()
+
+        constraintFor v = case rule.attributes.concreteness of
+            Unconstrained -> Nothing
+            AllConstrained constrained -> Just constrained
+            SomeConstrained mapping -> Map.lookup (toPair v) mapping
 
     checkConcreteness ::
         Concreteness ->

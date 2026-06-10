@@ -15,6 +15,7 @@ module Test.Booster.Pattern.ApplyEquations (
     test_llvmCacheUsedForConstraints,
     test_equationCacheTaint,
     test_argumentIndexing,
+    test_preMatchConcreteness,
     test_localFixpoint,
     test_ruleMetrics,
     test_errors,
@@ -46,6 +47,7 @@ import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
+import Booster.Syntax.ParsedKore.Internalise (symb)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
 import Test.Booster.Util ((@?>>=))
@@ -414,6 +416,32 @@ test_equationCacheTaint =
         ns <- noSolver
         runNoLoggingT $ evaluateTerm BottomUp def Nothing ns cache mempty t
 
+test_preMatchConcreteness :: TestTree
+test_preMatchConcreteness =
+    testGroup
+        "Pre-match concreteness check on direct argument positions"
+        [ testCase "Concrete-constrained rule applies to a concrete argument" $ do
+            evalWith [trm| g2{}(\dv{SomeSort{}}("v"), con1{}(B:SomeSort{})) |]
+                >>= (@?= Right [trm| \dv{SomeSort{}}("v") |])
+        , testCase "Violated constraint falls through to the next rule (same as post-match)" $ do
+            -- the first rule matches, but X is bound to a variable;
+            -- detected before the match now, after it previously
+            evalWith [trm| g2{}(A:SomeSort{}, con1{}(B:SomeSort{})) |]
+                >>= (@?= Right [trm| con2{}(A:SomeSort{}) |])
+        , testCase "Violated constraint skips a rule whose match would be indeterminate" $ do
+            -- f2(B) vs con1(Y) makes the first rule's match
+            -- indeterminate, which used to abort evaluation of the
+            -- node. The forced binding X := A already violates the
+            -- concreteness constraint, so the rule is now skipped
+            -- before matching and the fallback rule applies.
+            evalWith [trm| g2{}(A:SomeSort{}, f2{}(B:SomeSort{})) |]
+                >>= (@?= Right [trm| con2{}(A:SomeSort{}) |])
+        ]
+  where
+    evalWith t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm BottomUp preMatchDef Nothing ns mempty mempty t
+
 test_errors :: TestTree
 test_errors =
     testGroup
@@ -509,6 +537,36 @@ loopDef =
                             Nothing
                             [trm| f1{}(con3{}(X:SomeSort{}, Y:SomeSort{})) |]
                             [trm| f1{}(con1{}(X:SomeSort{})) |]
+                            50
+                        ]
+                    )
+                ]
+        }
+
+-- two-argument function, for the pre-match concreteness tests
+g2 :: Symbol
+g2 = [symb| symbol g2{}(SomeSort{}, SomeSort{}) : SomeSort{} [function{}()] |]
+
+preMatchDef :: KoreDefinition
+preMatchDef =
+    testDefinition
+        { functionEquations =
+            mkTheory
+                [
+                    ( index IdxFun "g2"
+                    ,
+                        [ equation -- g2(X, con1(Y)) => X, requires concrete(X)
+                            (Just "g2-concrete-first-arg")
+                            [trm| g2{}(X:SomeSort{}, con1{}(Y:SomeSort{})) |]
+                            [trm| X:SomeSort{} |]
+                            42
+                            `withAttributes` ( \as ->
+                                                as{concreteness = SomeConstrained (Map.singleton ("X", "SomeSort") Concrete)}
+                                             )
+                        , equation -- g2(X, Y) => con2(X), fallback
+                            (Just "g2-fallback")
+                            [trm| g2{}(X:SomeSort{}, Y:SomeSort{}) |]
+                            [trm| con2{}(X:SomeSort{}) |]
                             50
                         ]
                     )
