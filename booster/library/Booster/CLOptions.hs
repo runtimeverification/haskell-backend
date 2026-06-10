@@ -421,6 +421,12 @@ parseEquationOptions =
             ( long "equation-argument-indexing"
                 <> help "Filter equation candidates by argument-level (depth-1) term index"
             )
+        <*> switch
+            ( long "equation-local-fixpoint"
+                <> help
+                    "Normalize rewritten subterms in place instead of restarting \
+                    \the term traversal from the top after every change"
+            )
   where
     defaultMaxIterations = 100
     defaultMaxRecursion = 5

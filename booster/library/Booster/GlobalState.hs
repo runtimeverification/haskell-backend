@@ -15,6 +15,9 @@ data EquationOptions = EquationOptions
     , maxRecursion :: Bound "Recursion"
     , argumentIndexing :: Bool
     -- ^ filter equation candidates by argument-level (depth-1) term index
+    , localFixpoint :: Bool
+    -- ^ normalize rewritten subterms in place instead of restarting
+    -- the traversal from the top after every change
     }
     deriving stock (Show, Eq)
 
@@ -22,7 +25,12 @@ data EquationOptions = EquationOptions
 globalEquationOptions :: IORef EquationOptions
 globalEquationOptions =
     unsafePerformIO . newIORef $
-        EquationOptions{maxIterations = 100, maxRecursion = 5, argumentIndexing = False}
+        EquationOptions
+            { maxIterations = 100
+            , maxRecursion = 5
+            , argumentIndexing = False
+            , localFixpoint = False
+            }
 
 readGlobalEquationOptions :: IO EquationOptions
 readGlobalEquationOptions = readIORef globalEquationOptions

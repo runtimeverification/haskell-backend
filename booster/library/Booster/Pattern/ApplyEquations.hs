@@ -150,6 +150,7 @@ data EquationConfig = EquationConfig
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
     , argumentIndexing :: Bool
+    , localFixpoint :: Bool
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
     }
@@ -157,6 +158,10 @@ data EquationConfig = EquationConfig
 data EquationState = EquationState
     { termStack :: Seq Term
     , recursionStack :: [Term]
+    , localSteps :: [Term]
+    -- ^ chain of locally-rewritten node values on the current
+    -- traversal path, for loop detection in local-fixpoint mode
+    -- (path-scoped: saved and restored around each local recursion)
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache
@@ -194,6 +199,7 @@ startState cache known =
     EquationState
         { termStack = mempty
         , recursionStack = []
+        , localSteps = []
         , changed = False
         , predicates = known
         , -- replacements from predicates are rebuilt from the path conditions every time
@@ -355,6 +361,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
                         , argumentIndexing = globalEquationOptions.argumentIndexing
+                        , localFixpoint = globalEquationOptions.localFixpoint
                         , logger
                         , prettyModifiers
                         }
@@ -408,12 +415,46 @@ iterateEquations direction preference startTerm = do
                  in simp llvmResult
             -- evaluate functions and simplify (recursively at each level)
             newTerm <-
-                let simp = cached Equations $ traverseTerm direction simp (applyHooksAndEquations preference)
+                let onEval
+                        | config.localFixpoint && direction == BottomUp = localFixpointEval simp
+                        | otherwise = applyHooksAndEquations preference
+                    simp = cached Equations $ traverseTerm direction simp onEval
                  in simp replacedTerm
             changeFlag <- getChanged
             if changeFlag
                 then checkForLoop newTerm >> resetChanged >> go newTerm
                 else pure llvmResult
+
+    {- Local-fixpoint evaluation (only in BottomUp mode, behind
+       --equation-local-fixpoint): when a node was rewritten, run the
+       LLVM pass on the result (preserving the LLVM-before-equations
+       ordering the global loop provides) and re-enter the cached
+       recursion on it, normalizing the new subtree in place instead
+       of restarting the whole-term traversal. Ancestors then see
+       children in final form and the global loop converges in 1-2
+       passes instead of one per causal chain step.
+
+       The whole-term snapshots on the term stack no longer catch
+       node-level oscillations (a -> b -> a), so the chain of local
+       rewrites along the current path is tracked in 'localSteps' and
+       checked per step. The stack is path-scoped by save/restore;
+       'maxIterations' keeps counting global passes only.
+    -}
+    localFixpointEval :: LoggerMIO io => (Term -> EquationT io Term) -> Term -> EquationT io Term
+    localFixpointEval recurse t = do
+        t' <- applyHooksAndEquations preference t
+        if t' == t
+            then pure t
+            else do
+                priorSteps <- (.localSteps) <$> getState
+                when (t' `elem` priorSteps) $ do
+                    withContext CtxAbort $ do
+                        logWarn "Equation loop detected (local fixpoint)."
+                    throw . EquationLoop . reverse $ t' : priorSteps
+                eqState . modify $ \s -> s{localSteps = t' : s.localSteps}
+                result <- llvmSimplify t' >>= recurse
+                eqState . modify $ \s -> s{localSteps = priorSteps}
+                pure result
 
 llvmSimplify :: forall io. LoggerMIO io => Term -> EquationT io Term
 llvmSimplify term = do
@@ -1218,9 +1259,10 @@ simplifyConstraint' recurseIntoEvalBool = \case
     evalBool :: LoggerMIO io => Term -> EquationT io Term
     evalBool t = withTermContext t $ do
         prior <- getState -- save prior state so we can revert
-        eqState $ put prior{termStack = mempty, changed = False}
+        eqState $ put prior{termStack = mempty, changed = False, localSteps = []}
         result <- iterateEquations BottomUp PreferFunctions t
-        -- reset change flag and term stack to prior values
+        -- reset change flag, term stack, and local steps to prior values
         -- (keep the updated cache and added predicates, if any)
-        eqState $ modify $ \s -> s{changed = prior.changed, termStack = prior.termStack}
+        eqState $ modify $ \s ->
+            s{changed = prior.changed, termStack = prior.termStack, localSteps = prior.localSteps}
         pure result
