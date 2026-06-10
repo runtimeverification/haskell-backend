@@ -417,6 +417,10 @@ parseEquationOptions =
                 <> value defaultMaxRecursion
                 <> showDefault
             )
+        <*> switch
+            ( long "equation-argument-indexing"
+                <> help "Filter equation candidates by argument-level (depth-1) term index"
+            )
   where
     defaultMaxIterations = 100
     defaultMaxRecursion = 5

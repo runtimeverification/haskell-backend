@@ -16,6 +16,10 @@ module Booster.Pattern.Index (
     compositeTermIndex,
     kCellTermIndex,
     termTopIndex,
+    -- equation indexing (depth-1)
+    EquationTheory (..),
+    equationLhsIndex,
+    equationSubjectIndex,
     -- helpers
     hasNone,
     noFunctions,
@@ -65,6 +69,12 @@ data CellIndex
     | IdxCons SymbolName
     | IdxFun SymbolName
     | IdxVal ByteString
+    | -- | bare variable in a _subject_ argument position (only produced
+      -- by 'equationSubjectIndex' for simplification lookup): a bare
+      -- variable can never syntactically /match/ a non-variable pattern,
+      -- so only @Anything@ pattern components cover it. Rule-side
+      -- indexes never contain it.
+      IdxVar
     | IdxMap
     | IdxList
     | IdxSet
@@ -132,6 +142,7 @@ instance Pretty CellIndex where
     pretty (IdxCons sym) = "C--" <> prettyLabel sym
     pretty (IdxFun sym) = "F--" <> prettyLabel sym
     pretty (IdxVal sym) = "V--" <> prettyLabel sym
+    pretty IdxVar = "Var"
     pretty IdxMap = "Map"
     pretty IdxList = "List"
     pretty IdxSet = "Set"
@@ -240,6 +251,82 @@ stripSortInjections = \case
 -- | indexes terms by their top symbol (combining '\and' branches)
 termTopIndex :: Term -> TermIndex
 termTopIndex = TermIndex . (: []) . cellTopIndex
+
+{- | Depth-1 indexing of equations: the top symbol of a symbol
+application plus one component per argument.
+
+The contract is stated against the tri-state matcher ('matchTerms'
+in Eval mode: "matches" / "does not unify" / "indeterminate"), not
+against semantic unifiability, and it differs per theory because the
+equation-application result handlers differ:
+
+* /Simplifications/ treat every failure mode as "continue", so the
+  index may skip any rule whose match cannot return "matches" — both
+  decisive failures and indeterminates are skippable.
+  Every argument component therefore stays exact ('cellTopIndex').
+
+* /Function equations/ abort on an indeterminate match (protecting
+  @[owise]@/priority soundness), so the index may only skip rules
+  whose match is guaranteed to /decisively/ fail. Any component whose
+  'match1' interaction can be indeterminate (function applications,
+  injections, @\\and@) is weakened to @Anything@ on both sides.
+
+Rules whose LHS is not a symbol application keep their single-component
+top index; the 'zipWith' truncation in the 'TermIndex' lattice ordering
+degrades mixed lengths conservatively.
+-}
+data EquationTheory = FunctionEquations | Simplifications
+    deriving stock (Eq, Show)
+
+{- | Index of an equation LHS (computed once per rule lookup; cheap,
+one constructor inspection per argument).
+-}
+equationLhsIndex :: EquationTheory -> Term -> TermIndex
+equationLhsIndex theory = deepIndexWith (equationArgIndex theory)
+
+{- | Index of a subject term for equation candidate filtering.
+
+Identical to the rule-side computation except for bare-variable
+arguments in simplification lookup, which become 'IdxVar': a bare
+subject variable can never syntactically match a non-variable pattern
+component (only bind /pattern/ variables, which are @Anything@), so
+'IdxVar' rules out every non-@Anything@ pattern component. For
+function equations a bare subject variable is an indeterminate pair
+with any pattern, hence @Anything@ (must be attempted).
+-}
+equationSubjectIndex :: EquationTheory -> Term -> TermIndex
+equationSubjectIndex theory = deepIndexWith subjectArg
+  where
+    subjectArg = case theory of
+        FunctionEquations -> equationArgIndex FunctionEquations
+        Simplifications -> \case
+            Var{} -> IdxVar
+            arg -> cellTopIndex arg
+
+deepIndexWith :: (Term -> CellIndex) -> Term -> TermIndex
+deepIndexWith argComponent = \case
+    t@(SymbolApplication _ _ args) ->
+        TermIndex $ cellTopIndex t : map argComponent args
+    other ->
+        termTopIndex other
+
+-- | Argument component, per theory (see 'equationLhsIndex').
+equationArgIndex :: EquationTheory -> Term -> CellIndex
+equationArgIndex Simplifications = cellTopIndex
+equationArgIndex FunctionEquations = weaken
+  where
+    -- only shapes whose mismatch 'match1' decides decisively stay
+    -- exact; everything that can be indeterminate becomes Anything
+    weaken = \case
+        ConsApplication symbol _ _ -> IdxCons symbol.name
+        DomainValue _ v -> IdxVal v
+        KMap{} -> IdxMap
+        KList{} -> IdxList
+        KSet{} -> IdxSet
+        FunctionApplication{} -> Anything
+        Var{} -> Anything
+        Injection{} -> Anything
+        AndTerm{} -> Anything
 
 -- | Cell top indexes form a lattice with a flat partial ordering
 cellTopIndex :: Term -> CellIndex

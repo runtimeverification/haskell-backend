@@ -12,6 +12,7 @@ import Booster.Definition.Base qualified as RewriteRule (RewriteRule (..))
 import Booster.Definition.Attributes.Base
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
+import Booster.Pattern.Index qualified as Idx
 
 import Booster.LLVM as LLVM (API, simplifyBool)
 import Booster.Log
@@ -156,7 +157,9 @@ computeCeil term@(SymbolApplication symbol _ args)
         concatMapM computeCeil args
     | otherwise = do
         ceils <- (.definition.ceils) <$> getConfig
-        simplified <- applyEquations ceils handleSimplificationEquation term
+        -- ceil rules use the simplification handler (every failure
+        -- continues), so the simplification index contract applies
+        simplified <- applyEquations Idx.Simplifications ceils handleSimplificationEquation term
         -- liftIO $ putStrLn $ Pretty.renderString . layoutPrettyUnbounded $ "original ceil:" <+> pretty (InternalCeil term)
         -- when (simplified /= (InternalCeil term)) $ liftIO $ putStrLn $ Pretty.renderString . layoutPrettyUnbounded $ "applied ceil:" <+> pretty simplified
         if simplified == term

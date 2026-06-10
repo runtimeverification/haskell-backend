@@ -12,9 +12,11 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplify,
     test_simplifyPattern,
     test_simplifyConstraint,
+    test_argumentIndexing,
     test_errors,
 ) where
 
+import Control.Exception (finally)
 import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
 import Data.Map (Map)
@@ -25,6 +27,11 @@ import Test.Tasty.HUnit
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
+import Booster.GlobalState (
+    EquationOptions (..),
+    readGlobalEquationOptions,
+    writeGlobalEquationOptions,
+ )
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
@@ -225,6 +232,40 @@ test_simplifyConstraint =
         do
             ns <- noSolver
             runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
+
+{- | Smoke test for the depth-1 candidate filter: skipping is
+behaviour-preserving by construction (simplifications skip only
+cannot-succeed pairs, function equations only decisive failures), so
+results must be identical with the flag on.
+-}
+test_argumentIndexing :: TestTree
+test_argumentIndexing =
+    testCase "Evaluation results are unchanged with argument indexing enabled" $ do
+        defaults <- readGlobalEquationOptions
+        writeGlobalEquationOptions defaults{argumentIndexing = True}
+        runChecks `finally` writeGlobalEquationOptions defaults
+  where
+    runChecks = do
+        -- function equations: the f1(con1(X)) rule is filtered for a
+        -- con2 argument, the identity rule still applies
+        evalWith funDef [trm| f1{}(con2{}(A:SomeSort{})) |]
+            >>= (@?= Right [trm| con2{}(A:SomeSort{}) |])
+        -- concreteness-blocked rules behave as before (both rules are
+        -- index-compatible, rejection happens after the match)
+        evalWith funDef [trm| f1{}(con1{}(\dv{SomeSort{}}("hey"))) |]
+            >>= (@?= Right [trm| f1{}(con1{}(\dv{SomeSort{}}("hey"))) |])
+        -- simplifications: priority order among surviving candidates is kept
+        evalWith simplDef (app con1 [app con2 [app f2 [var "A" someSort]]])
+            >>= (@?= Right (app con2 [app f2 [var "A" someSort]]))
+        -- bare-variable argument: all con2-shaped rules are filtered
+        -- via IdxVar, term is unchanged (as it would be via match
+        -- failures without the filter)
+        evalWith simplDef [trm| con1{}(X:SomeSort{}) |]
+            >>= (@?= Right [trm| con1{}(X:SomeSort{}) |])
+
+    evalWith def t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm BottomUp def Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =

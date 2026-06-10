@@ -6,15 +6,21 @@ License     : BSD-3-Clause
 -}
 module Test.Booster.Pattern.Index (
     test_indexing,
+    test_equationIndex,
 ) where
 
+import Control.Monad (replicateM)
 import Data.Set qualified as Set
+import Hedgehog
+import Hedgehog.Gen qualified as Gen
 import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit hiding (assert)
+import Test.Tasty.Hedgehog
 
 import Booster.Pattern.Base
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
 import Booster.Pattern.Index qualified as Idx
+import Booster.Pattern.Match (MatchResult (..), MatchType (..), matchTerms)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 import Test.Booster.Fixture hiding (inj)
@@ -249,3 +255,112 @@ testIndexCover =
     permuteCIs n
         | n <= 0 = [[]]
         | otherwise = [i : is | i <- cellIndexes, is <- permuteCIs (n - 1)]
+
+----------------------------------------
+-- Depth-1 equation indexing
+
+test_equationIndex :: TestTree
+test_equationIndex =
+    testGroup
+        "Depth-1 equation indexing"
+        [ testComponentTables
+        , testIndexMatchContract
+        ]
+
+-- | The compatibility check 'applyEquations' uses to filter candidates
+indexCompatible :: Idx.EquationTheory -> Term -> Term -> Bool
+indexCompatible theory pat subj =
+    Idx.invert (Idx.equationSubjectIndex theory subj) Idx.^<=^ Idx.equationLhsIndex theory pat
+
+testComponentTables :: TestTree
+testComponentTables =
+    testGroup
+        "Component behaviour per theory"
+        [ testCase "Bare subject variable arguments rule out non-variable patterns for simplifications only" $ do
+            -- pattern f1(con1(Y)) can never _match_ subject f1(X) ...
+            incompatible Idx.Simplifications [trm| f1{}(con1{}(Y:SomeSort{})) |] [trm| f1{}(X:SomeSort{}) |]
+            -- ... but the pair is indeterminate, so function equations must attempt it
+            compatible Idx.FunctionEquations [trm| f1{}(con1{}(Y:SomeSort{})) |] [trm| f1{}(X:SomeSort{}) |]
+        , testCase "Function-application pattern argument vs domain value: skippable for simplifications only" $ do
+            incompatible
+                Idx.Simplifications
+                [trm| f1{}(f2{}(Y:SomeSort{})) |]
+                [trm| f1{}(\dv{SomeSort{}}("0")) |]
+            compatible
+                Idx.FunctionEquations
+                [trm| f1{}(f2{}(Y:SomeSort{})) |]
+                [trm| f1{}(\dv{SomeSort{}}("0")) |]
+        , testCase "Constructor mismatch in arguments is decisive for both theories" $ do
+            incompatible
+                Idx.Simplifications
+                [trm| f1{}(con1{}(Y:SomeSort{})) |]
+                [trm| f1{}(con2{}(X:SomeSort{})) |]
+            incompatible
+                Idx.FunctionEquations
+                [trm| f1{}(con1{}(Y:SomeSort{})) |]
+                [trm| f1{}(con2{}(X:SomeSort{})) |]
+        , testCase "Variable pattern arguments cover any subject argument" $ do
+            compatible Idx.Simplifications [trm| f1{}(Y:SomeSort{}) |] [trm| f1{}(X:SomeSort{}) |]
+            compatible Idx.Simplifications [trm| f1{}(Y:SomeSort{}) |] [trm| f1{}(con1{}(X:SomeSort{})) |]
+            compatible Idx.FunctionEquations [trm| f1{}(Y:SomeSort{}) |] [trm| f1{}(\dv{SomeSort{}}("0")) |]
+        , testCase "Different head symbols are incompatible regardless of arguments" $ do
+            incompatible Idx.Simplifications [trm| f1{}(X:SomeSort{}) |] [trm| f2{}(X:SomeSort{}) |]
+            incompatible Idx.FunctionEquations [trm| f1{}(X:SomeSort{}) |] [trm| f2{}(X:SomeSort{}) |]
+        ]
+  where
+    compatible theory pat subj =
+        assertBool "expected index-compatible pair" (indexCompatible theory pat subj)
+    incompatible theory pat subj =
+        assertBool "expected index-incompatible pair" (not $ indexCompatible theory pat subj)
+
+{- | Pins the index component tables to the matcher, row by row: if
+the index allows skipping a (pattern, subject) pair, the match must
+not have been able to return the result the skip would suppress.
+-}
+testIndexMatchContract :: TestTree
+testIndexMatchContract =
+    testGroup
+        "Index skip-safety against matchTerms Eval"
+        [ testProperty "a pair skipped by the simplification index can never match" . property $ do
+            (pat, subj) <- forAll genTermPair
+            cover 10 "incompatible" (not $ indexCompatible Idx.Simplifications pat subj)
+            case matchTerms Eval testDefinition pat subj of
+                MatchSuccess _ -> assert (indexCompatible Idx.Simplifications pat subj)
+                _ -> pure ()
+        , testProperty "a pair skipped by the function-equation index always fails decisively" . property $ do
+            (pat, subj) <- forAll genTermPair
+            cover 5 "incompatible" (not $ indexCompatible Idx.FunctionEquations pat subj)
+            case matchTerms Eval testDefinition pat subj of
+                MatchFailed _ -> pure ()
+                -- successful and indeterminate matches must have been attempted
+                _ -> assert (indexCompatible Idx.FunctionEquations pat subj)
+        ]
+
+genTermPair :: Gen (Term, Term)
+genTermPair = do
+    sym <- Gen.element [con1, con2, con3, f1, f2]
+    let arity = length sym.argSorts
+    pat <- app sym <$> replicateM arity (genArg 2)
+    subj <- app sym <$> replicateM arity (genArg 2)
+    pure (pat, subj)
+  where
+    genArg :: Int -> Gen Term
+    genArg 0 =
+        Gen.choice
+            [ (`var` someSort) <$> Gen.element ["X", "Y", "Z"]
+            , DomainValue someSort <$> Gen.element ["a", "b"]
+            ]
+    genArg n =
+        Gen.frequency
+            [ (3, genArg 0)
+            , (2, (\c a -> app c [a]) <$> Gen.element [con1, con2] <*> genArg (n - 1))
+            , (1, (\a b -> app con3 [a, b]) <$> genArg (n - 1) <*> genArg (n - 1))
+            , (2, (\f a -> app f [a]) <$> Gen.element [f1, f2] <*> genArg (n - 1))
+            ,
+                ( 1
+                , Injection aSubsort someSort . (\(a, b) -> app con4 [a, b])
+                    <$> ((,) <$> genArg (n - 1) <*> genArg (n - 1))
+                )
+            , (1, pure (KMap testKMapDefinition [] Nothing))
+            , (1, AndTerm <$> genArg (n - 1) <*> genArg (n - 1))
+            ]

@@ -149,6 +149,7 @@ data EquationConfig = EquationConfig
     , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
+    , argumentIndexing :: Bool
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
     }
@@ -353,6 +354,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , smtSolver
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
+                        , argumentIndexing = globalEquationOptions.argumentIndexing
                         , logger
                         , prettyModifiers
                         }
@@ -736,11 +738,11 @@ applyHooksAndEquations pref term = do
         def <- (.definition) <$> getConfig
         ( case pref of
                 PreferFunctions -> do
-                    applyEquations def.functionEquations handleFunctionEquation
-                        `elseApply` applyEquations def.simplifications handleSimplificationEquation
+                    applyEquations Idx.FunctionEquations def.functionEquations handleFunctionEquation
+                        `elseApply` applyEquations Idx.Simplifications def.simplifications handleSimplificationEquation
                 PreferSimplifications -> do
-                    applyEquations def.simplifications handleSimplificationEquation
-                        `elseApply` applyEquations def.functionEquations handleFunctionEquation
+                    applyEquations Idx.Simplifications def.simplifications handleSimplificationEquation
+                        `elseApply` applyEquations Idx.FunctionEquations def.functionEquations handleFunctionEquation
             )
             term
 
@@ -792,15 +794,17 @@ applyEquations ::
     forall io tag.
     ContextFor (RewriteRule tag) =>
     LoggerMIO io =>
+    Idx.EquationTheory ->
     Theory (RewriteRule tag) ->
     ResultHandler io ->
     Term ->
     EquationT io Term
-applyEquations theory handler term = do
+applyEquations eqTheory theory handler term = do
     let index = Idx.termTopIndex term
     when (Idx.hasNone index) $ do
         withContext CtxAbort $ logMessage ("Index 'None'" :: Text)
         throw (IndexIsNone term)
+    argIndexing <- (.argumentIndexing) <$> getConfig
     let
         indexes = Set.toList $ Map.keysSet theory `Idx.covering` index
         equationsFor i = fromMaybe Map.empty $ Map.lookup i theory
@@ -817,7 +821,20 @@ applyEquations theory handler term = do
             concatMap snd . Map.toAscList . Map.unionsWith (<>) $
                 map equationsFor indexes
 
-    processEquations equations
+        -- Depth-1 filter: drop candidates whose argument-level index is
+        -- incompatible with the subject's. What "incompatible" may skip
+        -- differs per theory, see 'Idx.equationLhsIndex'. Rule indexes
+        -- are recomputed per candidate: one constructor inspection per
+        -- argument, negligible against a match attempt (precompute at
+        -- internalisation if profiles ever disagree).
+        invertedSubjectIndex = Idx.invert $ Idx.equationSubjectIndex eqTheory term
+        compatible rule =
+            invertedSubjectIndex Idx.^<=^ Idx.equationLhsIndex eqTheory rule.lhs
+        candidates
+            | argIndexing = filter compatible equations
+            | otherwise = equations
+
+    processEquations candidates
   where
     -- process one equation at a time, until something has happened
     processEquations ::
