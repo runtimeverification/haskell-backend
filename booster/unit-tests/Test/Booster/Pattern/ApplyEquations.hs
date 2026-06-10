@@ -12,6 +12,7 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplify,
     test_simplifyPattern,
     test_simplifyConstraint,
+    test_llvmCacheUsedForConstraints,
     test_argumentIndexing,
     test_localFixpoint,
     test_ruleMetrics,
@@ -236,6 +237,30 @@ test_simplifyConstraint =
         do
             ns <- noSolver
             runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
+
+test_llvmCacheUsedForConstraints :: TestTree
+test_llvmCacheUsedForConstraints =
+    testGroup
+        "LLVM cache is consulted when simplifying concrete constraints"
+        [ testCase "Without a cache entry, the term is evaluated" $
+            -- the KEQUAL.eq hook evaluates the trivial equation to true
+            simpl mempty (Predicate concreteEqualsK) @?>>= Right (Predicate TrueBool)
+        , testCase "A cache entry short-circuits evaluation" $ do
+            -- seeded with a (deliberately wrong) cached result that
+            -- evaluation could never produce, proving the lookup
+            -- happens before any evaluation of the term
+            let seeded = mempty{llvm = Map.singleton concreteEqualsK FalseBool}
+            simpl seeded (Predicate concreteEqualsK) @?>>= Right (Predicate FalseBool)
+        ]
+  where
+    -- concrete (ground) term, evaluates to TrueBool via the ==K hook
+    concreteEqualsK =
+        let t = [trm| con1{}(\dv{SomeSort{}}("hey")) |]
+         in EqualsK (KSeq (sortOfTerm t) t) (KSeq (sortOfTerm t) t)
+
+    simpl cache t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns cache mempty t
 
 {- | Smoke test for the depth-1 candidate filter: skipping is
 behaviour-preserving by construction (simplifications skip only

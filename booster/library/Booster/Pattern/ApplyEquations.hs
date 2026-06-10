@@ -1284,26 +1284,38 @@ simplifyConstraint' recurseIntoEvalBool = \case
     t@(Term TermAttributes{isEvaluated, canBeEvaluated} _)
         | isEvaluated ->
             pure t
-        | isConcrete t && canBeEvaluated -> do
-            mbApi <- (.llvmApi) <$> getConfig
-            case mbApi of
-                Just api ->
-                    withContext CtxLlvm . withTermContext t $
-                        LLVM.simplifyBool api t >>= \case
-                            Left (LlvmError e) -> do
-                                withContext CtxAbort $
-                                    logWarn $
-                                        "LLVM backend error detected: " <> Text.decodeUtf8 e
-                                throw $ UndefinedTerm t $ LlvmError e
-                            Right res -> do
-                                let result =
-                                        if res
-                                            then TrueBool
-                                            else FalseBool
-                                withContext CtxSuccess $
-                                    withTermContext result $
-                                        pure result
-                Nothing -> if recurseIntoEvalBool then evalBool t else pure t
+        | isConcrete t && canBeEvaluated ->
+            -- LLVM evaluation of a concrete term is path-condition-independent,
+            -- so cached results are valid in any context (and 'cacheReset'
+            -- consistently preserves the LLVM cache). Consulting the cache
+            -- before the API check is sound because entries can only have been
+            -- produced by an earlier LLVM call.
+            fromCache LLVM t >>= \case
+                Just cachedResult ->
+                    withTermContext t . withContext CtxSuccess . withContextFor LLVM $
+                        withTermContext cachedResult $
+                            pure cachedResult
+                Nothing -> do
+                    mbApi <- (.llvmApi) <$> getConfig
+                    case mbApi of
+                        Just api ->
+                            withContext CtxLlvm . withTermContext t $
+                                LLVM.simplifyBool api t >>= \case
+                                    Left (LlvmError e) -> do
+                                        withContext CtxAbort $
+                                            logWarn $
+                                                "LLVM backend error detected: " <> Text.decodeUtf8 e
+                                        throw $ UndefinedTerm t $ LlvmError e
+                                    Right res -> do
+                                        let result =
+                                                if res
+                                                    then TrueBool
+                                                    else FalseBool
+                                        toCache LLVM t result
+                                        withContext CtxSuccess $
+                                            withTermContext result $
+                                                pure result
+                        Nothing -> if recurseIntoEvalBool then evalBool t else pure t
         | otherwise ->
             if recurseIntoEvalBool then evalBool t else pure t
   where
