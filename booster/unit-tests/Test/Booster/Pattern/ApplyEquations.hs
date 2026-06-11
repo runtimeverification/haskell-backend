@@ -261,20 +261,18 @@ test_localFixpoint =
   where
     budgetChecks :: EquationOptions -> IO ()
     budgetChecks defaults = do
-        let subj depth = app f1 [iterate (apply con1) start !! depth]
-            start = app con2 [a]
-            n `times` f = foldr (.) id (replicate n $ apply f)
         -- each pass advances a chain by the budget plus one
         -- application, so depths beyond the restart-only limit of
-        -- maxIterations complete now
+        -- maxIterations complete now (the chain rule produces its
+        -- redex inside the RHS, which the in-place recursion follows)
         evalWith funDef (subj 101) >>= (@?= Right (101 `times` con2 $ start))
         -- node-level oscillation is detected per local step (cycle
         -- shorter than the budget)
         isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
-        -- the combined bound (passes times per-pass budget plus one
-        -- application per node) still terminates evaluation with a
-        -- partial result: with 10 passes and a budget of 20, a chain
-        -- of depth 300 cannot finish
+        -- the combined bound (passes times the per-chain budget plus
+        -- one application) still terminates evaluation with a partial
+        -- result: with 10 passes and a budget of 20, a chain of depth
+        -- 300 cannot finish
         writeGlobalEquationOptions
             EquationOptions
                 { maxIterations = 10
@@ -282,6 +280,10 @@ test_localFixpoint =
                 , maxLocalSteps = 20
                 }
         isTooMany =<< evalWith funDef (subj 300)
+
+    subj depth = app f1 [iterate (apply con1) start !! depth]
+    start = app con2 [a]
+    n `times` f = foldr (.) id (replicate n $ apply f)
 
     a = var "A" someSort
     apply f = app f . (: [])

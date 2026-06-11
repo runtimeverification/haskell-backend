@@ -162,8 +162,9 @@ data EquationState = EquationState
     -- traversal path, for loop detection of in-place rewriting
     -- (path-scoped: saved and restored around each local recursion)
     , localStepCount :: Int
-    -- ^ in-place rewrites taken in the current traversal pass,
-    -- bounded by 'maxLocalSteps' (reset at the start of each pass)
+    -- ^ length of 'localSteps' (path-scoped like the chain itself),
+    -- kept separately to bound in-place rewriting by 'maxLocalSteps'
+    -- without computing the length on every step
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache
@@ -406,8 +407,6 @@ iterateEquations direction preference startTerm = do
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
-            -- each pass gets a fresh in-place rewriting budget
-            eqState . modify $ \s -> s{localStepCount = 0}
             -- simplify the term using the LLVM backend first
             llvmResult <- llvmSimplify currentTerm
             -- NB llvmSimplify is idempotent. No need to iterate if
@@ -432,26 +431,32 @@ iterateEquations direction preference startTerm = do
     {- Local-fixpoint evaluation (BottomUp mode): when a node was
        rewritten, run the LLVM pass on the result (preserving the
        LLVM-before-equations ordering the global loop provides) and
-       re-enter the cached recursion on it, normalizing the new
-       subtree in place instead of restarting the whole-term
-       traversal. Ancestors then see children in final form and the
-       global loop converges in a few passes instead of one per
-       causal chain step.
+       re-enter the cached bottom-up traversal on it, normalizing
+       everything the rewrite produced in place instead of restarting
+       the whole-term traversal (the rewrite builds a new subterm
+       from the rule's RHS, which needs full evaluation in all its
+       arguments; the cache cuts the descent short at substituted
+       subject parts that are already normal). Ancestors then see
+       children in final form and the global loop converges in a few
+       passes instead of one per causal chain step.
 
-       The in-place rewriting effort is bounded: at most
-       'maxLocalSteps' rewrites per traversal pass; once the budget
-       is exhausted, rewritten nodes are returned without recursion,
-       which is exactly the restart-only strategy (the changed flag
-       is already set, so the global loop picks the node up on the
-       next pass). Total work per evaluation therefore stays bounded
-       by 'maxIterations' passes times ('maxLocalSteps' plus one
-       application per node), and 'TooManyIterations' with its
-       partial result is reached as before. A budget of 0 restores
-       the restart-only strategy entirely.
+       The in-place rewriting effort is bounded: both 'localSteps'
+       and 'localStepCount' are path-scoped (saved and restored
+       around the recursion, maintaining the invariant
+       localStepCount == length localSteps), so each chain of
+       in-place rewrites is at most 'maxLocalSteps' deep. Once the
+       budget is exhausted, rewritten nodes are returned without
+       recursion, which is exactly the restart-only strategy (the
+       changed flag is already set, so the global loop picks the
+       node up on the next pass). Each chain therefore advances by
+       at most 'maxLocalSteps' plus one application per pass, total
+       work stays bounded by 'maxIterations' passes, and
+       'TooManyIterations' with its partial result is reached as
+       before. A budget of 0 restores the restart-only strategy
+       entirely.
 
-       Loop detection is two-layered: the chain of in-place rewrites
-       along the current path is tracked in 'localSteps' (path-scoped
-       by save/restore) and checked per step, catching oscillations
+       Loop detection is two-layered: the in-place rewrite chain in
+       'localSteps' is checked per step, catching oscillations
        shorter than the budget immediately; cycles that survive a
        pass boundary recur in the whole-term snapshots within at most
        one cycle period of passes and are caught by 'checkForLoop'
@@ -473,13 +478,18 @@ iterateEquations direction preference startTerm = do
                             withContext CtxAbort $ do
                                 logWarn "Equation loop detected (local fixpoint)."
                             throw . EquationLoop . reverse $ t' : st.localSteps
-                        eqState . modify $ \s ->
-                            s
-                                { localSteps = t' : s.localSteps
-                                , localStepCount = s.localStepCount + 1
+                        let !newCount = st.localStepCount + 1
+                        eqState . put $
+                            st
+                                { localSteps = t' : st.localSteps
+                                , localStepCount = newCount
                                 }
                         result <- llvmSimplify t' >>= recurse
-                        eqState . modify $ \s -> s{localSteps = st.localSteps}
+                        eqState . modify $ \s ->
+                            s
+                                { localSteps = st.localSteps
+                                , localStepCount = st.localStepCount
+                                }
                         pure result
 
 llvmSimplify :: forall io. LoggerMIO io => Term -> EquationT io Term

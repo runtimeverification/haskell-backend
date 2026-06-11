@@ -422,9 +422,10 @@ parseEquationOptions =
             ( metavar "LOCAL_STEP_LIMIT"
                 <> long "equation-max-local-steps"
                 <> help
-                    "Number of equations applied in place at rewritten subterms \
-                    \per traversal pass before restarting the traversal from the \
-                    \top (0, the default, is restart-only evaluation)"
+                    "Number of equations applied in place at a rewritten subterm \
+                    \(per chain of in-place rewrites) before restarting the \
+                    \traversal from the top (0, the default, is restart-only \
+                    \evaluation)"
                 <> value defaultMaxLocalSteps
                 <> showDefault
             )

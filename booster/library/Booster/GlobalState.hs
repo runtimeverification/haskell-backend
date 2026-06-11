@@ -14,10 +14,10 @@ data EquationOptions = EquationOptions
     { maxIterations :: Bound "Iterations"
     , maxRecursion :: Bound "Recursion"
     , maxLocalSteps :: Bound "LocalSteps"
-    -- ^ how many equations may be applied in place at rewritten
-    -- subterms per traversal pass before falling back to restarting
-    -- the traversal from the top (0, the default, is restart-only
-    -- evaluation)
+    -- ^ how many equations may be applied in place at a rewritten
+    -- subterm (per chain of in-place rewrites) before falling back
+    -- to restarting the traversal from the top (0, the default, is
+    -- restart-only evaluation)
     }
     deriving stock (Show, Eq)
 
