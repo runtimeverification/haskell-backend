@@ -172,6 +172,10 @@ CLI flags for these fields are defined in `booster/tools/booster/Server.hs` in
 - Traverses bottom-up, applies function/simplification equations.
 - Concrete sub-terms are sent to the LLVM backend for evaluation (top-down first
   to maximise batch size).
+- Passes restart from the top until a fixed point (bounded by
+  `--equation-max-iterations`); `--equation-max-local-steps N` additionally
+  re-simplifies rewritten sub-terms in place, up to N chained equation
+  applications (default 0 = restart-only).
 
 **Term representation** (`Booster/Pattern/Base.hs`):
 - `Term` is a tagged union with a `TermAttributes` field tracking `isConstructorLike`,
