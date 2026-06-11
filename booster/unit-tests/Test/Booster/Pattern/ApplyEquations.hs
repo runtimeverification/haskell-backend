@@ -12,9 +12,11 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplify,
     test_simplifyPattern,
     test_simplifyConstraint,
+    test_localFixpoint,
     test_errors,
 ) where
 
+import Control.Exception (finally)
 import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
 import Data.Map (Map)
@@ -25,6 +27,11 @@ import Test.Tasty.HUnit
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
+import Booster.GlobalState (
+    EquationOptions (..),
+    readGlobalEquationOptions,
+    writeGlobalEquationOptions,
+ )
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
@@ -69,7 +76,9 @@ test_evaluateFunction =
                 n `times` f = foldr (.) id (replicate n $ apply f)
             -- top-down evaluation: a single iteration is enough
             eval TopDown (subj 101) @?>>= Right (101 `times` con2 $ a)
-            -- bottom-up evaluation: `depth` many iterations
+            -- bottom-up evaluation: with the default in-place budget
+            -- of 0, each pass advances the chain by one application,
+            -- so the iteration limit caps the chain depth
             eval BottomUp (subj 100) @?>>= Right (100 `times` con2 $ a)
             isTooManyIterations =<< eval BottomUp (subj 101)
         , -- con3(f1(con2(a)), f1(con1(con2(b)))) => con3(con2(a), con2(con2(b)))
@@ -225,6 +234,69 @@ test_simplifyConstraint =
         do
             ns <- noSolver
             runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
+
+test_localFixpoint :: TestTree
+test_localFixpoint =
+    -- must run after the iteration-limit test ("Recursive evaluation"),
+    -- whose outcome the temporary budget window below would change
+    -- if the two ran concurrently (the test binary runs tests in
+    -- parallel)
+    after AllFinish "Recursive evaluation" $
+        testCase "In-place rewriting: deeper chains, loop detection, and bounded effort" $ do
+            -- at the default budget of 0 (restart-only evaluation),
+            -- node-level oscillation is detected by the whole-term
+            -- snapshots of the global passes
+            isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+            -- explicit construction instead of record update: the
+            -- field names are shared with EquationConfig, making an
+            -- update ambiguous under DuplicateRecordFields
+            defaults <- readGlobalEquationOptions
+            writeGlobalEquationOptions
+                EquationOptions
+                    { maxIterations = defaults.maxIterations
+                    , maxRecursion = defaults.maxRecursion
+                    , maxLocalSteps = 20
+                    }
+            budgetChecks defaults `finally` writeGlobalEquationOptions defaults
+  where
+    budgetChecks :: EquationOptions -> IO ()
+    budgetChecks defaults = do
+        -- each pass advances a chain by the budget plus one
+        -- application, so depths beyond the restart-only limit of
+        -- maxIterations complete now (the chain rule produces its
+        -- redex inside the RHS, which the in-place recursion follows)
+        evalWith funDef (subj 101) >>= (@?= Right (101 `times` con2 $ start))
+        -- node-level oscillation is detected per local step (cycle
+        -- shorter than the budget)
+        isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+        -- the combined bound (passes times the per-chain budget plus
+        -- one application) still terminates evaluation with a partial
+        -- result: with 10 passes and a budget of 20, a chain of depth
+        -- 300 cannot finish
+        writeGlobalEquationOptions
+            EquationOptions
+                { maxIterations = 10
+                , maxRecursion = defaults.maxRecursion
+                , maxLocalSteps = 20
+                }
+        isTooMany =<< evalWith funDef (subj 300)
+
+    subj depth = app f1 [iterate (apply con1) start !! depth]
+    start = app con2 [a]
+    n `times` f = foldr (.) id (replicate n $ apply f)
+
+    a = var "A" someSort
+    apply f = app f . (: [])
+
+    isLoop (Left (EquationLoop _)) = pure ()
+    isLoop other = assertFailure $ "Expected an equation loop, got " <> show other
+
+    isTooMany (Left (TooManyIterations _ _ _)) = pure ()
+    isTooMany other = assertFailure $ "Expected an iteration-limit abort, got " <> show other
+
+    evalWith def t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm BottomUp def Nothing ns mempty mempty t
 
 test_errors :: TestTree
 test_errors =
