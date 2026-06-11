@@ -17,7 +17,7 @@ jobs:
       version: ${{ steps.make-release.outputs.version }}
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Make release'
         id: 'make-release'
         env:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -52,14 +52,14 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: k-framework
           extraPullNames: k-framework-binary
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: 'Build and Cache'
-        uses: workflow/nix-shell-action@v3
+        uses: workflow/nix-shell-action@v4.0.0
         env:
           GC_DONT_GC: 1
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_PUBLIC_TOKEN }}
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -85,7 +85,7 @@ jobs:
           sudo apt install --yes debhelper z3 libsecp256k1-dev
 
       - name: Cache Stack root
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.stack
           key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
@@ -93,7 +93,7 @@ jobs:
             stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
             stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
-      - uses: haskell-actions/setup@v2.7
+      - uses: haskell-actions/setup@v2.11.0
         id: setup-haskell-stack
         with:
           ghc-version: ${{ env.ghc_version }}
