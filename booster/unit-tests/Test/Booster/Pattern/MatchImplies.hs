@@ -215,24 +215,22 @@ varsAndValues =
 
 {- | A pattern variable that gets matched against two different subject
 positions — one a domain value (constructor-like), one a function
-application (not constructor-like) — is currently reported as a decisive
-'MatchFailed VariableConflict' in 'Implies' mode. That matches what the
-matcher does for 'Eval' but diverges from 'Rewrite', which routes the same
-shape through 'addIndeterminate' because the second term might simplify
-into something equivalent to the first (the comment on 'bindVariable' says
+application (not constructor-like) — must be reported as
+'MatchIndeterminate', because the second term might simplify into
+something equivalent to the first (the comment on 'bindVariable' says
 exactly this).
 
-For 'Implies' this asymmetry causes a soundness gap: the implies handler
-trusts the matcher's decisive verdict and returns a non-'indeterminate'
-@valid:false@, even though kore would simplify the function application
-and find the subsumption. The tests below pin both orderings of the
-rebind; they are expected to fail until 'Implies' mirrors 'Rewrite' in
-'Match.bindVariable'.
+A decisive 'MatchFailed VariableConflict' here (as 'Implies' mode
+returned before this was fixed) would be a soundness gap: the implies
+handler trusts the matcher's decisive verdict and returns a
+non-'indeterminate' @valid:false@, even though simplifying the function
+application could reveal the subsumption. The tests below pin both
+orderings of the rebind.
 -}
 variableRebindMixedDeterminacy :: TestTree
 variableRebindMixedDeterminacy =
     testGroup
-        "Variable rebinding with mixed-determinacy subject (currently failing)"
+        "Variable rebinding with mixed-determinacy subject"
         [ let d = dv someSort "1"
               fnApp = app f1 [dv someSort "x"]
               t1 = app con3 [var "X" someSort, var "X" someSort]

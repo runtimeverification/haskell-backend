@@ -308,20 +308,18 @@ internalSets =
             (success [])
         ]
 
-{- | The matcher in 'Eval' mode currently returns a decisive
-'MatchFailed VariableConflict' when a pattern variable is bound first to
-one term and then to another where the two terms are not both
-constructor-like (e.g. a domain value and a function application). The
-"truth" verdict here is 'MatchIndeterminate', because the function
-application could simplify into the constructor-like term.
+{- | When a pattern variable is bound first to one term and then to
+another where the two terms are not both constructor-like (e.g. a
+domain value and a function application), the verdict must be
+'MatchIndeterminate', because the function application could simplify
+into the constructor-like term.
 
-Because 'handleFunctionEquation' (Pattern.ApplyEquations) routes
-@FailedMatch _@ to @continue@ but @IndeterminateMatch{}@ to @abort@, the
-current behaviour silently skips a higher-priority equation and commits
-to a lower-priority one — a soundness gap for function-equation
-priorities. The tests below pin both orderings of the rebind; they are
-expected to fail until 'Eval' mode mirrors 'Rewrite' / 'Implies' in
-'Match.bindVariable'.
+A decisive 'MatchFailed VariableConflict' here would be a soundness gap
+for function-equation priorities: 'handleFunctionEquation'
+(Pattern.ApplyEquations) routes @FailedMatch _@ to @continue@ but
+@IndeterminateMatch{}@ to @abort@, so a spurious failure silently skips
+a higher-priority equation and commits to a lower-priority one. The
+tests below pin both orderings of the rebind.
 
 The companion soundness regression test lives in
 "Test.Booster.Pattern.ApplyEquations.test_soundnessGap".
@@ -329,7 +327,7 @@ The companion soundness regression test lives in
 variableRebindMixedDeterminacy :: TestTree
 variableRebindMixedDeterminacy =
     testGroup
-        "Variable rebinding with mixed-determinacy subject (currently failing)"
+        "Variable rebinding with mixed-determinacy subject"
         [ let d = dv someSort "1"
               fnApp = app f1 [dv someSort "x"]
               t1 = app con3 [var "X" someSort, var "X" someSort]
@@ -352,20 +350,19 @@ variableRebindMixedDeterminacy =
 
 {- | When the pattern (rule LHS) contains a function application and the
 subject in that position is a structured term — an injection, a map, a
-list, or a set — 'Eval' currently returns a decisive
-'MatchFailed DifferentSymbols'. The "truth" verdict is
-'MatchIndeterminate', because the function application could in
-principle simplify into the corresponding category. The four tests
-mirror the four 'match1' lines that currently @failWith@ in Eval mode
-(@FunctionApplication{}@ paired with @Injection{} / KMap{} / KList{} /
-KSet{}@). The companion case for @DomainValue{}@ is covered by an
-existing test in the 'symbols' group; both flips happen in the impl
-commit.
+list, or a set — the verdict must be 'MatchIndeterminate', because the
+function application could in principle simplify into the corresponding
+category. A decisive 'MatchFailed DifferentSymbols' (as 'Eval' mode
+returned before this was fixed) would unsoundly skip a higher-priority
+function equation. The four tests pin the @FunctionApplication{}@
+pattern paired with @Injection{} / KMap{} / KList{} / KSet{}@ subjects;
+the companion case for @DomainValue{}@ is covered by an existing test
+in the 'symbols' group.
 -}
 functionApplicationAgainstConcreteCategories :: TestTree
 functionApplicationAgainstConcreteCategories =
     testGroup
-        "FunctionApplication pattern against concrete categories (currently failing)"
+        "FunctionApplication pattern against concrete categories"
         [ let pat = app f1 [var "X" someSort]
               subj = Injection aSubsort someSort (dv aSubsort "x")
            in test

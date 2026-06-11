@@ -321,18 +321,18 @@ test_errors =
     isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
     isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
 
-{- | Soundness gap for 'Eval' mode of 'matchTerms': when a pattern
-variable rebinds to two terms that are not both constructor-like (e.g. a
-domain value and a function application), the matcher today returns a
-decisive @MatchFailed VariableConflict@. 'handleFunctionEquation'
-(ApplyEquations.hs) routes @FailedMatch _@ to @continue@, which silently
-skips a higher-priority equation and commits to a lower-priority
-catch-all. Because function-equation priorities are semantically binding,
-this violates the priority contract.
+{- | Soundness regression test for 'Eval' mode of 'matchTerms': when a
+pattern variable rebinds to two terms that are not both constructor-like
+(e.g. a domain value and a function application), the matcher must
+return @MatchIndeterminate@, which routes through
+@IndeterminateMatch{} -> abort@ in 'handleFunctionEquation' and leaves
+the term unchanged so the caller can decide what to do.
 
-Under the proposed fix, the matcher returns @MatchIndeterminate@ for the
-same shape, which routes through @IndeterminateMatch{} -> abort@ and
-leaves the term unchanged so the caller can decide what to do.
+Before this was fixed, the matcher returned a decisive
+@MatchFailed VariableConflict@, which 'handleFunctionEquation' routes to
+@continue@ — silently skipping a higher-priority equation and committing
+to a lower-priority catch-all. Because function-equation priorities are
+semantically binding, that violated the priority contract.
 
 The simplification companion is the dual: simplification priorities are
 advisory, so both @FailedMatch@ and @IndeterminateMatch@ route to
@@ -447,9 +447,10 @@ two equations on @f1@:
 The test subject is @f1(con3(\\dv "a", f2(\\dv "x")))@: when matching
 the priority-40 rule's LHS, the variable @X@ is bound first to
 @\\dv "a"@ (constructor-like) and then to @f2(\\dv "x")@ (a
-'FunctionApplication', not constructor-like). 'Match.bindVariable' in
-'Eval' mode currently returns @MatchFailed VariableConflict@; under the
-proposed fix it would return @MatchIndeterminate@ instead.
+'FunctionApplication', not constructor-like). 'Match.bindVariable'
+returns @MatchIndeterminate@ for this mixed-determinacy rebind (it
+returned a decisive @MatchFailed VariableConflict@ in 'Eval' mode
+before this was fixed).
 -}
 soundnessGapRules :: [RewriteRule t]
 soundnessGapRules =
