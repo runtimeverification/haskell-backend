@@ -284,17 +284,12 @@ match1 Rewrite t1@ConsApplication{}                       (Var t2)              
 match1 _       t1@ConsApplication{}                       t2@Var{}                                   = addIndeterminate t1 t2
 match1 Eval    t1@FunctionApplication{}                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@FunctionApplication{}                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       t1@FunctionApplication{}                   t2@DomainValue{}                           = addIndeterminate t1 t2
-match1 _       t1@FunctionApplication{}                   t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@FunctionApplication{}                   t2@KMap{}                                  = addIndeterminate t1 t2
-match1 _       t1@FunctionApplication{}                   t2@KList{}                                 = addIndeterminate t1 t2
-match1 _       t1@FunctionApplication{}                   t2@KSet{}                                  = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@FunctionApplication{}                   t2@ConsApplication{}                       = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@FunctionApplication{}                   t2@FunctionApplication{}                   = addIndeterminate t1 t2
 match1 Rewrite t1@FunctionApplication{}                   (Var t2)                                   = subjectVariableMatch t1 t2
-match1 _       t1@FunctionApplication{}                   t2@Var{}                                   = addIndeterminate t1 t2
+-- a function application pattern may evaluate to any shape, so matching it
+-- against any other subject is indeterminate in every mode
+match1 _       t1@FunctionApplication{}                   t2                                         = addIndeterminate t1 t2
 match1 Eval    t1@Var{}                                   t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1@Var{}                                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
 match1 matchTy (Var var1)                                 t2@DomainValue{}                           = matchVar matchTy var1 t2
