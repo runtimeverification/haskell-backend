@@ -363,24 +363,36 @@ matchInj
             -- source2 is already handled)
             unless (s1IsSubsort || s2IsSubsort) $
                 failWith (DifferentSorts trm1 trm2)
-            -- Functions may have a more general sort than the actual result.
-            -- This means we cannot simply fail the rewrite: the match is
-            -- indeterminate if the function result is.
-            case (s1IsSubsort, trm2) of
-                (True, FunctionApplication{}) ->
-                    addIndeterminate trm1 trm2
-                _ -> do
-                    -- If the rule has a variable with a supersort of the
-                    -- subject, trm2 can be bound with a suitable injection
-                    case (s2IsSubsort, trm1) of
-                        (True, Var v) ->
-                            bindVariable matchType v (Injection source2 source1 trm2)
-                        _ ->
-                            -- truly different sorts, safe to just fail
-                            failWith $
-                                DifferentSorts
-                                    (Injection source1 target1 trm1)
-                                    (Injection source2 target2 trm2)
+            -- A decisive failure is only sound when neither child can
+            -- change sort: a function application may have a more general
+            -- sort than the actual result, and a variable may be
+            -- instantiated at any subsort of its declared sort. Exactly
+            -- one of the subsort relations holds here (sources differ,
+            -- and the subsort order is antisymmetric).
+            case (trm1, trm2) of
+                (_, FunctionApplication{})
+                    | s1IsSubsort ->
+                        -- the subject child may evaluate into source1
+                        addIndeterminate trm1 trm2
+                (_, Var{})
+                    | s1IsSubsort ->
+                        -- the subject child may be instantiated in source1
+                        addIndeterminate trm1 trm2
+                (Var v, _)
+                    | s2IsSubsort ->
+                        -- pattern variable with a supersort of the subject:
+                        -- bind with a suitable injection
+                        bindVariable matchType v (Injection source2 source1 trm2)
+                (FunctionApplication{}, _)
+                    | s2IsSubsort ->
+                        -- the pattern child may evaluate into source2
+                        addIndeterminate trm1 trm2
+                _ ->
+                    -- both children rigid at incompatible sorts, safe to fail
+                    failWith $
+                        DifferentSorts
+                            (Injection source1 target1 trm1)
+                            (Injection source2 target2 trm2)
 {-# INLINE matchInj #-}
 
 ----- Symbol Applications

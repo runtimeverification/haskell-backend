@@ -33,6 +33,7 @@ test_match_eval =
         , variableRebindMixedDeterminacy
         , functionApplicationAgainstConcreteCategories
         , injectionAgainstBuiltinCollections
+        , injectionChildNarrowing
         ]
 
 symbols :: TestTree
@@ -450,6 +451,48 @@ injectionAgainstBuiltinCollections =
                 emptySet
                 injection
                 (remainder [(emptySet, injection)])
+            ]
+
+{- | Two injections with the same target but different source sorts can
+only be decisively distinguished when neither child can change sort: a
+function-application child may evaluate to a term of a narrower sort,
+and a variable child may be instantiated with one. Whenever the
+narrowable child sits on the wider-sorted side, the verdict is
+'MatchIndeterminate'; only rigid children at incompatible sorts fail
+decisively.
+-}
+injectionChildNarrowing :: TestTree
+injectionChildNarrowing =
+    let dSub = dv aSubsort "x"
+        dSome = dv someSort "y"
+        varSome = var "Y" someSort
+        fnSome = app f1 [dSome]
+     in testGroup
+            "Injection children that may narrow"
+            [ test
+                "subject variable child of wider sort is indeterminate"
+                (Injection aSubsort kItemSort dSub)
+                (Injection someSort kItemSort varSome)
+                (remainder [(dSub, varSome)])
+            , test
+                "subject function child of wider sort is indeterminate"
+                (Injection aSubsort kItemSort dSub)
+                (Injection someSort kItemSort fnSome)
+                (remainder [(dSub, fnSome)])
+            , test
+                "pattern function child of wider sort is indeterminate"
+                (Injection someSort kItemSort fnSome)
+                (Injection aSubsort kItemSort dSub)
+                (remainder [(fnSome, dSub)])
+            , test
+                "rigid children at incompatible sorts fail"
+                (Injection aSubsort kItemSort dSub)
+                (Injection someSort kItemSort dSome)
+                ( failed $
+                    DifferentSorts
+                        (Injection aSubsort kItemSort dSub)
+                        (Injection someSort kItemSort dSome)
+                )
             ]
 
 ----------------------------------------
