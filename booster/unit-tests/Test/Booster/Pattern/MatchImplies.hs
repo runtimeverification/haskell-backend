@@ -181,7 +181,11 @@ varsAndValues =
                 success [("X", someSort, inj aSubsort someSort v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
-           in test "two variables (v1 subsort v2)" v1 v2 $
+           in test "two variables (v1 subsort v2): indeterminate, Y may narrow" v1 v2 $
+                remainder [(v1, v2)]
+        , let v1 = var "X" aSubsort
+              v2 = var "Y" differentSort
+           in test "two variables (disjoint sorts): fail" v1 v2 $
                 failed (DifferentSorts v1 v2)
         , let v1 = var "X" someSort
               v2 = var "X" differentSort

@@ -473,7 +473,20 @@ matchVar
                         if termSort == variableSort
                             then term2
                             else Injection termSort variableSort term2
-                else failWith $ DifferentSorts (Var var) term2
+                else case term2 of
+                    -- The subject's static sort is only an upper bound when
+                    -- the subject can still change shape: a function
+                    -- application may evaluate to a term of a narrower sort,
+                    -- and a variable may be instantiated with one. If the two
+                    -- sorts share a subsort, a match may yet be possible, so
+                    -- defer instead of failing decisively.
+                    FunctionApplication{}
+                        | sortsOverlap subsorts termSort variableSort ->
+                            addIndeterminate (Var var) term2
+                    Var{}
+                        | sortsOverlap subsorts termSort variableSort ->
+                            addIndeterminate (Var var) term2
+                    _ -> failWith $ DifferentSorts (Var var) term2
 
 -- Subject variable matches are currently marked as indeterminate.
 -- The code may be extended to collect these as separate conditional
@@ -851,6 +864,20 @@ checkSubsort subsorts sub sup
                 | otherwise -> do
                     argsCheck <- zipWithM (checkSubsort subsorts) subArgs supArgs
                     pure $ and argsCheck
+
+{- | Whether two sorts can have a common inhabitant, i.e., share a
+   subsort. The subsort sets in the 'SortTable' are reflexive-transitive
+   closures (each sort is a member of its own set), so a non-empty
+   intersection is exactly sort overlap. Sort variables, parametric
+   sorts, and sorts missing from the table cannot be decided here and
+   are conservatively reported as overlapping.
+-}
+sortsOverlap :: SortTable -> Sort -> Sort -> Bool
+sortsOverlap subsorts (SortApp name1 []) (SortApp name2 [])
+    | Just subs1 <- Map.lookup name1 subsorts
+    , Just subs2 <- Map.lookup name2 subsorts =
+        not $ subs1 `Set.disjoint` subs2
+sortsOverlap _ _ _ = True
 
 data SortError
     = FoundSortVariable VarName
