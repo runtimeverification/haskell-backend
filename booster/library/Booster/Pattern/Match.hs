@@ -196,82 +196,72 @@ match1 ::
     Term ->
     StateT MatchState (Except MatchResult) ()
 {- FOURMOLU_DISABLE -}
--- The table is grouped by the pattern (t1) constructor, in a fixed block
--- order: \and patterns/subjects first, then DomainValue, Injection, KMap,
--- KList, KSet, ConsApplication, FunctionApplication, Var. Within each block,
--- rows needing special treatment come first and a catch-all closes the block,
--- so a new Term constructor must be threaded through each block deliberately.
--- Decisive failure is only sound when both sides are rigid (cannot change
--- shape or sort under evaluation or instantiation) and distinct; anything
--- that may still change defers via addIndeterminate.
+-- The matcher defers by default: the final generic rule resolves every pair
+-- not handled earlier to addIndeterminate, which is always sound (the caller
+-- decides what to do with an indeterminate verdict). Every row above it must
+-- justify a stronger outcome: decomposition (\and, same-category descent),
+-- variable binding, or decisive failure. Decisive failure is only sound for
+-- two terms whose top-level categories are rigid (cannot change under
+-- evaluation or instantiation, see isRigidCategory) and distinct. The few
+-- explicit addIndeterminate rows below exist only to shadow a more generic
+-- stronger row that would otherwise capture their cells.
 match1 Implies t1                                         t2                                         | t1 == t2 = pure ()
--- \and in the pattern: defer in Eval mode, decompose otherwise
-match1 Eval    t1@AndTerm{}                               t2@AndTerm{}                               = addIndeterminate t1 t2
+-- \and: Eval mode defers on a subject \and and on a pattern \and facing a
+-- variable (shadowing the decomposition rules below); all other \and cells
+-- decompose, pattern side first
+match1 Eval    t1                                         t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 Eval    t1@AndTerm{}                               t2@Var{}                                   = addIndeterminate t1 t2
 match1 _       (AndTerm t1a t1b)                          t2                                         = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
--- \and in the subject (the pattern is \and-free from here on)
-match1 Eval    t1                                         t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 _       t1                                         (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
--- domain value patterns
-match1 _       (DomainValue s1 t1)                        (DomainValue s2 t2)                        = matchDV s1 t1 s2 t2
-match1 _       t1@DomainValue{}                           t2@FunctionApplication{}                   = addIndeterminate t1 t2
--- match with var on the RHS must be indeterminate when evaluating functions. see: https://github.com/runtimeverification/hs-backend-booster/issues/231
-match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
--- match with var on RHS may lead to branching during rewriting, see https://github.com/runtimeverification/haskell-backend/issues/4100
--- Related cases are currently marked with a special function so they can be identified and changed together later (extending branching functionality)
-match1 _       t1@DomainValue{}                           (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@DomainValue{}                           t2                                         = failWith $ DifferentSymbols t1 t2
--- injection patterns
-match1 _       (Injection source1 target1 trm1)           (Injection source2 target2 trm2)           = matchInj source1 target1 trm1 source2 target2 trm2
--- injection-vs-builtin-collection is indeterminate in both directions under Eval: the injected term
--- may simplify, so a decisive failure would unsoundly skip a higher-priority function equation. This
--- mirrors the commuted KMap/KList/KSet-vs-Injection Eval rows below; non-Eval modes stay decisive.
-match1 Eval    t1@Injection{}                             t2@KMap{}                                  = addIndeterminate t1 t2
-match1 Eval    t1@Injection{}                             t2@KList{}                                 = addIndeterminate t1 t2
-match1 Eval    t1@Injection{}                             t2@KSet{}                                  = addIndeterminate t1 t2
-match1 _       t1@Injection{}                             t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@Injection{}                             (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@Injection{}                             t2@Var{}                                   = addIndeterminate t1 t2
-match1 _       t1@Injection{}                             t2                                         = failWith $ DifferentSymbols t1 t2
--- builtin map patterns
-match1 _       t1@(KMap def1 patKeyVals patRest)          t2@(KMap def2 subjKeyVals subjRest)        = if def1 == def2 then matchMaps def1 patKeyVals patRest subjKeyVals subjRest else failWith $ DifferentSorts t1 t2
-match1 Eval    t1@KMap{}                                  t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@KMap{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KMap{}                                  (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@KMap{}                                  t2@Var{}                                   = addIndeterminate t1 t2
-match1 _       t1@KMap{}                                  t2                                         = failWith $ DifferentSymbols t1 t2
--- builtin list patterns
-match1 _       t1@(KList def1 heads1 rest1)               t2@(KList def2 heads2 rest2)               = if def1 == def2 then matchLists def1 heads1 rest1 heads2 rest2 else failWith $ DifferentSorts t1 t2
-match1 Eval    t1@KList{}                                 t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@KList{}                                 t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KList{}                                 (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@KList{}                                 t2@Var{}                                   = addIndeterminate t1 t2
-match1 _       t1@KList{}                                 t2                                         = failWith $ DifferentSymbols t1 t2
--- builtin set patterns
-match1 _       t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
-match1 Eval    t1@KSet{}                                  t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@KSet{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KSet{}                                  (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@KSet{}                                  t2@Var{}                                   = addIndeterminate t1 t2
-match1 _       t1@KSet{}                                  t2                                         = failWith $ DifferentSymbols t1 t2
--- constructor patterns
-match1 matchTy (ConsApplication symbol1 sorts1 args1)     (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications matchTy symbol1 sorts1 args1 symbol2 sorts2 args2
--- a function-application subject may evaluate to any shape (constructor and
--- function symbol names never coincide, so the former Eval descent through
--- matchSymbolAplications also resolved to indeterminate)
-match1 _       t1@ConsApplication{}                       t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@ConsApplication{}                       (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@ConsApplication{}                       t2@Var{}                                   = addIndeterminate t1 t2
-match1 _       t1@ConsApplication{}                       t2                                         = failWith $ DifferentSymbols t1 t2
--- function application patterns
-match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 Rewrite t1@FunctionApplication{}                   (Var v2)                                   = subjectVariableMatch t1 v2
--- a function application pattern may evaluate to any shape, so matching it
--- against any other subject is indeterminate in every mode
-match1 _       t1@FunctionApplication{}                   t2                                         = addIndeterminate t1 t2
--- variable patterns
+-- variable patterns: bind (or defer/fail on sort grounds, inside matchVar)
 match1 matchTy (Var var1)                                 t2                                         = matchVar matchTy var1 t2
+-- variable subjects: indeterminate. see https://github.com/runtimeverification/hs-backend-booster/issues/231 (Eval)
+match1 Eval    t1                                         t2@Var{}                                   = addIndeterminate t1 t2
+-- match with var on RHS may lead to branching during rewriting, see https://github.com/runtimeverification/haskell-backend/issues/4100
+-- Related cases are marked with a special function so they can be identified and changed together later (extending branching functionality)
+match1 _       t1                                         (Var v2)                                   = subjectVariableMatch t1 v2
+-- same-category pairs descend into their contents
+match1 _       (DomainValue s1 t1)                        (DomainValue s2 t2)                        = matchDV s1 t1 s2 t2
+match1 _       (Injection source1 target1 trm1)           (Injection source2 target2 trm2)           = matchInj source1 target1 trm1 source2 target2 trm2
+match1 _       t1@(KMap def1 patKeyVals patRest)          t2@(KMap def2 subjKeyVals subjRest)        = if def1 == def2 then matchMaps def1 patKeyVals patRest subjKeyVals subjRest else failWith $ DifferentSorts t1 t2
+match1 _       t1@(KList def1 heads1 rest1)               t2@(KList def2 heads2 rest2)               = if def1 == def2 then matchLists def1 heads1 rest1 heads2 rest2 else failWith $ DifferentSorts t1 t2
+match1 _       t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
+match1 matchTy (ConsApplication symbol1 sorts1 args1)     (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications matchTy symbol1 sorts1 args1 symbol2 sorts2 args2
+match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
+-- injection-vs-builtin-collection is indeterminate in both directions under
+-- Eval (the injected term may simplify, and equation LHS sorts may be
+-- misaligned with the subject); these rows shadow the decisive rule below
+match1 Eval    t1@Injection{}                             t2 | isCollection t2                       = addIndeterminate t1 t2
+match1 Eval    t1                                         t2@Injection{} | isCollection t1           = addIndeterminate t1 t2
+-- the remaining rigid pairs are cross-category and can never become equal
+match1 _       t1 t2 | isRigidCategory t1, isRigidCategory t2                                        = failWith $ DifferentSymbols t1 t2
+-- everything else (a function application somewhere, or a future Term
+-- constructor): cannot be decided here, defer
+match1 _       t1                                         t2                                         = addIndeterminate t1 t2
 {- FOURMOLU_ENABLE -}
+
+{- | Whether the term's top-level category is rigid: it cannot change under
+   evaluation or instantiation. Domain values, injections, internalised
+   collections, and constructor applications are rigid: two such terms of
+   different categories can never become equal, so a decisive mismatch is
+   sound. Function applications, variables, and \and terms are not rigid.
+-}
+isRigidCategory :: Term -> Bool
+isRigidCategory = \case
+    DomainValue{} -> True
+    Injection{} -> True
+    KMap{} -> True
+    KList{} -> True
+    KSet{} -> True
+    ConsApplication{} -> True
+    _ -> False
+
+isCollection :: Term -> Bool
+isCollection = \case
+    KMap{} -> True
+    KList{} -> True
+    KSet{} -> True
+    _ -> False
 
 matchDV :: Sort -> ByteString -> Sort -> ByteString -> StateT s (Except MatchResult) ()
 matchDV s1 t1 s2 t2 =
