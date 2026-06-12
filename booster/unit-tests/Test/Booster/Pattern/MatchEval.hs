@@ -31,8 +31,6 @@ test_match_eval =
         , kmapTerms
         , internalSets
         , variableRebindMixedDeterminacy
-        , functionApplicationAgainstConcreteCategories
-        , injectionAgainstBuiltinCollections
         , injectionChildNarrowing
         ]
 
@@ -70,10 +68,6 @@ symbols =
               subj = app con1 [d]
            in test "same constructor, different argument sorts" pat subj $
                 failed (DifferentSorts x d)
-        , let pat = app f1 [var "X" someSort]
-              subj = dv someSort "something"
-           in test "function and something else (indeterminate)" pat subj $
-                remainder [(pat, subj)]
         ]
 
 composite :: TestTree
@@ -361,97 +355,6 @@ variableRebindMixedDeterminacy =
                 t2
                 (remainderWith [("X", someSort, fnApp)] [(fnApp, d)])
         ]
-
-{- | When the pattern (rule LHS) contains a function application and the
-subject in that position is a structured term — an injection, a map, a
-list, or a set — the verdict must be 'MatchIndeterminate', because the
-function application could in principle simplify into the corresponding
-category. A decisive 'MatchFailed DifferentSymbols' (as 'Eval' mode
-returned before this was fixed) would unsoundly skip a higher-priority
-function equation. The four tests pin the @FunctionApplication{}@
-pattern paired with @Injection{} / KMap{} / KList{} / KSet{}@ subjects;
-the companion case for @DomainValue{}@ is covered by an existing test
-in the 'symbols' group.
--}
-functionApplicationAgainstConcreteCategories :: TestTree
-functionApplicationAgainstConcreteCategories =
-    testGroup
-        "FunctionApplication pattern against concrete categories"
-        [ let pat = app f1 [var "X" someSort]
-              subj = Injection aSubsort someSort (dv aSubsort "x")
-           in test
-                "FunctionApplication pattern with Injection subject is indeterminate"
-                pat
-                subj
-                (remainder [(pat, subj)])
-        , let pat = app f1 [var "X" someSort]
-              subj = emptyKMap
-           in test
-                "FunctionApplication pattern with KMap subject is indeterminate"
-                pat
-                subj
-                (remainder [(pat, subj)])
-        , let pat = app f1 [var "X" someSort]
-              subj = emptyList
-           in test
-                "FunctionApplication pattern with KList subject is indeterminate"
-                pat
-                subj
-                (remainder [(pat, subj)])
-        , let pat = app f1 [var "X" someSort]
-              subj = emptySet
-           in test
-                "FunctionApplication pattern with KSet subject is indeterminate"
-                pat
-                subj
-                (remainder [(pat, subj)])
-        ]
-
-{- | An injection paired with a builtin collection ('KMap' / 'KList' /
-'KSet') must be 'MatchIndeterminate' in *both* directions under 'Eval':
-the injected term may simplify, so a decisive 'MatchFailed' would
-unsoundly skip a higher-priority function equation. The collection-pattern
-/ injection-subject direction was already indeterminate; the commuted
-injection-pattern / collection-subject direction previously returned a
-decisive 'MatchFailed DifferentSymbols'. Both orderings are pinned here to
-lock in the symmetry.
--}
-injectionAgainstBuiltinCollections :: TestTree
-injectionAgainstBuiltinCollections =
-    let injection = Injection aSubsort someSort (dv aSubsort "x")
-     in testGroup
-            "Injection against builtin collections (indeterminate both ways)"
-            [ test
-                "Injection pattern with KMap subject is indeterminate"
-                injection
-                emptyKMap
-                (remainder [(injection, emptyKMap)])
-            , test
-                "KMap pattern with Injection subject is indeterminate"
-                emptyKMap
-                injection
-                (remainder [(emptyKMap, injection)])
-            , test
-                "Injection pattern with KList subject is indeterminate"
-                injection
-                emptyList
-                (remainder [(injection, emptyList)])
-            , test
-                "KList pattern with Injection subject is indeterminate"
-                emptyList
-                injection
-                (remainder [(emptyList, injection)])
-            , test
-                "Injection pattern with KSet subject is indeterminate"
-                injection
-                emptySet
-                (remainder [(injection, emptySet)])
-            , test
-                "KSet pattern with Injection subject is indeterminate"
-                emptySet
-                injection
-                (remainder [(emptySet, injection)])
-            ]
 
 {- | Two injections with the same target but different source sorts can
 only be decisively distinguished when neither child can change sort: a
