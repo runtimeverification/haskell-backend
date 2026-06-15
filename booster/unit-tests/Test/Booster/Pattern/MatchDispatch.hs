@@ -108,12 +108,12 @@ grid Eval =
     --  And DV  Inj Map List Set Cons Fun Var
     [ [I, S, S, F, F, F, S, S, I] -- AndTerm
     , [I, S, F, F, F, F, F, I, I] -- DomainValue
-    , [I, F, S, F, F, F, F, I, I] -- Injection
+    , [I, F, S, I, I, I, F, I, I] -- Injection
     , [I, F, I, S, F, F, F, I, I] -- KMap
     , [I, F, I, F, S, F, F, I, I] -- KList
     , [I, F, I, F, F, S, F, I, I] -- KSet
     , [I, F, F, F, F, F, S, I, I] -- ConsApplication
-    , [I, F, F, F, F, F, I, S, I] -- FunctionApplication
+    , [I, I, I, I, I, I, I, S, I] -- FunctionApplication
     , [I, S, S, F, F, F, S, S, S] -- Var
     ]
 grid Implies =
