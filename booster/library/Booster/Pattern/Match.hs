@@ -339,12 +339,23 @@ matchInj
                     | s2IsSubsort ->
                         -- the pattern child may evaluate into source2
                         addIndeterminate trm1 trm2
+                _
+                    | isRigidCategory trm1
+                    , isRigidCategory trm2 ->
+                        -- both children rigid at incompatible sorts: neither can
+                        -- change shape under evaluation or instantiation, so a
+                        -- decisive mismatch is sound
+                        failWith $
+                            DifferentSorts
+                                (Injection source1 target1 trm1)
+                                (Injection source2 target2 trm2)
                 _ ->
-                    -- both children rigid at incompatible sorts, safe to fail
-                    failWith $
-                        DifferentSorts
-                            (Injection source1 target1 trm1)
-                            (Injection source2 target2 trm2)
+                    -- a non-rigid child (a subject variable, or an \and that the
+                    -- caller's ordering does not currently route here) could yet
+                    -- resolve to a compatible sort; defer rather than decide,
+                    -- per the default-indeterminate policy. Using isRigidCategory
+                    -- removes the dependency on match1's ordering for soundness.
+                    addIndeterminate trm1 trm2
 {-# INLINE matchInj #-}
 
 ----- Symbol Applications
@@ -450,6 +461,13 @@ matchVar
                     Var{}
                         | sortsOverlap subsorts termSort variableSort ->
                             addIndeterminate (Var var) term2
+                    -- term2 here is either rigid (its sort is exact) or a
+                    -- function/variable whose sort is disjoint from the
+                    -- variable's (sortsOverlap already deferred the overlapping
+                    -- case): in neither case can evaluation or instantiation
+                    -- bridge the sorts, so a decisive failure is sound. An \and
+                    -- never reaches matchVar (match1 decomposes a subject \and
+                    -- before dispatching a variable pattern).
                     _ -> failWith $ DifferentSorts (Var var) term2
 
 -- Subject variable matches are currently marked as indeterminate.
@@ -784,10 +802,17 @@ bindVariable var term@(Term termAttrs _) = do
             , oldTermAttrs.isConstructorLike ->
                 failWith $ VariableConflict var oldTerm term
             | otherwise ->
-                -- the term in the binding could be _equivalent_
-                -- (not necessarily syntactically equal) to term, so we
-                -- defer rather than fail in every mode: a decisive
-                -- MatchFailed here would skip higher-priority equations.
+                -- A variable already bound to oldTerm is now matched against
+                -- term, and the two are not both constructor-like: they may
+                -- still be _equivalent_ (not syntactically equal), so the match
+                -- cannot be decided here and we defer in every mode. The
+                -- soundness concern is function evaluation: handleFunctionEquation
+                -- treats a MatchFailed as "skip this equation, try the next
+                -- priority" and an indeterminate match as "abort". A spurious
+                -- decisive failure here would let evaluation fall through to a
+                -- lower-priority equation (a higher priority number; priorities
+                -- count up from 1) that should not have been reached. See
+                -- hs-backend-booster issue #231.
                 addIndeterminate oldTerm term
         Nothing -> do
             let
