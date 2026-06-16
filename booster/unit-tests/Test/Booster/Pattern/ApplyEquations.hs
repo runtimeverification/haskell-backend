@@ -14,6 +14,7 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplifyConstraint,
     test_localFixpoint,
     test_errors,
+    test_soundnessGap,
 ) where
 
 import Control.Exception (finally)
@@ -320,6 +321,43 @@ test_errors =
     isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
     isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
 
+{- | Soundness regression test for 'Eval' mode of 'matchTerms': when a
+pattern variable rebinds to two terms that are not both constructor-like
+(e.g. a domain value and a function application), the matcher must
+return @MatchIndeterminate@, which routes through
+@IndeterminateMatch{} -> abort@ in 'handleFunctionEquation' and leaves
+the term unchanged so the caller can decide what to do.
+
+Before this was fixed, the matcher returned a decisive
+@MatchFailed VariableConflict@, which 'handleFunctionEquation' routes to
+@continue@ — silently skipping a higher-priority equation and committing
+to a lower-priority catch-all. Because function-equation priorities are
+semantically binding, that violated the priority contract.
+
+The simplification companion is the dual: simplification priorities are
+advisory, so both @FailedMatch@ and @IndeterminateMatch@ route to
+@continue@ and the behaviour is unchanged. The companion is included to
+pin that simplifications are unaffected by the fix.
+-}
+test_soundnessGap :: TestTree
+test_soundnessGap =
+    testGroup
+        "Eval matcher soundness: mixed-determinacy rebind"
+        [ testCase
+            "Function equations: high-priority indeterminate match aborts, lower-priority rule NOT tried"
+            $ do
+                let subj = [trm| f1{}(con3{}(\dv{SomeSort{}}("a"), f2{}(\dv{SomeSort{}}("x")))) |]
+                ns <- noSolver
+                runNoLoggingT (fst <$> evaluateTerm TopDown soundnessGapFunDef Nothing ns mempty mempty subj)
+                    @?>>= Right subj
+        , testCase "Simplifications: high-priority indeterminate match continues, lower-priority rule fires" $ do
+            let subj = [trm| f1{}(con3{}(\dv{SomeSort{}}("a"), f2{}(\dv{SomeSort{}}("x")))) |]
+                result = [trm| con2{}(con3{}(\dv{SomeSort{}}("a"), f2{}(\dv{SomeSort{}}("x")))) |]
+            ns <- noSolver
+            runNoLoggingT (fst <$> evaluateTerm TopDown soundnessGapSimplDef Nothing ns mempty mempty subj)
+                @?>>= Right result
+        ]
+
 ----------------------------------------
 
 index :: (ByteString -> CellIndex) -> SymbolName -> TermIndex
@@ -397,6 +435,47 @@ loopDef =
                         ]
                     )
                 ]
+        }
+
+{- | Rules used by 'test_soundnessGap'. Both definitions hold the same
+two equations on @f1@:
+
+* Priority 40: @f1(con3(X, X)) = con1(X)@ — narrow pattern that requires
+  the two arguments of @con3@ to be the same.
+* Priority 50: @f1(X) = con2(X)@ — catch-all.
+
+The test subject is @f1(con3(\\dv "a", f2(\\dv "x")))@: when matching
+the priority-40 rule's LHS, the variable @X@ is bound first to
+@\\dv "a"@ (constructor-like) and then to @f2(\\dv "x")@ (a
+'FunctionApplication', not constructor-like). 'Match.bindVariable'
+returns @MatchIndeterminate@ for this mixed-determinacy rebind (it
+returned a decisive @MatchFailed VariableConflict@ in 'Eval' mode
+before this was fixed).
+-}
+soundnessGapRules :: [RewriteRule t]
+soundnessGapRules =
+    [ equation
+        (Just "soundness-gap-pri40")
+        [trm| f1{}(con3{}(X:SomeSort{}, X:SomeSort{})) |]
+        [trm| con1{}(X:SomeSort{}) |]
+        40
+    , equation
+        (Just "soundness-gap-pri50")
+        [trm| f1{}(X:SomeSort{}) |]
+        [trm| con2{}(X:SomeSort{}) |]
+        50
+    ]
+
+soundnessGapFunDef, soundnessGapSimplDef :: KoreDefinition
+soundnessGapFunDef =
+    testDefinition
+        { functionEquations =
+            mkTheory [(index IdxFun "f1", soundnessGapRules)]
+        }
+soundnessGapSimplDef =
+    testDefinition
+        { simplifications =
+            mkTheory [(index IdxFun "f1", soundnessGapRules)]
         }
 
 f1Equations, f2Equations :: [RewriteRule t]
