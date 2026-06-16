@@ -369,6 +369,7 @@ injectionChildNarrowing =
     let dSub = dv aSubsort "x"
         dSome = dv someSort "y"
         varSome = var "Y" someSort
+        varSub = var "Z" aSubsort
         fnSome = app f1 [dSome]
      in testGroup
             "Injection children that may narrow"
@@ -395,6 +396,26 @@ injectionChildNarrowing =
                     DifferentSorts
                         (Injection aSubsort kItemSort dSub)
                         (Injection someSort kItemSort dSome)
+                )
+            , -- Mirror of the wider-sort cases above, but with the non-rigid
+              -- child on the *narrower-sorted* side. Here no evaluation or
+              -- instantiation can bridge the sorts: normalising the narrower
+              -- injection wraps the child in an inj{aSubsort -> someSort}(...),
+              -- which the rigid wider-sorted pattern child (a domain value) can
+              -- never equal, whatever the variable resolves to. So the decisive
+              -- failure is kept rather than deferred. This pins the regression
+              -- behind keeping matchInj's catch-all decisive: broadening it to
+              -- addIndeterminate on any non-rigid child made a KEVM execution
+              -- abort instead of branch (rpc-integration test-3934-smt, where a
+              -- subject function child of a narrower sort took this same path).
+              test
+                "subject variable child of narrower sort fails"
+                (Injection someSort kItemSort dSome)
+                (Injection aSubsort kItemSort varSub)
+                ( failed $
+                    DifferentSorts
+                        (Injection someSort kItemSort dSome)
+                        (Injection aSubsort kItemSort varSub)
                 )
             ]
 
