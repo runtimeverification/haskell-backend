@@ -339,23 +339,17 @@ matchInj
                     | s2IsSubsort ->
                         -- the pattern child may evaluate into source2
                         addIndeterminate trm1 trm2
-                _
-                    | isRigidCategory trm1
-                    , isRigidCategory trm2 ->
-                        -- both children rigid at incompatible sorts: neither can
-                        -- change shape under evaluation or instantiation, so a
-                        -- decisive mismatch is sound
-                        failWith $
-                            DifferentSorts
-                                (Injection source1 target1 trm1)
-                                (Injection source2 target2 trm2)
                 _ ->
-                    -- a non-rigid child (a subject variable, or an \and that the
-                    -- caller's ordering does not currently route here) could yet
-                    -- resolve to a compatible sort; defer rather than decide,
-                    -- per the default-indeterminate policy. Using isRigidCategory
-                    -- removes the dependency on match1's ordering for soundness.
-                    addIndeterminate trm1 trm2
+                    -- The remaining children are rigid (their sorts are exact),
+                    -- or a function/variable at a sort that cannot narrow into
+                    -- the other side (the narrowable directions are deferred by
+                    -- the cases above): a decisive failure is sound. An \and
+                    -- child never reaches matchInj (match1 decomposes a subject
+                    -- \and before dispatching an injection pattern).
+                    failWith $
+                        DifferentSorts
+                            (Injection source1 target1 trm1)
+                            (Injection source2 target2 trm2)
 {-# INLINE matchInj #-}
 
 ----- Symbol Applications
