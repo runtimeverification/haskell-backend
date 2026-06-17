@@ -30,6 +30,8 @@ test_match_eval =
         , composite
         , kmapTerms
         , internalSets
+        , variableRebindMixedDeterminacy
+        , injectionChildNarrowing
         ]
 
 symbols :: TestTree
@@ -66,10 +68,6 @@ symbols =
               subj = app con1 [d]
            in test "same constructor, different argument sorts" pat subj $
                 failed (DifferentSorts x d)
-        , let pat = app f1 [var "X" someSort]
-              subj = dv someSort "something"
-           in test "function and something else" pat subj $
-                failed (DifferentSymbols pat subj)
         ]
 
 composite :: TestTree
@@ -97,8 +95,8 @@ composite =
               b = var "B" someSort
               pat = app con3 [var "X" someSort, var "X" someSort] -- same!
               subj = app con3 [a, b]
-           in test "Matching two constructor argument to be the same (failing)" pat subj $
-                failed (VariableConflict (Variable someSort "X") a b)
+           in test "Matching two constructor argument to be the same (indeterminate)" pat subj $
+                remainderWith [("X", someSort, a)] [(a, b)]
         ]
 
 varsAndValues :: TestTree
@@ -115,8 +113,20 @@ varsAndValues =
                 success [("X", someSort, inj aSubsort someSort v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
-           in test "two variables (v1 subsort v2)" v1 v2 $
+           in test "two variables (v1 subsort v2): indeterminate, Y may narrow" v1 v2 $
+                remainder [(v1, v2)]
+        , let v1 = var "X" aSubsort
+              v2 = var "Y" differentSort
+           in test "two variables (disjoint sorts): fail" v1 v2 $
                 failed (DifferentSorts v1 v2)
+        , let v1 = var "X" aSubsort
+              f = app f1 [dv someSort "y"]
+           in test "var against function call of wider sort: indeterminate, result may narrow" v1 f $
+                remainder [(v1, f)]
+        , let v1 = var "X" differentSort
+              f = app f1 [dv someSort "y"]
+           in test "var against function call of disjoint sort: fail" v1 f $
+                failed (DifferentSorts v1 f)
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
            in test "same variable name, different sort" v1 v2 $
@@ -306,6 +316,109 @@ internalSets =
             (success [])
         ]
 
+{- | When a pattern variable is bound first to one term and then to
+another where the two terms are not both constructor-like (e.g. a
+domain value and a function application), the verdict must be
+'MatchIndeterminate', because the function application could simplify
+into the constructor-like term.
+
+A decisive 'MatchFailed VariableConflict' here would be a soundness gap
+for function-equation priorities: 'handleFunctionEquation'
+(Pattern.ApplyEquations) routes @FailedMatch _@ to @continue@ but
+@IndeterminateMatch{}@ to @abort@, so a spurious failure silently skips
+a higher-priority equation and commits to a lower-priority one. The
+tests below pin both orderings of the rebind.
+
+The companion soundness regression test lives in
+"Test.Booster.Pattern.ApplyEquations.test_soundnessGap".
+-}
+variableRebindMixedDeterminacy :: TestTree
+variableRebindMixedDeterminacy =
+    testGroup
+        "Variable rebinding with mixed-determinacy subject"
+        [ let d = dv someSort "1"
+              fnApp = app f1 [dv someSort "x"]
+              t1 = app con3 [var "X" someSort, var "X" someSort]
+              t2 = app con3 [d, fnApp]
+           in test
+                "Rebind X to a domain value then to a function application is indeterminate"
+                t1
+                t2
+                (remainderWith [("X", someSort, d)] [(d, fnApp)])
+        , let d = dv someSort "1"
+              fnApp = app f1 [dv someSort "x"]
+              t1 = app con3 [var "X" someSort, var "X" someSort]
+              t2 = app con3 [fnApp, d]
+           in test
+                "Rebind X to a function application then to a domain value is indeterminate"
+                t1
+                t2
+                (remainderWith [("X", someSort, fnApp)] [(fnApp, d)])
+        ]
+
+{- | Two injections with the same target but different source sorts can
+only be decisively distinguished when neither child can change sort: a
+function-application child may evaluate to a term of a narrower sort,
+and a variable child may be instantiated with one. Whenever the
+narrowable child sits on the wider-sorted side, the verdict is
+'MatchIndeterminate'; only rigid children at incompatible sorts fail
+decisively.
+-}
+injectionChildNarrowing :: TestTree
+injectionChildNarrowing =
+    let dSub = dv aSubsort "x"
+        dSome = dv someSort "y"
+        varSome = var "Y" someSort
+        varSub = var "Z" aSubsort
+        fnSome = app f1 [dSome]
+     in testGroup
+            "Injection children that may narrow"
+            [ test
+                "subject variable child of wider sort is indeterminate"
+                (Injection aSubsort kItemSort dSub)
+                (Injection someSort kItemSort varSome)
+                (remainder [(dSub, varSome)])
+            , test
+                "subject function child of wider sort is indeterminate"
+                (Injection aSubsort kItemSort dSub)
+                (Injection someSort kItemSort fnSome)
+                (remainder [(dSub, fnSome)])
+            , test
+                "pattern function child of wider sort is indeterminate"
+                (Injection someSort kItemSort fnSome)
+                (Injection aSubsort kItemSort dSub)
+                (remainder [(fnSome, dSub)])
+            , test
+                "rigid children at incompatible sorts fail"
+                (Injection aSubsort kItemSort dSub)
+                (Injection someSort kItemSort dSome)
+                ( failed $
+                    DifferentSorts
+                        (Injection aSubsort kItemSort dSub)
+                        (Injection someSort kItemSort dSome)
+                )
+            , -- Mirror of the wider-sort cases above, but with the non-rigid
+              -- child on the *narrower-sorted* side. Here no evaluation or
+              -- instantiation can bridge the sorts: normalising the narrower
+              -- injection wraps the child in an inj{aSubsort -> someSort}(...),
+              -- which the rigid wider-sorted pattern child (a domain value) can
+              -- never equal, whatever the variable resolves to. So the decisive
+              -- failure is kept rather than deferred. This pins the regression
+              -- behind keeping matchInj's catch-all decisive: broadening it to
+              -- addIndeterminate on any non-rigid child made a KEVM execution
+              -- abort instead of branch (rpc-integration test-3934-smt, where a
+              -- subject function child of a narrower sort took this same path).
+              test
+                "subject variable child of narrower sort fails"
+                (Injection someSort kItemSort dSome)
+                (Injection aSubsort kItemSort varSub)
+                ( failed $
+                    DifferentSorts
+                        (Injection someSort kItemSort dSome)
+                        (Injection aSubsort kItemSort varSub)
+                )
+            ]
+
 ----------------------------------------
 
 test :: String -> Term -> Term -> MatchResult -> TestTree
@@ -322,6 +435,23 @@ success assocs =
 
 failed :: FailReason -> MatchResult
 failed = MatchFailed
+
+remainder :: [(Term, Term)] -> MatchResult
+remainder = MatchIndeterminate mempty . NE.fromList
+
+{- | Like 'remainder' but also asserts a non-empty partial substitution
+from pairs that the matcher resolved before reaching the indeterminate
+pairs.
+-}
+remainderWith :: [(VarName, Sort, Term)] -> [(Term, Term)] -> MatchResult
+remainderWith assocs pairs =
+    MatchIndeterminate
+        ( Map.fromList
+            [ (Variable{variableSort, variableName}, term)
+            | (variableName, variableSort, term) <- assocs
+            ]
+        )
+        (NE.fromList pairs)
 
 errors :: String -> Term -> Term -> TestTree
 errors name pat subj =
