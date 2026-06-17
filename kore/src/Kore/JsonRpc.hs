@@ -470,16 +470,16 @@ respond reqId serverState moduleName runSMT =
                  in Right . Implies $
                         case r of
                             Claim.Implied Nothing ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom) logs Nothing Nothing
+                                ImpliesResult jsonTerm Valid (Just . renderCond sort $ Condition.bottom) logs Nothing
                             Claim.Implied (Just cond) ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond) logs Nothing Nothing
+                                ImpliesResult jsonTerm Valid (Just . renderCond sort $ cond) logs Nothing
                             Claim.NotImplied _ ->
-                                ImpliesResult jsonTerm False Nothing logs Nothing Nothing
+                                ImpliesResult jsonTerm Invalid Nothing logs Nothing
                             Claim.NotImpliedStuck (Just cond) ->
                                 let jsonCond = renderCond sort cond
-                                 in ImpliesResult jsonTerm False (Just jsonCond) logs Nothing Nothing
+                                 in ImpliesResult jsonTerm Invalid (Just jsonCond) logs Nothing
                             Claim.NotImpliedStuck Nothing ->
-                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs Nothing Nothing
+                                ImpliesResult jsonTerm Invalid (Just . renderCond sort $ Condition.bottom) logs Nothing
         Simplify SimplifyRequest{state, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             case verifyIn serializedModule state of
                 Left Error{errorError, errorContext} ->

@@ -2,7 +2,7 @@
     "jsonrpc": "2.0",
     "id": "implies-smt-002",
     "result": {
-        "valid": false,
+        "status": "invalid",
         "implication": {
             "format": "KORE",
             "version": 1,

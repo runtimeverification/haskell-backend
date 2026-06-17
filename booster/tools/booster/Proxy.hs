@@ -227,7 +227,7 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
                                             , "consequent" .= impliesReq.consequent
                                             ]
                                                 <> case koreRes of
-                                                    Right (Implies r) -> ["valid" .= r.valid]
+                                                    Right (Implies r) -> ["status" .= r.status]
                                                     _ -> []
                                         )
                                         ("kore-implies-fallback" :: Text)
@@ -245,7 +245,7 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
                                     , "consequent" .= impliesReq.consequent
                                     ]
                                         <> case koreRes of
-                                            Right (Implies r) -> ["valid" .= r.valid]
+                                            Right (Implies r) -> ["status" .= r.status]
                                             _ -> []
                                 )
                                 ("kore-implies" :: Text)

@@ -241,33 +241,32 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         consequent.term
   where
     -- Single construction point for every implies / does-not-imply result.
-    -- The call sites differ only in 'valid', 'condition', and 'indeterminate';
-    -- centralising the record keeps a future field addition a one-line change.
-    mkResult s l r valid condition indeterminate =
+    -- The call sites differ only in 'status' and 'condition'; centralising
+    -- the record keeps a future field addition a one-line change.
+    mkResult s l r status condition =
         pure . Right . RpcTypes.Implies $
             RpcTypes.ImpliesResult
                 { implication = addHeader $ Kore.Syntax.KJImplies s l r
-                , valid
+                , status
                 , condition
                 , logs = Nothing
-                , indeterminate
                 , haskellLogEntries = Nothing
                 }
 
-    doesNotImply' s condition l r = mkResult s l r False condition Nothing
+    doesNotImply' s condition l r = mkResult s l r RpcTypes.Invalid condition
 
     doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
 
     -- Variant of 'doesNotImply' that flags the result as indeterminate.
-    -- Use at non-decisive 'valid = False' outcomes — the 'MatchIndeterminate'
+    -- Use at non-decisive not-implied outcomes — the 'MatchIndeterminate'
     -- retry-ladder no-progress fall-through and the 'MatchSuccess'
     -- SMT-discharge 'IsUnknown _' branch — so a recover-mode client
-    -- escalates to kore rather than trusting @valid: false@.
+    -- escalates to kore rather than trusting @status: invalid@.
     doesNotImplyIndeterminate s' l r =
-        let s = externaliseSort s' in mkResult s l r False Nothing (Just True)
+        let s = externaliseSort s' in mkResult s l r RpcTypes.Indeterminate Nothing
 
     implies' predicate s l r subst =
-        mkResult s l r True (Just condition) Nothing
+        mkResult s l r RpcTypes.Valid (Just condition)
       where
         condition =
             RpcTypes.Condition
