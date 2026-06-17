@@ -182,7 +182,34 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
             | fromMaybe False impliesReq.assumeDefined || fromMaybe False impliesReq.boosterOnly -> do
                 -- try the booster end-point first
                 (boosterResult, boosterTime) <- Stats.timed $ booster req
+                let koreImpliesFallback reason = do
+                        Booster.Log.withContext CtxProxy $
+                            Booster.Log.logMessage (reason :: Text)
+                        (koreRes, koreTime) <- Stats.timed $ kore req
+                        logStats ImpliesM (boosterTime + koreTime, koreTime)
+                        Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
+                            Booster.Log.logMessage $
+                                WithJsonMessage
+                                    ( object $
+                                        [ "tag" .= ("kore-implies-fallback" :: Text)
+                                        , "antecedent" .= impliesReq.antecedent
+                                        , "consequent" .= impliesReq.consequent
+                                        ]
+                                            <> case koreRes of
+                                                Right (Implies r) -> ["status" .= r.status]
+                                                _ -> []
+                                    )
+                                    ("kore-implies-fallback" :: Text)
+                        pure koreRes
                 case boosterResult of
+                    -- Booster could not decide (indeterminate match / SMT-unknown
+                    -- obligation): escalate to kore so the check still gets a
+                    -- decisive answer.  Skipped under booster-only, where the
+                    -- indeterminate result is returned as-is for the client to act on.
+                    Right (Implies r)
+                        | r.status == Indeterminate
+                        , not (fromMaybe False impliesReq.boosterOnly) ->
+                            koreImpliesFallback "Implies indeterminate in booster. Falling back to kore."
                     res@Right{} -> do
                         logStats ImpliesM (boosterTime, 0)
                         pure res
@@ -210,28 +237,9 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
                                         ("booster-implies-invalid" :: Text)
                             logStats ImpliesM (boosterTime, 0)
                             pure $ Left err
-                        | otherwise -> do
-                            Booster.Log.withContext CtxProxy $
-                                Booster.Log.logMessage . Text.pack $
-                                    "Implies abort in booster: "
-                                        <> fromError err
-                                        <> ". Falling back to kore."
-                            (koreRes, koreTime) <- Stats.timed $ kore req
-                            logStats ImpliesM (boosterTime + koreTime, koreTime)
-                            Booster.Log.withContexts [CtxProxy, CtxAbort, CtxDetail] $
-                                Booster.Log.logMessage $
-                                    WithJsonMessage
-                                        ( object $
-                                            [ "tag" .= ("kore-implies-fallback" :: Text)
-                                            , "antecedent" .= impliesReq.antecedent
-                                            , "consequent" .= impliesReq.consequent
-                                            ]
-                                                <> case koreRes of
-                                                    Right (Implies r) -> ["status" .= r.status]
-                                                    _ -> []
-                                        )
-                                        ("kore-implies-fallback" :: Text)
-                            pure koreRes
+                        | otherwise ->
+                            koreImpliesFallback . Text.pack $
+                                "Implies abort in booster: " <> fromError err <> ". Falling back to kore."
             | otherwise -> do
                 (koreRes, koreTime) <- Stats.timed $ kore req
                 logStats ImpliesM (koreTime, koreTime)
