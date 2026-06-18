@@ -1,8 +1,8 @@
 {
     "jsonrpc": "2.0",
-    "id": "4420703856-001",
+    "id": "implies-smt-004",
     "result": {
-        "status": "invalid",
+        "status": "valid",
         "implication": {
             "format": "KORE",
             "version": 1,
@@ -14,16 +14,17 @@
                     "args": []
                 },
                 "first": {
-                    "tag": "DV",
+                    "tag": "EVar",
+                    "name": "VarACCT'Unds'ID",
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortInt",
                         "args": []
-                    },
-                    "value": "0"
+                    }
                 },
                 "second": {
-                    "tag": "Bottom",
+                    "tag": "EVar",
+                    "name": "VarACCT'Unds'ID",
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortInt",
@@ -49,7 +50,7 @@
                 "format": "KORE",
                 "version": 1,
                 "term": {
-                    "tag": "Bottom",
+                    "tag": "Top",
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortInt",

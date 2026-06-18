@@ -2,7 +2,7 @@
     "jsonrpc": "2.0",
     "id": "4567908768-001",
     "result": {
-        "valid": false,
+        "status": "invalid",
         "implication": {
             "format": "KORE",
             "version": 1,
