@@ -164,9 +164,28 @@ data Condition = Condition
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
+-- | Tri-state verdict of an implication check.
+data ImpliesStatus
+    = -- | The implication holds (the witnessing substitution / predicate is
+      -- carried in 'ImpliesResult.condition').
+      Valid
+    | -- | The implication decisively does not hold (a 'MatchFailed{}', an
+      -- SMT-refuted consequent obligation, or a bottom consequent).
+      Invalid
+    | -- | Booster could not decide: its match check was indeterminate (e.g.
+      -- an unevaluated function blocking unification) and the simplify /
+      -- SMT-discharge ladder did not settle the obligations.  A recover-mode
+      -- client should escalate to kore rather than trust the result.  Kore
+      -- checks are always decisive and never produce this.
+      Indeterminate
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, ConstructorTagModifier '[CamelToKebab]] ImpliesStatus
+
 data ImpliesResult = ImpliesResult
     { implication :: KoreJson
-    , valid :: Bool
+    , status :: ImpliesStatus
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
     , haskellLogEntries :: Maybe [LogLine]

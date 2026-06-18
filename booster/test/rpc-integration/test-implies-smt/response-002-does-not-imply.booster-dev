@@ -1,8 +1,8 @@
 {
     "jsonrpc": "2.0",
-    "id": "4420567456-001",
+    "id": "implies-smt-002",
     "result": {
-        "status": "invalid",
+        "status": "indeterminate",
         "implication": {
             "format": "KORE",
             "version": 1,
@@ -15,7 +15,7 @@
                 },
                 "first": {
                     "tag": "EVar",
-                    "name": "x",
+                    "name": "VarX",
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortInt",
@@ -23,13 +23,13 @@
                     }
                 },
                 "second": {
-                    "tag": "DV",
+                    "tag": "EVar",
+                    "name": "VarX",
                     "sort": {
                         "tag": "SortApp",
                         "name": "SortInt",
                         "args": []
-                    },
-                    "value": "0"
+                    }
                 }
             }
         }
