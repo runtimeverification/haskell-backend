@@ -941,8 +941,9 @@ applyEquation term rule =
                         logMessage ("Equation with existentials" :: Text)
                     lift . throw . InternalError $
                         "Equation with existentials: " <> Text.pack (show rule)
-                -- immediately cancel if not preserving definedness
-                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
+                -- immediately cancel if the rule has a non-empty definedness residual
+                -- (i.e. its definedness obligation does not reduce to #Top)
+                unless (null rule.definednessResidual) $ do
                     throwE
                         ( \ctxt ->
                             ctxt $

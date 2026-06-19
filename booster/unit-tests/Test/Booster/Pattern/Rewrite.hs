@@ -168,6 +168,7 @@ rule ruleLabel lhs rhs priority =
                 }
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
+        , definednessResidual = []
         }
 
 ruleWithRequires :: Maybe Text -> Term -> Term -> Priority -> [Predicate] -> RewriteRule "Rewrite"

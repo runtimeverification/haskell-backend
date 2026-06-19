@@ -19,6 +19,7 @@ module Booster.Pattern.Util (
     checkTermSymbols,
     isConcrete,
     filterTermSymbols,
+    collectUndefinedSubterms,
     sizeOfTerm,
     termVarStats,
     termSymbolStats,
@@ -267,6 +268,60 @@ filterTermSymbols check = cata $ \case
                         <> maybe [elemSym | check elemSym] (filter check [concatSym, elemSym] <>) rest
                 more ->
                     filter check [concatSym, elemSym] <> fromMaybe [] rest <> concat more
+
+{- | Collect the maximal sub-terms rooted at a partial (non-total, non-constructor)
+   symbol — the rule's runtime definedness obligations (each collected term must not
+   evaluate to bottom).  The traversal mirrors @'filterTermSymbols' (not . 'isDefinedSymbol')@
+   case-for-case, so the result is empty exactly when that scan finds no partial symbol;
+   where the scan would report a (partial) collection meta-symbol, the whole collection
+   term is returned as the obligation.
+-}
+collectUndefinedSubterms :: Term -> [Term]
+collectUndefinedSubterms = go
+  where
+    partial = not . isDefinedSymbol
+    go t = case t of
+        SymbolApplication sym _ args
+            | partial sym -> [t]
+            | otherwise -> concatMap go args
+        AndTerm t1 t2 -> go t1 <> go t2
+        DomainValue{} -> []
+        Var{} -> []
+        Injection _ _ inner -> go inner
+        KMap def [] Nothing -> [t | partial (unitSymbol $ KMapMeta def)]
+        KMap def [(k, v)] Nothing -> go k <> go v <> [t | partial (kmapElementSymbol def)]
+        KMap _ [] (Just rest) -> go rest
+        KMap def kvs rest ->
+            [t | partial (concatSymbol $ KMapMeta def) || partial (kmapElementSymbol def)]
+                <> concatMap (\(k, v) -> go k <> go v) kvs
+                <> maybe [] go rest
+        KList def heads Nothing -> case heads of
+            [] -> [t | partial (unitSymbol $ KListMeta def)]
+            [x] -> [t | partial (klistElementSymbol def)] <> go x
+            more ->
+                [t | partial (concatSymbol $ KListMeta def) || partial (klistElementSymbol def)]
+                    <> concatMap go more
+        KList def heads (Just (mid, tails)) ->
+            go mid
+                <> ( let ends = heads <> tails
+                      in if null ends
+                            then []
+                            else
+                                [t | partial (concatSymbol $ KListMeta def) || partial (klistElementSymbol def)]
+                                    <> concatMap go ends
+                   )
+        KSet def elements rest -> case elements of
+            [] -> maybe [t | partial (unitSymbol $ KSetMeta def)] go rest
+            [single] ->
+                go single
+                    <> maybe
+                        [t | partial (klistElementSymbol def)]
+                        (\r -> [t | partial (concatSymbol $ KSetMeta def) || partial (klistElementSymbol def)] <> go r)
+                        rest
+            more ->
+                [t | partial (concatSymbol $ KSetMeta def) || partial (klistElementSymbol def)]
+                    <> maybe [] go rest
+                    <> concatMap go more
 
 -- | Calculate size of a term in bytes
 sizeOfTerm :: Term -> Int

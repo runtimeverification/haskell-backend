@@ -115,16 +115,18 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
                         { rule = r
                         , ceils = requiresCeils <> rhsCeils
                         , newRule =
-                            if null requiresCeils && null rhsCeils
-                                then
-                                    Just
+                            Just $
+                                if null requiresCeils && null rhsCeils
+                                    then -- implication residual empty: rule preserves definedness
+
                                         r
                                             { RewriteRule.attributes = attributes{preserving = Flag True}
                                             , RewriteRule.computedAttributes = computedAttributes{notPreservesDefinednessReasons = []}
+                                            , RewriteRule.definednessResidual = []
                                             }
-                                else -- we could add a case when ceils are fully resolved into predicates, which we would then
-                                -- add to the requires clause of a rule
-                                    Nothing
+                                    else -- attach the leftover implication residual; the rule is applied
+                                    -- only where this discharges (currently: never, matching master)
+                                        r{RewriteRule.definednessResidual = Set.toList (requiresCeils <> rhsCeils)}
                         }
 
         case res of

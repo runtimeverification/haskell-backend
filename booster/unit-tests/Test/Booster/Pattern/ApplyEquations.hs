@@ -37,7 +37,7 @@ import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
-import Booster.Pattern.Util (sortOfTerm)
+import Booster.Pattern.Util (collectUndefinedSubterms, sortOfTerm)
 import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
@@ -533,6 +533,7 @@ equation ruleLabel lhs rhs priority =
                 }
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
+        , definednessResidual = []
         }
 
 withAttributes :: RewriteRule t -> (AxiomAttributes -> AxiomAttributes) -> RewriteRule t
@@ -540,8 +541,16 @@ r@RewriteRule{lhs, attributes, computedAttributes} `withAttributes` f =
     r{lhs, computedAttributes, attributes = f attributes}
 
 withComputedAttributes :: RewriteRule t -> ComputedAxiomAttributes -> RewriteRule t
-r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
-    r{lhs, computedAttributes}
+r@RewriteRule{lhs, rhs} `withComputedAttributes` computedAttributes =
+    r
+        { lhs
+        , computedAttributes
+        , -- keep the residual gate consistent with the (manually set) reasons
+          definednessResidual =
+            if null computedAttributes.notPreservesDefinednessReasons
+                then []
+                else map Right (collectUndefinedSubterms lhs <> collectUndefinedSubterms rhs)
+        }
 
 mkTheory :: [(TermIndex, [RewriteRule t])] -> Theory (RewriteRule t)
 mkTheory = Map.map mkPriorityGroups . Map.fromList
