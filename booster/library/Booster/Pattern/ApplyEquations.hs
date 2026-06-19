@@ -152,6 +152,11 @@ data EquationConfig = EquationConfig
     , maxLocalSteps :: Bound "LocalSteps"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , dischargeDefinedness :: Bool
+    -- ^ when True, a rule blocked by a non-empty static definedness residual gets a
+    -- dynamic discharge attempt (substitute the match, simplify, re-check) before being
+    -- rejected. Set False for the discharge's own nested simplification, so the attempt
+    -- is at most one level deep (no recursive dynamic discharge).
     }
 
 data EquationState = EquationState
@@ -367,6 +372,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , maxLocalSteps = globalEquationOptions.maxLocalSteps
                         , logger
                         , prettyModifiers
+                        , dischargeDefinedness = True
                         }
     -- NB the returned cache assumes the known predicates
     pure (res, endState.cache)
@@ -923,6 +929,45 @@ applyEquations theory handler term = do
                     )
                     err
 
+{- | Dynamic ceil discharge. Given the match substitution and a rule's leftover
+   definedness residual, substitute and simplify each obligation and report whether they
+   are now all trivially satisfied: a @#Ceil(t)@ obligation (@Right t@) when the simplified
+   term has no remaining partial sub-terms (the same "trivially defined" check used at load),
+   a predicate obligation (@Left p@) when it simplifies to @true@.
+
+   The nested simplification runs with 'dischargeDefinedness' disabled, so a rule blocked
+   during the discharge is simply not applied rather than triggering a further (recursive)
+   discharge — the attempt is at most one level deep.
+-}
+dischargeDefinednessResidual ::
+    LoggerMIO io =>
+    Substitution ->
+    [Either Predicate Term] ->
+    EquationT io Bool
+dischargeDefinednessResidual subst residual = do
+    cfg <- getConfig
+    st <- getState
+    and <$> mapM (dischargeObligation cfg st) residual
+  where
+    -- run the residual's simplification in an *isolated* equation state (fresh iteration
+    -- state, copied cache/known predicates) so it cannot corrupt the outer evaluation, and
+    -- with dynamic discharge disabled so it does not recurse (at most one level deep)
+    dischargeObligation cfg st obligation =
+        eqState . lift $ do
+            let substituted = substituteInTerm subst (either coerce id obligation)
+            (result, _) <-
+                runEquationT cfg.definition cfg.llvmApi cfg.smtSolver st.cache st.predicates $
+                    withoutDynamicDischarge (evaluateTerm' BottomUp substituted)
+            pure $ case (obligation, result) of
+                -- #Ceil(t): satisfied once the simplified term has no partial sub-terms
+                (Right{}, Right simplified) -> null (collectUndefinedSubterms simplified)
+                -- predicate obligation: satisfied once it simplifies to true
+                (Left{}, Right simplified) -> simplified == TrueBool
+                (_, Left _) -> False
+
+    withoutDynamicDischarge (EquationT m) =
+        EquationT $ withReaderT (\cfg -> cfg{dischargeDefinedness = False}) m
+
 applyEquation ::
     forall io tag.
     LoggerMIO io =>
@@ -941,18 +986,22 @@ applyEquation term rule =
                         logMessage ("Equation with existentials" :: Text)
                     lift . throw . InternalError $
                         "Equation with existentials: " <> Text.pack (show rule)
-                -- immediately cancel if the rule has a non-empty definedness residual
-                -- (i.e. its definedness obligation does not reduce to #Top)
+                let rejectNotPreservingDefinedness =
+                        throwE
+                            ( \ctxt ->
+                                ctxt $
+                                    logMessage $
+                                        renderOneLineText $
+                                            "Uncertain about definedness of rule due to:"
+                                                <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
+                            , RuleNotPreservingDefinedness
+                            )
+                -- A non-empty static definedness residual blocks the rule. When dynamic
+                -- discharge is enabled we defer the decision to after matching (where the
+                -- match substitution is available); otherwise we reject up front.
                 unless (null rule.definednessResidual) $ do
-                    throwE
-                        ( \ctxt ->
-                            ctxt $
-                                logMessage $
-                                    renderOneLineText $
-                                        "Uncertain about definedness of rule due to:"
-                                            <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-                        , RuleNotPreservingDefinedness
-                        )
+                    discharge <- (.dischargeDefinedness) <$> lift getConfig
+                    unless discharge rejectNotPreservingDefinedness
                 -- immediately cancel if rule has concrete() flag and term has variables
                 when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
                     throwE
@@ -1006,6 +1055,14 @@ applyEquation term rule =
                                                 map (\(k, v) -> pretty' @mods k <+> "->" <+> pretty' @mods v) $
                                                     Map.toList subst
                                         )
+
+                        -- dynamic ceil discharge: substitute the match into the (non-empty)
+                        -- static residual and try to simplify it to trivially-satisfied before
+                        -- committing to the rule. One level deep: the nested simplification runs
+                        -- with discharge disabled, so it does not itself attempt discharge.
+                        unless (null rule.definednessResidual) $ do
+                            discharged <- lift $ dischargeDefinednessResidual subst rule.definednessResidual
+                            unless discharged rejectNotPreservingDefinedness
 
                         -- check required constraints from lhs.
                         -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
