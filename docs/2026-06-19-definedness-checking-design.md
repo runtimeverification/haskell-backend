@@ -231,3 +231,35 @@ The only genuine residual to discharge at runtime is RHS-introduced partiality (
 - Roșu, *Matching Logic* (LMCS 2017) and *Matching Logic Explained* (JLAMP 2021) — `⌈_⌉` semantics, the `∀x. ⌈x⌉` definedness axiom, total vs partial symbol axioms, the `⌈x/y⌉ = (y ≠ 0)` example; OOPSLA'16 *Semantics-Based Program Verifiers* — set-valued application and `∅`-strictness.
 - One-Path (LICS'13) / All-Path (RTA'14) reachability logic — total state model; symbolic states as denotation sets; vacuity of ⊥ instances.
 - This repo: `booster/library/Booster/Definition/Ceil.hs` (PR #402, the static Model-A residual via `ceil(RHS) ∖ ceil(LHS) ∖ ceil(requires)`, with the explicit "assume the configuration is defined … should eventually check"); `Internalise.hs:892` (the conservative LHS∪RHS load scan to be replaced); `ApplyEquations.hs:716` (`master`'s binary definedness gate, to be replaced); PRs #426/#440/#441 (the empirical-caution episode); `docs/2020-06-17-Checking-Implication.md` (the in-repo note that checking `⌈t(X)⌉ ∧ P(X)` "could … infer that the configuration is defined, allowing … subsequent rewriting without generating extra definedness conditions" — assume-defined, in our own docs).
+
+## 9. Implementation status on this branch (`ceil-simplifier`)
+
+What has actually been built so far, and the decisions taken (some made autonomously — flag for review).
+
+### 9.1 What is implemented
+
+1. **Residuals attached to rules.** `RewriteRule` gained `definednessResidual :: [Either Predicate Term]` (`Left p` = residual predicate, `Right t` = unresolved `#Ceil(t)`); a rule preserves definedness iff it is empty. `Pattern.Util.collectUndefinedSubterms` mirrors `filterTermSymbols`. Commit: *"gate rule application on a definedness residual"* — a behaviour-preserving switch of the gate from the `notPreservesDefinednessReasons` boolean to the residual.
+2. **Uniform static computation.** `Definition/Ceil.computeCeilsDefinition` now walks **all three theories** via a polymorphic `computeRuleResidual` parameterised by a `DefinednessFormula`: rewrite → `Implication` (`#Ceil(rhs) ∖ #Ceil(lhs) ∖ #Ceil(requires)`, unchanged from master), function → `ConjunctionArgs` (`#Ceil(args(lhs)) ∧ #Ceil(rhs)`, head excluded), simplification → `Conjunction` (`#Ceil(lhs) ∧ #Ceil(rhs)`). Commit: *"compute ceil residuals uniformly for all rule kinds, per-kind formula"*. Switching a kind's formula is now a one-line change.
+3. **Dynamic discharge.** `ApplyEquations.applyEquation` defers the residual check to after matching and calls `dischargeDefinednessResidual`: substitute the match `σ`, simplify each obligation in an **isolated `runEquationT`** (copied cache/known predicates, fresh iteration state) with discharge disabled, and accept when a `#Ceil(t)` obligation simplifies to a term with no partial sub-terms (the load-time "trivially defined" check) or a predicate simplifies to `true`. Commit: *"dynamic ceil discharge at rule application"* (+ unit tests).
+
+### 9.2 Decisions taken (review these)
+
+- **Dynamic discharge is always on**, not behind a flag. `EquationConfig.dischargeDefinedness` defaults `True` (set in `runEquationT`) and is flipped `False` only for the discharge's own nested simplification, giving a **one-level-deep** guard (no recursive discharge). The earlier per-site `--evaluate-ceils-*` flags were *not* reintroduced; if per-site control is wanted, the flag now exists and just needs threading from `GlobalState`/CLI.
+- **Isolation via a fresh `runEquationT`** (not `local`/`withReaderT` over the live state). An in-place nested simplify corrupted the outer traversal's iteration state (`changed`, cache) — caught by the `f2` unit tests, which returned the whole term unevaluated. The isolated run (copying `cache`/`predicates`) fixes it and mirrors the rebased-out prototype.
+- **Discharge check = the load-time "trivially defined" test**, per the request: `collectUndefinedSubterms == []` for `#Ceil(t)`, `== TrueBool` for predicates. No SMT / path-condition entailment for residual *predicates* yet — only structural/concrete discharge. (Symbolic conditions like `Y =/= 0` provable only from the path condition still do **not** discharge. That is the obvious next increment if wanted.)
+- **`internalise` keeps a cheap raw-scan residual as a fallback**; `computeCeilsDefinition` (run at server load) overwrites it with the real `computeCeil` residual. So a definition loaded *without* the ceil pass is more conservative than one loaded with it, and **the unit tests exercise the fallback** (they do not run `computeCeilsDefinition`), while the per-kind `computeCeil` formulas run at the server.
+- **`notPreservesDefinednessReasons` is retained** (not removed) for the abort message and to select which rules `computeCeilRule` refines. Retiring it is a clean follow-up once the residual is the sole source of truth.
+
+### 9.3 Behaviour change vs master, and validation gaps
+
+- Rewrite rules: unchanged (same implication residual as master).
+- Function/simplification rules: now more permissive — residuals that discharge **at load** (concrete arithmetic, concrete collection distinctness, explicit `#Ceil` rules) and, with dynamic discharge, residuals that discharge **once the match is known** now let the rule apply. Symbolic partial subterms still reject, so the KEVM LHS-partial declines are **not** expected to move (matching the analysis in §8.3); the genuinely-partial-arithmetic family needs the SMT/path-condition step that is not yet built.
+- **Validation:** 982 booster unit tests pass (incl. a positive + negative dynamic-discharge test). The new per-kind `computeCeil` formulas and the always-on dynamic discharge are **not yet exercised against the booster/KEVM integration suite** (needs the K toolchain) — that is the outstanding validation before trusting the behaviour change or flipping anything KEVM-facing.
+
+### 9.4 Commit sequence (on the `#4156` base `163997f9b`)
+
+1. `docs/…definedness-checking-design` — this document.
+2. `…: gate rule application on a definedness residual` — residual field + gate switch (behaviour-preserving).
+3. `Definition/Ceil: compute ceil residuals uniformly for all rule kinds, per-kind formula`.
+4. `Pattern/ApplyEquations: dynamic ceil discharge at rule application`.
+5. `unit-tests/ApplyEquations: tests for dynamic ceil discharge`.
