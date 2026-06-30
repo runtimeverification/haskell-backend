@@ -393,17 +393,25 @@ whileDebugAttemptEquation termLike equation m =
         logEntry (DebugAttemptEquation equation termLike)
             >> m
 
--- | Log when an 'Equation' is actually applied.
+{- | Log when an 'Equation' is actually applied.
+
+The constructor carries the input 'TermLike' (the focal sub-term that matched
+the rule's LHS) alongside the equation and the result 'Pattern'. Carrying the
+input lets 'oneLineJson' emit a 'pre_hash' field that the diagnostic pipeline
+can join against 'DebugTerm' entries (which serialize term contents) to
+recover the input term without redundantly logging it here.
+-}
 data DebugApplyEquation
     = -- | Entered into the log when an equation's result is actually used.
       DebugApplyEquation
         (Equation RewritingVariableName)
+        (TermLike RewritingVariableName)
         (Pattern RewritingVariableName)
     deriving stock (Show)
     deriving stock (GHC.Generic)
 
 instance Pretty DebugApplyEquation where
-    pretty (DebugApplyEquation equation result) =
+    pretty (DebugApplyEquation equation _term result) =
         Pretty.vsep
             [ (Pretty.hsep . catMaybes)
                 [ Just "applied equation"
@@ -444,6 +452,7 @@ instance Entry DebugApplyEquation where
     oneLineDoc
         ( DebugApplyEquation
                 _
+                _
                 Conditional{term}
             ) =
             Pretty.hsep
@@ -453,7 +462,7 @@ instance Entry DebugApplyEquation where
                 ]
     helpDoc _ = "log equation application successes"
 
-    oneLineContextDoc (DebugApplyEquation equation result) =
+    oneLineContextDoc (DebugApplyEquation equation _term result) =
         let equationKind = if isSimplification equation then CtxSimplification else CtxFunction
          in [ equationKind `withId` ruleIdText equation
             , CLNullary CtxSuccess
@@ -461,8 +470,25 @@ instance Entry DebugApplyEquation where
             , CLNullary CtxKoreTerm
             ]
 
-    oneLineJson (DebugApplyEquation _ result) =
-        JSON.toJSON $ Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result
+    -- The JSON body carries the input-term hash (@pre_hash@) and result-term
+    -- hash (@post_hash@) so the diagnostic pipeline can chain equation
+    -- applications without parsing context strings. Both hashes use
+    -- @Data.Hashable.hash@ on the underlying 'TermLike', matching the hash
+    -- that 'DebugTerm' / 'DebugTermContext' emit in their context tags — so a
+    -- consumer indexing 'DebugTerm' entries by hash can resolve @pre_hash@
+    -- back to the full input-term content. The pre-existing @result@ field
+    -- is kept for backwards compatibility; new consumers can ignore it and
+    -- rely on the hash chain.
+    oneLineJson (DebugApplyEquation equation term result) =
+        JSON.object $
+            maybe [] (\lbl -> ["label" JSON..= lbl]) (ruleLabel equation)
+                <> [ "rule_id" JSON..= ruleIdText equation
+                   , "location" JSON..= fmap (renderDefault . pretty) (srcLoc equation)
+                   , "pre_hash" JSON..= showHashHex (hash term)
+                   , "post_hash" JSON..= showHashHex (hash (toTermLike result))
+                   , "result"
+                        JSON..= JSON.toJSON (Kore.Syntax.Json.fromTermLike . getRewritingTerm $ toTermLike result)
+                   ]
 
 {- | Log when an 'Equation' is actually applied.
 
@@ -475,7 +501,8 @@ after 'attemptEquation'.
 debugApplyEquation ::
     MonadLog log =>
     Equation RewritingVariableName ->
+    TermLike RewritingVariableName ->
     Pattern RewritingVariableName ->
     log ()
-debugApplyEquation equation result =
-    logEntry $ DebugApplyEquation equation result
+debugApplyEquation equation term result =
+    logEntry $ DebugApplyEquation equation term result

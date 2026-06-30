@@ -238,6 +238,10 @@ allowedLogLevels =
         )
     , ("TimeProfile", "Logs for timing analysis")
     , ("Timing", "Formerly --print-stats")
+    ,
+        ( "KoreCalls"
+        , "Log structured input/output for every Kore backend invocation (simplify and execute-fallback)"
+        )
     ]
 
 levelToContext :: Map Text [ContextFilter]
@@ -282,6 +286,7 @@ levelToContext =
                 , [ctxt| request*,booster>rewrite*,match|definedness|constraint,abort. |]
                 , [ctxt| request*,proxy. |]
                 , [ctxt| request*,proxy,abort. |]
+                , [ctxt| request*,proxy>abort,detail. |]
                 , [ctxt| request*,booster>failure,abort |]
                 ]
             )
@@ -304,6 +309,18 @@ levelToContext =
             ( "Timing"
             ,
                 [ [ctxt| *>timing |]
+                ]
+            )
+        ,
+            ( "KoreCalls"
+            ,
+                [ [ctxt| request*,proxy>detail. |]
+                ]
+            )
+        ,
+            ( "SimplifyKore"
+            ,
+                [ [ctxt| request*>simplification*|function*,success |]
                 ]
             )
         ]
@@ -383,7 +400,7 @@ parseSMTOptions =
 
 parseEquationOptions :: Parser EquationOptions
 parseEquationOptions =
-    (\x y -> EquationOptions (Bound x) (Bound y))
+    (\x y z -> EquationOptions (Bound x) (Bound y) (Bound z))
         <$> option
             nonnegativeInt
             ( metavar "ITERATION_LIMIT"
@@ -400,9 +417,22 @@ parseEquationOptions =
                 <> value defaultMaxRecursion
                 <> showDefault
             )
+        <*> option
+            nonnegativeInt
+            ( metavar "LOCAL_STEP_LIMIT"
+                <> long "equation-max-local-steps"
+                <> help
+                    "Number of equations applied in place at a rewritten subterm \
+                    \(per chain of in-place rewrites) before restarting the \
+                    \traversal from the top (0, the default, is restart-only \
+                    \evaluation)"
+                <> value defaultMaxLocalSteps
+                <> showDefault
+            )
   where
     defaultMaxIterations = 100
     defaultMaxRecursion = 5
+    defaultMaxLocalSteps = 0
 
 parseRewriteOptions :: Parser RewriteOptions
 parseRewriteOptions =

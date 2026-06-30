@@ -27,6 +27,7 @@ import Deriving.Aeson (
  )
 import GHC.Generics (Generic)
 import GHC.TypeLits
+import Kore.JsonRpc.Types.ContextLog (LogLine)
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
@@ -46,6 +47,8 @@ data ExecuteRequest = ExecuteRequest
     , assumeStateDefined :: !(Maybe Bool)
     , logSuccessfulRewrites :: !(Maybe Bool)
     , logFailedRewrites :: !(Maybe Bool)
+    , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -57,6 +60,8 @@ data ImpliesRequest = ImpliesRequest
     , consequent :: !KoreJson
     , _module :: !(Maybe Text)
     , assumeDefined :: !(Maybe Bool)
+    , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -66,6 +71,8 @@ data ImpliesRequest = ImpliesRequest
 data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
+    , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -75,6 +82,7 @@ data SimplifyRequest = SimplifyRequest
 data AddModuleRequest = AddModuleRequest
     { _module :: Text
     , nameAsId :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -84,6 +92,8 @@ data AddModuleRequest = AddModuleRequest
 data GetModelRequest = GetModelRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
+    , boosterOnly :: !(Maybe Bool)
+    , haskellLogging :: !(Maybe [Text])
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -138,6 +148,7 @@ data ExecuteResult = ExecuteResult
     , rule :: Maybe Text
     , logs :: Maybe [LogEntry]
     , unknownPredicate :: Maybe KoreJson
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -153,11 +164,31 @@ data Condition = Condition
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
+-- | Tri-state verdict of an implication check.
+data ImpliesStatus
+    = -- | The implication holds (the witnessing substitution / predicate is
+      -- carried in 'ImpliesResult.condition').
+      Valid
+    | -- | The implication decisively does not hold (a 'MatchFailed{}', an
+      -- SMT-refuted consequent obligation, or a bottom consequent).
+      Invalid
+    | -- | Booster could not decide: its match check was indeterminate (e.g.
+      -- an unevaluated function blocking unification) and the simplify /
+      -- SMT-discharge ladder did not settle the obligations.  A recover-mode
+      -- client should escalate to kore rather than trust the result.  Kore
+      -- checks are always decisive and never produce this.
+      Indeterminate
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, ConstructorTagModifier '[CamelToKebab]] ImpliesStatus
+
 data ImpliesResult = ImpliesResult
     { implication :: KoreJson
-    , valid :: Bool
+    , status :: ImpliesStatus
     , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -167,21 +198,26 @@ data ImpliesResult = ImpliesResult
 data SimplifyResult = SimplifyResult
     { state :: KoreJson
     , logs :: Maybe [LogEntry]
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
-data AddModuleResult = AddModuleResult {_module :: !Text}
+data AddModuleResult = AddModuleResult
+    { _module :: !Text
+    , haskellLogEntries :: Maybe [LogLine]
+    }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] AddModuleResult
 
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
     , substitution :: Maybe KoreJson
+    , haskellLogEntries :: Maybe [LogLine]
     }
     deriving stock (Generic, Show, Eq)
     deriving

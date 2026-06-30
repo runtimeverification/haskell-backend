@@ -394,7 +394,7 @@ selectDebugApplyEquation ::
     SomeEntry ->
     Bool
 selectDebugApplyEquation options entry
-    | Just (DebugApplyEquation equation _) <- fromEntry entry =
+    | Just (DebugApplyEquation equation _ _) <- fromEntry entry =
         any (flip HashSet.member $ selected options) (Equation.identifiers equation)
     | otherwise = False
 

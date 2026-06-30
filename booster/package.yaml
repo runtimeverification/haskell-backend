@@ -175,6 +175,7 @@ executables:
       - stm
       - text
       - transformers
+      - unliftio
     ghc-options:
     - -rtsopts
     - -threaded

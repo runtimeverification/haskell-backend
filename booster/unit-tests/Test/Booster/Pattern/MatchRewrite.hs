@@ -126,8 +126,33 @@ constructors =
               z = var "Z" someSort
               t1 = app con3 [var "X" someSort, var "X" someSort]
               t2 = app con3 [y, z]
-           in test "Matching the same variable in a constructor (indeterminate)" t1 t2 $
-                remainder [(y, z)]
+           in -- The matcher binds X to Y from the first argument pair and
+              -- only then discovers the conflict on the second pair, which it
+              -- adds to the indeterminate list. The partial substitution is
+              -- exposed alongside the remainder so callers (e.g. applyRule)
+              -- can attempt to falsify the rule's `requires` clause before
+              -- aborting.
+              test "Matching the same variable in a constructor (indeterminate)" t1 t2 $
+                remainderWith [("X", someSort, y)] [(y, z)]
+        , let
+            -- Pattern has structured term in one arg (con1 d), variable in
+            -- the other; subject has the inverse: domain value where the
+            -- pattern has a variable, and a subject-side variable where the
+            -- pattern has a structured term.
+            -- Resolved pair: (P, d_other) -> P ↦ d_other.
+            -- Indeterminate pair: (con1(d), V) -> structured pattern vs.
+            -- subject-side variable.
+            -- This mirrors the `#addr [OP]` shape: one cell's match binds
+            -- variables cleanly, another cell's match is indeterminate.
+            d = dv someSort "thing"
+            dOther = dv someSort "other"
+            v = var "V" someSort
+            c1d = app con1 [d]
+            t1 = app con3 [var "P" someSort, c1d]
+            t2 = app con3 [dOther, v]
+           in
+            test "Structured/var pattern with mixed-determinacy subject" t1 t2 $
+                remainderWith [("P", someSort, dOther)] [(c1d, v)]
         ]
 
 functions :: TestTree
@@ -180,7 +205,11 @@ varsAndValues =
                 success [("X", someSort, inj aSubsort someSort v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
-           in test "two variables (v1 subsort v2)" v1 v2 $
+           in test "two variables (v1 subsort v2): indeterminate, Y may narrow" v1 v2 $
+                remainder [(v1, v2)]
+        , let v1 = var "X" aSubsort
+              v2 = var "Y" differentSort
+           in test "two variables (disjoint sorts): fail" v1 v2 $
                 failed (DifferentSorts v1 v2)
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
@@ -514,7 +543,20 @@ failed :: FailReason -> MatchResult
 failed = MatchFailed
 
 remainder :: [(Term, Term)] -> MatchResult
-remainder = MatchIndeterminate . NE.fromList
+remainder = MatchIndeterminate mempty . NE.fromList
+
+{- | Like 'remainder' but also asserts a non-empty partial substitution from
+pairs that the matcher resolved before reaching the indeterminate pairs.
+-}
+remainderWith :: [(VarName, Sort, Term)] -> [(Term, Term)] -> MatchResult
+remainderWith assocs pairs =
+    MatchIndeterminate
+        ( Map.fromList
+            [ (Variable{variableSort, variableName}, term)
+            | (variableName, variableSort, term) <- assocs
+            ]
+        )
+        (NE.fromList pairs)
 
 sortErr :: SortError -> MatchResult
 sortErr = MatchFailed . SubsortingError

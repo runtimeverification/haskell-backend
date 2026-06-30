@@ -231,6 +231,7 @@ respond reqId serverState moduleName runSMT =
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
                                         , unknownPredicate = Nothing
+                                        , haskellLogEntries = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -247,6 +248,7 @@ respond reqId serverState moduleName runSMT =
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
                                         , unknownPredicate = Nothing
+                                        , haskellLogEntries = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -263,6 +265,7 @@ respond reqId serverState moduleName runSMT =
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
                                         , unknownPredicate = Nothing
+                                        , haskellLogEntries = Nothing
                                         }
                     GraphTraversal.Stopped
                         [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
@@ -279,6 +282,7 @@ respond reqId serverState moduleName runSMT =
                                                 Just $ map (patternToExecState False sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs rules
                                             , unknownPredicate = Nothing
+                                            , haskellLogEntries = Nothing
                                             }
                             | Just rule <- containsLabelOrRuleId rules terminalRules ->
                                 Right $
@@ -291,6 +295,7 @@ respond reqId serverState moduleName runSMT =
                                             , nextStates = Nothing
                                             , logs = mkLogs rules
                                             , unknownPredicate = Nothing
+                                            , haskellLogEntries = Nothing
                                             }
                             | otherwise ->
                                 Right $
@@ -304,6 +309,7 @@ respond reqId serverState moduleName runSMT =
                                                 Just $ map (patternToExecState True sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs rules
                                             , unknownPredicate = Nothing
+                                            , haskellLogEntries = Nothing
                                             }
                     GraphTraversal.TimedOut
                         Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
@@ -318,6 +324,7 @@ respond reqId serverState moduleName runSMT =
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
                                         , unknownPredicate = Nothing
+                                        , haskellLogEntries = Nothing
                                         }
                     -- these are programmer errors
                     result@GraphTraversal.Aborted{} ->
@@ -463,16 +470,16 @@ respond reqId serverState moduleName runSMT =
                  in Right . Implies $
                         case r of
                             Claim.Implied Nothing ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom) logs
+                                ImpliesResult jsonTerm Valid (Just . renderCond sort $ Condition.bottom) logs Nothing
                             Claim.Implied (Just cond) ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond) logs
+                                ImpliesResult jsonTerm Valid (Just . renderCond sort $ cond) logs Nothing
                             Claim.NotImplied _ ->
-                                ImpliesResult jsonTerm False Nothing logs
+                                ImpliesResult jsonTerm Invalid Nothing logs Nothing
                             Claim.NotImpliedStuck (Just cond) ->
                                 let jsonCond = renderCond sort cond
-                                 in ImpliesResult jsonTerm False (Just jsonCond) logs
+                                 in ImpliesResult jsonTerm Invalid (Just jsonCond) logs Nothing
                             Claim.NotImpliedStuck Nothing ->
-                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
+                                ImpliesResult jsonTerm Invalid (Just . renderCond sort $ Condition.bottom) logs Nothing
         Simplify SimplifyRequest{state, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             case verifyIn serializedModule state of
                 Left Error{errorError, errorContext} ->
@@ -505,6 +512,7 @@ respond reqId serverState moduleName runSMT =
                                             TermLike.mapVariables getRewritingVariable $
                                                 OrPattern.toTermLike sort result
                                     , logs = allLogs
+                                    , haskellLogEntries = Nothing
                                     }
         AddModule AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
             let nameAsId = fromMaybe False nameAsId'
@@ -557,7 +565,8 @@ respond reqId serverState moduleName runSMT =
                                             }
                                     else -- the module already exists so we don't need to add it again
                                         st
-                        pure . AddModule $ AddModuleResult (getModuleName moduleHash)
+                        pure . AddModule $
+                            AddModuleResult{_module = getModuleName moduleHash, haskellLogEntries = Nothing}
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
                             withExceptT
@@ -612,7 +621,8 @@ respond reqId serverState moduleName runSMT =
                                         Map.insert (coerce moduleHash) _module receivedModules
                                 }
 
-                        pure . AddModule $ AddModuleResult (getModuleName moduleHash)
+                        pure . AddModule $
+                            AddModuleResult{_module = getModuleName moduleHash, haskellLogEntries = Nothing}
         GetModel GetModelRequest{state, _module} ->
             withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
@@ -648,11 +658,13 @@ respond reqId serverState moduleName runSMT =
                                     GetModelResult
                                         { satisfiable = Unknown
                                         , substitution = Nothing
+                                        , haskellLogEntries = Nothing
                                         }
                                 Left True ->
                                     GetModelResult
                                         { satisfiable = Unsat
                                         , substitution = Nothing
+                                        , haskellLogEntries = Nothing
                                         }
                                 Right subst ->
                                     GetModelResult
@@ -660,6 +672,7 @@ respond reqId serverState moduleName runSMT =
                                         , substitution =
                                             PatternJson.fromSubstitution sort $
                                                 Substitution.mapVariables getRewritingVariable subst
+                                        , haskellLogEntries = Nothing
                                         }
 
         -- this case is only reachable if the cancel appeared as part of a batch request
@@ -732,6 +745,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
         jsonRpcServer
             srvSettings
             False -- no bound threads
+            (\_ -> return ())
             ( \req parsed ->
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond (fromId $ getReqId req) serverState mainModule runSMT parsed
