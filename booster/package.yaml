@@ -182,7 +182,9 @@ executables:
 
 tests:
   unit-tests:
-    source-dirs: unit-tests
+    source-dirs:
+      - unit-tests
+      - bench-fixtures
     main: Driver.hs
     build-tools:
       - tasty-discover:tasty-discover
@@ -249,14 +251,12 @@ tests:
       - process
       - text
       - transformers
-    ghc-options:
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
 
 benchmarks:
   booster-bench:
-    source-dirs: bench
+    source-dirs:
+      - bench
+      - bench-fixtures
     main: Main.hs
     dependencies:
       - base

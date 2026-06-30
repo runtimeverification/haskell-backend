@@ -2,29 +2,54 @@
 
 module Main (main) where
 
-import BenchData
+import Control.DeepSeq (force)
+import Data.List (dropWhileEnd)
+import System.Environment (lookupEnv)
+import Text.Read (readMaybe)
+
+import Booster.Benchmark.Data
 import Booster.Benchmark.Ops
 import Booster.Pattern.Base
 import Test.Tasty.Bench
 
 main :: IO ()
-main =
+main = do
+    sizes <- resolveSizes benchmarkSizes
+    matchSizes <- resolveSizes matchMapBenchSizes
+    pipeSizes <- resolveSizes pipelineBenchSizes
     defaultMain
-        [ bgroup "kmap" (map kmapBenchFor benchmarkSizes)
-        , bgroup "kset" (map ksetBenchFor benchmarkSizes)
-        , bgroup "klist" (map klistBenchFor benchmarkSizes)
-        , pipelineBenchmarks
+        [ bgroup "kmap" (map kmapBenchFor sizes)
+        , bgroup "kset" (map ksetBenchFor sizes)
+        , bgroup "klist" (map klistBenchFor sizes)
+        , pipelineBenchmarks matchSizes pipeSizes
         ]
+
+{- | Benchmark sizes default to the fixture list but can be overridden via the
+@BENCH_SIZES@ environment variable (comma-separated), e.g. @BENCH_SIZES=10@
+for a fast smoke run. A malformed or empty value falls back to the default.
+-}
+resolveSizes :: [Int] -> IO [Int]
+resolveSizes def = do
+    mEnv <- lookupEnv "BENCH_SIZES"
+    pure $ case mEnv >>= parseSizes of
+        Just sizes@(_ : _) -> sizes
+        _ -> def
+  where
+    parseSizes = traverse (readMaybe . trim) . splitOn ','
+    splitOn c s = case break (== c) s of
+        (chunk, _ : rest) -> chunk : splitOn c rest
+        (chunk, []) -> [chunk]
+    trim = dropWhileEnd (== ' ') . dropWhile (== ' ')
 
 kmapBenchFor :: Int -> Benchmark
 kmapBenchFor size =
-    let mapTerm = mkMapTerm size
-        existingKey = mkLookupExistingKey size
-        missingKey = mkLookupMissingKey size
-        insertKey = mkInsertKey size
-        insertValue = mkUpdatedValue (size + 1)
-        updateValue = mkUpdatedValue (size + 2)
-        duplicatePairs = case mapTerm of
+    let !mapTerm = force (mkMapTerm size)
+        !existingKey = force (mkLookupExistingKey size)
+        !missingKey = force (mkLookupMissingKey size)
+        !insertKey = force (mkInsertKey size)
+        !insertValue = force (mkUpdatedValue (size + 1))
+        !updateValue = force (mkUpdatedValue (size + 2))
+        !duplicatePairs = force $ case mapTerm of
             KMap _ pairs _ -> pairs <> reverse pairs
             _ -> []
         coreBenches =
@@ -47,10 +72,10 @@ kmapBenchFor size =
 
 ksetBenchFor :: Int -> Benchmark
 ksetBenchFor size =
-    let leftSet = mkSetTerm size
-        rightSet = mkSetTerm (max 1 (size `div` 2))
-        probe = mkSetElement (max 1 (size `div` 3))
-        duplicateElements = case leftSet of
+    let !leftSet = force (mkSetTerm size)
+        !rightSet = force (mkSetTerm (max 1 (size `div` 2)))
+        !probe = force (mkSetElement (max 1 (size `div` 3)))
+        !duplicateElements = force $ case leftSet of
             KSet _ elements _ -> elements <> reverse elements
             _ -> []
         coreBenches =
@@ -70,8 +95,8 @@ ksetBenchFor size =
 
 klistBenchFor :: Int -> Benchmark
 klistBenchFor size =
-    let listTerm = mkListTerm size
-        concatRhs = mkListConcatRhs size
+    let !listTerm = force (mkListTerm size)
+        !concatRhs = force (mkListConcatRhs size)
         idxMiddle = size `div` 2
         idxLast = max 0 (size - 1)
         rangeTrim = max 0 (size `div` 4)
@@ -89,13 +114,13 @@ klistBenchFor size =
             ("size-" <> show size)
             (coreBenches <> whenSizeAtMost 10000 size heavyBenches)
 
-pipelineBenchmarks :: Benchmark
-pipelineBenchmarks =
+pipelineBenchmarks :: [Int] -> [Int] -> Benchmark
+pipelineBenchmarks matchSizes pipeSizes =
     bgroup
         "pipeline"
-        [ bgroup "kmap-matchMaps" (map mapMatchBenchFor matchMapBenchSizes)
-        , bgroup "ord-term" (map ordBenchFor pipelineBenchSizes)
-        , bgroup "substitution" (map substitutionBenchFor pipelineBenchSizes)
+        [ bgroup "kmap-matchMaps" (map mapMatchBenchFor matchSizes)
+        , bgroup "ord-term" (map ordBenchFor pipeSizes)
+        , bgroup "substitution" (map substitutionBenchFor pipeSizes)
         , bench "full-single-rule-pipeline" $ nfIO runPipelineOnce
         ]
 
@@ -107,8 +132,8 @@ pipelineBenchSizes = [10, 100, 1000, 5000]
 
 mapMatchBenchFor :: Int -> Benchmark
 mapMatchBenchFor size =
-    let patternMap = mkPatternMapForMatch size
-        subjectMap = mkSubjectMapForMatch size
+    let !patternMap = force (mkPatternMapForMatch size)
+        !subjectMap = force (mkSubjectMapForMatch size)
      in bgroup
             ("size-" <> show size)
             [ bench "matchMaps" $ whnf (\(p, s) -> matchMapTerms p s) (patternMap, subjectMap)
@@ -121,12 +146,13 @@ whenSizeAtMost limit size benchmarks
 
 ordBenchFor :: Int -> Benchmark
 ordBenchFor size =
-    let left = mkMapTerm size
-        right =
-            case mkMapTerm size of
-                KMap def pairs rest ->
-                    KMap def ((mkInsertKey (size + 7), mkUpdatedValue (size + 7)) : pairs) rest
-                other -> other
+    let !left = force (mkMapTerm size)
+        !right =
+            force $
+                case mkMapTerm size of
+                    KMap def pairs rest ->
+                        KMap def ((mkInsertKey (size + 7), mkUpdatedValue (size + 7)) : pairs) rest
+                    other -> other
      in bgroup
             ("size-" <> show size)
             [ bench "derived" $ whnf (\(a, b) -> compare a b) (left, right)
@@ -135,10 +161,10 @@ ordBenchFor size =
 
 substitutionBenchFor :: Int -> Benchmark
 substitutionBenchFor size =
-    let unchangedKeyMap = mkMapWithValueVariables size
-        unchangedKeySubst = mkValueSubstitution size
-        changedKeyMap = mkMapWithKeyVariables size
-        changedKeySubst = mkKeySubstitution size
+    let !unchangedKeyMap = force (mkMapWithValueVariables size)
+        !unchangedKeySubst = force (mkValueSubstitution size)
+        !changedKeyMap = force (mkMapWithKeyVariables size)
+        !changedKeySubst = force (mkKeySubstitution size)
      in bgroup
             ("size-" <> show size)
             [ bench "unchanged-keys" $

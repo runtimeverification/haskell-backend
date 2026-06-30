@@ -237,8 +237,6 @@ library
       Booster.Builtin.KEQUAL
       Booster.Builtin.LIST
       Booster.Builtin.MAP
-      Booster.Benchmark.Data
-      Booster.Benchmark.Ops
       Booster.CLOptions
       Booster.Definition.Attributes.Base
       Booster.Definition.Attributes.Reader
@@ -451,7 +449,7 @@ test-suite predicates-integration
       test/predicates-integration
   default-extensions:
       BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6
   build-depends:
       base
     , bytestring
@@ -493,9 +491,12 @@ test-suite unit-tests
       Test.Booster.Syntax.Json.Internalise
       Test.Booster.Syntax.ParsedKore.Parser
       Test.Booster.Util
+      Booster.Benchmark.Data
+      Booster.Benchmark.Ops
       Paths_hs_backend_booster
   hs-source-dirs:
       unit-tests
+      bench-fixtures
   default-extensions:
       BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
@@ -525,10 +526,12 @@ benchmark booster-bench
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      BenchData
+      Booster.Benchmark.Data
+      Booster.Benchmark.Ops
       Paths_hs_backend_booster
   hs-source-dirs:
       bench
+      bench-fixtures
   default-extensions:
       BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
