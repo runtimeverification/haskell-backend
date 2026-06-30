@@ -59,10 +59,6 @@ hie.yaml
 /booster/test/*/definition/*kompiled/
 /booster/benchmarks.csv
 /booster/booster-bench.hp
-/plan.md
 
 # the LLVM bindings from ./booster/cbits are symlinked to the root ./cbits to make HLS work
 /cbits
-
-# git worktrees
-/.worktrees/
