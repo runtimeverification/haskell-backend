@@ -1,0 +1,37 @@
+{
+    "jsonrpc": "2.0",
+    "id": "implies-smt-005",
+    "result": {
+        "status": "indeterminate",
+        "implication": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "Implies",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortInt",
+                    "args": []
+                },
+                "first": {
+                    "tag": "EVar",
+                    "name": "VarX",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                },
+                "second": {
+                    "tag": "EVar",
+                    "name": "VarX",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                }
+            }
+        }
+    }
+}

@@ -364,6 +364,7 @@ library
     Kore.Log.ErrorRewriteLoop
     Kore.Log.ErrorRewritesInstantiation
     Kore.Log.ErrorVerify
+    Kore.Log.LogCapture
     Kore.Log.DebugAttemptUnification
     Kore.Log.DebugContext
     Kore.Log.JsonRpc

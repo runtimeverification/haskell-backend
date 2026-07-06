@@ -51,7 +51,12 @@ data MatchResult
     | -- | different constructors or domain values, or sort mismatch
       MatchFailed FailReason
     | -- | (other) cases that are unresolved (offending case in head position).
-      MatchIndeterminate (NonEmpty (Term, Term))
+      --
+      -- The first field carries the /partial/ substitution accumulated from
+      -- pairs that did resolve before the indeterminate pairs were encountered;
+      -- any successful extension of the match must extend this substitution,
+      -- so callers may use it to prune via a side-condition check.
+      MatchIndeterminate Substitution (NonEmpty (Term, Term))
     deriving stock (Eq, Show)
 
 data MatchType = Rewrite | Eval | Implies deriving (Eq)
@@ -139,7 +144,7 @@ matchTerms matchType KoreDefinition{sorts} term1 term2 =
      in if matchType /= Implies && (not $ Set.null sharedVars)
             then case matchType of
                 Rewrite ->
-                    MatchIndeterminate $
+                    MatchIndeterminate Map.empty $
                         NE.fromList
                             [(Var v, Var v) | v <- Set.toList sharedVars]
                 Eval -> MatchFailed $ SharedVariables sharedVars
@@ -183,129 +188,81 @@ match matchType = do
 checkIndeterminate :: StateT MatchState (Except MatchResult) ()
 checkIndeterminate = do
     indeterminate <- gets mIndeterminate
-    unless (null indeterminate) . lift $
-        throwE (MatchIndeterminate $ NE.fromList indeterminate)
+    unless (null indeterminate) $ do
+        partialSubst <- gets mSubstitution
+        lift $ throwE (MatchIndeterminate partialSubst $ NE.fromList indeterminate)
 match1 ::
     MatchType ->
     Term ->
     Term ->
     StateT MatchState (Except MatchResult) ()
 {- FOURMOLU_DISABLE -}
+-- The matcher defers by default: the final generic rule resolves every pair
+-- not handled earlier to addIndeterminate, which is always sound (the caller
+-- decides what to do with an indeterminate verdict). Every row above it must
+-- justify a stronger outcome: decomposition (\and, same-category descent),
+-- variable binding, or decisive failure. Decisive failure is only sound for
+-- two terms whose top-level categories are rigid (cannot change under
+-- evaluation or instantiation, see isRigidCategory) and distinct. The few
+-- explicit addIndeterminate rows below exist only to shadow a more generic
+-- stronger row that would otherwise capture their cells.
 match1 Implies t1                                         t2                                         | t1 == t2 = pure ()
-match1 Eval    t1@AndTerm{}                               t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       (AndTerm t1a t1b)                          t2@AndTerm{}                               = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@DomainValue{}                           = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@Injection{}                             = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@KMap{}                                  = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@KList{}                                 = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@KSet{}                                  = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@ConsApplication{}                       = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 _       (AndTerm t1a t1b)                          t2@FunctionApplication{}                   = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
+-- \and: Eval mode defers on a subject \and and on a pattern \and facing a
+-- variable (shadowing the decomposition rules below); all other \and cells
+-- decompose, pattern side first
+match1 Eval    t1                                         t2@AndTerm{}                               = addIndeterminate t1 t2
 match1 Eval    t1@AndTerm{}                               t2@Var{}                                   = addIndeterminate t1 t2
-match1 _       (AndTerm t1a t1b)                          t2@Var{}                                   = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
-match1 Eval    t1@DomainValue{}                           t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@DomainValue{}                           (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       (DomainValue s1 t1)                        (DomainValue s2 t2)                        = matchDV s1 t1 s2 t2
-match1 _       t1@DomainValue{}                           t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
-match1 _       t1@DomainValue{}                           t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@DomainValue{}                           t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@DomainValue{}                           t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@DomainValue{}                           t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
-match1 _       t1@DomainValue{}                           t2@FunctionApplication{}                   = addIndeterminate t1 t2
--- match with var on the RHS must be indeterminate when evaluating functions. see: https://github.com/runtimeverification/hs-backend-booster/issues/231
-match1 Eval    t1@DomainValue{}                           t2@Var{}                                   = addIndeterminate t1 t2
+match1 _       (AndTerm t1a t1b)                          t2                                         = enqueueRegularProblem t1a t2 >> enqueueRegularProblem t1b t2
+match1 _       t1                                         (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
+-- variable patterns: bind (or defer/fail on sort grounds, inside matchVar)
+match1 matchTy (Var var1)                                 t2                                         = matchVar matchTy var1 t2
+-- variable subjects: indeterminate. see https://github.com/runtimeverification/hs-backend-booster/issues/231 (Eval)
+match1 Eval    t1                                         t2@Var{}                                   = addIndeterminate t1 t2
 -- match with var on RHS may lead to branching during rewriting, see https://github.com/runtimeverification/haskell-backend/issues/4100
--- Related cases are currently marked with a special function so they can be identified and changed together later (extending branching functionality)
-match1 Rewrite t1@DomainValue{}                           (Var v2)                                   = subjectVariableMatch t1 v2
-match1 Implies t1@DomainValue{}                           (Var v2)                                   = subjectVariableMatch t1 v2
-match1 Eval    t1@Injection{}                             t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@Injection{}                             (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       t1@Injection{}                             t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
-match1 matchTy (Injection source1 target1 trm1)           (Injection source2 target2 trm2)           = matchInj matchTy source1 target1 trm1 source2 target2 trm2
-match1 _       t1@Injection{}                             t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@Injection{}                             t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@Injection{}                             t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@Injection{}                             t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
-match1 _       t1@Injection{}                             t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@Injection{}                             (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@Injection{}                             t2@Var{}                                   = addIndeterminate t1 t2
-match1 Eval    t1@KMap{}                                  t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@KMap{}                                  (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       t1@KMap{}                                  t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
-match1 Eval    t1@KMap{}                                  t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@KMap{}                                  t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
+-- Related cases are marked with a special function so they can be identified and changed together later (extending branching functionality)
+match1 _       t1                                         (Var v2)                                   = subjectVariableMatch t1 v2
+-- same-category pairs descend into their contents
+match1 _       (DomainValue s1 t1)                        (DomainValue s2 t2)                        = matchDV s1 t1 s2 t2
+match1 _       (Injection source1 target1 trm1)           (Injection source2 target2 trm2)           = matchInj source1 target1 trm1 source2 target2 trm2
 match1 _       t1@(KMap def1 patKeyVals patRest)          t2@(KMap def2 subjKeyVals subjRest)        = if def1 == def2 then matchMaps def1 patKeyVals patRest subjKeyVals subjRest else failWith $ DifferentSorts t1 t2
-match1 _       t1@KMap{}                                  t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KMap{}                                  t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KMap{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KMap{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KMap{}                                  (Var v2)                                   = subjectVariableMatch t1 v2
-match1 _       t1@KMap{}                                  t2@Var{}                                   = addIndeterminate t1 t2
-match1 Eval    t1@KList{}                                 t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@KList{}                                 (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       t1@KList{}                                 t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
-match1 Eval    t1@KList{}                                 t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@KList{}                                 t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KList{}                                 t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
 match1 _       t1@(KList def1 heads1 rest1)               t2@(KList def2 heads2 rest2)               = if def1 == def2 then matchLists def1 heads1 rest1 heads2 rest2 else failWith $ DifferentSorts t1 t2
-match1 _       t1@KList{}                                 t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KList{}                                 t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KList{}                                 t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KList{}                                 (Var t2)                                   = subjectVariableMatch t1 t2
-match1 _       t1@KList{}                                 t2@Var{}                                   = addIndeterminate t1 t2
-match1 Eval    t1@KSet{}                                  t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@KSet{}                                  (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       t1@KSet{}                                  t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
-match1 Eval    t1@KSet{}                                  t2@Injection{}                             = addIndeterminate t1 t2
-match1 _       t1@KSet{}                                  t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KSet{}                                  t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KSet{}                                  t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
 match1 _       t1@(KSet def1 patElements patRest)         t2@(KSet def2 subjElements subjRest)       = if def1 == def2 then matchSets def1 patElements patRest subjElements subjRest else failWith $ DifferentSorts t1 t2
-match1 _       t1@KSet{}                                  t2@ConsApplication{}                       = failWith $ DifferentSymbols t1 t2
-match1 _       t1@KSet{}                                  t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@KSet{}                                  (Var t2)                                   = subjectVariableMatch t1 t2
-match1 _       t1@KSet{}                                  t2@Var{}                                   = addIndeterminate t1 t2
-match1 Eval    t1@ConsApplication{}                       t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@ConsApplication{}                       (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 _       t1@ConsApplication{}                       t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
-match1 _       t1@ConsApplication{}                       t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
-match1 _       t1@ConsApplication{}                       t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@ConsApplication{}                       t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@ConsApplication{}                       t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
 match1 matchTy (ConsApplication symbol1 sorts1 args1)     (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications matchTy symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 Eval    (ConsApplication symbol1 sorts1 args1)     (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@ConsApplication{}                       t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@ConsApplication{}                       (Var t2)                                   = subjectVariableMatch t1 t2
-match1 _       t1@ConsApplication{}                       t2@Var{}                                   = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@FunctionApplication{}                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 Eval    t1@FunctionApplication{}                   t2@DomainValue{}                           = failWith $ DifferentSymbols t1 t2
-match1 _       t1@FunctionApplication{}                   t2@DomainValue{}                           = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@Injection{}                             = failWith $ DifferentSymbols t1 t2
-match1 _       t1@FunctionApplication{}                   t2@Injection{}                             = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@KMap{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@FunctionApplication{}                   t2@KMap{}                                  = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@KList{}                                 = failWith $ DifferentSymbols t1 t2
-match1 _       t1@FunctionApplication{}                   t2@KList{}                                 = addIndeterminate t1 t2
-match1 Eval    t1@FunctionApplication{}                   t2@KSet{}                                  = failWith $ DifferentSymbols t1 t2
-match1 _       t1@FunctionApplication{}                   t2@KSet{}                                  = addIndeterminate t1 t2
-match1 Eval    (FunctionApplication symbol1 sorts1 args1) (ConsApplication symbol2 sorts2 args2)     = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@FunctionApplication{}                   t2@ConsApplication{}                       = addIndeterminate t1 t2
 match1 Eval    (FunctionApplication symbol1 sorts1 args1) (FunctionApplication symbol2 sorts2 args2) = matchSymbolAplications Eval symbol1 sorts1 args1 symbol2 sorts2 args2
-match1 _       t1@FunctionApplication{}                   t2@FunctionApplication{}                   = addIndeterminate t1 t2
-match1 Rewrite t1@FunctionApplication{}                   (Var t2)                                   = subjectVariableMatch t1 t2
-match1 _       t1@FunctionApplication{}                   t2@Var{}                                   = addIndeterminate t1 t2
-match1 Eval    t1@Var{}                                   t2@AndTerm{}                               = addIndeterminate t1 t2
-match1 _       t1@Var{}                                   (AndTerm t2a t2b)                          = enqueueRegularProblem t1 t2a >> enqueueRegularProblem t1 t2b
-match1 matchTy (Var var1)                                 t2@DomainValue{}                           = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@Injection{}                             = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@KMap{}                                  = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@KList{}                                 = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@KSet{}                                  = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@ConsApplication{}                       = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@FunctionApplication{}                   = matchVar matchTy var1 t2
-match1 matchTy (Var var1)                                 t2@Var{}                                   = matchVar matchTy var1 t2
+-- injection-vs-builtin-collection is indeterminate in both directions under
+-- Eval (the injected term may simplify, and equation LHS sorts may be
+-- misaligned with the subject); these rows shadow the decisive rule below
+match1 Eval    t1@Injection{}                             t2 | isCollection t2                       = addIndeterminate t1 t2
+match1 Eval    t1                                         t2@Injection{} | isCollection t1           = addIndeterminate t1 t2
+-- the remaining rigid pairs are cross-category and can never become equal
+match1 _       t1 t2 | isRigidCategory t1, isRigidCategory t2                                        = failWith $ DifferentSymbols t1 t2
+-- everything else (a function application somewhere, or a future Term
+-- constructor): cannot be decided here, defer
+match1 _       t1                                         t2                                         = addIndeterminate t1 t2
 {- FOURMOLU_ENABLE -}
+
+{- | Whether the term's top-level category is rigid: it cannot change under
+   evaluation or instantiation. Domain values, injections, internalised
+   collections, and constructor applications are rigid: two such terms of
+   different categories can never become equal, so a decisive mismatch is
+   sound. Function applications, variables, and \and terms are not rigid.
+-}
+isRigidCategory :: Term -> Bool
+isRigidCategory = \case
+    DomainValue{} -> True
+    Injection{} -> True
+    KMap{} -> True
+    KList{} -> True
+    KSet{} -> True
+    ConsApplication{} -> True
+    _ -> False
+
+isCollection :: Term -> Bool
+isCollection = \case
+    KMap{} -> True
+    KList{} -> True
+    KSet{} -> True
+    _ -> False
 
 matchDV :: Sort -> ByteString -> Sort -> ByteString -> StateT s (Except MatchResult) ()
 matchDV s1 t1 s2 t2 =
@@ -322,7 +279,6 @@ matchDV s1 t1 s2 t2 =
 -- the contained pattern term is just a variable, otherwise they need
 -- to be identical.
 matchInj ::
-    MatchType ->
     Sort ->
     Sort ->
     Term ->
@@ -331,7 +287,6 @@ matchInj ::
     Term ->
     StateT MatchState (Except MatchResult) ()
 matchInj
-    _matchType
     source1
     target1
     trm1
@@ -343,7 +298,6 @@ matchInj
         | source1 == source2 = do
             enqueueRegularProblem trm1 trm2
 matchInj
-    matchType
     source1
     target1
     trm1
@@ -362,24 +316,41 @@ matchInj
             -- source2 is already handled)
             unless (s1IsSubsort || s2IsSubsort) $
                 failWith (DifferentSorts trm1 trm2)
-            -- Functions may have a more general sort than the actual result.
-            -- This means we cannot simply fail the rewrite: the match is
-            -- indeterminate if the function result is.
-            case (s1IsSubsort, trm2) of
-                (True, FunctionApplication{}) ->
-                    addIndeterminate trm1 trm2
-                _ -> do
-                    -- If the rule has a variable with a supersort of the
-                    -- subject, trm2 can be bound with a suitable injection
-                    case (s2IsSubsort, trm1) of
-                        (True, Var v) ->
-                            bindVariable matchType v (Injection source2 source1 trm2)
-                        _ ->
-                            -- truly different sorts, safe to just fail
-                            failWith $
-                                DifferentSorts
-                                    (Injection source1 target1 trm1)
-                                    (Injection source2 target2 trm2)
+            -- A decisive failure is only sound when neither child can
+            -- change sort: a function application may have a more general
+            -- sort than the actual result, and a variable may be
+            -- instantiated at any subsort of its declared sort. Exactly
+            -- one of the subsort relations holds here (sources differ,
+            -- and the subsort order is antisymmetric).
+            case (trm1, trm2) of
+                (_, FunctionApplication{})
+                    | s1IsSubsort ->
+                        -- the subject child may evaluate into source1
+                        addIndeterminate trm1 trm2
+                (_, Var{})
+                    | s1IsSubsort ->
+                        -- the subject child may be instantiated in source1
+                        addIndeterminate trm1 trm2
+                (Var v, _)
+                    | s2IsSubsort ->
+                        -- pattern variable with a supersort of the subject:
+                        -- bind with a suitable injection
+                        bindVariable v (Injection source2 source1 trm2)
+                (FunctionApplication{}, _)
+                    | s2IsSubsort ->
+                        -- the pattern child may evaluate into source2
+                        addIndeterminate trm1 trm2
+                _ ->
+                    -- The remaining children are rigid (their sorts are exact),
+                    -- or a function/variable at a sort that cannot narrow into
+                    -- the other side (the narrowable directions are deferred by
+                    -- the cases above): a decisive failure is sound. An \and
+                    -- child never reaches matchInj (match1 decomposes a subject
+                    -- \and before dispatching an injection pattern).
+                    failWith $
+                        DifferentSorts
+                            (Injection source1 target1 trm1)
+                            (Injection source2 target2 trm2)
 {-# INLINE matchInj #-}
 
 ----- Symbol Applications
@@ -457,7 +428,7 @@ matchVar
             failWith $ VariableConflict var1 (Var var1) (Var var2)
 matchVar
     -- term1 variable (target): introduce a new binding
-    matchType
+    _matchType
     var@Variable{variableSort}
     term2 =
         do
@@ -468,11 +439,31 @@ matchVar
                     checkSubsort subsorts termSort variableSort
             if isSubsort
                 then
-                    bindVariable matchType var $
+                    bindVariable var $
                         if termSort == variableSort
                             then term2
                             else Injection termSort variableSort term2
-                else failWith $ DifferentSorts (Var var) term2
+                else case term2 of
+                    -- The subject's static sort is only an upper bound when
+                    -- the subject can still change shape: a function
+                    -- application may evaluate to a term of a narrower sort,
+                    -- and a variable may be instantiated with one. If the two
+                    -- sorts share a subsort, a match may yet be possible, so
+                    -- defer instead of failing decisively.
+                    FunctionApplication{}
+                        | sortsOverlap subsorts termSort variableSort ->
+                            addIndeterminate (Var var) term2
+                    Var{}
+                        | sortsOverlap subsorts termSort variableSort ->
+                            addIndeterminate (Var var) term2
+                    -- term2 here is either rigid (its sort is exact) or a
+                    -- function/variable whose sort is disjoint from the
+                    -- variable's (sortsOverlap already deferred the overlapping
+                    -- case): in neither case can evaluation or instantiation
+                    -- bridge the sorts, so a decisive failure is sound. An \and
+                    -- never reaches matchVar (match1 decomposes a subject \and
+                    -- before dispatching a variable pattern).
+                    _ -> failWith $ DifferentSorts (Var var) term2
 
 -- Subject variable matches are currently marked as indeterminate.
 -- The code may be extended to collect these as separate conditional
@@ -796,8 +787,8 @@ enqueueRegularProblems ts =
  binding to a term is added. This avoids repeated traversals while
  guarding against substitution loops.
 -}
-bindVariable :: MatchType -> Variable -> Term -> StateT MatchState (Except MatchResult) ()
-bindVariable matchType var term@(Term termAttrs _) = do
+bindVariable :: Variable -> Term -> StateT MatchState (Except MatchResult) ()
+bindVariable var term@(Term termAttrs _) = do
     State{mSubstitution = currentSubst} <- get
     case Map.lookup var currentSubst of
         Just oldTerm@(Term oldTermAttrs _)
@@ -806,11 +797,18 @@ bindVariable matchType var term@(Term termAttrs _) = do
             , oldTermAttrs.isConstructorLike ->
                 failWith $ VariableConflict var oldTerm term
             | otherwise ->
-                -- the term in the binding could be _equivalent_
-                -- (not necessarily syntactically equal) to term'
-                case matchType of
-                    Rewrite -> addIndeterminate oldTerm term
-                    _ -> failWith $ VariableConflict var oldTerm term
+                -- A variable already bound to oldTerm is now matched against
+                -- term, and the two are not both constructor-like: they may
+                -- still be _equivalent_ (not syntactically equal), so the match
+                -- cannot be decided here and we defer in every mode. The
+                -- soundness concern is function evaluation: handleFunctionEquation
+                -- treats a MatchFailed as "skip this equation, try the next
+                -- priority" and an indeterminate match as "abort". A spurious
+                -- decisive failure here would let evaluation fall through to a
+                -- lower-priority equation (a higher priority number; priorities
+                -- count up from 1) that should not have been reached. See
+                -- hs-backend-booster issue #231.
+                addIndeterminate oldTerm term
         Nothing -> do
             let
                 -- apply existing substitutions to term
@@ -850,6 +848,20 @@ checkSubsort subsorts sub sup
                 | otherwise -> do
                     argsCheck <- zipWithM (checkSubsort subsorts) subArgs supArgs
                     pure $ and argsCheck
+
+{- | Whether two sorts can have a common inhabitant, i.e., share a
+   subsort. The subsort sets in the 'SortTable' are reflexive-transitive
+   closures (each sort is a member of its own set), so a non-empty
+   intersection is exactly sort overlap. Sort variables, parametric
+   sorts, and sorts missing from the table cannot be decided here and
+   are conservatively reported as overlapping.
+-}
+sortsOverlap :: SortTable -> Sort -> Sort -> Bool
+sortsOverlap subsorts (SortApp name1 []) (SortApp name2 [])
+    | Just subs1 <- Map.lookup name1 subsorts
+    , Just subs2 <- Map.lookup name2 subsorts =
+        not $ subs1 `Set.disjoint` subs2
+sortsOverlap _ _ _ = True
 
 data SortError
     = FoundSortVariable VarName

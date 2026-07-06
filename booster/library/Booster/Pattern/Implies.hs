@@ -121,7 +121,7 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (sortOfPattern patL)
                                 (externaliseExistTerm existsL patL.term)
                                 (externaliseExistTerm existsR patR.term)
-                        MatchIndeterminate _remainder ->
+                        MatchIndeterminate _partialSubst _remainder ->
                             ApplyEquations.evaluatePattern def mLlvmLibrary solver mempty patL >>= \case
                                 (Right simplifedSubstPatL, _) ->
                                     if patL == simplifedSubstPatL
@@ -136,31 +136,68 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                                 (Left err, _) ->
                                     pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ err)
                         MatchSuccess subst -> do
-                            let filteredConsequentPreds =
-                                    (patR.constraints <> (Set.fromList $ asEquations patR.substitution))
-                                        `Set.difference` (patL.constraints <> (Set.fromList $ asEquations patL.substitution))
-
+                            let sort = sortOfPattern patL
+                                lhs = externaliseExistTerm existsL patL.term
+                                rhs = externaliseExistTerm existsR patR.term
+                                antecedentPreds =
+                                    patL.constraints <> Set.fromList (asEquations patL.substitution)
+                                filteredConsequentPreds =
+                                    (patR.constraints <> Set.fromList (asEquations patR.substitution))
+                                        `Set.difference` antecedentPreds
                             if null filteredConsequentPreds
-                                then
-                                    implies
-                                        (sortOfPattern patL)
-                                        (externaliseExistTerm existsL patL.term)
-                                        (externaliseExistTerm existsR patR.term)
-                                        subst
-                                else -- FIXME This is incomplete because patL.constraints are not assumed in the check.
-                                    ApplyEquations.evaluateConstraints def mLlvmLibrary solver filteredConsequentPreds >>= \case
-                                        Right newPreds ->
-                                            if all (== Predicate TrueBool) newPreds
-                                                then
-                                                    implies
-                                                        (sortOfPattern patL)
-                                                        (externaliseExistTerm existsL patL.term)
-                                                        (externaliseExistTerm existsR patR.term)
-                                                        subst
-                                                else -- here we conservatively abort (incomplete)
-                                                    pure . Left . RpcError.backendError $ RpcError.Aborted "unknown constraints"
-                                        Left other ->
-                                            pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                                then implies sort lhs rhs subst
+                                else do
+                                    -- Discharge the leftover consequent obligations under
+                                    -- the antecedent. Two stages:
+                                    --   1. Simplify each obligation with the antecedent in
+                                    --      'knownPredicates' so function-symbol unfolds
+                                    --      (e.g. '#rangeAddress') and boolean structure
+                                    --      collapse can fire.
+                                    --   2. SMT-close any non-'TrueBool' residue against
+                                    --      'antecedentPreds' / 'patL.substitution' — the
+                                    --      same pattern the rewrite path uses to discharge
+                                    --      rule requires-clauses
+                                    --      ('Booster.Pattern.Rewrite.checkRequires').
+                                    simplified <-
+                                        mapM
+                                            ( fmap fst
+                                                . ApplyEquations.simplifyConstraint
+                                                    def
+                                                    mLlvmLibrary
+                                                    solver
+                                                    mempty
+                                                    antecedentPreds
+                                            )
+                                            (Set.toList filteredConsequentPreds)
+                                    let impliesResult = implies sort lhs rhs subst
+                                        unsure = doesNotImplyIndeterminate sort lhs rhs
+                                        disjoint = doesNotImply sort lhs rhs
+                                    case sequence simplified of
+                                        Left _ ->
+                                            -- Equation engine error: route to Unsure
+                                            -- rather than the old hard 'Aborted', so the
+                                            -- client can escalate via kore fallback.
+                                            unsure
+                                        Right reduced
+                                            | all (== Predicate TrueBool) reduced ->
+                                                impliesResult
+                                            | otherwise -> do
+                                                let residue =
+                                                        Set.fromList $
+                                                            filter (/= Predicate TrueBool) reduced
+                                                SMT.checkPredicates
+                                                    solver
+                                                    antecedentPreds
+                                                    patL.substitution
+                                                    residue
+                                                    >>= \case
+                                                        SMT.IsValid -> impliesResult
+                                                        SMT.IsInvalid -> disjoint
+                                                        -- Vacuous antecedent: any consequent
+                                                        -- is implied.
+                                                        SMT.IsUnknown SMT.InconsistentGroundTruth ->
+                                                            impliesResult
+                                                        SMT.IsUnknown _ -> unsure
 
             case (internalised antecedent.term, internalised consequent.term) of
                 (Left patternError, _) -> do
@@ -202,40 +239,46 @@ runImplies def mLlvmLibrary mSMTOptions antecedent consequent =
                         antecedent.term
                         consequent.term
   where
-    doesNotImply' s condition l r =
-        pure $
-            Right $
-                RpcTypes.Implies
-                    RpcTypes.ImpliesResult
-                        { implication = addHeader $ Kore.Syntax.KJImplies s l r
-                        , valid = False
-                        , condition
-                        , logs = Nothing
-                        }
+    -- Single construction point for every implies / does-not-imply result.
+    -- The call sites differ only in 'status' and 'condition'; centralising
+    -- the record keeps a future field addition a one-line change.
+    mkResult s l r status condition =
+        pure . Right . RpcTypes.Implies $
+            RpcTypes.ImpliesResult
+                { implication = addHeader $ Kore.Syntax.KJImplies s l r
+                , status
+                , condition
+                , logs = Nothing
+                , haskellLogEntries = Nothing
+                }
+
+    doesNotImply' s condition l r = mkResult s l r RpcTypes.Invalid condition
 
     doesNotImply s' = let s = externaliseSort s' in doesNotImply' s Nothing
+
+    -- Variant of 'doesNotImply' that flags the result as indeterminate.
+    -- Use at non-decisive not-implied outcomes — the 'MatchIndeterminate'
+    -- retry-ladder no-progress fall-through and the 'MatchSuccess'
+    -- SMT-discharge 'IsUnknown _' branch — so a recover-mode client
+    -- escalates to kore rather than trusting @status: invalid@.
+    doesNotImplyIndeterminate s' l r =
+        let s = externaliseSort s' in mkResult s l r RpcTypes.Indeterminate Nothing
+
     implies' predicate s l r subst =
-        pure $
-            Right $
-                RpcTypes.Implies
-                    RpcTypes.ImpliesResult
-                        { implication = addHeader $ Kore.Syntax.KJImplies s l r
-                        , valid = True
-                        , condition =
-                            Just
-                                RpcTypes.Condition
-                                    { predicate = addHeader predicate
-                                    , substitution =
-                                        addHeader
-                                            $ ( \case
-                                                    [] -> Kore.Syntax.KJTop s
-                                                    [x] -> x
-                                                    xs -> Kore.Syntax.KJAnd s xs
-                                              )
-                                                . map (uncurry $ externaliseSubstitution s)
-                                                . Map.toList
-                                            $ subst
-                                    }
-                        , logs = Nothing
-                        }
+        mkResult s l r RpcTypes.Valid (Just condition)
+      where
+        condition =
+            RpcTypes.Condition
+                { predicate = addHeader predicate
+                , substitution =
+                    addHeader
+                        $ ( \case
+                                [] -> Kore.Syntax.KJTop s
+                                [x] -> x
+                                xs -> Kore.Syntax.KJAnd s xs
+                          )
+                            . map (uncurry $ externaliseSubstitution s)
+                            . Map.toList
+                        $ subst
+                }
     implies s' = let s = externaliseSort s' in implies' (Kore.Syntax.KJTop s) s

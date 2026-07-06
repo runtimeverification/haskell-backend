@@ -149,6 +149,7 @@ data EquationConfig = EquationConfig
     , smtSolver :: SMT.SMTContext
     , maxRecursion :: Bound "Recursion"
     , maxIterations :: Bound "Iterations"
+    , maxLocalSteps :: Bound "LocalSteps"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
     }
@@ -156,6 +157,14 @@ data EquationConfig = EquationConfig
 data EquationState = EquationState
     { termStack :: Seq Term
     , recursionStack :: [Term]
+    , localSteps :: [Term]
+    -- ^ chain of locally-rewritten node values on the current
+    -- traversal path, for loop detection of in-place rewriting
+    -- (path-scoped: saved and restored around each local recursion)
+    , localStepCount :: Int
+    -- ^ length of 'localSteps' (path-scoped like the chain itself),
+    -- kept separately to bound in-place rewriting by 'maxLocalSteps'
+    -- without computing the length on every step
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache
@@ -193,6 +202,8 @@ startState cache known =
     EquationState
         { termStack = mempty
         , recursionStack = []
+        , localSteps = []
+        , localStepCount = 0
         , changed = False
         , predicates = known
         , -- replacements from predicates are rebuilt from the path conditions every time
@@ -354,6 +365,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , smtSolver
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
+                        , maxLocalSteps = globalEquationOptions.maxLocalSteps
                         , logger
                         , prettyModifiers
                         }
@@ -407,12 +419,79 @@ iterateEquations direction preference startTerm = do
                  in simp llvmResult
             -- evaluate functions and simplify (recursively at each level)
             newTerm <-
-                let simp = cached Equations $ traverseTerm direction simp (applyHooksAndEquations preference)
+                let onEval
+                        | direction == BottomUp = localFixpointEval simp
+                        | otherwise = applyHooksAndEquations preference
+                    simp = cached Equations $ traverseTerm direction simp onEval
                  in simp replacedTerm
             changeFlag <- getChanged
             if changeFlag
                 then checkForLoop newTerm >> resetChanged >> go newTerm
                 else pure llvmResult
+
+    {- Local-fixpoint evaluation (BottomUp mode): when a node was
+       rewritten, run the LLVM pass on the result (preserving the
+       LLVM-before-equations ordering the global loop provides) and
+       re-enter the cached bottom-up traversal on it, normalizing
+       everything the rewrite produced in place instead of restarting
+       the whole-term traversal (the rewrite builds a new subterm
+       from the rule's RHS, which needs full evaluation in all its
+       arguments; the cache cuts the descent short at substituted
+       subject parts that are already normal). Ancestors then see
+       children in final form and the global loop converges in a few
+       passes instead of one per causal chain step.
+
+       The in-place rewriting effort is bounded: both 'localSteps'
+       and 'localStepCount' are path-scoped (saved and restored
+       around the recursion, maintaining the invariant
+       localStepCount == length localSteps), so each chain of
+       in-place rewrites is at most 'maxLocalSteps' deep. Once the
+       budget is exhausted, rewritten nodes are returned without
+       recursion, which is exactly the restart-only strategy (the
+       changed flag is already set, so the global loop picks the
+       node up on the next pass). Each chain therefore advances by
+       at most 'maxLocalSteps' plus one application per pass, total
+       work stays bounded by 'maxIterations' passes, and
+       'TooManyIterations' with its partial result is reached as
+       before. A budget of 0 restores the restart-only strategy
+       entirely.
+
+       Loop detection is two-layered: the in-place rewrite chain in
+       'localSteps' is checked per step, catching oscillations
+       shorter than the budget immediately; cycles that survive a
+       pass boundary recur in the whole-term snapshots within at most
+       one cycle period of passes and are caught by 'checkForLoop'
+       (a cycle period dividing the budget repeats the snapshot on
+       the very next pass).
+    -}
+    localFixpointEval :: LoggerMIO io => (Term -> EquationT io Term) -> Term -> EquationT io Term
+    localFixpointEval recurse t = do
+        t' <- applyHooksAndEquations preference t
+        if t' == t
+            then pure t
+            else do
+                config <- getConfig
+                st <- getState
+                if coerce st.localStepCount >= config.maxLocalSteps
+                    then pure t' -- budget exhausted: defer to the global loop
+                    else do
+                        when (t' `elem` st.localSteps) $ do
+                            withContext CtxAbort $ do
+                                logWarn "Equation loop detected (local fixpoint)."
+                            throw . EquationLoop . reverse $ t' : st.localSteps
+                        let !newCount = st.localStepCount + 1
+                        eqState . put $
+                            st
+                                { localSteps = t' : st.localSteps
+                                , localStepCount = newCount
+                                }
+                        result <- llvmSimplify t' >>= recurse
+                        eqState . modify $ \s ->
+                            s
+                                { localSteps = st.localSteps
+                                , localStepCount = st.localStepCount
+                                }
+                        pure result
 
 llvmSimplify :: forall io. LoggerMIO io => Term -> EquationT io Term
 llvmSimplify term = do
@@ -893,7 +972,7 @@ applyEquation term rule =
                                         logPretty' @mods failReason
                             , FailedMatch failReason
                             )
-                    MatchIndeterminate remainder ->
+                    MatchIndeterminate _partialSubst remainder ->
                         throwE
                             ( \ctxt ->
                                 withContext CtxMatch $
@@ -1203,9 +1282,15 @@ simplifyConstraint' recurseIntoEvalBool = \case
     evalBool :: LoggerMIO io => Term -> EquationT io Term
     evalBool t = withTermContext t $ do
         prior <- getState -- save prior state so we can revert
-        eqState $ put prior{termStack = mempty, changed = False}
+        eqState $ put prior{termStack = mempty, changed = False, localSteps = [], localStepCount = 0}
         result <- iterateEquations BottomUp PreferFunctions t
-        -- reset change flag and term stack to prior values
+        -- reset change flag, term stack, and local steps to prior values
         -- (keep the updated cache and added predicates, if any)
-        eqState $ modify $ \s -> s{changed = prior.changed, termStack = prior.termStack}
+        eqState $ modify $ \s ->
+            s
+                { changed = prior.changed
+                , termStack = prior.termStack
+                , localSteps = prior.localSteps
+                , localStepCount = prior.localStepCount
+                }
         pure result

@@ -235,7 +235,9 @@ respond stateVar request =
                                 }
                     Booster.Log.logMessage $
                         "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
-                    pure $ RpcTypes.AddModule $ RpcTypes.AddModuleResult moduleHash
+                    pure $
+                        RpcTypes.AddModule $
+                            RpcTypes.AddModuleResult{_module = moduleHash, haskellLogEntries = Nothing}
             RpcTypes.Simplify req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> Booster.Log.withContext CtxSimplify $ do
                 let internalised =
                         runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -317,7 +319,11 @@ respond stateVar request =
 
                 let mkSimplifyResponse state =
                         RpcTypes.Simplify
-                            RpcTypes.SimplifyResult{state, logs = Nothing}
+                            RpcTypes.SimplifyResult
+                                { state
+                                , logs = Nothing
+                                , haskellLogEntries = Nothing
+                                }
                 pure $ second mkSimplifyResponse result
             RpcTypes.GetModel req -> withModule req._module $ \case
                 (_, _, Nothing, _) -> do
@@ -408,6 +414,7 @@ respond stateVar request =
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Sat
                                             , substitution
+                                            , haskellLogEntries = Nothing
                                             }
                                 SMT.IsUnsat -> do
                                     logMessage ("SMT result: Unsat" :: Text)
@@ -415,6 +422,7 @@ respond stateVar request =
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unsat
                                             , substitution = Nothing
+                                            , haskellLogEntries = Nothing
                                             }
                                 SMT.IsUnknown reason -> do
                                     logMessage $ "SMT result: Unknown - " <> show reason
@@ -422,6 +430,7 @@ respond stateVar request =
                                         RpcTypes.GetModelResult
                                             { satisfiable = RpcTypes.Unknown
                                             , substitution = Nothing
+                                            , haskellLogEntries = Nothing
                                             }
             RpcTypes.Implies req -> withModule req._module $ \(def, mLlvmLibrary, mSMTOptions, _) -> runImplies def mLlvmLibrary mSMTOptions req.antecedent req.consequent
             -- this case is only reachable if the cancel appeared as part of a batch request
@@ -502,6 +511,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                             $ toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
     RewriteStuck p ->
         Right $
@@ -514,6 +524,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
     RewriteTrivial p ->
         Right $
@@ -526,6 +537,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
     RewriteCutPoint lbl _ p next ->
         Right $
@@ -538,6 +550,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates = Just [toExecState next Nothing unsupported]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
     RewriteTerminal lbl _ p ->
         Right $
@@ -550,6 +563,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
     RewriteFinished _ _ p ->
         Right $
@@ -562,6 +576,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
     RewriteAborted failure p -> do
         Right $
@@ -579,6 +594,7 @@ execResponse req (d, traces, rr) unsupported = case rr of
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
+                    , haskellLogEntries = Nothing
                     }
   where
     logSuccessfulRewrites = fromMaybe False req.logSuccessfulRewrites

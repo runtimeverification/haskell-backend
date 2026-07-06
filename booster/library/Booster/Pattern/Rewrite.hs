@@ -404,7 +404,7 @@ applyRule pat@Pattern{ceilConditions} rule =
                         MatchFailed reason -> do
                             withContext CtxFailure $ logPretty' @mods reason
                             returnNotApplied
-                        MatchIndeterminate remainder -> do
+                        MatchIndeterminate partialSubst remainder -> do
                             withContext CtxIndeterminate $
                                 logMessage $
                                     WithJsonMessage (object ["remainder" .= (bimap externaliseTerm externaliseTerm <$> remainder)]) $
@@ -415,6 +415,18 @@ applyRule pat@Pattern{ceilConditions} rule =
                                                             map (\(t1, t2) -> pretty' @mods t1 <+> "==" <+> pretty' @mods t2) $
                                                                 NE.toList remainder
                                                     )
+                            -- Attempt to falsify the rule under the matcher's partial substitution.
+                            -- The matcher accumulates bindings for every pair it resolves cleanly,
+                            -- independently of the indeterminate pairs; any successful extension of
+                            -- the match must extend that substitution. So if any 'requires' clause
+                            -- evaluates to bottom under the partial substitution alone, no extension
+                            -- can rescue it and the rule cannot fire — we prune it via the standard
+                            -- 'returnNotApplied' path inside 'checkRequires' and the next rule is
+                            -- tried. If 'checkRequires' returns or aborts for any other reason
+                            -- (clause true, clause indeterminate, SMT-unclear), we fall through to
+                            -- the existing 'RuleApplicationUnclear' abort because the match itself
+                            -- is still indeterminate.
+                            _ <- checkRequires partialSubst
                             failRewrite $ RuleApplicationUnclear rule pat.term remainder
                         MatchSuccess matchingSubstitution -> do
                             -- existential variables may be present in rule.rhs and rule.ensures,

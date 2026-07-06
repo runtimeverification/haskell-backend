@@ -28,6 +28,7 @@ test_match_implies =
         [ constructors
         , functions
         , varsAndValues
+        , variableRebindMixedDeterminacy
         , andTerms
         , sorts
         , injections
@@ -126,9 +127,8 @@ constructors =
               z = var "Z" someSort
               t1 = app con3 [var "X" someSort, var "X" someSort]
               t2 = app con3 [y, z]
-           in test "Matching the same variable in a constructor (fail)" t1 t2 $
-                failed $
-                    VariableConflict (Variable someSort "X") y z
+           in test "Matching the same variable in a constructor (indeterminate)" t1 t2 $
+                remainderWith [("X", someSort, y)] [(y, z)]
         ]
 
 functions :: TestTree
@@ -181,7 +181,11 @@ varsAndValues =
                 success [("X", someSort, inj aSubsort someSort v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
-           in test "two variables (v1 subsort v2)" v1 v2 $
+           in test "two variables (v1 subsort v2): indeterminate, Y may narrow" v1 v2 $
+                remainder [(v1, v2)]
+        , let v1 = var "X" aSubsort
+              v2 = var "Y" differentSort
+           in test "two variables (disjoint sorts): fail" v1 v2 $
                 failed (DifferentSorts v1 v2)
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
@@ -211,6 +215,44 @@ varsAndValues =
               d = dv differentSort ""
            in test "var and domain value (different sort)" v d $
                 failed (DifferentSorts v d)
+        ]
+
+{- | A pattern variable that gets matched against two different subject
+positions — one a domain value (constructor-like), one a function
+application (not constructor-like) — must be reported as
+'MatchIndeterminate', because the second term might simplify into
+something equivalent to the first (the comment on 'bindVariable' says
+exactly this).
+
+A decisive 'MatchFailed VariableConflict' here (as 'Implies' mode
+returned before this was fixed) would be a soundness gap: the implies
+handler trusts the matcher's decisive verdict and returns a
+non-'indeterminate' @valid:false@, even though simplifying the function
+application could reveal the subsumption. The tests below pin both
+orderings of the rebind.
+-}
+variableRebindMixedDeterminacy :: TestTree
+variableRebindMixedDeterminacy =
+    testGroup
+        "Variable rebinding with mixed-determinacy subject"
+        [ let d = dv someSort "1"
+              fnApp = app f1 [dv someSort "x"]
+              t1 = app con3 [var "X" someSort, var "X" someSort]
+              t2 = app con3 [d, fnApp]
+           in test
+                "Rebind X to a domain value then to a function application is indeterminate"
+                t1
+                t2
+                (remainderWith [("X", someSort, d)] [(d, fnApp)])
+        , let d = dv someSort "1"
+              fnApp = app f1 [dv someSort "x"]
+              t1 = app con3 [var "X" someSort, var "X" someSort]
+              t2 = app con3 [fnApp, d]
+           in test
+                "Rebind X to a function application then to a domain value is indeterminate"
+                t1
+                t2
+                (remainderWith [("X", someSort, fnApp)] [(fnApp, d)])
         ]
 
 andTerms :: TestTree
@@ -515,7 +557,20 @@ failed :: FailReason -> MatchResult
 failed = MatchFailed
 
 remainder :: [(Term, Term)] -> MatchResult
-remainder = MatchIndeterminate . NE.fromList
+remainder = MatchIndeterminate mempty . NE.fromList
+
+{- | Like 'remainder' but also asserts a non-empty partial substitution from
+pairs that the matcher resolved before reaching the indeterminate pairs.
+-}
+remainderWith :: [(VarName, Sort, Term)] -> [(Term, Term)] -> MatchResult
+remainderWith assocs pairs =
+    MatchIndeterminate
+        ( Map.fromList
+            [ (Variable{variableSort, variableName}, term)
+            | (variableName, variableSort, term) <- assocs
+            ]
+        )
+        (NE.fromList pairs)
 
 sortErr :: SortError -> MatchResult
 sortErr = MatchFailed . SubsortingError

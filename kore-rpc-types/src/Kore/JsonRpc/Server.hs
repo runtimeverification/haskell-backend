@@ -28,9 +28,10 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as L8
 import Data.Conduit (ConduitT, Void, runConduit, (.|))
 import Data.Conduit.List qualified as CL
-import Data.Conduit.Network (ServerSettings, appSink, appSource, runGeneralTCPServer)
+import Data.Conduit.Network (ServerSettings, appSink, appSockAddr, appSource, runGeneralTCPServer)
 import Data.Conduit.TMChan (closeTBMChan, sinkTBMChan, sourceTBMChan)
 import Data.Maybe (catMaybes)
+import Data.Text (Text, pack)
 import Kore.JsonRpc.Types (FromRequestCancellable (isCancel), ReqException (..), rpcJsonConfig)
 import Network.JSONRPC hiding (encodeConduit, runJSONRPCT)
 import UnliftIO (MonadUnliftIO, atomically, wait, withAsync)
@@ -82,12 +83,15 @@ jsonRpcServer ::
     foreign calls with thread-local state)
     -}
     Bool ->
+    -- | Called with the peer address text on each new connection (use for logging)
+    (Text -> IO ()) ->
     -- | Action to perform on connecting client thread
     (Request -> Respond q IO r) ->
     [JsonRpcHandler] ->
     m a
-jsonRpcServer serverSettings runBound respond handlers =
-    runGeneralTCPServer serverSettings $ \cl ->
+jsonRpcServer serverSettings runBound onConnect respond handlers =
+    runGeneralTCPServer serverSettings $ \cl -> do
+        liftIO $ onConnect . pack . show $ appSockAddr cl
         Log.runNoLoggingT $
             runJSONRPCT
                 -- we have to ensure that the returned messages contain no newlines

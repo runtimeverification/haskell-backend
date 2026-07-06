@@ -12,9 +12,12 @@ module Test.Booster.Pattern.ApplyEquations (
     test_simplify,
     test_simplifyPattern,
     test_simplifyConstraint,
+    test_localFixpoint,
     test_errors,
+    test_soundnessGap,
 ) where
 
+import Control.Exception (finally)
 import Control.Monad.Logger (runNoLoggingT)
 import Data.ByteString (ByteString)
 import Data.Map (Map)
@@ -25,6 +28,11 @@ import Test.Tasty.HUnit
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
+import Booster.GlobalState (
+    EquationOptions (..),
+    readGlobalEquationOptions,
+    writeGlobalEquationOptions,
+ )
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
@@ -69,7 +77,9 @@ test_evaluateFunction =
                 n `times` f = foldr (.) id (replicate n $ apply f)
             -- top-down evaluation: a single iteration is enough
             eval TopDown (subj 101) @?>>= Right (101 `times` con2 $ a)
-            -- bottom-up evaluation: `depth` many iterations
+            -- bottom-up evaluation: with the default in-place budget
+            -- of 0, each pass advances the chain by one application,
+            -- so the iteration limit caps the chain depth
             eval BottomUp (subj 100) @?>>= Right (100 `times` con2 $ a)
             isTooManyIterations =<< eval BottomUp (subj 101)
         , -- con3(f1(con2(a)), f1(con1(con2(b)))) => con3(con2(a), con2(con2(b)))
@@ -226,6 +236,69 @@ test_simplifyConstraint =
             ns <- noSolver
             runNoLoggingT $ fst <$> simplifyConstraint testDefinition Nothing ns mempty mempty t
 
+test_localFixpoint :: TestTree
+test_localFixpoint =
+    -- must run after the iteration-limit test ("Recursive evaluation"),
+    -- whose outcome the temporary budget window below would change
+    -- if the two ran concurrently (the test binary runs tests in
+    -- parallel)
+    after AllFinish "Recursive evaluation" $
+        testCase "In-place rewriting: deeper chains, loop detection, and bounded effort" $ do
+            -- at the default budget of 0 (restart-only evaluation),
+            -- node-level oscillation is detected by the whole-term
+            -- snapshots of the global passes
+            isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+            -- explicit construction instead of record update: the
+            -- field names are shared with EquationConfig, making an
+            -- update ambiguous under DuplicateRecordFields
+            defaults <- readGlobalEquationOptions
+            writeGlobalEquationOptions
+                EquationOptions
+                    { maxIterations = defaults.maxIterations
+                    , maxRecursion = defaults.maxRecursion
+                    , maxLocalSteps = 20
+                    }
+            budgetChecks defaults `finally` writeGlobalEquationOptions defaults
+  where
+    budgetChecks :: EquationOptions -> IO ()
+    budgetChecks defaults = do
+        -- each pass advances a chain by the budget plus one
+        -- application, so depths beyond the restart-only limit of
+        -- maxIterations complete now (the chain rule produces its
+        -- redex inside the RHS, which the in-place recursion follows)
+        evalWith funDef (subj 101) >>= (@?= Right (101 `times` con2 $ start))
+        -- node-level oscillation is detected per local step (cycle
+        -- shorter than the budget)
+        isLoop =<< evalWith loopDef (app f1 [app con1 [a]])
+        -- the combined bound (passes times the per-chain budget plus
+        -- one application) still terminates evaluation with a partial
+        -- result: with 10 passes and a budget of 20, a chain of depth
+        -- 300 cannot finish
+        writeGlobalEquationOptions
+            EquationOptions
+                { maxIterations = 10
+                , maxRecursion = defaults.maxRecursion
+                , maxLocalSteps = 20
+                }
+        isTooMany =<< evalWith funDef (subj 300)
+
+    subj depth = app f1 [iterate (apply con1) start !! depth]
+    start = app con2 [a]
+    n `times` f = foldr (.) id (replicate n $ apply f)
+
+    a = var "A" someSort
+    apply f = app f . (: [])
+
+    isLoop (Left (EquationLoop _)) = pure ()
+    isLoop other = assertFailure $ "Expected an equation loop, got " <> show other
+
+    isTooMany (Left (TooManyIterations _ _ _)) = pure ()
+    isTooMany other = assertFailure $ "Expected an iteration-limit abort, got " <> show other
+
+    evalWith def t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm BottomUp def Nothing ns mempty mempty t
+
 test_errors :: TestTree
 test_errors =
     testGroup
@@ -247,6 +320,43 @@ test_errors =
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'
     isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
     isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
+
+{- | Soundness regression test for 'Eval' mode of 'matchTerms': when a
+pattern variable rebinds to two terms that are not both constructor-like
+(e.g. a domain value and a function application), the matcher must
+return @MatchIndeterminate@, which routes through
+@IndeterminateMatch{} -> abort@ in 'handleFunctionEquation' and leaves
+the term unchanged so the caller can decide what to do.
+
+Before this was fixed, the matcher returned a decisive
+@MatchFailed VariableConflict@, which 'handleFunctionEquation' routes to
+@continue@ — silently skipping a higher-priority equation and committing
+to a lower-priority catch-all. Because function-equation priorities are
+semantically binding, that violated the priority contract.
+
+The simplification companion is the dual: simplification priorities are
+advisory, so both @FailedMatch@ and @IndeterminateMatch@ route to
+@continue@ and the behaviour is unchanged. The companion is included to
+pin that simplifications are unaffected by the fix.
+-}
+test_soundnessGap :: TestTree
+test_soundnessGap =
+    testGroup
+        "Eval matcher soundness: mixed-determinacy rebind"
+        [ testCase
+            "Function equations: high-priority indeterminate match aborts, lower-priority rule NOT tried"
+            $ do
+                let subj = [trm| f1{}(con3{}(\dv{SomeSort{}}("a"), f2{}(\dv{SomeSort{}}("x")))) |]
+                ns <- noSolver
+                runNoLoggingT (fst <$> evaluateTerm TopDown soundnessGapFunDef Nothing ns mempty mempty subj)
+                    @?>>= Right subj
+        , testCase "Simplifications: high-priority indeterminate match continues, lower-priority rule fires" $ do
+            let subj = [trm| f1{}(con3{}(\dv{SomeSort{}}("a"), f2{}(\dv{SomeSort{}}("x")))) |]
+                result = [trm| con2{}(con3{}(\dv{SomeSort{}}("a"), f2{}(\dv{SomeSort{}}("x")))) |]
+            ns <- noSolver
+            runNoLoggingT (fst <$> evaluateTerm TopDown soundnessGapSimplDef Nothing ns mempty mempty subj)
+                @?>>= Right result
+        ]
 
 ----------------------------------------
 
@@ -325,6 +435,47 @@ loopDef =
                         ]
                     )
                 ]
+        }
+
+{- | Rules used by 'test_soundnessGap'. Both definitions hold the same
+two equations on @f1@:
+
+* Priority 40: @f1(con3(X, X)) = con1(X)@ — narrow pattern that requires
+  the two arguments of @con3@ to be the same.
+* Priority 50: @f1(X) = con2(X)@ — catch-all.
+
+The test subject is @f1(con3(\\dv "a", f2(\\dv "x")))@: when matching
+the priority-40 rule's LHS, the variable @X@ is bound first to
+@\\dv "a"@ (constructor-like) and then to @f2(\\dv "x")@ (a
+'FunctionApplication', not constructor-like). 'Match.bindVariable'
+returns @MatchIndeterminate@ for this mixed-determinacy rebind (it
+returned a decisive @MatchFailed VariableConflict@ in 'Eval' mode
+before this was fixed).
+-}
+soundnessGapRules :: [RewriteRule t]
+soundnessGapRules =
+    [ equation
+        (Just "soundness-gap-pri40")
+        [trm| f1{}(con3{}(X:SomeSort{}, X:SomeSort{})) |]
+        [trm| con1{}(X:SomeSort{}) |]
+        40
+    , equation
+        (Just "soundness-gap-pri50")
+        [trm| f1{}(X:SomeSort{}) |]
+        [trm| con2{}(X:SomeSort{}) |]
+        50
+    ]
+
+soundnessGapFunDef, soundnessGapSimplDef :: KoreDefinition
+soundnessGapFunDef =
+    testDefinition
+        { functionEquations =
+            mkTheory [(index IdxFun "f1", soundnessGapRules)]
+        }
+soundnessGapSimplDef =
+    testDefinition
+        { simplifications =
+            mkTheory [(index IdxFun "f1", soundnessGapRules)]
         }
 
 f1Equations, f2Equations :: [RewriteRule t]

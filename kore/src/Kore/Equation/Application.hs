@@ -260,7 +260,7 @@ applyEquation ::
     Simplifier (OrPattern RewritingVariableName)
 applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
-    debugApplyEquation equation result
+    debugApplyEquation equation term result
     doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
     when doTracing $
         modify $

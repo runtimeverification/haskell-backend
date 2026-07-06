@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       - name: 'Install Cachix'
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: k-framework
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
@@ -84,7 +84,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
@@ -107,7 +107,7 @@ jobs:
 
       - name: 'Install Cachix'
         if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: k-framework
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
@@ -124,7 +124,7 @@ jobs:
     runs-on: [self-hosted, linux, normal]
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
@@ -140,12 +140,12 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: k-framework
           skipPush: true
 
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
@@ -193,14 +193,14 @@ jobs:
         run: |
           sudo apt install --yes build-essential debhelper z3 libsecp256k1-dev
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
       - name: Cache Stack root
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.stack
           key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
@@ -208,7 +208,7 @@ jobs:
             stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
             stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
-      - uses: haskell-actions/setup@v2.7
+      - uses: haskell-actions/setup@v2.11.0
         id: setup-haskell-stack
         with:
           ghc-version: ${{ env.ghc_version }}
@@ -239,7 +239,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
@@ -255,7 +255,7 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       - name: 'Install Cachix'
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: k-framework
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
