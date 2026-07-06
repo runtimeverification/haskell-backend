@@ -139,6 +139,25 @@
           wrapProgram $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
         '';
       };
+      # stack by default uses nix at runtime to pull dependencies
+      # this messes with actual `nix develop` shell users of this flake, so we wrap stack
+      #  to not do this when run from this `nix develop` shell
+      # otherwise, we would have to modify `stack.yaml` and even add a dedicated `shell.nix`
+      #  for stack since building this project requires pkg-config and secp256k1 (see pkg-config setup hooks)
+      # `hpkgs.shellFor` includes a GHC wrapped with `-B` to a `ghc-x.y.z-with-packages`
+      #  for stack, instead, we need a clean libdir as otherwise stack will pick wrong packages
+      #  therefore, we wrap stack with a bare ghc that points by default to a `ghc-x.y.z` libdir
+      #  by wrapping stack and inserting GHC into PATH with higher priority than the shell-provided GHC
+      stackWrapped = pkgs.symlinkJoin {
+        name = "stack";
+        paths = [ pkgs.stack ];
+        buildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/stack \
+            --prefix PATH : ${pkgs.haskell.compiler.${ghcVer}}/bin \
+            --add-flags "--no-nix --system-ghc --no-install-ghc"
+        '';
+        };
     in {
       packages =
       let
@@ -209,7 +228,12 @@
             hpkgs.hlint
             pkgs.haskell-language-server
             pkgs.z3
-            pkgs.secp256k1
+            pkgs.pkg-config
+            stackWrapped
+          ];
+          buildInputs = with pkgs; [
+            secp256k1
+            zlib
           ];
         };
       };
