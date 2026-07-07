@@ -25,7 +25,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           submodules: recursive
-          token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v25
@@ -36,32 +35,19 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-      - name: 'Install Cachix'
-        uses: cachix/cachix-action@v17
-        with:
-          name: k-framework
-          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      # - name: 'Install Cachix'
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: k-framework
 
       - name: Format
         run: nix develop .#style --command bash -c './scripts/fourmolu.sh'
 
-      - name: Update branch
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
+      - name: Check formatting
         run: |
-          if git status -s -b | grep -q '^##.*(no branch)$'; then
-            echo 2>&1 "Error: Git is in detached HEAD state"
-            exit 1
-          fi
-
           if [ -n "$(git status --porcelain '*.hs')" ]; then
-            git config --global user.name github-actions
-            git config --global user.email github-actions@github.com
-            git add '*.hs'
-            git commit -m "Format with fourmolu"
-            git show --stat
-            git push
-            echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
+            echo "Code is not formatted. Run scripts/fourmolu.sh and commit the result." | tee -a $GITHUB_STEP_SUMMARY
+            git diff --stat
             exit 1
           fi
       # could run hlint here, but then no more jobs would run if the code is not accepted
@@ -105,12 +91,11 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-      - name: 'Install Cachix'
-        if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/cachix-action@v17
-        with:
-          name: k-framework
-          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      # - name: 'Install Cachix'
+      #   if: ${{ !startsWith(matrix.os, 'self') }}
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: k-framework
 
       - name: Build
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
@@ -139,11 +124,11 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-      - name: Install Cachix
-        uses: cachix/cachix-action@v17
-        with:
-          name: k-framework
-          skipPush: true
+      # - name: Install Cachix
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: k-framework
+      #     skipPush: true
 
       - uses: dorny/paths-filter@v4
         id: changes
@@ -254,11 +239,10 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-      - name: 'Install Cachix'
-        uses: cachix/cachix-action@v17
-        with:
-          name: k-framework
-          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+      # - name: 'Install Cachix'
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: k-framework
 
       - name: Format
         run: nix develop .#style --command bash -c './scripts/hlint.sh'
