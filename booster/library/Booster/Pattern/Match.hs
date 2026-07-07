@@ -50,12 +50,13 @@ data MatchResult
       MatchSuccess Substitution
     | -- | different constructors or domain values, or sort mismatch
       MatchFailed FailReason
-    | -- | (other) cases that are unresolved (offending case in head position).
-      --
-      -- The first field carries the /partial/ substitution accumulated from
-      -- pairs that did resolve before the indeterminate pairs were encountered;
-      -- any successful extension of the match must extend this substitution,
-      -- so callers may use it to prune via a side-condition check.
+    | {- | (other) cases that are unresolved (offending case in head position).
+
+      The first field carries the /partial/ substitution accumulated from
+      pairs that did resolve before the indeterminate pairs were encountered;
+      any successful extension of the match must extend this substitution,
+      so callers may use it to prune via a side-condition check.
+      -}
       MatchIndeterminate Substitution (NonEmpty (Term, Term))
     deriving stock (Eq, Show)
 

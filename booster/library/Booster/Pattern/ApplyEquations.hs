@@ -158,13 +158,15 @@ data EquationState = EquationState
     { termStack :: Seq Term
     , recursionStack :: [Term]
     , localSteps :: [Term]
-    -- ^ chain of locally-rewritten node values on the current
-    -- traversal path, for loop detection of in-place rewriting
-    -- (path-scoped: saved and restored around each local recursion)
+    {- ^ chain of locally-rewritten node values on the current
+    traversal path, for loop detection of in-place rewriting
+    (path-scoped: saved and restored around each local recursion)
+    -}
     , localStepCount :: Int
-    -- ^ length of 'localSteps' (path-scoped like the chain itself),
-    -- kept separately to bound in-place rewriting by 'maxLocalSteps'
-    -- without computing the length on every step
+    {- ^ length of 'localSteps' (path-scoped like the chain itself),
+    kept separately to bound in-place rewriting by 'maxLocalSteps'
+    without computing the length on every step
+    -}
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache

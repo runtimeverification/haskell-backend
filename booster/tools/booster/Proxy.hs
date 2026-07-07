@@ -69,10 +69,11 @@ data KoreServer = KoreServer
         IO a
     , loggerEnv :: Kore.Log.LoggerEnv IO
     , captureRegistry :: KoreCaptureRegistry
-    -- ^ per-request kore log capture registry; the kore log action
-    -- is wired at server startup to consult this registry for the
-    -- calling thread so requests that opt in via @haskell-logging@
-    -- can drain captured entries into their response.
+    {- ^ per-request kore log capture registry; the kore log action
+    is wired at server startup to consult this registry for the
+    calling thread so requests that opt in via @haskell-logging@
+    can drain captured entries into their response.
+    -}
     }
 
 data ProxyConfig = ProxyConfig
@@ -84,10 +85,11 @@ data ProxyConfig = ProxyConfig
     , simplifyBeforeFallback :: Bool
     , customLogLevels :: ![Log.LogLevel]
     , koreCaptureRegistry :: KoreCaptureRegistry
-    -- ^ shared with 'KoreServer.captureRegistry'; the proxy uses it
-    -- to register a per-request kore-side capture collector for the
-    -- duration of any kore invocation triggered while serving a
-    -- @haskell-logging: true@ request.
+    {- ^ shared with 'KoreServer.captureRegistry'; the proxy uses it
+    to register a per-request kore-side capture collector for the
+    duration of any kore invocation triggered while serving a
+    @haskell-logging: true@ request.
+    -}
     }
 
 serverError :: String -> Value -> ErrorObj
