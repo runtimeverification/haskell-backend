@@ -35,10 +35,10 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
 
-      # - name: 'Install Cachix'
-      #   uses: cachix/cachix-action@v17
-      #   with:
-      #     name: k-framework
+      - name: 'Install Cachix'
+        uses: cachix/cachix-action@v17
+        with:
+          name: k-framework
 
       - name: Format
         run: nix develop .#style --command bash -c './scripts/fourmolu.sh'
@@ -91,11 +91,11 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
 
-      # - name: 'Install Cachix'
-      #   if: ${{ !startsWith(matrix.os, 'self') }}
-      #   uses: cachix/cachix-action@v17
-      #   with:
-      #     name: k-framework
+      - name: 'Install Cachix'
+        if: ${{ !startsWith(matrix.os, 'self') }}
+        uses: cachix/cachix-action@v17
+        with:
+          name: k-framework
 
       - name: Build
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
@@ -124,11 +124,11 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
 
-      # - name: Install Cachix
-      #   uses: cachix/cachix-action@v17
-      #   with:
-      #     name: k-framework
-      #     skipPush: true
+      - name: Install Cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: k-framework
+          skipPush: true
 
       - uses: dorny/paths-filter@v4
         id: changes
@@ -239,10 +239,10 @@ jobs:
             substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
 
-      # - name: 'Install Cachix'
-      #   uses: cachix/cachix-action@v17
-      #   with:
-      #     name: k-framework
+      - name: 'Install Cachix'
+        uses: cachix/cachix-action@v17
+        with:
+          name: k-framework
 
       - name: Format
         run: nix develop .#style --command bash -c './scripts/hlint.sh'
