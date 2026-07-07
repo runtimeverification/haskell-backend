@@ -206,6 +206,8 @@
         cabal = hpkgs.shellFor {
           name = "haskell cabal shell";
           packages = shellForPackages;
+          # clang from kompile in K crashes on hardening flag `zerocallusedregs`
+          hardeningDisable = [ "zerocallusedregs" ];
           nativeBuildInputs = [
             hpkgs.cabal-install
             pkgs.hpack
@@ -226,6 +228,7 @@
         default = hpkgs.shellFor {
           name = "haskell default shell";
           packages = shellForPackages;
+          hardeningDisable = [ "zerocallusedregs" ];
           nativeBuildInputs = [
             hpkgs.cabal-install
             hpkgs.hpack
