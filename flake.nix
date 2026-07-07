@@ -213,6 +213,11 @@
             pkgs.nix
             pkgs.z3
             pkgs.lsof
+            pkgs.pkg-config
+          ];
+          buildInputs = with pkgs; [
+            secp256k1
+            zlib
           ];
           shellHook = ''
             hpack booster && hpack dev-tools
