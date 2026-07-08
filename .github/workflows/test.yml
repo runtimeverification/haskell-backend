@@ -166,7 +166,7 @@ jobs:
         if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
-                --override-input haskell-backend . --update-input haskell-backend \
+                --override-input haskell-backend . \
                 --override-input haskell-backend/nixpkgs \
                 "github:NixOS/nixpkgs/$(nix eval --raw --impure --expr '(builtins.getFlake ("git+file://" + toString ./.)).inputs.nixpkgs.rev')" \
                 --command bash -c "cd test && make -j2 --output-sync test"
