@@ -113,7 +113,7 @@ K integration nix shell:
 
 ```sh
 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
-    --override-input haskell-backend . --update-input haskell-backend
+    --override-input haskell-backend .
 
 export PLUGIN_DIR=$(nix build .#blockchain-k-plugin --no-link --print-out-paths)
 cd booster/test/rpc-integration/resources

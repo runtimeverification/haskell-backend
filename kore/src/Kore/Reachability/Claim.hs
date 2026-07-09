@@ -467,8 +467,9 @@ data CheckImplicationResult a
       Implied !a
     | -- | The implication is not valid.
       NotImplied !a
-    | -- | The implication between /terms/ is valid, but the implication between
-      -- side-conditions is not valid.
+    | {- | The implication between /terms/ is valid, but the implication between
+      side-conditions is not valid.
+      -}
       NotImpliedStuck !a
     deriving stock (Eq, Ord, Show)
     deriving stock (Foldable, Functor, Traversable)

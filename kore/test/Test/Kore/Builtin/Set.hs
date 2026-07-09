@@ -841,8 +841,8 @@ test_unifySelectTwoFromTwoElementSet =
                     -- list monad
                     (elementUnifier1, elementUnifier2) <-
                         [ (elemStepPattern1, elemStepPattern2)
-                            , (elemStepPattern2, elemStepPattern1)
-                            ]
+                        , (elemStepPattern2, elemStepPattern1)
+                        ]
                     return
                         Conditional
                             { term = set
@@ -893,8 +893,8 @@ test_unifyConcatElemVarVsElemSet =
                     -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkElemVar elementVar2, set)
-                            , (from key, elementSet')
-                            ]
+                        , (from key, elementSet')
+                        ]
                     return
                         Conditional
                             { term = expectedPatSet
@@ -947,8 +947,8 @@ test_unifyConcatElemVarVsElemElem =
                     -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkElemVar elementVar2, elementSet3)
-                            , (mkElemVar elementVar3, elementSet2)
-                            ]
+                        , (mkElemVar elementVar3, elementSet2)
+                        ]
                     return
                         Conditional
                             { term = expectedPatSet
@@ -994,8 +994,8 @@ test_unifyConcatElemElemVsElemConcrete =
                     -- list monad
                     (elemUnifier1, elemUnifier2) <-
                         [ (mkElemVar elementVar3, from key)
-                            , (from key, mkElemVar elementVar3)
-                            ]
+                        , (from key, mkElemVar elementVar3)
+                        ]
                     return
                         Conditional
                             { term = expectedSet
@@ -1041,8 +1041,8 @@ test_unifyConcatElemElemVsElemElem =
                     -- list monad
                     (elemUnifier1, elemUnifier2) <-
                         [ (mkElemVar elementVar3, mkElemVar elementVar4)
-                            , (mkElemVar elementVar4, mkElemVar elementVar3)
-                            ]
+                        , (mkElemVar elementVar4, mkElemVar elementVar3)
+                        ]
                     return
                         Conditional
                             { term = patSet
@@ -1101,8 +1101,8 @@ test_unifyConcatElemConcatVsElemConcrete =
                     -- list monad
                     (elemUnifier1, elemUnifier2) <-
                         [ (elemStepPattern2, elemStepPattern3)
-                            , (elemStepPattern3, elemStepPattern2)
-                            ]
+                        , (elemStepPattern3, elemStepPattern2)
+                        ]
                     return
                         Conditional
                             { term = expectedPat
@@ -1570,8 +1570,8 @@ test_unifyConcatElemElemVsElemConcatSet =
                     -- list monad
                     (firstUnifier, secondUnifier) <-
                         [ (mkElemVar elementVar3, mkElemVar elementVar4)
-                            , (mkElemVar elementVar4, mkElemVar elementVar3)
-                            ]
+                        , (mkElemVar elementVar4, mkElemVar elementVar3)
+                        ]
                     return
                         Conditional
                             { term = patSet

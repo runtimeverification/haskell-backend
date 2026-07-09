@@ -79,16 +79,18 @@ prop> x < maxBoundName x ==> nextName x x < Just (maxBoundName x)
 class Ord name => FreshPartialOrd name where
     minBoundName :: name -> name
 
-    -- | @maxBoundName x@ is the greatest name related to @x@.
-    --
-    --    In the typical implementation, the counter has type
-    --    @'Maybe' ('Sup' 'Natural')@
-    --    so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
+    {- | @maxBoundName x@ is the greatest name related to @x@.
+
+    In the typical implementation, the counter has type
+    @'Maybe' ('Sup' 'Natural')@
+    so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
+    -}
     maxBoundName :: name -> name
 
-    -- | @nextName a b@ is the least name greater than @a@ and @b@.
-    --
-    --    The result shares any properties (besides its name) with the first argument.
+    {- | @nextName a b@ is the least name greater than @a@ and @b@.
+
+    The result shares any properties (besides its name) with the first argument.
+    -}
     nextName :: name -> name -> Maybe name
 
 instance FreshPartialOrd VariableName where
@@ -164,12 +166,13 @@ instance
 
 -- | A @FreshName@ can be renamed to avoid colliding with a set of names.
 class Ord name => FreshName name where
-    -- | Refresh a name, renaming it avoid the given set.
-    --
-    --    If the given name occurs in the set, @refreshName@ must return
-    --    'Just' a fresh name which does not occur in the set. If the given
-    --    name does /not/ occur in the set, @refreshName@ /may/ return
-    --    'Nothing'.
+    {- | Refresh a name, renaming it avoid the given set.
+
+    If the given name occurs in the set, @refreshName@ must return
+    'Just' a fresh name which does not occur in the set. If the given
+    name does /not/ occur in the set, @refreshName@ /may/ return
+    'Nothing'.
+    -}
     refreshName ::
         -- | names to avoid
         Set name ->

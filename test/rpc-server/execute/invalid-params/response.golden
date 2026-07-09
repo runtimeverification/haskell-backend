@@ -1,1 +1,1 @@
-{"jsonrpc":"2.0","id":1,"error":{"code":-32602,"data":{"state":"aaaa","max-depth":1},"message":"Invalid params"}}
+{"jsonrpc":"2.0","id":1,"error":{"code":-32602,"data":{"state":"aaaa","max-depth":1},"message":"Invalid params: Error in $.state: parsing Kore.Syntax.Json.Types.KoreJson(KoreJson) failed, expected Object, but encountered String"}}

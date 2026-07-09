@@ -375,8 +375,9 @@ data ReplCommand
       ShowRule !(Maybe ReplNode)
     | -- | Show the unparsed rule(s) that got us to this configuration.
       ShowKRule !(Maybe ReplNode)
-    | -- | Show the rules which were applied from the first node
-      -- to reach the second.
+    | {- | Show the rules which were applied from the first node
+      to reach the second.
+      -}
       ShowRules !(ReplNode, ReplNode)
     | -- | Show the first preceding branch.
       ShowPrecBranch !(Maybe ReplNode)
@@ -414,28 +415,33 @@ data ReplCommand
       TryAlias ReplAlias
     | -- | Load script from file
       LoadScript FilePath
-    | -- | Show proof status of each claim
-      -- TODO(Ana): 'Log (KoreLogOptions -> KoreLogOptions)', this would need
-      -- the parts of the code which depend on the 'Show' instance of 'ReplCommand'
-      -- to change. Do the same for Debug..Equation.
+    | {- | Show proof status of each claim
+      TODO(Ana): 'Log (KoreLogOptions -> KoreLogOptions)', this would need
+      the parts of the code which depend on the 'Show' instance of 'ReplCommand'
+      to change. Do the same for Debug..Equation.
+      -}
       ProofStatus
     | -- | Setup the Kore logger.
       Log GeneralLogOptions
-    | -- | Log debugging information about attempting to
-      -- apply specific equations.
+    | {- | Log debugging information about attempting to
+      apply specific equations.
+      -}
       DebugAttemptEquation Log.DebugAttemptEquationOptions
     | -- | Log when specific equations apply.
       DebugApplyEquation Log.DebugApplyEquationOptions
-    | -- | Log the attempts and the applications of specific
-      -- equations.
+    | {- | Log the attempts and the applications of specific
+      equations.
+      -}
       DebugEquation Log.DebugEquationOptions
-    | -- | Log debugging information about attempting to
-      -- apply specific rewrite rules.
+    | {- | Log debugging information about attempting to
+      apply specific rewrite rules.
+      -}
       DebugAttemptRewrite Log.DebugAttemptRewriteOptions
     | -- | Log when specific rewrite rules apply.
       DebugApplyRewrite Log.DebugApplyRewriteOptions
-    | -- | Log the attempts and the applications of specific
-      -- rewrite rules.
+    | {- | Log the attempts and the applications of specific
+      rewrite rules.
+      -}
       DebugRewrite Log.DebugRewriteOptions
     | -- | Set a timeout for one step.
       SetStepTimeout !(Maybe StepTimeout)
@@ -664,8 +670,9 @@ data ReplState = ReplState
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     , koreLogOptions :: !Log.KoreLogOptions
-    -- ^ The log level, log scopes and log type decide what gets logged and
-    -- where.
+    {- ^ The log level, log scopes and log type decide what gets logged and
+    where.
+    -}
     , stepTimeout :: Maybe StepTimeout
     -- ^ Timeout for one step.
     , stepTime :: StepTime
@@ -689,9 +696,10 @@ data Config = Config
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         NewUnifier (Condition RewritingVariableName)
-    -- ^ Unifier function, it is a partially applied 'unificationProcedure'
-    --   where we discard the result since we are looking for unification
-    --   failures
+    {- ^ Unifier function, it is a partially applied 'unificationProcedure'
+    where we discard the result since we are looking for unification
+    failures
+    -}
     , logger :: MVar (LogAction IO SomeEntry)
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile

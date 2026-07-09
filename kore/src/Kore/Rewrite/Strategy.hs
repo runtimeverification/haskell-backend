@@ -89,9 +89,10 @@ data ExecutionGraph config rule = ExecutionGraph
 data ChildNode config rule = ChildNode
     { config :: config
     , parents :: [(Seq rule, Graph.Node)]
-    -- ^ The predecessor configurations in the execution graph and the sequence
-    -- of rules applied from the parent configuration to the present
-    -- configuration.
+    {- ^ The predecessor configurations in the execution graph and the sequence
+    of rules applied from the parent configuration to the present
+    configuration.
+    -}
     }
     deriving stock (Eq, Show, Functor)
 
@@ -432,7 +433,7 @@ history ExecutionGraph{root, graph} =
 See also: 'runStrategy'
 -}
 pickLongest :: ExecutionGraph config rule -> config
-pickLongest exeGraph = head $ last $ history exeGraph
+pickLongest exeGraph = (last $ history exeGraph) !! 0
 
 -- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
 pickFinal :: ExecutionGraph config rule -> [config]

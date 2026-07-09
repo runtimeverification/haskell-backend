@@ -1,3 +1,6 @@
+-- no head/tail warnings
+{-# OPTIONS_GHC -Wno-x-partial #-}
+
 module Test.Booster.Syntax.Json (
     -- Tasty wrappers
     test_prettyPattern,

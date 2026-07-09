@@ -10,14 +10,15 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.6.5"
-  stack_version: "2.15.1"
+  ghc_version: "9.10.3"
+  stack_version: "3.7.1"
   hpack_version: '0.36'
 
 jobs:
   formatting:
     name: 'Formatting and Style'
-    runs-on: ubuntu-22.04
+    needs: nix-integration-early
+    runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v6
@@ -33,7 +34,7 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       # - name: 'Install Cachix'
       #   uses: cachix/cachix-action@v17
@@ -61,8 +62,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            os: ubuntu-22.04
+          - runner: ubuntu-24.04
+            os: ubuntu-24.04
             nix: x86_64-linux
           - runner: self-macos-latest
             os: self-macos-latest
@@ -89,7 +90,7 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       # - name: 'Install Cachix'
       #   if: ${{ !startsWith(matrix.os, 'self') }}
@@ -99,7 +100,7 @@ jobs:
 
       - name: Build
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
-        
+
       - name: Test
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
 
@@ -107,6 +108,7 @@ jobs:
     name: 'Nix / Integration'
     needs: formatting
     runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 120
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -122,7 +124,7 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       # - name: Install Cachix
       #   uses: cachix/cachix-action@v17
@@ -166,17 +168,84 @@ jobs:
         if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
-                --override-input haskell-backend . --update-input haskell-backend \
+                --override-input haskell-backend . \
+                --override-input haskell-backend/nixpkgs \
+                "github:NixOS/nixpkgs/$(nix eval --raw --impure --expr '(builtins.getFlake ("git+file://" + toString ./. + "?shallow=1")).inputs.nixpkgs.rev')" \
+                --command bash -c "cd test && make -j2 --output-sync test"
+
+nix-integration-early:
+    name: 'Nix / Integration (early)'
+    runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 120
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.30.1/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://cache.iog.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      # - name: Install Cachix
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: k-framework
+      #     skipPush: true
+
+      - uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            kore:
+              - 'kore/**'
+            kore_rpc_types:
+              - 'kore-rpc-types/**'
+            booster:
+              - 'booster/**'
+            dev_tools:
+              - 'dev-tools/**'
+            project:
+              - 'stack.yaml*'
+              - 'cabal.project*'
+              - 'Makefile'
+              - '*.mk'
+              - 'flake.nix'
+              - 'deps/*'
+              - scripts/booster-integration-tests.sh
+            kore_tests:
+              - 'test/**'
+
+      - name: Run kore integration tests
+        # do not run this unless anything has changed in a relevant directory
+        if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
+        run: |
+          echo nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
+                --override-input haskell-backend . \
+                --override-input haskell-backend/nixpkgs \
+                "github:NixOS/nixpkgs/$(nix eval --raw --impure --expr '(builtins.getFlake ("git+file://" + toString ./. + "?shallow=1")).inputs.nixpkgs.rev')" \
+                --command bash -c "cd test && make -j2 --output-sync test"
+          GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
+                --override-input haskell-backend . \
+                --override-input haskell-backend/nixpkgs \
+                "github:NixOS/nixpkgs/$(nix eval --raw --impure --expr '(builtins.getFlake ("git+file://" + toString ./. + "?shallow=1")).inputs.nixpkgs.rev')" \
                 --command bash -c "cd test && make -j2 --output-sync test"
 
   stack:
     name: 'Stack / Unit Tests'
     needs: formatting
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Install prerequisites
         run: |
-          sudo apt install --yes debhelper z3 libsecp256k1-dev
+          sudo apt install --yes build-essential debhelper z3 libsecp256k1-dev
 
       - uses: actions/checkout@v6
         with:
@@ -216,12 +285,12 @@ jobs:
         run: stack test kore:kore-test hs-backend-booster:unit-tests
 
       - name: Build Ubuntu package
-        run: ./package/debian/build-package jammy k-haskell-backend.deb
+        run: ./package/debian/build-package noble k-haskell-backend.deb
 
   hlint:
     name: 'HLint'
     needs: formatting
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v6
@@ -237,7 +306,7 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= 
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       # - name: 'Install Cachix'
       #   uses: cachix/cachix-action@v17

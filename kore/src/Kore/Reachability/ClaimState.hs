@@ -34,8 +34,9 @@ data ClaimState claim
       Remaining !claim
     | -- | The claim was rewritten.
       Rewritten !claim
-    | -- | The proof of this claim cannot be completed because the implication
-      -- does not hold.
+    | {- | The proof of this claim cannot be completed because the implication
+      does not hold.
+      -}
       Stuck !claim
     | -- | The claim was proven.
       Proven

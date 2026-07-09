@@ -328,7 +328,7 @@ test_removeAll =
             map' <- forAll genMapPattern
             set <- forAll Test.Set.genSetConcreteIntegerPattern
             when (set == HashSet.empty) discard
-            let key = head (HashSet.toList set)
+            let key = (HashSet.toList set) !! 0 -- not empty, see above
                 diffSet = HashSet.delete key set
                 patSet = mkSet_ set & fromConcrete
                 patDiffSet = mkSet_ diffSet & fromConcrete

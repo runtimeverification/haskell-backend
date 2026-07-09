@@ -14,8 +14,10 @@ TESTS = $(wildcard *.kore)
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
 GOLDEN += $(foreach TEST, $(TESTS), $(TEST).golden)
 
+# sed: strip build-dependent package unit-ids by removing backtraces entirely
 %.kore.out : %.kore
 	$(KORE_PARSER) --no-print-definition $< 2>$@ || true
+	sed -i '/^HasCallStack backtrace:/,$$d' $@
 	$(DIFF) $*.kore.golden $@ || $(FAILED)
 
 %.golden: %.out

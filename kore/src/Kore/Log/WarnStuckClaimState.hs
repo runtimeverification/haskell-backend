@@ -26,11 +26,13 @@ import Pretty qualified
 The warning message distinguishes for the user the ways that a proof can be stuck.
 -}
 data WarnStuckClaimState
-    = -- | The terms of the left- and right-hand sides do not unify,
-      -- and the left-hand side cannot be rewritten any further.
+    = {- | The terms of the left- and right-hand sides do not unify,
+      and the left-hand side cannot be rewritten any further.
+      -}
       TermsUnifiableStuck SomeClaim
-    | -- | The left- and right-hand side terms are unifiable, but the left-hand side
-      -- condition does not imply the right-hand side condition.
+    | {- | The left- and right-hand side terms are unifiable, but the left-hand side
+      condition does not imply the right-hand side condition.
+      -}
       TermsNotUnifiableStuck SomeClaim
     | -- | The left-hand side of the claim has been simplified to bottom.
       BottomLHS SomeClaim

@@ -12,7 +12,7 @@ import Data.Aeson.Encode.Pretty qualified as JSON
 import Data.ByteString.Char8 qualified as BSS
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Foldable (toList)
-import Data.List (foldl', maximumBy, sortBy)
+import Data.List (maximumBy, sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
@@ -271,11 +271,12 @@ ruleStats = Map.fromListWith (<>) . collect
     interesting (CLWithId c') = isRuleCtx c'
 
     fromCtxSpan :: Seq CLContext -> [LogLine] -> (RuleStats, [LogLine])
-    fromCtxSpan prefix ls
-        | null prefixLines =
-            error "Should have at least one line with the prefix" -- see above
-        | otherwise =
-            (mkOutcome (head prefixLines) (last prefixLines), rest)
+    fromCtxSpan prefix ls =
+        case prefixLines of
+            [] ->
+                error "Should have at least one line with the prefix" -- see above
+            hd : _ ->
+                (mkOutcome hd (last prefixLines), rest)
       where
         len = Seq.length prefix
 

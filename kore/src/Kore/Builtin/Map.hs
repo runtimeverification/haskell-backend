@@ -757,8 +757,7 @@ unifyNotInKeys resultSort unifyChildren unifyData =
                 keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
 
                 let keyInKeysOpaque =
-                        ( \term' -> inject @(TermLike _) (inKeys :: InKeys (TermLike RewritingVariableName)){mapTerm = term'}
-                        )
+                        (\term' -> inject @(TermLike _) (inKeys :: InKeys (TermLike RewritingVariableName)){mapTerm = term'})
                             <$> opaqueElements
 
                 opaqueConditions <-

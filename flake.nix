@@ -3,7 +3,8 @@
 
   inputs = {
     rv-nix-tools.url = "github:runtimeverification/rv-nix-tools/854d4f05ea78547d46e807b414faad64cea10ae4";
-    nixpkgs.follows = "rv-nix-tools/nixpkgs";
+    # nixpkgs.follows = "rv-nix-tools/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     z3 = {
       url = "github:Z3Prover/z3/z3-4.13.4";
@@ -83,11 +84,7 @@
       in {
         json-rpc = hlib.dontCheck (hlib.markUnbroken hprev.json-rpc);
         smtlib-backends-process = hlib.dontCheck (hlib.markUnbroken (hlib.dontCheck hprev.smtlib-backends-process));
-        decision-diagrams = hlib.dontCheck (hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams));
-
-        # dependencies on the "wrong" version of hashable
-        data-fix = hlib.doJailbreak hprev.data-fix;
-        text-short = hlib.doJailbreak hprev.text-short;
+        decision-diagrams = hlib.doJailbreak (hlib.markUnbroken (hlib.dontCheck hprev.decision-diagrams));
 
         # skip some package tests (might cause issues on CI)
         crypton-x509 = hlib.dontCheck hprev.crypton-x509;
@@ -106,21 +103,9 @@
       someCabalHashesOverlay = makeOverlayForHaskell (final: prev: some-cabal-hashes {
         self = final;
         overrides = {
-          # note: fetchFromGitHub should be replaced by a flake input
-          # tasty-test-reporter = final.fetchFromGitHub {
-          #   owner = "goodlyrottenapple";
-          #   repo = "tasty-test-reporter";
-          #   rev = "b704130545aa3925a8487bd3e92f1dd5ce0512e2";
-          #   sha256 = "sha256-uOQYsTecYgAKhL+DIgHLAfh2DAv+ye1JWqcQGRdpiMA=";
-          # };
-
-          # a custom older version of hashable
-          hashable = "1.4.2.0";
-
-          # custom version of tar. We would want 0.6.3.0 but the
-          # currently-used nixpkgs cabal hashes don't provide that
-          tar = "0.6.2.0";
+          # custom versions of packages go here
         };
+        # packages with un-met dependency versions need to jail-break
       });
       pkgs = import nixpkgs {
         inherit system;
@@ -136,7 +121,7 @@
         inherit system;
       };
       # ghc compiler revision
-      ghcVer = "ghc965";
+      ghcVer = "ghc9103";
 
       withZ3 = pkgs: pkg: exe: pkgs.stdenv.mkDerivation {
         name = exe;
@@ -144,7 +129,7 @@
         dontPatch = true;
         dontConfigure = true;
         dontBuild = true;
-        
+
         buildInputs = with pkgs; [ makeWrapper ];
         installPhase = ''
           mkdir -p $out/bin
@@ -154,6 +139,25 @@
           wrapProgram $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
         '';
       };
+      # stack by default uses nix at runtime to pull dependencies
+      # this messes with actual `nix develop` shell users of this flake, so we wrap stack
+      #  to not do this when run from this `nix develop` shell
+      # otherwise, we would have to modify `stack.yaml` and even add a dedicated `shell.nix`
+      #  for stack since building this project requires pkg-config and secp256k1 (see pkg-config setup hooks)
+      # `hpkgs.shellFor` includes a GHC wrapped with `-B` to a `ghc-x.y.z-with-packages`
+      #  for stack, instead, we need a clean libdir as otherwise stack will pick wrong packages
+      #  therefore, we wrap stack with a bare ghc that points by default to a `ghc-x.y.z` libdir
+      #  by wrapping stack and inserting GHC into PATH with higher priority than the shell-provided GHC
+      stackWrapped = pkgs.symlinkJoin {
+        name = "stack";
+        paths = [ pkgs.stack ];
+        buildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/stack \
+            --prefix PATH : ${pkgs.haskell.compiler.${ghcVer}}/bin \
+            --add-flags "--no-nix --system-ghc --no-install-ghc"
+        '';
+        };
     in {
       packages =
       let
@@ -202,6 +206,8 @@
         cabal = hpkgs.shellFor {
           name = "haskell cabal shell";
           packages = shellForPackages;
+          # clang from kompile in K crashes on hardening flag `zerocallusedregs`
+          hardeningDisable = [ "zerocallusedregs" ];
           nativeBuildInputs = [
             hpkgs.cabal-install
             pkgs.hpack
@@ -209,6 +215,12 @@
             pkgs.nix
             pkgs.z3
             pkgs.lsof
+            pkgs.pkg-config
+            pkgs.git
+          ];
+          buildInputs = with pkgs; [
+            secp256k1
+            zlib
           ];
           shellHook = ''
             hpack booster && hpack dev-tools
@@ -217,6 +229,7 @@
         default = hpkgs.shellFor {
           name = "haskell default shell";
           packages = shellForPackages;
+          hardeningDisable = [ "zerocallusedregs" ];
           nativeBuildInputs = [
             hpkgs.cabal-install
             hpkgs.hpack
@@ -224,7 +237,12 @@
             hpkgs.hlint
             pkgs.haskell-language-server
             pkgs.z3
-            pkgs.secp256k1
+            pkgs.pkg-config
+            stackWrapped
+          ];
+          buildInputs = with pkgs; [
+            secp256k1
+            zlib
           ];
         };
       };

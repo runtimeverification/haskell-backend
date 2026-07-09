@@ -27,7 +27,7 @@ import Data.Char (isDigit)
 import Data.Coerce (coerce)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, listToMaybe, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Prettyprinter (pretty)
@@ -205,11 +205,10 @@ equationToSMTLemma equation
                     | (t, v) <- Map.toList m
                     ]
             lemmaId =
-                head $
+                fromMaybe "Unknown location" . listToMaybe $
                     catMaybes
                         [ fmap Pretty.pretty equation.attributes.ruleLabel
                         , fmap Pretty.pretty equation.attributes.location
-                        , Just "Unknown location"
                         ]
         -- free variables (not created by abstraction during
         -- translation) are all-quantified on the outside

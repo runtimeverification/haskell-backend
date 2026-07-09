@@ -1186,8 +1186,10 @@ remakeMapTerms _ AcTerm{acElements = [var]} =
     mkElemVar $ fromJust $ retract var
 remakeMapTerms tools AcTerm{acElements, acSort} =
     if fromJust $ isMapSort tools acSort
-        then Ac.asInternal tools acSort $ NormalizedMap{getNormalizedMap = normalizedAc $ map mkVar acElements}
-        else Ac.asInternal tools acSort $ NormalizedSet{getNormalizedSet = normalizedAc $ map mkVar acElements}
+        then
+            Ac.asInternal tools acSort $ NormalizedMap{getNormalizedMap = normalizedAc $ map mkVar acElements}
+        else
+            Ac.asInternal tools acSort $ NormalizedSet{getNormalizedSet = normalizedAc $ map mkVar acElements}
   where
     normalizedAc opaque = NormalizedAc{elementsWithVariables = [], concreteElements = HashMap.empty, opaque}
 
@@ -1238,7 +1240,11 @@ solveDiophantineEquations system =
     vk' :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
     vk' vk mk =
         Set.fromList
-            [ add v (e j) | v <- Set.toList $ Set.difference vk mk, j <- [0 .. m - 1], isMinimal v (e j) mk, dot (defect' v) (defect' (e j)) < 0
+            [ add v (e j)
+            | v <- Set.toList $ Set.difference vk mk
+            , j <- [0 .. m - 1]
+            , isMinimal v (e j) mk
+            , dot (defect' v) (defect' (e j)) < 0
             ]
 
     isMinimal :: Vector Int -> Vector Int -> Set (Vector Int) -> Bool

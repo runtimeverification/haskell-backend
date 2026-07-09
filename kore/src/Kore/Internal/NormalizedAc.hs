@@ -78,8 +78,9 @@ class AcWrapper (normalized :: Type -> Type -> Type) where
     unwrapAc :: normalized key child -> NormalizedAc normalized key child
     wrapAc :: NormalizedAc normalized key child -> normalized key child
 
-    -- | Pairs the values in two wrappers as they should be paired for
-    --    unification.
+    {- | Pairs the values in two wrappers as they should be paired for
+    unification.
+    -}
     alignValues ::
         Value normalized a ->
         Value normalized b ->
@@ -168,11 +169,13 @@ For a map, it would be something equivalent to @Identity@.
 -}
 data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
     { elementsWithVariables :: [Element collection child]
-    -- ^ Non-concrete elements of the structure.
-    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    {- ^ Non-concrete elements of the structure.
+    These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    -}
     , concreteElements :: HashMap key (Value collection child)
-    -- ^ Concrete elements of the structure.
-    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    {- ^ Concrete elements of the structure.
+    These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    -}
     , opaque :: [child]
     -- ^ Unoptimized (i.e. non-element) parts of the structure.
     }

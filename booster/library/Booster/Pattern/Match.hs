@@ -50,12 +50,13 @@ data MatchResult
       MatchSuccess Substitution
     | -- | different constructors or domain values, or sort mismatch
       MatchFailed FailReason
-    | -- | (other) cases that are unresolved (offending case in head position).
-      --
-      -- The first field carries the /partial/ substitution accumulated from
-      -- pairs that did resolve before the indeterminate pairs were encountered;
-      -- any successful extension of the match must extend this substitution,
-      -- so callers may use it to prune via a side-condition check.
+    | {- | (other) cases that are unresolved (offending case in head position).
+
+      The first field carries the /partial/ substitution accumulated from
+      pairs that did resolve before the indeterminate pairs were encountered;
+      any successful extension of the match must extend this substitution,
+      so callers may use it to prune via a side-condition check.
+      -}
       MatchIndeterminate Substitution (NonEmpty (Term, Term))
     deriving stock (Eq, Show)
 
@@ -69,8 +70,9 @@ data FailReason
       DifferentSymbols Term Term
     | -- | The unificands have different sorts
       DifferentSorts Term Term
-    | -- | Variable would refer to itself. This should not happen
-      -- because we rename rule variables to avoid it.
+    | {- | Variable would refer to itself. This should not happen
+      because we rename rule variables to avoid it.
+      -}
       VariableRecursion Variable Term
     | -- | Variable reassigned
       VariableConflict Variable Term Term
@@ -372,8 +374,7 @@ matchSymbolAplications
     args2
         | symbol1.name /= symbol2.name =
             failWith
-                ( DifferentSymbols (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)
-                )
+                (DifferentSymbols (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2))
         | length args1 /= length args2 =
             failWith $
                 ArgLengthsDiffer (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)
@@ -395,7 +396,8 @@ matchSymbolAplications
                 then
                     failWith
                         (DifferentSymbols (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2))
-                else addIndeterminate (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)
+                else
+                    addIndeterminate (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)
         | length args1 /= length args2 =
             failWith $
                 ArgLengthsDiffer (SymbolApplication symbol1 sorts1 args1) (SymbolApplication symbol2 sorts2 args2)

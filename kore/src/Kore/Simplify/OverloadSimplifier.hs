@@ -59,52 +59,56 @@ data OverloadSimplifier = OverloadSimplifier
         Symbol ->
         [TermLike RewritingVariableName] ->
         TermLike RewritingVariableName
-    -- ^ Apply an overloading equation from right to left.
-    --
-    --        In general an overloading equation is of the form
-    --
-    --        @overloadingOp(inj{S1,S2}(X:S1)) = inj{S,S'}(overloadedOp(X:S1))@
-    --
-    --        This function is given an injection prototype (used for name and
-    --        attributes), the @overloadingOp@ symbol and the list of children
-    --        corresponding to the @overloadedOp@ symbol application (@X:S1@ in the
-    --        example above).  It then injects the children appropriately to serve
-    --        as arguments to @overloadingOp@ and applies @overloadingOp@ to them.
+    {- ^ Apply an overloading equation from right to left.
+
+       In general an overloading equation is of the form
+
+       @overloadingOp(inj{S1,S2}(X:S1)) = inj{S,S'}(overloadedOp(X:S1))@
+
+       This function is given an injection prototype (used for name and
+       attributes), the @overloadingOp@ symbol and the list of children
+       corresponding to the @overloadedOp@ symbol application (@X:S1@ in the
+       example above).  It then injects the children appropriately to serve
+       as arguments to @overloadingOp@ and applies @overloadingOp@ to them.
+    -}
     , unifyOverloadWithinBound ::
         Inj () ->
         Symbol ->
         Symbol ->
         Sort ->
         Maybe InjectedOverload
-    -- ^ Find a common overload with the result sort being a subsort of the
-    --        argument, if such an overload exists. Also returns the appropriate
-    --        injection, if necessary.
+    {- ^ Find a common overload with the result sort being a subsort of the
+       argument, if such an overload exists. Also returns the appropriate
+       injection, if necessary.
+    -}
     , getOverloadedWithinSort ::
         Inj () ->
         Symbol ->
         Sort ->
         Either String (Maybe InjectedOverload)
-    -- ^ Find a symbol overloaded by the argument with the result sort being
-    --         a subsort of the argument, if a maximum (w.r.t. overloading) such
-    --         symbol exists. Also returns the appropriate injection, if necessary.
+    {- ^ Find a symbol overloaded by the argument with the result sort being
+        a subsort of the argument, if a maximum (w.r.t. overloading) such
+        symbol exists. Also returns the appropriate injection, if necessary.
+    -}
     , unifyOverloadWithSortWithinBound ::
         Symbol -> -- top symbol on the LHS (wrapepd in an \inj{S1, injTo})
         Inj () -> -- injection \inj{S2, injTo} wrapping the var on the RHS
         Either String (Maybe InjectedOverloadPair)
-    -- ^ Given symbol firstHead of sort S1 and an injection inj{S2, injTo}
-    --           If there exists a (unique) maximum overloaded symbol secondHead
-    --           with its result sort S2' within S2, such that there exists a common
-    --           overload headUnion of firstHead and secondHead
-    --           with its result sort S within injTo, then return a 'Pair' of the form
-    --
-    --             @((headUnion, inj{S, injTo}), (secondHead, inj{S2', S2}))@
-    --
-    --           where the injections can miss if they are identities.
-    --
-    --           If there are no overloaded symbols candidates, return @Right Nothing@
-    --
-    --           If there are candidates, but no maximum, throw an
-    --           'errorAmbiguousOverloads' with the candidates found
+    {- ^ Given symbol firstHead of sort S1 and an injection inj{S2, injTo}
+          If there exists a (unique) maximum overloaded symbol secondHead
+          with its result sort S2' within S2, such that there exists a common
+          overload headUnion of firstHead and secondHead
+          with its result sort S within injTo, then return a 'Pair' of the form
+
+            @((headUnion, inj{S, injTo}), (secondHead, inj{S2', S2}))@
+
+          where the injections can miss if they are identities.
+
+          If there are no overloaded symbols candidates, return @Right Nothing@
+
+          If there are candidates, but no maximum, throw an
+          'errorAmbiguousOverloads' with the candidates found
+    -}
     }
 
 {- | Builds an Overload Simplifier given a graph encoding the overload
