@@ -10,9 +10,11 @@ License     : BSD-3-Clause
 module Booster.Pattern.ApplyEquations (
     evaluateTerm,
     evaluatePattern,
+    evaluatePatternWithCeils,
     Direction (..),
     EquationT (..),
     runEquationT,
+    runEquationTWithCeils,
     EquationConfig (..),
     getConfig,
     EquationPreference (..),
@@ -72,7 +74,7 @@ import Booster.Prettyprinter (renderOneLineText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json.Externalise (externaliseTerm)
 import Booster.Syntax.Json.Internalise (extractSubstitution)
-import Booster.Util (Bound (..))
+import Booster.Util (Bound (..), secWithUnit, timed)
 import Kore.JsonRpc.Types.ContextLog (CLContext (CLWithId), IdContext (CtxCached))
 import Kore.Util (showHashHex)
 
@@ -152,6 +154,10 @@ data EquationConfig = EquationConfig
     , maxLocalSteps :: Bound "LocalSteps"
     , logger :: Logger LogMessage
     , prettyModifiers :: ModifiersRep
+    , evaluateCeils :: Bool
+    -- ^ When True, attempt to discharge definedness conditions at runtime
+    -- by evaluating partial-function sub-terms of rule RHS with evaluateCeils=False.
+    -- Sound because the sub-evaluation only applies total-RHS equations.
     }
 
 data EquationState = EquationState
@@ -349,7 +355,33 @@ runEquationT ::
     Set Predicate ->
     EquationT io a ->
     io (Either EquationFailure a, SimplifierCache)
-runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
+runEquationT = runEquationT' False
+
+{- | Like 'runEquationT' but with the @evaluateCeils@ flag enabled, allowing
+runtime discharge of definedness conditions for rules with partial-function RHS.
+-}
+runEquationTWithCeils ::
+    LoggerMIO io =>
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SMT.SMTContext ->
+    SimplifierCache ->
+    Set Predicate ->
+    EquationT io a ->
+    io (Either EquationFailure a, SimplifierCache)
+runEquationTWithCeils = runEquationT' True
+
+runEquationT' ::
+    LoggerMIO io =>
+    Bool ->
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SMT.SMTContext ->
+    SimplifierCache ->
+    Set Predicate ->
+    EquationT io a ->
+    io (Either EquationFailure a, SimplifierCache)
+runEquationT' withCeils definition llvmApi smtSolver sCache known (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     logger <- getLogger
     prettyModifiers <- getPrettyModifiers
@@ -367,6 +399,7 @@ runEquationT definition llvmApi smtSolver sCache known (EquationT m) = do
                         , maxLocalSteps = globalEquationOptions.maxLocalSteps
                         , logger
                         , prettyModifiers
+                        , evaluateCeils = withCeils
                         }
     -- NB the returned cache assumes the known predicates
     pure (res, endState.cache)
@@ -578,6 +611,31 @@ evaluatePattern def mLlvmLibrary smtSolver cache pat =
         smtSolver
         cache
         -- interpret substitution as additional known constraints
+        (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
+        . evaluatePattern'
+        $ pat
+
+{- | Like 'evaluatePattern' but with the @evaluateCeils@ flag enabled.
+   Used during implies checking, where we may need to apply simplification
+   equations whose RHS contains partial-function applications.  The
+   definedness conditions for each such equation are discharged at runtime
+   by evaluating them with the standard (evaluateCeils=False) evaluator and
+   checking whether the term changed.
+-}
+evaluatePatternWithCeils ::
+    LoggerMIO io =>
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SMT.SMTContext ->
+    SimplifierCache ->
+    Pattern ->
+    io (Either EquationFailure Pattern, SimplifierCache)
+evaluatePatternWithCeils def mLlvmLibrary smtSolver cache pat =
+    runEquationTWithCeils
+        def
+        mLlvmLibrary
+        smtSolver
+        cache
         (pat.constraints <> (Set.fromList . asEquations $ pat.substitution))
         . evaluatePattern'
         $ pat
@@ -941,18 +999,49 @@ applyEquation term rule =
                         logMessage ("Equation with existentials" :: Text)
                     lift . throw . InternalError $
                         "Equation with existentials: " <> Text.pack (show rule)
-                -- immediately cancel if not preserving definedness
-                unless (null rule.computedAttributes.notPreservesDefinednessReasons) $ do
-                    throwE
-                        ( \ctxt ->
-                            ctxt $
-                                logMessage $
-                                    renderOneLineText $
-                                        "Uncertain about definedness of rule due to:"
-                                            <+> hsep (intersperse "," $ map pretty rule.computedAttributes.notPreservesDefinednessReasons)
-                        , RuleNotPreservingDefinedness
-                        )
-                -- immediately cancel if rule has concrete() flag and term has variables
+                -- Gate on definedness preservation.
+                -- Four cases based on (preserves-definedness attribute, definedness conditions, evaluateCeils flag):
+                --
+                --   notPreservingReasons=[]  + conditions=[]  → totally defined, proceed silently
+                --   notPreservingReasons=[]  + conditions≠[]  → user set preserves-definedness, log and proceed
+                --   notPreservingReasons≠[]  + conditions=[]  → can't prove definedness, reject
+                --   notPreservingReasons≠[]  + conditions≠[]  + evaluateCeils=False  → ceils disabled, reject
+                --   notPreservingReasons≠[]  + conditions≠[]  + evaluateCeils=True   → defer to runtime check after match
+                let notPreservingReasons = rule.computedAttributes.notPreservesDefinednessReasons
+                    definednessConditions = collectUndefinedSubterms rule.rhs
+                    preservedByAttr = null notPreservingReasons
+                    hasConditions = not (null definednessConditions)
+                case (preservedByAttr, hasConditions) of
+                    (True, True) ->
+                        -- user marked preserves-definedness; log so the path is visible in traces
+                        withContext CtxDefinedness $
+                            logMessage ("Rule is marked as preserving definedness" :: Text)
+                    (False, False) ->
+                        -- no conditions to check at runtime, conservatively reject
+                        throwE
+                            ( \ctxt ->
+                                ctxt $
+                                    logMessage $
+                                        renderOneLineText $
+                                            "Uncertain about definedness of rule due to:"
+                                                <+> hsep (intersperse "," $ map pretty notPreservingReasons)
+                            , RuleNotPreservingDefinedness
+                            )
+                    (False, True) -> do
+                        -- conditions present; reject now unless evaluateCeils enabled (runtime check deferred)
+                        cfg <- lift getConfig
+                        unless (cfg.evaluateCeils) $
+                            throwE
+                                ( \ctxt ->
+                                    ctxt $
+                                        logMessage $
+                                            renderOneLineText $
+                                                "Uncertain about definedness of rule due to:"
+                                                    <+> hsep (intersperse "," $ map pretty notPreservingReasons)
+                                , RuleNotPreservingDefinedness
+                                )
+                    (True, False) -> pure () -- totally defined, proceed silently
+                    -- immediately cancel if rule has concrete() flag and term has variables
                 when (allMustBeConcrete rule.attributes.concreteness && not (Set.null (freeVariables term))) $ do
                     throwE
                         ( \ctxt -> ctxt $ logMessage ("Concreteness constraint violated: term has variables" :: Text)
@@ -1006,6 +1095,11 @@ applyEquation term rule =
                                                     Map.toList subst
                                         )
 
+                        -- when evaluateCeils is enabled and the rule has definedness conditions,
+                        -- check them now (after match, with the substitution applied)
+                        when (not preservedByAttr && hasConditions) $
+                            checkDefinednessConditions subst definednessConditions
+
                         -- check required constraints from lhs.
                         -- Reaction on false/indeterminate varies depending on the equation's type (function/simplification),
                         -- see @handleSimplificationEquation@ and @handleFunctionEquation@
@@ -1033,6 +1127,54 @@ applyEquation term rule =
                             "Known true side conditions (won't check):"
                                 <+> hsep (intersperse "," $ map (pretty' @mods) knownTrue)
         pure toCheck
+
+    -- Runtime definedness discharge: for each definedness condition (a partial-function
+    -- sub-term of the rule's RHS, after substitution), try to evaluate it using the
+    -- standard equation evaluator (evaluateCeils=False — only total-RHS rules apply).
+    -- If the term changes, it was defined.  If any condition fails, the rule is rejected.
+    checkDefinednessConditions ::
+        Map Variable Term ->
+        [Term] ->
+        ExceptT
+            ((EquationT io () -> EquationT io ()) -> EquationT io (), ApplyEquationFailure)
+            (EquationT io)
+            ()
+    checkDefinednessConditions subst conditions = withContext CtxDefinedness $ do
+        cfg <- lift getConfig
+        st <- lift getState
+        let substituted = map (substituteInTerm subst) conditions
+        (allDefined, elapsed) <- lift . (eqState . lift) . timed $ do
+            results <- mapM (tryEvaluate cfg st) substituted
+            pure $ and results
+        withContext CtxTiming $
+            logMessage $
+                WithJsonMessage (object ["time" .= elapsed]) $
+                    "Checked definedness conditions in " <> Text.pack (secWithUnit elapsed)
+        unless allDefined $
+            throwE
+                ( \ctxt ->
+                    ctxt $
+                        logMessage ("Definedness conditions could not be established" :: Text)
+                , RuleNotPreservingDefinedness
+                )
+
+    tryEvaluate ::
+        EquationConfig ->
+        EquationState ->
+        Term ->
+        io Bool
+    tryEvaluate cfg st cond = do
+        (result, _) <-
+            runEquationT
+                cfg.definition
+                cfg.llvmApi
+                cfg.smtSolver
+                st.cache
+                st.predicates
+                (evaluateTerm' BottomUp cond)
+        pure $ case result of
+            Right evaluated -> evaluated /= cond
+            Left _ -> False
 
     -- Simplify given predicate in a nested EquationT execution.
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
