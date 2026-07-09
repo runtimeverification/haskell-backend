@@ -175,7 +175,6 @@ jobs:
 
 nix-integration-early:
     name: 'Nix / Integration (early)'
-    needs: formatting
     runs-on: [self-hosted, linux, normal]
     timeout-minutes: 120
     steps:
