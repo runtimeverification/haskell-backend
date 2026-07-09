@@ -1,0 +1,7 @@
+self-hosted-runner:
+  labels:
+    - linux
+    - normal
+    - self-macos-latest
+
+config-variables: null

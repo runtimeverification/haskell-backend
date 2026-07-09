@@ -1,0 +1,99 @@
+name: 'Downstream Perf Suite'
+description: 'Run one downstream performance suite, preserve artifacts, and fail only after collection/upload.'
+
+inputs:
+  suite:
+    description: 'Suite id, for example kevm or kontrol'
+    required: true
+  script:
+    description: 'Path to the suite runner script'
+    required: true
+  artifact-name:
+    description: 'Artifact name to upload'
+    required: true
+  feature-branch-name:
+    description: 'Raw feature branch name from GitHub context'
+    required: true
+  reason:
+    description: 'Trigger reason emitted by the select job'
+    required: true
+  timeout-seconds:
+    description: 'Per-command timeout in seconds used for feature and baseline runs'
+    required: false
+    default: '14400'
+  shard-label:
+    description: 'Optional shard label to isolate per-shard outputs'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Install Nix'
+      uses: cachix/install-nix-action@v26
+      with:
+        install_url: https://releases.nixos.org/nix/nix-2.30.1/install
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
+          substituters = http://cache.nixos.org https://cache.iog.io
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+    - name: 'Install Cachix'
+      uses: cachix/cachix-action@v14
+      with:
+        name: k-framework
+        skipPush: true
+
+    - name: 'Install uv and cmake3'
+      shell: bash
+      run: |
+        python3 -m pip install --user uv
+        mkdir -p "$HOME/.local/bin" "$HOME/.local"
+        CMAKE_VERSION=3.31.6
+        CMAKE_ROOT="$HOME/.local/cmake-${CMAKE_VERSION}-linux-x86_64"
+        if [ ! -x "$CMAKE_ROOT/bin/cmake" ]; then
+          curl -fsSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" \
+            | tar -xz -C "$HOME/.local"
+        fi
+        ln -sf "$CMAKE_ROOT/bin/cmake" "$HOME/.local/bin/cmake"
+        ln -sf "$CMAKE_ROOT/bin/ctest" "$HOME/.local/bin/ctest"
+        ln -sf "$CMAKE_ROOT/bin/cpack" "$HOME/.local/bin/cpack"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: 'Run suite'
+      id: suite
+      shell: bash
+      env:
+        DOWNSTREAM_PERF_MANIFEST: ${{ github.workspace }}/scripts/logs/downstream-perf-${{ inputs.suite }}.manifest
+        DOWNSTREAM_PERF_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+        FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
+      run: |
+        set +e
+        bash "${{ inputs.script }}"
+        status=$?
+        echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - name: 'Collect suite results'
+      if: ${{ always() }}
+      shell: bash
+      env:
+        FEATURE_BRANCH_NAME: ${{ inputs.feature-branch-name }}
+        REASON: ${{ inputs.reason }}
+        DOWNSTREAM_PERF_SHARD_LABEL: ${{ inputs.shard-label }}
+      run: |
+        bash scripts/collect-downstream-perf-results.sh "${{ inputs.suite }}" "scripts/logs/downstream-perf-${{ inputs.suite }}.manifest" "$REASON" "$FEATURE_BRANCH_NAME"
+
+    - name: 'Upload suite results'
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: downstream-perf/${{ inputs.suite }}
+        if-no-files-found: error
+
+    - name: 'Fail if suite failed'
+      if: ${{ steps.suite.outputs.exit_code != '0' }}
+      shell: bash
+      run: |
+        exit "${{ steps.suite.outputs.exit_code }}"

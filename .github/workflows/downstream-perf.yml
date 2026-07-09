@@ -1,0 +1,565 @@
+name: 'Downstream Performance'
+
+on:
+  workflow_dispatch:
+    inputs:
+      suites:
+        description: 'Downstream suites to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - kevm
+          - kontrol
+      pr_number:
+        description: 'PR number to comment on when running manually'
+        required: false
+        type: string
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+      - ready_for_review
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    name: 'Select downstream perf suites'
+    runs-on: ubuntu-22.04
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+      run_kevm: ${{ steps.decide.outputs.run_kevm }}
+      run_kontrol: ${{ steps.decide.outputs.run_kontrol }}
+      reason: ${{ steps.decide.outputs.reason }}
+      target_pr: ${{ steps.decide.outputs.target_pr }}
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Detect relevant changes'
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            downstream_perf:
+              - 'booster/**'
+              - 'kore/**'
+              - 'kore-rpc-types/**'
+              - 'flake.nix'
+              - 'deps/**'
+              - 'scripts/performance-tests-kevm.sh'
+              - 'scripts/performance-tests-kontrol.sh'
+              - 'scripts/compare.py'
+              - 'scripts/compare-downstream-perf-artifacts.sh'
+              - 'scripts/collect-downstream-perf-results.sh'
+              - 'scripts/downstream-perf-lib.sh'
+              - '.github/actions/downstream-perf-suite/**'
+              - '.github/actionlint.yaml'
+              - '.github/workflows/downstream-perf.yml'
+
+      - name: 'Decide suites'
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_SUITES: ${{ inputs.suites || 'all' }}
+          REQUESTED_PR: ${{ inputs.pr_number || '' }}
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number || '' }}
+          HAS_PERF_LABEL: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'perf') }}
+          RELEVANT_CHANGES: ${{ steps.changes.outputs.downstream_perf || 'false' }}
+        run: |
+          should_run=false
+          run_kevm=false
+          run_kontrol=false
+          reason='not-requested'
+          target_pr="$PULL_REQUEST_NUMBER"
+
+          if [ -z "$target_pr" ] && [ -n "$REQUESTED_PR" ]; then
+            target_pr="$REQUESTED_PR"
+          fi
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            should_run=true
+            reason='manual-dispatch'
+          elif [ "$HAS_PERF_LABEL" = "true" ]; then
+            should_run=true
+            reason='perf-label'
+          elif [ "$RELEVANT_CHANGES" = "true" ]; then
+            should_run=true
+            reason='relevant-path-change'
+          fi
+
+          if [ "$should_run" = "true" ]; then
+            case "$REQUESTED_SUITES" in
+              all)
+                run_kevm=true
+                run_kontrol=true
+                ;;
+              kevm)
+                run_kevm=true
+                ;;
+              kontrol)
+                run_kontrol=true
+                ;;
+              *)
+                echo "Unknown suites selection: $REQUESTED_SUITES" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          {
+            echo "should_run=$should_run"
+            echo "run_kevm=$run_kevm"
+            echo "run_kontrol=$run_kontrol"
+            echo "reason=$reason"
+            echo "target_pr=$target_pr"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Downstream perf selection"
+            echo
+            echo "- Event: $EVENT_NAME"
+            echo "- Reason: $reason"
+            echo "- KEVM: $run_kevm"
+            echo "- Kontrol: $run_kontrol"
+            echo "- Target PR: ${target_pr:-none}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  kevm_master:
+    name: 'KEVM master raw'
+    needs: select
+    if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kevm == 'true' }}
+    runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 240
+    steps:
+      - name: 'Check out workflow code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Check out master source tree'
+        uses: actions/checkout@v5
+        with:
+          ref: refs/heads/master
+          path: haskell-backend-master
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: 'Sync downstream perf scripts into master tree'
+        run: |
+          install -m 755 scripts/performance-tests-kevm.sh haskell-backend-master/scripts/performance-tests-kevm.sh
+          install -m 644 scripts/downstream-perf-lib.sh haskell-backend-master/scripts/downstream-perf-lib.sh
+          install -m 644 scripts/compare.py haskell-backend-master/scripts/compare.py
+
+      - name: 'Run KEVM master raw run'
+        uses: ./.github/actions/downstream-perf-suite
+        env:
+          BASELINE_COMMIT: HEAD
+          PYTEST_PARALLEL: 1
+        with:
+          suite: kevm
+          script: haskell-backend-master/scripts/performance-tests-kevm.sh
+          artifact-name: kevm-master-raw-${{ github.run_id }}
+          feature-branch-name: master
+          reason: ${{ needs.select.outputs.reason }}
+          timeout-seconds: '14400'
+          shard-label: master
+
+  kevm_current:
+    name: 'KEVM current raw'
+    needs: select
+    if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kevm == 'true' }}
+    runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 240
+    steps:
+      - name: 'Check out current'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: 'Run KEVM current raw run'
+        uses: ./.github/actions/downstream-perf-suite
+        env:
+          BASELINE_COMMIT: HEAD
+          PYTEST_PARALLEL: 1
+        with:
+          suite: kevm
+          script: scripts/performance-tests-kevm.sh
+          artifact-name: kevm-current-raw-${{ github.run_id }}
+          feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          reason: ${{ needs.select.outputs.reason }}
+          timeout-seconds: '14400'
+          shard-label: current
+
+  kontrol_master:
+    name: 'Kontrol master raw'
+    needs: select
+    if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kontrol == 'true' }}
+    runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 240
+    steps:
+      - name: 'Check out workflow code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Check out master source tree'
+        uses: actions/checkout@v5
+        with:
+          ref: refs/heads/master
+          path: haskell-backend-master
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: 'Sync downstream perf scripts into master tree'
+        run: |
+          install -m 755 scripts/performance-tests-kontrol.sh haskell-backend-master/scripts/performance-tests-kontrol.sh
+          install -m 644 scripts/downstream-perf-lib.sh haskell-backend-master/scripts/downstream-perf-lib.sh
+          install -m 644 scripts/compare.py haskell-backend-master/scripts/compare.py
+
+      - name: 'Run Kontrol master raw run'
+        uses: ./.github/actions/downstream-perf-suite
+        env:
+          BASELINE_COMMIT: HEAD
+        with:
+          suite: kontrol
+          script: haskell-backend-master/scripts/performance-tests-kontrol.sh
+          artifact-name: kontrol-master-raw-${{ github.run_id }}
+          feature-branch-name: master
+          reason: ${{ needs.select.outputs.reason }}
+          timeout-seconds: '14400'
+          shard-label: master
+
+  kontrol_current:
+    name: 'Kontrol current raw'
+    needs: select
+    if: ${{ needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kontrol == 'true' }}
+    runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 240
+    steps:
+      - name: 'Check out current'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: 'Run Kontrol current raw run'
+        uses: ./.github/actions/downstream-perf-suite
+        env:
+          BASELINE_COMMIT: HEAD
+        with:
+          suite: kontrol
+          script: scripts/performance-tests-kontrol.sh
+          artifact-name: kontrol-current-raw-${{ github.run_id }}
+          feature-branch-name: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          reason: ${{ needs.select.outputs.reason }}
+          timeout-seconds: '14400'
+          shard-label: current
+
+  kevm_compare:
+    name: 'KEVM compare'
+    needs:
+      - select
+      - kevm_master
+      - kevm_current
+    if: ${{ always() && needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kevm == 'true' && needs.kevm_master.result != 'cancelled' && needs.kevm_current.result != 'cancelled' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Download KEVM master raw results'
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kevm-master-raw-${{ github.run_id }}
+          path: downstream-perf/raw/kevm-master
+
+      - name: 'Download KEVM current raw results'
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kevm-current-raw-${{ github.run_id }}
+          path: downstream-perf/raw/kevm-current
+
+      - name: 'Compare KEVM raw results'
+        id: compare
+        run: |
+          set +e
+          bash scripts/compare-downstream-perf-artifacts.sh \
+            kevm \
+            downstream-perf/raw/kevm-master \
+            downstream-perf/raw/kevm-current \
+            downstream-perf/final/kevm
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: 'Publish KEVM compare summary'
+        if: ${{ always() }}
+        run: |
+          if [ -f downstream-perf/final/kevm/summary.md ]; then
+            cat downstream-perf/final/kevm/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 'Upload KEVM final artifact'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kevm-final-${{ github.run_id }}
+          path: downstream-perf/final/kevm
+          if-no-files-found: error
+
+      - name: 'Fail if KEVM compare failed'
+        if: ${{ steps.compare.outputs.exit_code != '0' }}
+        run: |
+          exit "${{ steps.compare.outputs.exit_code }}"
+
+  kontrol_compare:
+    name: 'Kontrol compare'
+    needs:
+      - select
+      - kontrol_master
+      - kontrol_current
+    if: ${{ always() && needs.select.outputs.should_run == 'true' && needs.select.outputs.run_kontrol == 'true' && needs.kontrol_master.result != 'cancelled' && needs.kontrol_current.result != 'cancelled' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Download Kontrol master raw results'
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kontrol-master-raw-${{ github.run_id }}
+          path: downstream-perf/raw/kontrol-master
+
+      - name: 'Download Kontrol current raw results'
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kontrol-current-raw-${{ github.run_id }}
+          path: downstream-perf/raw/kontrol-current
+
+      - name: 'Compare Kontrol raw results'
+        id: compare
+        run: |
+          set +e
+          bash scripts/compare-downstream-perf-artifacts.sh \
+            kontrol \
+            downstream-perf/raw/kontrol-master \
+            downstream-perf/raw/kontrol-current \
+            downstream-perf/final/kontrol
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: 'Publish Kontrol compare summary'
+        if: ${{ always() }}
+        run: |
+          if [ -f downstream-perf/final/kontrol/summary.md ]; then
+            cat downstream-perf/final/kontrol/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 'Upload Kontrol final artifact'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kontrol-final-${{ github.run_id }}
+          path: downstream-perf/final/kontrol
+          if-no-files-found: error
+
+      - name: 'Fail if Kontrol compare failed'
+        if: ${{ steps.compare.outputs.exit_code != '0' }}
+        run: |
+          exit "${{ steps.compare.outputs.exit_code }}"
+
+  report:
+    name: 'Report downstream perf comment'
+    needs:
+      - select
+      - kevm_compare
+      - kontrol_compare
+    if: ${{ always() && needs.select.outputs.should_run == 'true' && needs.select.outputs.target_pr != '' && (needs.select.outputs.run_kevm != 'true' || needs.kevm_compare.result != 'cancelled') && (needs.select.outputs.run_kontrol != 'true' || needs.kontrol_compare.result != 'cancelled') }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: 'Download KEVM final artifact'
+        if: ${{ needs.select.outputs.run_kevm == 'true' && needs.kevm_compare.result != 'cancelled' && needs.kevm_compare.result != 'skipped' }}
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kevm-final-${{ github.run_id }}
+          path: downstream-perf/final/kevm
+
+      - name: 'Download Kontrol final artifact'
+        if: ${{ needs.select.outputs.run_kontrol == 'true' && needs.kontrol_compare.result != 'cancelled' && needs.kontrol_compare.result != 'skipped' }}
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kontrol-final-${{ github.run_id }}
+          path: downstream-perf/final/kontrol
+
+      - name: 'Resolve final artifact links'
+        id: artifact_links
+        uses: actions/github-script@v7
+        env:
+          RUN_KEVM: ${{ needs.select.outputs.run_kevm }}
+          RUN_KONTROL: ${{ needs.select.outputs.run_kontrol }}
+        with:
+          script: |
+            const runId = Number(context.runId);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const server = process.env.GITHUB_SERVER_URL || 'https://github.com';
+            const artifactsPage = `${server}/${owner}/${repo}/actions/runs/${runId}#artifacts`;
+            const result = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: runId,
+              per_page: 100,
+            });
+            const artifacts = result.data.artifacts || [];
+
+            function linkForPrefix(prefix) {
+              const artifact = artifacts.find((item) => item.name.startsWith(prefix));
+              if (!artifact) return artifactsPage;
+              return `${server}/${owner}/${repo}/actions/runs/${runId}/artifacts/${artifact.id}`;
+            }
+
+            const kevmLink = process.env.RUN_KEVM === 'true'
+              ? linkForPrefix(`kevm-final-${runId}`)
+              : '';
+            const kontrolLink = process.env.RUN_KONTROL === 'true'
+              ? linkForPrefix(`kontrol-final-${runId}`)
+              : '';
+
+            core.setOutput('kevm_link', kevmLink);
+            core.setOutput('kontrol_link', kontrolLink);
+
+      - name: 'Build PR comment body'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_KEVM: ${{ needs.select.outputs.run_kevm }}
+          RUN_KONTROL: ${{ needs.select.outputs.run_kontrol }}
+          KEVM_ARTIFACT_LINK: ${{ steps.artifact_links.outputs.kevm_link }}
+          KONTROL_ARTIFACT_LINK: ${{ steps.artifact_links.outputs.kontrol_link }}
+          TRIGGER_REASON: ${{ needs.select.outputs.reason }}
+          TARGET_PR: ${{ needs.select.outputs.target_pr }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p downstream-perf/report
+          comment_file="downstream-perf/report/comment.md"
+
+          {
+            echo '<!-- downstream-perf-report -->'
+            echo '## Downstream Performance'
+            echo
+            echo "- Trigger: $TRIGGER_REASON"
+            echo "- Target PR: #$TARGET_PR"
+            echo "- Workflow run: $RUN_URL"
+            echo
+
+            if [ "$RUN_KEVM" = "true" ]; then
+              echo "### KEVM"
+              echo
+              echo "- Artifacts: ${KEVM_ARTIFACT_LINK:-$RUN_URL#artifacts}"
+              echo
+              if [ -f downstream-perf/final/kevm/summary.md ]; then
+                sed '1,/^$/d' downstream-perf/final/kevm/summary.md
+              else
+                echo 'No KEVM final summary was produced.'
+              fi
+              echo
+            fi
+
+            if [ "$RUN_KONTROL" = "true" ]; then
+              echo "### Kontrol"
+              echo
+              echo "- Artifacts: ${KONTROL_ARTIFACT_LINK:-$RUN_URL#artifacts}"
+              echo
+              if [ -f downstream-perf/final/kontrol/summary.md ]; then
+                sed '1,/^$/d' downstream-perf/final/kontrol/summary.md
+              else
+                echo 'No Kontrol final summary was produced.'
+              fi
+              echo
+            fi
+          } > "$comment_file"
+
+      - name: 'Upsert PR comment'
+        uses: actions/github-script@v7
+        env:
+          COMMENT_PATH: downstream-perf/report/comment.md
+          TARGET_PR: ${{ needs.select.outputs.target_pr }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- downstream-perf-report -->';
+            const body = fs.readFileSync(process.env.COMMENT_PATH, 'utf8');
+            const issue_number = Number(process.env.TARGET_PR);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
