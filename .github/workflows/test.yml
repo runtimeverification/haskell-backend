@@ -101,7 +101,7 @@ jobs:
         run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
         
       - name: Test
-        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests && BENCH_SIZES=10 cabal bench booster-bench --benchmark-options='--stdev 100'"
 
   nix-integration:
     name: 'Nix / Integration'

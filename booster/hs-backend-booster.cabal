@@ -223,6 +223,11 @@ source-repository head
   type: git
   location: https://github.com/runtimeverification/hs-backend-booster
 
+flag profiling
+  description: Enable profiling-friendly build options for benchmark runs.
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Booster.Builtin
@@ -331,6 +336,8 @@ library
     , unix
     , unliftio
     , unordered-containers
+  if flag(profiling)
+    ghc-options: -prof -fprof-auto
   default-language: Haskell2010
 
 executable kore-rpc-booster
@@ -463,6 +470,7 @@ test-suite unit-tests
   type: exitcode-stdio-1.0
   main-is: Driver.hs
   other-modules:
+      Test.Booster.Benchmarks
       Test.Booster.Builtin
       Test.Booster.Definition.Internalise
       Test.Booster.Fixture
@@ -483,9 +491,12 @@ test-suite unit-tests
       Test.Booster.Syntax.Json.Internalise
       Test.Booster.Syntax.ParsedKore.Parser
       Test.Booster.Util
+      Booster.Benchmark.Data
+      Booster.Benchmark.Ops
       Paths_hs_backend_booster
   hs-source-dirs:
       unit-tests
+      bench-fixtures
   default-extensions:
       BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
@@ -509,4 +520,32 @@ test-suite unit-tests
     , tasty-hunit
     , text
     , transformers
+  default-language: Haskell2010
+
+benchmark booster-bench
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Booster.Benchmark.Data
+      Booster.Benchmark.Ops
+      Paths_hs_backend_booster
+  hs-source-dirs:
+      bench
+      bench-fixtures
+  default-extensions:
+      BangPatterns DataKinds DefaultSignatures DeriveAnyClass DeriveGeneric DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving ImportQualifiedPost KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedRecordDot OverloadedStrings PolyKinds ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -j6 -rtsopts -threaded -with-rtsopts=-N
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , deepseq
+    , hashable
+    , hs-backend-booster
+    , monad-logger
+    , tasty-bench
+    , text
+    , transformers
+  if flag(profiling)
+    ghc-options: -prof -fprof-auto
   default-language: Haskell2010

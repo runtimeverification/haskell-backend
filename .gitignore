@@ -57,6 +57,8 @@ hie.yaml
 /scripts/bug-reports
 /booster/test/rpc-integration/resources/*.dylib
 /booster/test/*/definition/*kompiled/
+/booster/benchmarks.csv
+/booster/booster-bench.hp
 
 # the LLVM bindings from ./booster/cbits are symlinked to the root ./cbits to make HLS work
 /cbits
