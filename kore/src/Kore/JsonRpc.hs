@@ -278,8 +278,7 @@ respond reqId serverState moduleName runSMT =
                                             , depth = Depth depth
                                             , reason = CutPointRule
                                             , rule
-                                            , nextStates =
-                                                Just $ map (patternToExecState False sort . Exec.rpcProgState) nexts
+                                            , nextStates = Nothing
                                             , logs = mkLogs rules
                                             , unknownPredicate = Nothing
                                             , haskellLogEntries = Nothing

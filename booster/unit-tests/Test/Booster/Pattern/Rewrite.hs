@@ -603,10 +603,11 @@ supportsCutPoints =
                 (Steps 0)
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
-                ( RewriteCutPoint
-                    "con1-f1"
-                    mockUniqueId
-                    [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                ( const $
+                    RewriteCutPoint
+                        "con1-f1"
+                        mockUniqueId
+                        [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
                 )
         , testCase "ignores non-matching cut-point labels" $
             let startTerm =

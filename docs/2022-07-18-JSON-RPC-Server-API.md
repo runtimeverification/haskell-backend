@@ -181,7 +181,6 @@ The `unknown-predicate` field MAY contain a predicate that could not be decided 
 ##### `"reason": "cut-point-rule"`
 Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.  
 An additional `rule` field indicates which of the `cut-point-rules` labels/IDs led to stopping.
-An additional `next-states` field contains the next state (which stems from the RHS of this rule) in a singleton list.
 
 ```json
 {
@@ -196,13 +195,6 @@ An additional `next-states` field contains the next state (which stems from the 
     "depth": 2,
     "reason": "cut-point-rule",
     "rule": "rule1",
-    "next-states": [
-      {
-        "term": {"format": "KORE", "version": 1, "term": {}},
-        "predicate": {"format":"KORE", "version":1, "term":{}},
-        "substitution": {"format":"KORE", "version":1, "term":{}},
-      }
-    ],
     "logs": []
   }
 }
