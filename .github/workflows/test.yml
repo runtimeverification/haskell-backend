@@ -17,6 +17,7 @@ env:
 jobs:
   formatting:
     name: 'Formatting and Style'
+    needs: nix-integration-early
     runs-on: ubuntu-24.04
     steps:
       - name: 'Check out code'
@@ -166,6 +167,72 @@ jobs:
         # do not run this unless anything has changed in a relevant directory
         if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
+          GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
+                --override-input haskell-backend . \
+                --override-input haskell-backend/nixpkgs \
+                "github:NixOS/nixpkgs/$(nix eval --raw --impure --expr '(builtins.getFlake ("git+file://" + toString ./. + "?shallow=1")).inputs.nixpkgs.rev')" \
+                --command bash -c "cd test && make -j2 --output-sync test"
+
+nix-integration-early:
+    name: 'Nix / Integration (early)'
+    needs: formatting
+    runs-on: [self-hosted, linux, normal]
+    timeout-minutes: 120
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.30.1/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://cache.iog.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      # - name: Install Cachix
+      #   uses: cachix/cachix-action@v17
+      #   with:
+      #     name: k-framework
+      #     skipPush: true
+
+      - uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            kore:
+              - 'kore/**'
+            kore_rpc_types:
+              - 'kore-rpc-types/**'
+            booster:
+              - 'booster/**'
+            dev_tools:
+              - 'dev-tools/**'
+            project:
+              - 'stack.yaml*'
+              - 'cabal.project*'
+              - 'Makefile'
+              - '*.mk'
+              - 'flake.nix'
+              - 'deps/*'
+              - scripts/booster-integration-tests.sh
+            kore_tests:
+              - 'test/**'
+
+      - name: Run kore integration tests
+        # do not run this unless anything has changed in a relevant directory
+        if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
+        run: |
+          echo nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
+                --override-input haskell-backend . \
+                --override-input haskell-backend/nixpkgs \
+                "github:NixOS/nixpkgs/$(nix eval --raw --impure --expr '(builtins.getFlake ("git+file://" + toString ./. + "?shallow=1")).inputs.nixpkgs.rev')" \
+                --command bash -c "cd test && make -j2 --output-sync test"
           GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . \
                 --override-input haskell-backend/nixpkgs \
