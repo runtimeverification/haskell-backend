@@ -216,6 +216,7 @@
             pkgs.z3
             pkgs.lsof
             pkgs.pkg-config
+            pkgs.git
           ];
           buildInputs = with pkgs; [
             secp256k1
