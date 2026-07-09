@@ -40,10 +40,12 @@ import Kore.Attribute.Synthetic (
  )
 import Kore.Attribute.Total
 import Kore.Builtin.Endianness qualified as Endianness
+import Kore.Builtin.Float qualified as Float
 import Kore.Builtin.Signedness qualified as Signedness
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalFloat
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
@@ -310,6 +312,94 @@ eqInt
         TermLike RewritingVariableName
 eqInt i j = mkApplySymbol eqIntSymbol [i, j]
 ltInt i j = mkApplySymbol ltIntSymbol [i, j]
+-- ** Float
+comparisonFloatSymbol :: Text -> Internal.Symbol
+comparisonFloatSymbol name = comparisonSymbol name floatSort
+unaryFloatSymbol :: Text -> Internal.Symbol
+unaryFloatSymbol name = unarySymbol name floatSort
+binaryFloatSymbol :: Text -> Internal.Symbol
+binaryFloatSymbol name = binarySymbol name floatSort
+eqFloatSymbol :: Internal.Symbol
+eqFloatSymbol =
+    comparisonFloatSymbol "eqFloat"
+        & hook "FLOAT.eq"
+        & function
+        & total
+addFloatSymbol :: Internal.Symbol
+addFloatSymbol =
+    binaryFloatSymbol "addFloat"
+        & hook "FLOAT.add"
+        & function
+        & total
+precisionFloatSymbol :: Internal.Symbol
+precisionFloatSymbol =
+    builtinSymbol "precisionFloat" intSort [floatSort]
+        & hook "FLOAT.precision"
+        & function
+        & total
+signFloatSymbol :: Internal.Symbol
+signFloatSymbol =
+    builtinSymbol "signFloat" boolSort [floatSort]
+        & hook "FLOAT.sign"
+        & function
+        & total
+int2FloatSymbol :: Internal.Symbol
+int2FloatSymbol =
+    builtinSymbol "int2Float" floatSort [intSort, intSort, intSort]
+        & hook "FLOAT.int2float"
+        & function
+float2IntSymbol :: Internal.Symbol
+float2IntSymbol =
+    builtinSymbol "float2Int" intSort [floatSort]
+        & hook "FLOAT.float2int"
+        & function
+float2StringSymbol :: Internal.Symbol
+float2StringSymbol =
+    builtinSymbol "float2String" stringSort [floatSort]
+        & hook "STRING.float2string"
+        & function
+        & total
+string2FloatSymbol :: Internal.Symbol
+string2FloatSymbol =
+    builtinSymbol "string2Float" floatSort [stringSort]
+        & hook "STRING.string2float"
+        & function
+eqFloat ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+eqFloat x y = mkApplySymbol eqFloatSymbol [x, y]
+addFloat ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+addFloat x y = mkApplySymbol addFloatSymbol [x, y]
+precisionFloat ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+precisionFloat x = mkApplySymbol precisionFloatSymbol [x]
+signFloat ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+signFloat x = mkApplySymbol signFloatSymbol [x]
+int2Float ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+int2Float x p e = mkApplySymbol int2FloatSymbol [x, p, e]
+float2Int ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+float2Int x = mkApplySymbol float2IntSymbol [x]
+float2String ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+float2String x = mkApplySymbol float2StringSymbol [x]
+string2Float ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
+string2Float x = mkApplySymbol string2FloatSymbol [x]
 -- ** KEQUAL
 comparisonKSymbol :: Text -> Internal.Symbol
 comparisonKSymbol name = comparisonSymbol name kSort
@@ -1011,6 +1101,37 @@ builtinInt internalIntValue =
         }
 mkInt :: InternalVariable variable => Integer -> TermLike variable
 mkInt = mkInternalInt . builtinInt
+-- ** Float
+
+floatSort :: Sort
+floatSort =
+    SortActualSort
+        SortActual
+            { sortActualName = testId "Float"
+            , sortActualSorts = []
+            }
+
+floatSortDecl :: ParsedSentence
+floatSortDecl =
+    hookedSortDecl
+        floatSort
+        [hasDomainValuesAttribute, hookAttribute "FLOAT.Float"]
+
+internalFloat :: FloatValue -> InternalFloat
+internalFloat internalFloatValue =
+    InternalFloat
+        { internalFloatSort = floatSort
+        , internalFloatValue
+        }
+
+mkFloat :: InternalVariable variable => FloatValue -> TermLike variable
+mkFloat = mkInternalFloat . internalFloat
+
+mkFloatText :: InternalVariable variable => Text -> TermLike variable
+mkFloatText =
+    mkFloat
+        . fromJust
+        . Float.parseText
 -- ** KEQUAL
 kSort :: Sort
 kSort =
@@ -1700,6 +1821,32 @@ stringModule =
             ]
         }
 
+-- ** FLOAT
+
+floatModuleName :: ModuleName
+floatModuleName = ModuleName "FLOAT"
+
+floatModule :: ParsedModule
+floatModule =
+    Module
+        { moduleName = floatModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importParsedModule boolModuleName
+            , importParsedModule intModuleName
+            , importParsedModule stringModuleName
+            , floatSortDecl
+            , hookedSymbolDecl eqFloatSymbol
+            , hookedSymbolDecl addFloatSymbol
+            , hookedSymbolDecl precisionFloatSymbol
+            , hookedSymbolDecl signFloatSymbol
+            , hookedSymbolDecl int2FloatSymbol
+            , hookedSymbolDecl float2IntSymbol
+            , hookedSymbolDecl float2StringSymbol
+            , hookedSymbolDecl string2FloatSymbol
+            ]
+        }
+
 -- ** IO
 
 ioModuleName :: ModuleName
@@ -1799,11 +1946,13 @@ testModule =
             , importParsedModule pairModuleName
             , importParsedModule setModuleName
             , importParsedModule stringModuleName
+            , importParsedModule floatModuleName
             , importParsedModule bytesModuleName
             , importParsedModule kryptoModuleName
             , importParsedModule ioModuleName
             , subsortDecl boolSort kItemSort
             , subsortDecl intSort kItemSort
+            , subsortDecl floatSort kItemSort
             , subsortDecl idSort kItemSort
             , subsortDecl kItemSort kSort
             ]
@@ -1863,6 +2012,7 @@ testDefinition =
             , pairModule
             , setModule
             , stringModule
+            , floatModule
             , ioModule
             , bytesModule
             , kryptoModule

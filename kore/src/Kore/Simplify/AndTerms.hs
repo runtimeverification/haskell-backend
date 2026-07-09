@@ -28,6 +28,7 @@ import Data.Text (
 import Kore.Builtin.Bool qualified as Builtin.Bool
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Endianness qualified as Builtin.Endianness
+import Kore.Builtin.Float qualified as Builtin.Float
 import Kore.Builtin.Int qualified as Builtin.Int
 import Kore.Builtin.InternalBytes (
     matchBytes,
@@ -152,6 +153,8 @@ maybeTermEquals childTransformers first second = do
     worker injSimplifier overloadSimplifier tools
         | Just unifyData <- Builtin.Int.matchInt first second =
             lift $ Builtin.Int.unifyInt unifyData
+        | Just unifyData <- Builtin.Float.matchFloat first second =
+            lift $ Builtin.Float.unifyFloat unifyData
         | Just unifyData <- Builtin.Bool.matchBools first second =
             lift $ Builtin.Bool.unifyBool unifyData
         | Just unifyData <- Builtin.String.matchString first second =
@@ -189,6 +192,8 @@ maybeTermEquals childTransformers first second = do
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
             lift $ Builtin.Bool.unifyBoolNot childTransformers boolNotData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
+            lift $ Builtin.unifyEq childTransformers unifyData
+        | Just unifyData <- Builtin.Float.matchUnifyFloatEq first second =
             lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
             lift $ Builtin.unifyEq childTransformers unifyData
@@ -244,6 +249,8 @@ maybeTermAnd childTransformers first second = do
             lift $ boolAnd unifyData
         | Just unifyData <- Builtin.Int.matchInt first second =
             lift $ Builtin.Int.unifyInt unifyData
+        | Just unifyData <- Builtin.Float.matchFloat first second =
+            lift $ Builtin.Float.unifyFloat unifyData
         | Just unifyData <- Builtin.Bool.matchBools first second =
             lift $ Builtin.Bool.unifyBool unifyData
         | Just unifyData <- Builtin.String.matchString first second =

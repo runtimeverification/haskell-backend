@@ -23,6 +23,7 @@ import Kore.Builtin.Signedness.Signedness qualified as Signedness
 import Kore.Internal.Alias qualified as Alias
 import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalBool
+import Kore.Internal.InternalFloat
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
@@ -97,6 +98,7 @@ externalize = Recursive.futu externalize1
             -- Internals
             InternalBoolF (Const internalBool) -> externalizeBool internalBool
             InternalIntF (Const internalInt) -> externalizeInt internalInt
+            InternalFloatF (Const internalFloat) -> externalizeFloat internalFloat
             InternalBytesF (Const internalBytes) -> externalizeBytes internalBytes
             InternalStringF (Const internalString) -> externalizeString internalString
             InternalListF internalList -> externalizeList internalList
@@ -357,3 +359,20 @@ externalizeInt builtin =
     domainValueChild =
         Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
             StringLiteral (Text.pack $ show internalIntValue)
+
+externalizeFloat ::
+    InternalFloat ->
+    FutuPattern variable (TermLike variable)
+externalizeFloat builtin =
+    Attribute.Null
+        :< Syntax.DomainValueF
+            DomainValue
+                { domainValueSort = internalFloatSort
+                , domainValueChild
+                }
+  where
+    InternalFloat{internalFloatSort} = builtin
+    InternalFloat{internalFloatValue} = builtin
+    domainValueChild =
+        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
+            StringLiteral (renderFloatValue internalFloatValue)

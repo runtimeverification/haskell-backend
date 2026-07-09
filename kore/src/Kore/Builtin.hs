@@ -38,6 +38,7 @@ import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Endianness qualified as Endianness
+import Kore.Builtin.Float qualified as Float
 import Kore.Builtin.IO qualified as IO
 import Kore.Builtin.Inj qualified as Inj
 import Kore.Builtin.Int qualified as Int
@@ -68,6 +69,7 @@ koreVerifiers =
     mempty
         <> Bool.verifiers
         <> Endianness.verifiers
+        <> Float.verifiers
         <> Inj.verifiers
         <> Int.verifiers
         <> InternalBytes.verifiers
@@ -92,6 +94,7 @@ koreEvaluators :: Text -> Maybe BuiltinAndAxiomSimplifier
 koreEvaluators key =
     asum
         [ Bool.builtinFunctions key
+        , Float.builtinFunctions key
         , Int.builtinFunctions key
         , IO.builtinFunctions key
         , KEqual.builtinFunctions key

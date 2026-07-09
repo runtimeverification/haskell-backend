@@ -97,6 +97,7 @@ import Kore.Internal.Inj
 import Kore.Internal.Inj qualified as Inj
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalFloat
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
@@ -186,6 +187,7 @@ data TermLikeF variable child
     | StringLiteralF !(Const StringLiteral child)
     | InternalBoolF !(Const InternalBool child)
     | InternalBytesF !(Const InternalBytes child)
+    | InternalFloatF !(Const InternalFloat child)
     | InternalIntF !(Const InternalInt child)
     | InternalStringF !(Const InternalString child)
     | InternalListF !(InternalList child)
@@ -236,6 +238,7 @@ instance
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -273,6 +276,7 @@ instance Synthetic Sort (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -310,6 +314,7 @@ instance Synthetic Attribute.Total (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -347,6 +352,7 @@ instance Synthetic Attribute.Function (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -384,6 +390,7 @@ instance Synthetic Attribute.Defined (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -421,6 +428,7 @@ instance Synthetic Attribute.Simplified (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -458,6 +466,7 @@ instance Synthetic Attribute.ConstructorLike (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalFloatF internalFloat -> synthetic internalFloat
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
@@ -474,6 +483,7 @@ instance From (KeyF child) (TermLikeF variable child) where
     from (Key.DomainValueF domainValue) = DomainValueF domainValue
     from (Key.InternalBoolF internalBool) = InternalBoolF internalBool
     from (Key.InternalIntF internalInt) = InternalIntF internalInt
+    from (Key.InternalFloatF internalFloat) = InternalFloatF internalFloat
     from (Key.InternalStringF internalString) = InternalStringF internalString
     from (Key.InternalSetF internalSet) = InternalSetF internalSet
     from (Key.InternalMapF internalMap) = InternalMapF internalMap
@@ -961,6 +971,8 @@ retractKey =
                     sequence (Key.InternalBoolF internalBool)
                 InternalBytesF internalBytes ->
                     sequence (Key.InternalBytesF internalBytes)
+                InternalFloatF internalFloat ->
+                    sequence (Key.InternalFloatF internalFloat)
                 InternalIntF internalInt ->
                     sequence (Key.InternalIntF internalInt)
                 InternalStringF internalString ->
@@ -1026,6 +1038,8 @@ instance
                 locationFromAst internalBoolSort
             InternalBytesF (Const InternalBytes{internalBytesSort}) ->
                 locationFromAst internalBytesSort
+            InternalFloatF (Const InternalFloat{internalFloatSort}) ->
+                locationFromAst internalFloatSort
             InternalIntF (Const InternalInt{internalIntSort}) ->
                 locationFromAst internalIntSort
             InternalStringF (Const InternalString{internalStringSort}) ->
@@ -1077,6 +1091,7 @@ traverseVariablesF adj =
         StringLiteralF strP -> pure (StringLiteralF strP)
         InternalBoolF boolP -> pure (InternalBoolF boolP)
         InternalBytesF bytesP -> pure (InternalBytesF bytesP)
+        InternalFloatF floatP -> pure (InternalFloatF floatP)
         InternalIntF intP -> pure (InternalIntF intP)
         InternalStringF stringP -> pure (InternalStringF stringP)
         InternalListF listP -> pure (InternalListF listP)
@@ -1288,6 +1303,9 @@ uninternalize = Pattern.Pattern . Recursive.cata go
             uninternalizeInternalValue bytesSort $
                 Encoding.decode8Bit $
                     ByteString.fromShort bytesValue
+        InternalFloatF (Const (InternalFloat floatSort floatValue)) ->
+            uninternalizeInternalValue floatSort $
+                renderFloatValue floatValue
         InternalIntF (Const (InternalInt intSort intValue)) ->
             uninternalizeInternalValue intSort $
                 Text.pack $
