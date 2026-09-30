@@ -815,6 +815,16 @@ test_matching_List =
         [ (inject xInt, two)
         , (yList, mkList [one])
         ]
+    , matches
+        "framed-list pattern preserves nonempty subject prefix"
+        (prefixList [one] xList)
+        (prefixList [one, two] yList)
+        [(xList, prefixList [two] yList)]
+    , matches
+        "framed-list pattern preserves empty subject prefix"
+        (prefixList [one] xList)
+        (prefixList [one] yList)
+        [(xList, prefixList [] yList)]
     ]
   where
     xList = inject $ configElementVariableFromId (testId "xList") Mock.listSort
