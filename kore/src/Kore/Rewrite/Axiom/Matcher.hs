@@ -24,7 +24,6 @@ import Data.PQueue.Min (
     MinQueue,
  )
 import Data.PQueue.Min qualified as MinQueue
-import Data.Sequence (Seq ((:|>)))
 import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
@@ -445,7 +444,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                                     then
                                         let (start, l2') = Seq.splitAt (length l1) l2
                                          in decomposeList $
-                                                (var1, List.asInternal tools sort (l2' :|> var2))
+                                                (var1, mkApplySymbol symbol1 [List.asInternal tools sort l2', var2])
                                                     : zip (toList l1) (toList start)
                                     else failMatch "subject list is too short"
                     (App_ symbol1 children1, App_ symbol2 children2) ->
