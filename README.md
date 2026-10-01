@@ -12,16 +12,16 @@ Note that this project is low-level and is not intended to be a user-facing tool
 
 ### Kompiling a K definition and running the RPC server
 
-The `kore-rpc-booster` binary takes a `kore` file definition, parses and internalises it and then launches an RPC server, which executes requests agains this definition. It additionally accepts a path to a dynamic library compiled by the LLVM backend, which is used for simplification of bool sorted terms. In order to build the kore definition and the shared library out of a K definition, first call
+The `kore-rpc-booster` binary takes a `kore` file definition, parses and internalises it and then launches an RPC server, which executes requests against this definition. It additionally accepts a path to a dynamic library compiled by the LLVM backend, which is used for simplification of bool sorted terms. In order to build the kore definition and the shared library out of a K definition, first call
 
 ```
-kompile --llvm-kompile-type c my_defintion.k
+kompile --llvm-kompile-type c my_definition.k
 ```
 
 and then launch the server via
 
 ```
-kore-rpc-booster ./my_defintion-kompiled/definition.kore --module MY-DEFINITION --llvm-backend-library ./my_defintion-kompiled/interpreter
+kore-rpc-booster ./my_definition-kompiled/definition.kore --module MY-DEFINITION --llvm-backend-library ./my_definition-kompiled/interpreter
 ```
 
 ## Building
@@ -71,7 +71,7 @@ if you prefer to use [Nix] please refer to the relevant resources on how to
 set up your [Nix] environment to build the server.
 **Note**: HLS has to be built with the project's GHC version.
 
-Prequisite: build the project with either Stack or Cabal.
+Prerequisite: build the project with either Stack or Cabal.
 
 Instructions on integrating with VSCode:
 1. Install the [Haskell extension]
