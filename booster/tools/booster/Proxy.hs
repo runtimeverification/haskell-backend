@@ -844,9 +844,6 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
                                         , logsOnly <> filteredNextLogs <> [proxyRewriteStepLogs]
                                         )
                         -- otherwise falling through to _otherReason
-                        CutPointRule
-                            | null filteredNexts ->
-                                pure $ Right $ makeVacuous (combineLogs $ res.logs : newLogs) res
                         _otherReason ->
                             pure $
                                 Right $
