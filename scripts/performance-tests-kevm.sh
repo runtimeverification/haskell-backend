@@ -8,18 +8,29 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 KEVM_VERSION=${KEVM_VERSION:-'master'}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+. "$SCRIPT_DIR/downstream-perf-lib.sh"
 
-MASTER_COMMIT="$(git rev-parse origin/master)"
-MASTER_COMMIT_SHORT="$(git rev-parse --short origin/master)"
+BASELINE_REF=${BASELINE_REF:-origin/master}
+HEAD_COMMIT="$(git rev-parse HEAD)"
+BASELINE_COMMIT=${BASELINE_COMMIT:-"$(downstream_perf_baseline_commit "$BASELINE_REF")"}
+BASELINE_COMMIT_SHORT="$(git rev-parse --short "$BASELINE_COMMIT")"
 
 FEATURE_BRANCH_NAME=${FEATURE_BRANCH_NAME:-"$(git rev-parse --abbrev-ref HEAD)"}
-FEATURE_BRANCH_NAME="${FEATURE_BRANCH_NAME//\//-}"
+FEATURE_BRANCH_NAME="$(downstream_perf_normalize_feature_branch "$FEATURE_BRANCH_NAME")"
 
-PYTEST_PARALLEL=${PYTEST_PARALLEL:-3}
-
-if [[ $FEATURE_BRANCH_NAME == "master" ]]; then
-  FEATURE_BRANCH_NAME="feature"
-fi
+PYTEST_PARALLEL=${PYTEST_PARALLEL:-1}
+TIMEOUT_SECONDS=${DOWNSTREAM_PERF_TIMEOUT_SECONDS:-${DOWNSTREAM_PERF_FEATURE_BUDGET_SECONDS:-14400}}
+KEVM_TEST_TARGET=${KEVM_TEST_TARGET:-test-prove-rules}
+DOWNSTREAM_PERF_SUITE=kevm
+FEATURE_STATUS=running
+BASELINE_STATUS=not-run
+COMPARE_STATUS=not-run
+SKIP_REASON=''
+FEATURE_DURATION_SECONDS=''
+BASELINE_DURATION_SECONDS=''
+FEATURE_LOG=''
+BASELINE_LOG=''
+COMPARE_FILE=''
 
 # Create a temporary directory (or use the one provided) and store its name in a variable.
 KEEP_TEMPD=${KEEP_TEMPD:-''}
@@ -37,6 +48,7 @@ if [ ! -e "$TEMPD" ]; then
 fi
 
 clean_up () {
+    downstream_perf_write_manifest_snapshot "${DOWNSTREAM_PERF_MANIFEST:-}"
     if [ -z "$KEEP_TEMPD" ]; then
         rm -rf "$TEMPD"
     fi
@@ -48,11 +60,32 @@ trap "exit 1"  HUP INT PIPE QUIT TERM
 trap clean_up  EXIT
 
 feature_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --ignore-environment --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --ignore-environment --command bash -c "export PATH=\"$DOWNSTREAM_PERF_RUNTIME_PATH:\$PATH\"; $1"
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --ignore-environment --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$BASELINE_COMMIT --ignore-environment --command bash -c "export PATH=\"$DOWNSTREAM_PERF_RUNTIME_PATH:\$PATH\"; $1"
+}
+
+first_existing_file() {
+  local candidate=''
+  for candidate in "$@"; do
+    if [ -e "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+build_kevm_command() {
+  local bug_report_arg=$1
+  printf 'timeout %ss make %s PYTEST_PARALLEL=%s PYTEST_ARGS='\''--maxfail=0 -vv %s --kompiled-targets-dir %s'\''' \
+    "$TIMEOUT_SECONDS" \
+    "$KEVM_TEST_TARGET" \
+    "$PYTEST_PARALLEL" \
+    "$bug_report_arg" \
+    "$PREKOMPILED_DIR"
 }
 
 cd $TEMPD
@@ -94,9 +127,26 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+# Keep nix develop as the primary environment, and add missing tool binaries
+# needed by blockchain-k-plugin (k tools + clang + cmake from ~/.local/bin).
+K_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths "github:runtimeverification/k/v$(cat deps/k_release)#k")/bin"
+CLANG_BIN_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths github:NixOS/nixpkgs/nixos-24.05#clang_14)/bin"
+OPENSSL_OUT_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#openssl.out)"
+OPENSSL_DEV_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#openssl.dev)"
+GMP_OUT_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#gmp.out)"
+GMP_DEV_DIR="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#gmp.dev)"
+OPENSSL_CRYPTO_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libcrypto.so" "$OPENSSL_OUT_DIR/lib/libcrypto.so.3" "$OPENSSL_OUT_DIR/lib/libcrypto.dylib" "$OPENSSL_OUT_DIR/lib/libcrypto.a")"
+OPENSSL_SSL_LIB="$(first_existing_file "$OPENSSL_OUT_DIR/lib/libssl.so" "$OPENSSL_OUT_DIR/lib/libssl.so.3" "$OPENSSL_OUT_DIR/lib/libssl.dylib" "$OPENSSL_OUT_DIR/lib/libssl.a")"
+GMP_LIB="$(first_existing_file "$GMP_OUT_DIR/lib/libgmp.so" "$GMP_OUT_DIR/lib/libgmp.so.10" "$GMP_OUT_DIR/lib/libgmp.dylib" "$GMP_OUT_DIR/lib/libgmp.a")"
+PLUGIN_TOOLCHAIN_PATH="$HOME/.local/bin:$K_BIN_DIR:$CLANG_BIN_DIR"
+DOWNSTREAM_PERF_RUNTIME_PATH="$PLUGIN_TOOLCHAIN_PATH"
+PLUGIN_CMAKE_PREFIX_PATH="$OPENSSL_OUT_DIR:$OPENSSL_DEV_DIR:$GMP_OUT_DIR:$GMP_DEV_DIR"
+PLUGIN_LIBFF_FLAGS="-DOPENSSL_ROOT_DIR=$OPENSSL_OUT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_DEV_DIR/include -DOPENSSL_CRYPTO_LIBRARY=$OPENSSL_CRYPTO_LIB -DOPENSSL_SSL_LIBRARY=$OPENSSL_SSL_LIB -DGMP_INCLUDE_DIR=$GMP_DEV_DIR/include -DGMP_LIBRARY=$GMP_LIB"
+
 # kompile evm-semantics or skip kompilation if using an existing TEMPD
 if [[ $FRESH_TEMPD -gt 0 ]]; then
-    feature_shell "make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+    # Ensure plugin build prerequisites are available on self-hosted runners.
+    feature_shell "export CMAKE_PREFIX_PATH=\"$PLUGIN_CMAKE_PREFIX_PATH\"; export LIBFF_CMAKE_FLAGS=\"$PLUGIN_LIBFF_FLAGS\"; make kevm-pyk && uv --project kevm-pyk run -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
 fi
 
 # kompile all verification K definitions and specs
@@ -105,8 +155,39 @@ mkdir -p $PREKOMPILED_DIR
 feature_shell "uv --directory kevm-pyk run -- pytest src/tests/integration/test_prove.py::test_kompile_targets -vv --maxfail=0 --kompiled-targets-dir $PREKOMPILED_DIR"
 
 mkdir -p $SCRIPT_DIR/logs
+FEATURE_LOG="$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+BASELINE_LOG="$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-baseline-$BASELINE_COMMIT_SHORT.log"
+COMPARE_FILE="$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-baseline-$BASELINE_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare"
 
-# use special options if given, but restore KORE_RPC_OPTS afterwards
+status_from_exit() {
+    local exit_code=$1
+    if [[ $exit_code -eq 0 ]]; then
+        printf 'success\n'
+    elif [[ $exit_code -eq 124 ]]; then
+        printf 'timeout\n'
+    else
+        printf 'failure\n'
+    fi
+}
+
+baseline_exit=0
+if [[ $BASELINE_COMMIT == $HEAD_COMMIT ]]; then
+    BASELINE_STATUS=skipped
+    COMPARE_STATUS=skipped
+    SKIP_REASON='baseline-same-as-head'
+else
+    read -r baseline_exit baseline_duration < <(
+        downstream_perf_run_and_log \
+            "$BASELINE_LOG" \
+            master_shell \
+            "$(build_kevm_command "")"
+    )
+    BASELINE_DURATION_SECONDS=$baseline_duration
+    BASELINE_STATUS="$(status_from_exit "$baseline_exit")"
+    killall kore-rpc-booster || echo "No zombie processes found"
+fi
+
+# use special options if given for the current-branch run only, then restore.
 FEATURE_SERVER_OPTS=${FEATURE_SERVER_OPTS:-''}
 if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     echo "Using special options '${FEATURE_SERVER_OPTS}' via KORE_RPC_OPTS"
@@ -116,21 +197,52 @@ if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     export KORE_RPC_OPTS=${FEATURE_SERVER_OPTS}
 fi
 
-feature_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv $BUG_REPORT --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+read -r feature_exit feature_duration < <(
+    downstream_perf_run_and_log \
+        "$FEATURE_LOG" \
+        feature_shell \
+        "$(build_kevm_command "$BUG_REPORT")"
+)
+FEATURE_DURATION_SECONDS=$feature_duration
+FEATURE_STATUS="$(status_from_exit "$feature_exit")"
 killall kore-rpc-booster || echo "No zombie processes found"
 
-
-if [ -z "$BUG_REPORT" ]; then
+if [ ! -z "${FEATURE_SERVER_OPTS}" ]; then
     if [ ! -z "${PRIOR_OPTS:-}" ]; then
         export KORE_RPC_OPTS=${PRIOR_OPTS}
     else
         unset KORE_RPC_OPTS
     fi
-    if [ ! -e "$SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
-        master_shell "make test-prove-rules PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 -vv --kompiled-targets-dir $PREKOMPILED_DIR' | tee $SCRIPT_DIR/logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log"
-        killall kore-rpc-booster || echo "No zombie processes found"
-    fi
+fi
 
-    cd $SCRIPT_DIR
-    python3 compare.py logs/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT.log > logs/kevm-$KEVM_VERSION-master-$MASTER_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare
+if [[ $FEATURE_STATUS != success ]]; then
+    COMPARE_STATUS=skipped
+    if [[ $BASELINE_STATUS == success ]]; then
+        SKIP_REASON="feature-run-${FEATURE_STATUS}-baseline-succeeded"
+    elif [[ $BASELINE_STATUS == skipped ]]; then
+        SKIP_REASON="feature-run-${FEATURE_STATUS}-baseline-skipped"
+    else
+        SKIP_REASON="feature-and-baseline-run-${FEATURE_STATUS}-${BASELINE_STATUS}"
+    fi
+    exit 1
+fi
+
+if [[ -n $BUG_REPORT ]]; then
+    COMPARE_STATUS=skipped
+    SKIP_REASON='bug-report-mode'
+    exit 0
+fi
+
+if [[ $BASELINE_STATUS == success ]]; then
+    cd "$SCRIPT_DIR"
+    python3 compare.py "$FEATURE_LOG" "$BASELINE_LOG" > "$COMPARE_FILE"
+    COMPARE_STATUS=success
+    exit 0
+fi
+
+COMPARE_STATUS=skipped
+if [[ $BASELINE_STATUS == skipped ]]; then
+    SKIP_REASON='baseline-same-as-head'
+else
+    SKIP_REASON="baseline-run-${BASELINE_STATUS}"
 fi
