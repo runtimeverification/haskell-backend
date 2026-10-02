@@ -31,6 +31,7 @@ import Kore.Internal.Inj (
  )
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalFloat
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
@@ -156,6 +157,10 @@ instance From InternalString Key where
     from = synthesize . from
     {-# INLINE from #-}
 
+instance From InternalFloat Key where
+    from = synthesize . from
+    {-# INLINE from #-}
+
 -- | The base functor of 'Key'; the branching structure of the syntax tree.
 data KeyF child
     = ApplySymbolF !(Application Symbol child)
@@ -169,6 +174,7 @@ data KeyF child
     | InternalSetF !(InternalSet Key child)
     | InternalStringF !(Const InternalString child)
     | StringLiteralF !(Const StringLiteral child)
+    | InternalFloatF !(Const InternalFloat child)
     deriving stock (Eq, Ord, Show)
     deriving stock (Foldable, Functor, Traversable)
     deriving stock (GHC.Generic)
@@ -191,6 +197,7 @@ instance Synthetic Sort KeyF where
         DomainValueF domainValue -> synthetic domainValue
         InternalBoolF internalBool -> synthetic internalBool
         InternalBytesF internalBytes -> synthetic internalBytes
+        InternalFloatF internalFloat -> synthetic internalFloat
         InternalIntF internalInt -> synthetic internalInt
         InternalListF internalList -> synthetic internalList
         InternalMapF internalMap -> synthetic internalMap
@@ -204,6 +211,10 @@ instance From InternalBool (KeyF child) where
 
 instance From InternalBytes (KeyF child) where
     from = InternalBytesF . Const
+    {-# INLINE from #-}
+
+instance From InternalFloat (KeyF child) where
+    from = InternalFloatF . Const
     {-# INLINE from #-}
 
 instance From InternalInt (KeyF child) where

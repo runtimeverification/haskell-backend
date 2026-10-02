@@ -58,6 +58,7 @@ module Kore.Internal.TermLike (
     mkInternalBytes,
     mkInternalBytes',
     mkInternalBool,
+    mkInternalFloat,
     mkInternalInt,
     mkInternalString,
     mkInternalList,
@@ -114,6 +115,7 @@ module Kore.Internal.TermLike (
     pattern Bottom_,
     pattern InternalBytes_,
     pattern InternalBool_,
+    pattern InternalFloat_,
     pattern InternalInt_,
     pattern InternalList_,
     pattern InternalMap_,
@@ -236,6 +238,7 @@ import Kore.Internal.Alias
 import Kore.Internal.Inj
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalFloat
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
@@ -336,6 +339,7 @@ hasConstructorLikeTop = \case
     App_ symbol _ -> Symbol.isConstructor symbol
     DV_ _ _ -> True
     InternalBool_ _ -> True
+    InternalFloat_ _ -> True
     InternalInt_ _ -> True
     InternalList_ _ -> True
     InternalMap_ _ -> True
@@ -475,6 +479,8 @@ forgetSimplifiedIgnorePredicates term@(Recursive.project -> (_ :< termF)) =
             Recursive.embed (newAttrs :< StringLiteralF (recursiveCall stringLiteral))
         InternalBoolF internalBool ->
             Recursive.embed (newAttrs :< InternalBoolF (recursiveCall internalBool))
+        InternalFloatF internalFloat ->
+            Recursive.embed (newAttrs :< InternalFloatF (recursiveCall internalFloat))
         InternalIntF internalInt ->
             Recursive.embed (newAttrs :< InternalIntF (recursiveCall internalInt))
         InternalBytesF internalBytes ->
@@ -757,6 +763,7 @@ forceSortPredicate
             ApplyAliasF _ -> illSorted forcedSort original
             InternalBoolF _ -> illSorted forcedSort original
             InternalBytesF _ -> illSorted forcedSort original
+            InternalFloatF _ -> illSorted forcedSort original
             InternalIntF _ -> illSorted forcedSort original
             InternalStringF _ -> illSorted forcedSort original
             InternalListF _ -> illSorted forcedSort original
@@ -1033,6 +1040,14 @@ mkInternalInt ::
     InternalInt ->
     TermLike variable
 mkInternalInt = updateCallStack . synthesize . InternalIntF . Const
+
+-- | Construct an internal float pattern.
+mkInternalFloat ::
+    HasCallStack =>
+    InternalVariable variable =>
+    InternalFloat ->
+    TermLike variable
+mkInternalFloat = updateCallStack . synthesize . InternalFloatF . Const
 
 -- | Construct an internal string pattern.
 mkInternalString ::
@@ -1497,6 +1512,10 @@ pattern InternalBool_ ::
     InternalBool ->
     TermLike variable
 
+pattern InternalFloat_ ::
+    InternalFloat ->
+    TermLike variable
+
 pattern InternalInt_ ::
     InternalInt ->
     TermLike variable
@@ -1652,6 +1671,9 @@ pattern DV_ domainValueSort domainValueChild <-
 
 pattern InternalBool_ internalBool <-
     (Recursive.project -> _ :< InternalBoolF (Const internalBool))
+
+pattern InternalFloat_ internalFloat <-
+    (Recursive.project -> _ :< InternalFloatF (Const internalFloat))
 
 pattern InternalInt_ internalInt <-
     (Recursive.project -> _ :< InternalIntF (Const internalInt))

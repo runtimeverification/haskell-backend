@@ -117,6 +117,7 @@ import Kore.Internal.TermLike (
     pattern Inj_,
     pattern InternalBool_,
     pattern InternalBytes_,
+    pattern InternalFloat_,
     pattern InternalInt_,
     pattern InternalList_,
     pattern InternalMap_,
@@ -714,6 +715,7 @@ retractLocalFunction =
                 Inj_ _ -> Just (Pair term1 term2)
                 InternalInt_ _ -> Just (Pair term1 term2)
                 InternalBytes_ _ _ -> Just (Pair term1 term2)
+                InternalFloat_ _ -> Just (Pair term1 term2)
                 InternalString_ _ -> Just (Pair term1 term2)
                 InternalBool_ _ -> Just (Pair term1 term2)
                 InternalList_ _ -> Just (Pair term1 term2)
@@ -1068,6 +1070,8 @@ cacheSimplifiedFunctions =
                 foldMap extractSimplifiedFunctions bool
             TermLike.InternalBytesF bytes ->
                 foldMap extractSimplifiedFunctions bytes
+            TermLike.InternalFloatF float ->
+                foldMap extractSimplifiedFunctions float
             TermLike.InternalIntF int ->
                 foldMap extractSimplifiedFunctions int
             TermLike.InternalStringF string ->
