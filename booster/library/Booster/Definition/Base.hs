@@ -74,6 +74,11 @@ data RewriteRule (tag :: k) = RewriteRule
     , attributes :: AxiomAttributes
     , computedAttributes :: ComputedAxiomAttributes
     , existentials :: Set Variable
+    , definednessResidual :: [Either Predicate Term]
+    -- ^ leftover definedness obligations: the rule preserves definedness (may be
+    -- applied) iff this is empty (≡ @#Top@).  A @Left p@ is a residual predicate, a
+    -- @Right t@ an unresolved @#Ceil(t)@.  Computed at load (see
+    -- 'Booster.Syntax.ParsedKore.Internalise' and 'Booster.Definition.Ceil').
     }
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)

@@ -847,6 +847,12 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
             , attributes = axAttributes
             , computedAttributes
             , existentials
+            , -- conservative RHS-scan residual; refined to the implication residual
+              -- (#Ceil(RHS) \ #Ceil(LHS) \ #Ceil(requires)) by Booster.Definition.Ceil
+              definednessResidual =
+                if coerce axAttributes.preserving
+                    then []
+                    else map Right (Util.collectUndefinedSubterms rhs)
             }
   where
     mkVar (name, sort) = do
@@ -915,6 +921,12 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
                     , attributes
                     , computedAttributes
                     , existentials = Set.empty
+                    , -- conjunction-form residual over LHS and RHS, matching the
+                      -- LHS∪RHS partial-symbol scan above (no LHS subtraction)
+                      definednessResidual =
+                        if coerce attrs.preserving
+                            then []
+                            else map Right (Util.collectUndefinedSubterms lhs <> Util.collectUndefinedSubterms rhs)
                     }
     | otherwise =
         -- we hit a simplification with top level ML connective or an
@@ -960,6 +972,7 @@ internaliseCeil partialDef left right sortVars attrs = do
                 , attributes
                 , computedAttributes
                 , existentials = Set.empty
+                , definednessResidual = [] -- ceil axioms preserve definedness by construction
                 }
   where
     uninternaliseCollections (Def.KMap def keyVals rest) = Def.externaliseKmapUnsafe def keyVals rest
@@ -1059,6 +1072,15 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
                 , attributes
                 , computedAttributes
                 , existentials = Set.empty
+                , -- residual over the LHS arguments and RHS, matching the
+                  -- args(LHS)∪RHS scan above (total-head/preserving exempt)
+                  definednessResidual =
+                    if coerce attrs.preserving || functionSymbolIsTotal lhs
+                        then []
+                        else
+                            map
+                                Right
+                                (concatMap (Util.collectUndefinedSubterms . snd) argPairs <> Util.collectUndefinedSubterms rhs)
                 }
   where
     functionSymbolIsTotal = \case

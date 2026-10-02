@@ -76,12 +76,26 @@ instance FromModifiersT mods => Pretty (PrettyWithModifiers mods ComputeCeilSumm
                                 (Set.toList ceils)
                         ]
 
+{- | Which #Ceil formula to use when computing a rule's definedness residual.
+   Each rule kind picks one; changing the per-kind choice in 'computeCeilsDefinition'
+   is how we experiment with the definedness check.
+-}
+data DefinednessFormula
+    = -- | rewrite rules: @#Ceil(rhs)@ minus @#Ceil(lhs)@ minus @#Ceil(requires)@, plus @#Ceil(requires)@
+      Implication
+    | -- | function equations: @#Ceil(args of lhs) ∧ #Ceil(rhs)@ — the LHS *head* (the function
+      -- being defined) is excluded, since requiring its definedness would be circular
+      ConjunctionArgs
+    | -- | simplification rules: @#Ceil(lhs) ∧ #Ceil(rhs)@
+      Conjunction
+    deriving stock (Eq, Show)
+
 computeCeilsDefinition ::
     LoggerMIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     io (KoreDefinition, [ComputeCeilSummary])
-computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
+computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory, functionEquations, simplifications} = do
     (rewriteTheory', ceilSummaries) <-
         runWriterT $
             let ceilComputation r = do
@@ -91,48 +105,103 @@ computeCeilsDefinition mllvm def@KoreDefinition{rewriteTheory} = do
                             tell (Seq.singleton summary)
                             pure $ fromMaybe r newRule
              in mapM (mapM (mapM ceilComputation)) rewriteTheory
-    pure (def{rewriteTheory = rewriteTheory'}, toList ceilSummaries)
+    functionEquations' <-
+        mapM (mapM (mapM (refineRuleResidual mllvm def ConjunctionArgs))) functionEquations
+    simplifications' <- mapM (mapM (mapM (refineRuleResidual mllvm def Conjunction))) simplifications
+    pure
+        ( def
+            { rewriteTheory = rewriteTheory'
+            , functionEquations = functionEquations'
+            , simplifications = simplifications'
+            }
+        , toList ceilSummaries
+        )
 
+-- | Attach a rule's definedness residual (function/simplification rules: no logging summary).
+refineRuleResidual ::
+    LoggerMIO io =>
+    Maybe LLVM.API ->
+    KoreDefinition ->
+    DefinednessFormula ->
+    RewriteRule.RewriteRule tag ->
+    io (RewriteRule.RewriteRule tag)
+refineRuleResidual mllvm def formula r =
+    computeRuleResidual mllvm def formula r >>= \case
+        Nothing -> pure r
+        Just newRule -> pure newRule
+
+-- | Rewrite-rule ceil computation that additionally produces a logging summary.
 computeCeilRule ::
     LoggerMIO io =>
     Maybe LLVM.API ->
     KoreDefinition ->
     RewriteRule.RewriteRule "Rewrite" ->
     io (Maybe ComputeCeilSummary)
-computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attributes, computedAttributes}
+computeCeilRule mllvm def r =
+    computeRuleResidual mllvm def Implication r >>= \case
+        Nothing -> pure Nothing
+        Just newRule ->
+            pure . Just $
+                ComputeCeilSummary
+                    { rule = r
+                    , ceils = Set.fromList (RewriteRule.definednessResidual newRule)
+                    , newRule = Just newRule
+                    }
+
+{- | Compute a rule's definedness residual under the given formula and attach it
+   (replacing 'definednessResidual'). Returns 'Nothing' for rules already known to
+   preserve definedness (empty 'notPreservesDefinednessReasons'), which are left
+   untouched. When the residual discharges to empty, the rule is additionally marked
+   @preserving@. Polymorphic in the rule tag so it serves all three theories.
+-}
+computeRuleResidual ::
+    LoggerMIO io =>
+    Maybe LLVM.API ->
+    KoreDefinition ->
+    DefinednessFormula ->
+    RewriteRule.RewriteRule tag ->
+    io (Maybe (RewriteRule.RewriteRule tag))
+computeRuleResidual mllvm def formula r@RewriteRule.RewriteRule{lhs, requires, rhs, attributes, computedAttributes}
     | null computedAttributes.notPreservesDefinednessReasons = pure Nothing
     | otherwise = do
         ns <- noSolver
         (res, _) <- runEquationT def mllvm ns mempty mempty $ do
-            lhsCeils <- Set.fromList <$> computeCeil lhs
-            requiresCeils <- Set.fromList <$> concatMapM (computeCeil . coerce) requires
-            let subtractLHSAndRequiresCeils = (Set.\\ (lhsCeils `Set.union` requiresCeils)) . Set.fromList
-            rhsCeils <- simplifyCeils =<< (subtractLHSAndRequiresCeils <$> computeCeil rhs)
+            ceils <- case formula of
+                Implication -> do
+                    lhsCeils <- Set.fromList <$> computeCeil lhs
+                    requiresCeils <- Set.fromList <$> concatMapM (computeCeil . coerce) requires
+                    let subtractLHSAndRequiresCeils = (Set.\\ (lhsCeils `Set.union` requiresCeils)) . Set.fromList
+                    rhsCeils <- simplifyCeils =<< (subtractLHSAndRequiresCeils <$> computeCeil rhs)
+                    pure (requiresCeils <> rhsCeils)
+                ConjunctionArgs -> do
+                    argsCeils <- Set.fromList <$> concatMapM computeCeil (functionArgs lhs)
+                    rhsCeils <- Set.fromList <$> computeCeil rhs
+                    simplifyCeils (argsCeils <> rhsCeils)
+                Conjunction -> do
+                    lhsCeils <- Set.fromList <$> computeCeil lhs
+                    rhsCeils <- Set.fromList <$> computeCeil rhs
+                    simplifyCeils (lhsCeils <> rhsCeils)
+            pure . Just $
+                if null ceils
+                    then -- residual discharges to #Top: the rule preserves definedness
 
-            pure $
-                Just $
-                    ComputeCeilSummary
-                        { rule = r
-                        , ceils = requiresCeils <> rhsCeils
-                        , newRule =
-                            if null requiresCeils && null rhsCeils
-                                then
-                                    Just
-                                        r
-                                            { RewriteRule.attributes = attributes{preserving = Flag True}
-                                            , RewriteRule.computedAttributes = computedAttributes{notPreservesDefinednessReasons = []}
-                                            }
-                                else -- we could add a case when ceils are fully resolved into predicates, which we would then
-                                -- add to the requires clause of a rule
-                                    Nothing
-                        }
-
+                        r
+                            { RewriteRule.attributes = attributes{preserving = Flag True}
+                            , RewriteRule.computedAttributes = computedAttributes{notPreservesDefinednessReasons = []}
+                            , RewriteRule.definednessResidual = []
+                            }
+                    else r{RewriteRule.definednessResidual = Set.toList ceils}
         case res of
             Left err -> do
                 liftIO $ print err
                 pure Nothing
-            Right r' -> pure r'
+            Right newRule -> pure newRule
   where
+    -- arguments of a function-equation LHS, excluding the (function) head symbol
+    functionArgs = \case
+        SymbolApplication _ _ args -> args
+        other -> [other]
+
     simplifyCeils ceils =
         (.llvmApi) <$> getConfig >>= \case
             Nothing -> pure ceils

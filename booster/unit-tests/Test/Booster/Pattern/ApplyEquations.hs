@@ -15,6 +15,7 @@ module Test.Booster.Pattern.ApplyEquations (
     test_localFixpoint,
     test_errors,
     test_soundnessGap,
+    test_dynamicCeilDischarge,
 ) where
 
 import Control.Exception (finally)
@@ -37,7 +38,7 @@ import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (CellIndex (..), TermIndex (..))
-import Booster.Pattern.Util (sortOfTerm)
+import Booster.Pattern.Util (collectUndefinedSubterms, sortOfTerm)
 import Booster.SMT.Interface (noSolver)
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
@@ -358,6 +359,28 @@ test_soundnessGap =
                 @?>>= Right result
         ]
 
+test_dynamicCeilDischarge :: TestTree
+test_dynamicCeilDischarge =
+    testGroup
+        "Dynamic discharge of definedness residuals at rule application"
+        [ testCase "applies once the match makes the residual defined" $ do
+            -- con3(f2(X), Y) => Y carries residual #Ceil(f2(X)); here the match binds
+            -- X to con2(A), and f2(con2(A)) simplifies to con2(A) (defined), so the
+            -- residual discharges and the rule fires (top-down, before the argument is
+            -- simplified away).
+            evalD TopDown [trm| con3{}(f2{}(con2{}(A:SomeSort{})), B:SomeSort{}) |]
+                @?>>= Right [trm| B:SomeSort{} |]
+        , testCase "stays blocked when the match keeps the residual undefined" $ do
+            -- f2(con1(A)) has no rule, so #Ceil(f2(con1(A))) cannot be discharged and the
+            -- rule does not fire.
+            let subj = [trm| con3{}(f2{}(con1{}(A:SomeSort{})), B:SomeSort{}) |]
+            evalD TopDown subj @?>>= Right subj
+        ]
+  where
+    evalD direction t = do
+        ns <- noSolver
+        runNoLoggingT $ fst <$> evaluateTerm direction dischargeDef Nothing ns mempty mempty t
+
 ----------------------------------------
 
 index :: (ByteString -> CellIndex) -> SymbolName -> TermIndex
@@ -478,6 +501,44 @@ soundnessGapSimplDef =
             mkTheory [(index IdxFun "f1", soundnessGapRules)]
         }
 
+{- | Definition for 'test_dynamicCeilDischarge'. @f2@ is partial with one total-result
+rule @f2(con2(X)) => con2(X)@ (so @f2(con2(_))@ reduces to a defined term, @f2(con1(_))@
+is stuck), plus a simplification @con3(f2(X), Y) => Y@ that carries the static residual
+@#Ceil(f2(X))@. Whether the simplification fires turns on discharging that residual
+against the match.
+-}
+dischargeDef :: KoreDefinition
+dischargeDef =
+    testDefinition
+        { functionEquations =
+            mkTheory
+                [
+                    ( index IdxFun "f2"
+                    ,
+                        [ equation
+                            Nothing
+                            [trm| f2{}(con2{}(X:SomeSort{})) |]
+                            [trm| con2{}(X:SomeSort{}) |]
+                            50
+                        ]
+                    )
+                ]
+        , simplifications =
+            mkTheory
+                [
+                    ( index IdxCons "con3"
+                    ,
+                        [ equation
+                            Nothing
+                            [trm| con3{}(f2{}(X:SomeSort{}), Y:SomeSort{}) |]
+                            [trm| Y:SomeSort{} |]
+                            50
+                            `withComputedAttributes` ComputedAxiomAttributes False [UndefinedSymbol "f2"]
+                        ]
+                    )
+                ]
+        }
+
 f1Equations, f2Equations :: [RewriteRule t]
 f1Equations =
     [ equation -- f1(con1(X)) == con2(f1(X))
@@ -533,6 +594,7 @@ equation ruleLabel lhs rhs priority =
                 }
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
+        , definednessResidual = []
         }
 
 withAttributes :: RewriteRule t -> (AxiomAttributes -> AxiomAttributes) -> RewriteRule t
@@ -540,8 +602,16 @@ r@RewriteRule{lhs, attributes, computedAttributes} `withAttributes` f =
     r{lhs, computedAttributes, attributes = f attributes}
 
 withComputedAttributes :: RewriteRule t -> ComputedAxiomAttributes -> RewriteRule t
-r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
-    r{lhs, computedAttributes}
+r@RewriteRule{lhs, rhs} `withComputedAttributes` computedAttributes =
+    r
+        { lhs
+        , computedAttributes
+        , -- keep the residual gate consistent with the (manually set) reasons
+          definednessResidual =
+            if null computedAttributes.notPreservesDefinednessReasons
+                then []
+                else map Right (collectUndefinedSubterms lhs <> collectUndefinedSubterms rhs)
+        }
 
 mkTheory :: [(TermIndex, [RewriteRule t])] -> Theory (RewriteRule t)
 mkTheory = Map.map mkPriorityGroups . Map.fromList
