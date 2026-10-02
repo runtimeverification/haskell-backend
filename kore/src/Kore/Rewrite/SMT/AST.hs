@@ -72,13 +72,15 @@ The SmtSort type below instantiates Sort with the types used by the SMT.
 data Sort sort symbol name = Sort
     { sortData ::
         SortSExprSpec
-    -- ^ Produces the SMT representation of a sort. Given a map with
-    -- Smt representations for sorts and a list of sort arguments, returns
-    -- an S-expression that can be used, say, when declaring symbols of
-    -- that sort.
+    {- ^ Produces the SMT representation of a sort. Given a map with
+    Smt representations for sorts and a list of sort arguments, returns
+    an S-expression that can be used, say, when declaring symbols of
+    that sort.
+    -}
     , sortDeclaration :: !(KoreSortDeclaration sort symbol name)
-    -- ^ Information needed for declaring the sort, also listing all
-    -- dependencies on other sorts and symbols.
+    {- ^ Information needed for declaring the sort, also listing all
+    dependencies on other sorts and symbols.
+    -}
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -119,13 +121,15 @@ The SmtSymbol type below instantiates Symbol with the types used by the SMT.
 -}
 data Symbol sort name = Symbol
     { symbolData :: AST.SExpr
-    -- ^ Produces the SMT representation of a symbol. Given a map with
-    -- Smt representations for sorts and a list of sort arguments, returns
-    -- an s-expression that can be used, say, when building assertions
-    -- using that symbol.
+    {- ^ Produces the SMT representation of a symbol. Given a map with
+    Smt representations for sorts and a list of sort arguments, returns
+    an s-expression that can be used, say, when building assertions
+    using that symbol.
+    -}
     , symbolDeclaration :: !(KoreSymbolDeclaration sort name)
-    -- ^ Information needed for declaring the symbol, also listing all
-    -- dependencies on other sorts and symbols.
+    {- ^ Information needed for declaring the symbol, also listing all
+    dependencies on other sorts and symbols.
+    -}
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -153,8 +157,9 @@ data KoreSortDeclaration sort symbol name
       SortDeclarationDataType !(AST.DataTypeDeclaration sort symbol name)
     | -- | Non-constructor sort.
       SortDeclarationSort !(AST.SortDeclaration name)
-    | -- | Sort that we don't need to declare (e.g. builtins like Int) so we just
-      -- represent that the SMT already knows about it.
+    | {- | Sort that we don't need to declare (e.g. builtins like Int) so we just
+      represent that the SMT already knows about it.
+      -}
       SortDeclaredIndirectly !name
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -170,13 +175,15 @@ by the SMT.
 data KoreSymbolDeclaration sort name
     = -- | Normal symbol declaration
       SymbolDeclaredDirectly !(AST.FunctionDeclaration sort name)
-    | -- | Builtins should not be declared to the SMT.
-      -- The IndirectSymbolDeclaration value holds dependencies on other sorts
-      -- and debug information.
+    | {- | Builtins should not be declared to the SMT.
+      The IndirectSymbolDeclaration value holds dependencies on other sorts
+      and debug information.
+      -}
       SymbolBuiltin !(IndirectSymbolDeclaration sort name)
-    | -- | Constructors are declared to the SMT when declaring the sort.
-      -- The IndirectSymbolDeclaration value holds dependencies on other sorts
-      -- and debug information.
+    | {- | Constructors are declared to the SMT when declaring the sort.
+      The IndirectSymbolDeclaration value holds dependencies on other sorts
+      and debug information.
+      -}
       SymbolConstructor !(IndirectSymbolDeclaration sort name)
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

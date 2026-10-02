@@ -157,11 +157,13 @@ instance Pretty (ApplyMatchResultErrors RewritingVariableName) where
 
 -- | @ApplyMatchResultError@ represents a reason the match could not be applied.
 data ApplyMatchResultError variable
-    = -- | The variable was matched with a symbolic term where a concrete
-      -- term was required.
+    = {- | The variable was matched with a symbolic term where a concrete
+      term was required.
+      -}
       NotConcrete (SomeVariableName variable) (TermLike variable)
-    | -- | The variable was matched with a concrete term where a symbolic
-      -- term was required.
+    | {- | The variable was matched with a concrete term where a symbolic
+      term was required.
+      -}
       NotSymbolic (SomeVariableName variable) (TermLike variable)
     | -- | The variable was not matched.
       NotMatched (SomeVariableName variable)

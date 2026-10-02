@@ -1344,8 +1344,8 @@ test_equalsTermsSimplification =
                 -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])
-                        , (Mock.b, [Mock.a])
-                        ]
+                    , (Mock.b, [Mock.a])
+                    ]
                 mconcat
                     [ Condition.assign (inject Mock.xConfig) xValue
                     , Condition.assign (inject Mock.xConfigSet) $

@@ -847,7 +847,7 @@
                                     "args": [
                                         {
                                             "tag": "App",
-                                            "name": "Lbl'Unds-LT-'Int'Unds'",
+                                            "name": "Lbl'Unds-GT-'Int'Unds'",
                                             "sorts": [],
                                             "args": [
                                                 {
@@ -901,7 +901,7 @@
                                     "args": [
                                         {
                                             "tag": "App",
-                                            "name": "Lbl'Unds-GT-'Int'Unds'",
+                                            "name": "Lbl'Unds-LT-'Int'Unds'",
                                             "sorts": [],
                                             "args": [
                                                 {

@@ -197,8 +197,9 @@ type ProvenClaims = MultiAnd SomeClaim
 -- | The result of proving some claims.
 data ProveClaimsResult = ProveClaimsResult
     { stuckClaims :: !StuckClaims
-    -- ^ The conjuction of stuck claims, that is: of claims which must still be
-    -- proven. If all claims were proved, then the remaining claims are @\\top@.
+    {- ^ The conjuction of stuck claims, that is: of claims which must still be
+    proven. If all claims were proved, then the remaining claims are @\\top@.
+    -}
     , provenClaims :: !ProvenClaims
     -- ^ The conjunction of all claims which were proven.
     , unexplored :: Natural
@@ -218,8 +219,9 @@ proveClaims ::
     [SomeClaim] ->
     Axioms SomeClaim ->
     AlreadyProven ->
-    -- | List of claims, together with a maximum number of verification steps
-    -- for each.
+    {- | List of claims, together with a maximum number of verification steps
+    for each.
+    -}
     ToProve SomeClaim ->
     Simplifier ProveClaimsResult
 proveClaims
@@ -288,8 +290,9 @@ proveClaimsWorker ::
     FinalNodeType ->
     [SomeClaim] ->
     Axioms SomeClaim ->
-    -- | List of claims, together with a maximum number of verification steps
-    -- for each.
+    {- | List of claims, together with a maximum number of verification steps
+    for each.
+    -}
     ToProve SomeClaim ->
     VerifierT (StateT ProvenClaims Simplifier) ()
 proveClaimsWorker

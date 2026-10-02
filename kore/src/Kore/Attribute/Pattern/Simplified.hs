@@ -67,9 +67,10 @@ import Prelude.Kore
 data Type
     = -- | The entire pattern is simplified
       Fully
-    | -- | The pattern's subterms are either fully simplified or partly
-      -- simplified. Normally all the leaves in a partly simplified
-      -- subterm tree are fully simplified.
+    | {- | The pattern's subterms are either fully simplified or partly
+      simplified. Normally all the leaves in a partly simplified
+      subterm tree are fully simplified.
+      -}
       Partly
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -87,13 +88,15 @@ instance Monoid Type where
 
 -- | Under which condition is a pattern simplified.
 data Condition
-    = -- | The term and all its subterms are simplified the same regardless
-      -- of the side condition.
+    = {- | The term and all its subterms are simplified the same regardless
+      of the side condition.
+      -}
       Any
-    | -- | The term is in its current simplified state only when using the
-      -- given side condition. When the side condition changes, e.g. by
-      -- adding extra conditions, then we may be able to further simplify the
-      -- term.
+    | {- | The term is in its current simplified state only when using the
+      given side condition. When the side condition changes, e.g. by
+      adding extra conditions, then we may be able to further simplify the
+      term.
+      -}
       Condition SideCondition.Representation
     | -- | Parts of the term are simplified under different side conditions.
       Unknown

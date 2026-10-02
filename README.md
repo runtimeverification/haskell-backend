@@ -191,7 +191,7 @@ To use this nix shell, execute
 ``` sh
 me@somewhere:haskell-backend$ nix develop \
     github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
-    --override-input haskell-backend . --update-input haskell-backend
+    --override-input haskell-backend .
 ...
 ...(nix output)
 integration-shell:me@somewhere:haskell-backend$

@@ -80,7 +80,7 @@ instance ParseAttributes Location where
 
 instance From Location Attributes where
     -- TODO (thomas.tuegel): Implement
-    from = def
+    from _ = def
 
 {- | This parser is used to parse the inner representation of the attribute.
  The expected format is "Location(sl,sc,el,ec)" where sc, sc, el, and ec are

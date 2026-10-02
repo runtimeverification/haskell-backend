@@ -111,7 +111,7 @@ writeBugReportArchive base tar = do
     Monad.whenM
         (doesFileExist sessionCommands)
         $ do
-            copyFile sessionCommands (base </> tail sessionCommands)
+            copyFile sessionCommands (base </> "sessionCommands")
             removeFile sessionCommands
     contents <- listDirectory base
     let filename = tar <.> "tar" <.> "gz"

@@ -169,6 +169,7 @@ cTypeToHs = \case
             C.TyDouble -> ''Foreign.C.CDouble
             C.TyLDouble -> error "TyLDouble unsupported"
             C.TyFloatN _ _ -> error "TyFloatN unsupported"
+            C.TyBFloat16{} -> error "TyBFloat16 unsupported"
         C.TyComplex _floatType -> error "TyComplex unsupported"
         C.TyComp _compTypeRef -> error "TyComp unsupported"
         C.TyEnum _enumTypeRef -> error "TyEnum unsupported"

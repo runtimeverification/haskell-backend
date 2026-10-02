@@ -131,9 +131,10 @@ class
     AcWrapper (normalized :: Type -> Type -> Type) =>
     TermWrapper normalized
     where
-    -- | Render a normalized value (e.g. 'NormalizedSet') as an 'InternalAc'.
-    --
-    --    The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
+    {- | Render a normalized value (e.g. 'NormalizedSet') as an 'InternalAc'.
+
+    The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
+    -}
     asInternalBuiltin ::
         SmtMetadataTools Attribute.Symbol ->
         Sort ->
@@ -142,9 +143,10 @@ class
 
     -- TODO (thomas.tuegel): Use From.
 
-    -- | Render a normalized value (e.g. 'NormalizedSet') as a 'TermLike'.
-    --
-    --    The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
+    {- | Render a normalized value (e.g. 'NormalizedSet') as a 'TermLike'.
+
+    The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
+    -}
     asInternal ::
         InternalVariable variable =>
         SmtMetadataTools Attribute.Symbol ->
@@ -152,16 +154,17 @@ class
         normalized Key (TermLike variable) ->
         TermLike variable
 
-    -- | Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
-    --
-    --     The term may become bottom if we had conflicts between elements that were
-    --     not detected before, e.g.
-    --
-    --     @
-    --     concat({1}, concat(X:Set, {1}))
-    --     concat(elem(Y:Int), concat({1}, elem(Y:Int)))
-    --     concat(X:Set, concat({1}, X:Set))
-    --     @
+    {- | Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
+
+    The term may become bottom if we had conflicts between elements that were
+    not detected before, e.g.
+
+    @
+    concat({1}, concat(X:Set, {1}))
+    concat(elem(Y:Int), concat({1}, elem(Y:Int)))
+    concat(X:Set, concat({1}, X:Set))
+    @
+    -}
     toNormalized ::
         HasCallStack =>
         Ord variable =>
@@ -169,10 +172,11 @@ class
         TermLike variable ->
         NormalizedOrBottom normalized variable
 
-    -- | Pattern match on a 'TermLike' to return a 'normalized'.
-    --
-    --    @matchBuiltin@ returns 'Nothing' if the 'TermLike' does not wrap a
-    --    'normalized' value.
+    {- | Pattern match on a 'TermLike' to return a 'normalized'.
+
+    @matchBuiltin@ returns 'Nothing' if the 'TermLike' does not wrap a
+    'normalized' value.
+    -}
     matchBuiltin ::
         TermLike variable ->
         Maybe (normalized Key (TermLike variable))

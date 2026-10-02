@@ -207,8 +207,9 @@ data KoreProveOptions = KoreProveOptions
     , graphSearch :: GraphSearchOrder
     -- ^ Search order of the execution graph
     , saveProofs :: !(Maybe FilePath)
-    -- ^ The file in which to save the proven claims in case the prover
-    -- fails.
+    {- ^ The file in which to save the proven claims in case the prover
+    fails.
+    -}
     , stuckCheck :: !StuckCheck
     -- ^ Whether to apply the stuck state detection heuristic
     , minDepth :: !(Maybe MinDepth)

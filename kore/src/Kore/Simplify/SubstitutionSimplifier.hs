@@ -141,8 +141,9 @@ newtype MakeAnd monad = MakeAnd
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
         monad (Pattern RewritingVariableName)
-    -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
-    -- the given 'Predicate.Predicate'.
+    {- ^ Construct a simplified 'And' pattern of two 'TermLike's under
+    the given 'Predicate.Predicate'.
+    -}
     }
 
 simplificationMakeAnd ::

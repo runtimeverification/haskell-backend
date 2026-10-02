@@ -108,8 +108,9 @@ data DecoderState = DecoderState
     { internedStrings :: Map.Map Int BS.ByteString
     , stack :: [Block]
     , termStore :: Seq Term
-    -- ^ remembers all unpacked terms in an append-only list. Needs to
-    -- ensure subterms will be shared.
+    {- ^ remembers all unpacked terms in an append-only list. Needs to
+    ensure subterms will be shared.
+    -}
     , termCache :: Map.Map ShallowTerm Idx
     -- ^ lookup index into termStore
     }

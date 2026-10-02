@@ -45,14 +45,17 @@ data Distinct = Distinct | Unknown
 data InjPair variable = InjPair {inj1, inj2 :: Inj (TermLike variable)}
 
 data UnifyInj a
-    = -- | The children of the injections can be unified directly because the
-      -- injections have the same inner and outer sorts.
+    = {- | The children of the injections can be unified directly because the
+      injections have the same inner and outer sorts.
+      -}
       UnifyInjDirect a
-    | -- | The right injection's inner sort is a subsort of the left injection's,
-      -- so unification can proceed by splitting the right injection.
+    | {- | The right injection's inner sort is a subsort of the left injection's,
+      so unification can proceed by splitting the right injection.
+      -}
       UnifyInjSplit a
-    | -- | The injections are known to be distinct because there is no subsort
-      -- relation between their inner sorts.
+    | {- | The injections are known to be distinct because there is no subsort
+      relation between their inner sorts.
+      -}
       UnifyInjDistinct a
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor)
@@ -70,11 +73,12 @@ data InjSimplifier = InjSimplifier
         InternalVariable variable =>
         Inj (TermLike variable) ->
         TermLike variable
-    -- ^ Apply the triangle axiom to combine an 'Inj' with its 'Inj' child:
-    --
-    --        @
-    --            inj{middle, outer}(inj{inner, middle}(_)) = inj{inner, outer}(_)
-    --        @
+    {- ^ Apply the triangle axiom to combine an 'Inj' with its 'Inj' child:
+
+       @
+           inj{middle, outer}(inj{inner, middle}(_)) = inj{inner, outer}(_)
+       @
+    -}
     , matchInjs ::
         forall variable.
         HasCallStack =>
@@ -87,31 +91,33 @@ data InjSimplifier = InjSimplifier
         InternalVariable variable =>
         UnifyInj (InjPair variable) ->
         Maybe (Inj (Pair (TermLike variable)))
-    -- ^ Push down the conjunction of 'Inj':
-    --
-    --        @
-    --            inj{lo, hi}(a) ∧ inj{lower, hi}(b)
-    --            ===
-    --            inj{lo, hi}(a ∧ inj{lower, lo}(b))
-    --                where lower < lo
-    --        @
-    --
-    --        Returns 'Distinct' if the sort injections cannot match, or 'Unknown' if
-    --        further simplification could produce matching injections.
+    {- ^ Push down the conjunction of 'Inj':
+
+       @
+           inj{lo, hi}(a) ∧ inj{lower, hi}(b)
+           ===
+           inj{lo, hi}(a ∧ inj{lower, lo}(b))
+               where lower < lo
+       @
+
+       Returns 'Distinct' if the sort injections cannot match, or 'Unknown' if
+       further simplification could produce matching injections.
+    -}
     , evaluateCeilInj ::
         forall variable.
         HasCallStack =>
         InternalVariable variable =>
         Ceil Sort (Inj (TermLike variable)) ->
         Ceil Sort (TermLike variable)
-    -- ^ Evaluate the 'Ceil' of 'Inj':
-    --
-    --        @
-    --            \ceil{outer, middle}(inj{inner, middle}(x))
-    --            ===
-    --            \ceil{outer, inner}(x)
-    --                where inner < middle
-    --        @
+    {- ^ Evaluate the 'Ceil' of 'Inj':
+
+       @
+           \ceil{outer, middle}(inj{inner, middle}(x))
+           ===
+           \ceil{outer, inner}(x)
+               where inner < middle
+       @
+    -}
     , injectTermTo ::
         forall variable.
         HasCallStack =>
@@ -120,8 +126,9 @@ data InjSimplifier = InjSimplifier
         TermLike variable ->
         Sort ->
         TermLike variable
-    -- ^ Injects a term to a given sort. Applies 'evaluateInj' to keep
-    --        the injection simplified.
+    {- ^ Injects a term to a given sort. Applies 'evaluateInj' to keep
+       the injection simplified.
+    -}
     }
 
 -- | Ignore 'UnorderedInj' errors in 'evaluateInj' and 'evaluateCeilInj' below.

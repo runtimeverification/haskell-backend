@@ -23,7 +23,7 @@ newtype InfoUserLog = InfoUserLog {getUserLog :: Text}
     deriving stock (Eq, Ord, Show)
 
 instance Debug InfoUserLog where
-    debugPrec w = \_ -> Pretty.pretty . show $ w
+    debugPrec w = \_ -> Pretty.pretty w
 
 instance Diff InfoUserLog where
     diffPrec = diffPrecEq

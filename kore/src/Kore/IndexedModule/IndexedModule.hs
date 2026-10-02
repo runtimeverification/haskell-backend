@@ -154,8 +154,9 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
 
       indexedModuleHooks ::
         !(Map.Map Text [Id])
-    -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
-    -- identifiers
+    {- ^ map from builtin domain (symbol and sort) identifiers to the hooked
+    identifiers
+    -}
     }
     deriving stock (Generic, Show, Eq, Functor, Foldable, Traversable)
 
@@ -441,7 +442,7 @@ indexedModuleRawSentences im =
             (SentenceClaimSentence . getIndexedSentence)
             (indexedModuleClaims im)
         ++ [ SentenceImportSentence
-            (SentenceImport (indexedModuleName $ indexedModuleSyntax m) attributes)
+                (SentenceImport (indexedModuleName $ indexedModuleSyntax m) attributes)
            | (_, attributes, m) <- indexedModuleImports im
            ]
   where

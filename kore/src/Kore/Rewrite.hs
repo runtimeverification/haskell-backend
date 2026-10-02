@@ -100,11 +100,13 @@ data RuleInfo a = RuleInfo
 data ProgramState b a
     = -- | The beginning of an execution step.
       Start !a
-    | -- | The configuration was rewritten after applying
-      -- the rewrite rules.
+    | {- | The configuration was rewritten after applying
+      the rewrite rules.
+      -}
       Rewritten !b !a
-    | -- | The configuration is a remainder resulting
-      -- from rewrite rule application.
+    | {- | The configuration is a remainder resulting
+      from rewrite rule application.
+      -}
       Remaining !a
     | -- | The execution step yields no children
       Bottom

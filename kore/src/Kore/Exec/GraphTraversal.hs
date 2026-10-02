@@ -77,15 +77,17 @@ data TransitionResult a
       Continuing a
     | -- | branch point (1st arg), branching into 2nd arg elements
       Branch a (NonEmpty a)
-    | -- | no next state but not final (e.g., not goal state, or side
-      -- conditions do not hold)
+    | {- | no next state but not final (e.g., not goal state, or side
+      conditions do not hold)
+      -}
       Stuck a
     | -- | the current configuration was simplified to bottom
       Vacuous a
     | -- | final state (e.g., goal state reached, side conditions hold)
       Final a
-    | -- | not stuck, but also not final (maximum depth reached before
-      -- finishing the proof). Provides current and "next" states for the result.
+    | {- | not stuck, but also not final (maximum depth reached before
+      finishing the proof). Provides current and "next" states for the result.
+      -}
       Stop a [a]
     deriving stock (Eq, Show)
 
@@ -214,15 +216,17 @@ graphTraversal ::
     GraphTraversalTimeoutMode ->
     Maybe StepTimeout ->
     EnableMovingAverage ->
-    -- | Whether to stop on branches or not. This could be handled in
-    -- the transition function, too, since the algorithm will _always_
-    -- stop on 'Stuck', 'Final', and `Stopped`. It is clearer to add
-    -- this explicitly here, though.
+    {- | Whether to stop on branches or not. This could be handled in
+    the transition function, too, since the algorithm will _always_
+    stop on 'Stuck', 'Final', and `Stopped`. It is clearer to add
+    this explicitly here, though.
+    -}
     FinalNodeType ->
+    -- | BreadthFirst, DepthFirst
+
     -- queue updating parameters,
     -- we construct enqueue :: [a] -> Seq a -> m (Either LimitExceeded (Seq a)) from it
 
-    -- | BreadthFirst, DepthFirst
     GraphSearchOrder ->
     -- | breadth limit, essentially a natural number
     Limit Natural ->
@@ -397,13 +401,15 @@ data GraphTraversalTimeoutMode
 data StepResult a
     = -- | Traversal continues with given queue.
       Continue (Seq a)
-    | -- | Traversal produced a result and continues with given queue.
-      -- Typically a final or stuck state (or a "stop" state), and the
-      -- queue is the remaining work.
+    | {- | Traversal produced a result and continues with given queue.
+      Typically a final or stuck state (or a "stop" state), and the
+      queue is the remaining work.
+      -}
       Output (TransitionResult a) (Seq a)
-    | -- | Traversal exceeded the breadth limit and should not
-      -- continue. The last state and the current queue are provided
-      -- for analysis.
+    | {- | Traversal exceeded the breadth limit and should not
+      continue. The last state and the current queue are provided
+      for analysis.
+      -}
       Abort (TransitionResult a) (Seq a)
     | -- | Traversal step exceeded timeout limit.
       Timeout a (Seq a)
@@ -428,16 +434,19 @@ extractStuckTraversalResult = \case
     IsVacuous a -> a
 
 data TraversalResult a
-    = -- | remaining queue length and stuck results (always at most
-      -- maxCounterExamples many).
+    = {- | remaining queue length and stuck results (always at most
+      maxCounterExamples many).
+      -}
       GotStuck Int [StuckTraversalResult a]
-    | -- | queue (length exceeding the limit), including result(s) of
-      -- the last step that led to stopping.
+    | {- | queue (length exceeding the limit), including result(s) of
+      the last step that led to stopping.
+      -}
       Aborted [a]
     | -- | queue empty, results returned
       Ended [a]
-    | -- | stop was signalled by the transition, return stopped
-      -- (unproven) states and next states (from queue)
+    | {- | stop was signalled by the transition, return stopped
+      (unproven) states and next states (from queue)
+      -}
       Stopped [a] [a]
     | -- | timed out, return current state and next states
       TimedOut a [a]

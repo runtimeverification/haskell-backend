@@ -171,7 +171,9 @@ computeCeil (KMap _ keyVals rest) = do
     symbols <- mkInKeysMap . (.definition.symbols) <$> getConfig
     pure $
         [Left $ Predicate $ mkNeq a b | a <- map fst keyVals, b <- map fst keyVals, a /= b]
-            <> [ Left $ Predicate $ NotBool (mkInKeys symbols a rest') | a <- map fst keyVals, rest' <- maybeToList rest
+            <> [ Left $ Predicate $ NotBool (mkInKeys symbols a rest')
+               | a <- map fst keyVals
+               , rest' <- maybeToList rest
                ]
             <> recArgs
 computeCeil (KList _ heads rest) = concatMapM computeCeil $ heads <> maybe [] (uncurry (:)) rest

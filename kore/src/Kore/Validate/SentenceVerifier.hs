@@ -101,8 +101,9 @@ verifyUniqueNames ::
     [Sentence pat] ->
     -- | Names that are already defined.
     HashMap InternedText AstLocation ->
-    -- | On success returns the names that were previously defined together with
-    -- the names defined in the given 'Module'.
+    {- | On success returns the names that were previously defined together with
+    the names defined in the given 'Module'.
+    -}
     Either (Error VerifyError) (HashMap InternedText AstLocation)
 verifyUniqueNames sentences existingNames =
     foldM verifyUniqueId existingNames definedNames

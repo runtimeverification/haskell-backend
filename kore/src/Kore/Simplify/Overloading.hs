@@ -103,8 +103,9 @@ flipResult result =
 data UnifyOverloadingError
     = -- | the unification problem could not be solved by the current method
       NotApplicable
-    | -- | There was a clash, unification will fail.
-      --         Reason for the clash is included.
+    | {- | There was a clash, unification will fail.
+        Reason for the clash is included.
+      -}
       Clash !String
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

@@ -37,14 +37,16 @@ class HasFreeVariables child (VariableNameType child) => Substitute child where
     -- | The type of variable names to be replaced under substitution.
     type VariableNameType child :: Type
 
-    -- | Apply a substitution: replace variables with terms from a 'Map'. The
-    -- 'NormalSubstitution' is assumed to be proper (none of the variables on
-    -- the left appear in any term on the right), but this is not checked.
+    {- | Apply a substitution: replace variables with terms from a 'Map'. The
+    'NormalSubstitution' is assumed to be proper (none of the variables on
+    the left appear in any term on the right), but this is not checked.
+    -}
     substitute :: NormalSubstitution child -> child -> child
 
-    -- | Rename variables from a 'Map'. The 'NormalRenaming' is assumed to be
-    -- proper (none of the variables on the left appear on the right), but this
-    -- is not checked.
+    {- | Rename variables from a 'Map'. The 'NormalRenaming' is assumed to be
+    proper (none of the variables on the left appear on the right), but this
+    is not checked.
+    -}
     rename :: NormalRenaming child -> child -> child
 
 {- | A @NormalSubstitution@ maps variable names to terms so that the former may

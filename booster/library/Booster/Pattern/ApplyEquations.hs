@@ -158,13 +158,15 @@ data EquationState = EquationState
     { termStack :: Seq Term
     , recursionStack :: [Term]
     , localSteps :: [Term]
-    -- ^ chain of locally-rewritten node values on the current
-    -- traversal path, for loop detection of in-place rewriting
-    -- (path-scoped: saved and restored around each local recursion)
+    {- ^ chain of locally-rewritten node values on the current
+    traversal path, for loop detection of in-place rewriting
+    (path-scoped: saved and restored around each local recursion)
+    -}
     , localStepCount :: Int
-    -- ^ length of 'localSteps' (path-scoped like the chain itself),
-    -- kept separately to bound in-place rewriting by 'maxLocalSteps'
-    -- without computing the length on every step
+    {- ^ length of 'localSteps' (path-scoped like the chain itself),
+    kept separately to bound in-place rewriting by 'maxLocalSteps'
+    without computing the length on every step
+    -}
     , changed :: Bool
     , predicates :: Set Predicate
     , cache :: SimplifierCache
@@ -261,12 +263,13 @@ pushRecursion t = eqState $ do
 popRecursion :: LoggerMIO io => EquationT io ()
 popRecursion = do
     s <- getState
-    if null s.recursionStack
-        then do
+    case s.recursionStack of
+        [] -> do
             withContext CtxAbort $
                 logMessage ("Trying to pop an empty recursion stack" :: Text)
             throw $ InternalError "Trying to pop an empty recursion stack"
-        else eqState $ put s{recursionStack = tail s.recursionStack}
+        _hd : rest ->
+            eqState $ put s{recursionStack = rest}
 
 toCache :: LoggerMIO io => CacheTag -> Term -> Term -> EquationT io ()
 toCache PathConditions _ _ = pure () -- never adding to the replacements
@@ -700,18 +703,19 @@ traverseTerm direction onRecurse onEval trm = do
                     rest' <- traverse onRecurse rest
                     -- then try to apply equations
                     onEval $ KMap def keyVals' rest'
-                else {- direction == TopDown -} do
-                    -- try to apply equations
-                    kmap' <- onEval kmap
-                    case kmap' of
-                        -- the result should be another internal KMap
-                        KMap _ keyVals' rest' ->
-                            KMap def
-                                <$> handlePairs keyVals'
-                                <*> traverse onRecurse rest'
-                        other ->
-                            -- unlikely to occur, but won't loop
-                            onRecurse other
+                else {- direction == TopDown -}
+                    do
+                        -- try to apply equations
+                        kmap' <- onEval kmap
+                        case kmap' of
+                            -- the result should be another internal KMap
+                            KMap _ keyVals' rest' ->
+                                KMap def
+                                    <$> handlePairs keyVals'
+                                    <*> traverse onRecurse rest'
+                            other ->
+                                -- unlikely to occur, but won't loop
+                                onRecurse other
         klist@(KList def heads rest) -> do
             let handleRest =
                     traverse $ \(mid, tails) -> (,) <$> onRecurse mid <*> mapM onRecurse tails
@@ -720,16 +724,17 @@ traverseTerm direction onRecurse onEval trm = do
                     heads' <- mapM onRecurse heads
                     rest' <- handleRest rest
                     onEval (KList def heads' rest')
-                else {- direction == TopDown -} do
-                    klist' <- onEval klist
-                    case klist' of
-                        -- the result should be another internal KList
-                        KList _ heads' rest' ->
-                            KList def
-                                <$> mapM onRecurse heads'
-                                <*> handleRest rest'
-                        other ->
-                            onRecurse other
+                else {- direction == TopDown -}
+                    do
+                        klist' <- onEval klist
+                        case klist' of
+                            -- the result should be another internal KList
+                            KList _ heads' rest' ->
+                                KList def
+                                    <$> mapM onRecurse heads'
+                                    <*> handleRest rest'
+                            other ->
+                                onRecurse other
         kset@(KSet def elems rest)
             | direction == BottomUp -> do
                 elems' <- mapM onRecurse elems
@@ -1151,8 +1156,7 @@ applyEquation term rule =
                             ctx . logMessage $
                                 WithJsonMessage (object ["conditions" .= map (externaliseTerm . coerce) stillUnclear]) $
                                     renderOneLineText
-                                        ( "Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear)
-                                        )
+                                        ("Uncertain about conditions in rule: " <+> hsep (intersperse "," $ map (pretty' @mods) stillUnclear))
                         , IndeterminateCondition stillUnclear
                         )
                 SMT.IsInvalid -> do

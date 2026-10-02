@@ -47,7 +47,7 @@ import Data.Aeson.Types (object)
 import Data.Coerce (coerce)
 import Data.Data (Proxy (..))
 import Data.Hashable qualified
-import Data.List (foldl', intercalate, intersperse)
+import Data.List (intercalate, intersperse)
 import Data.List.Extra (splitOn, takeEnd)
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set

@@ -79,9 +79,10 @@ class UnifyingRule rule where
     -- | The condition to be checked upon matching the rule
     precondition :: rule -> Predicate (UnifyingRuleVariable rule)
 
-    -- | Refresh the variables of a rule.
-    --    The free variables of a rule are implicitly quantified, so they are
-    --    renamed to avoid collision with any variables in the given set.
+    {- | Refresh the variables of a rule.
+    The free variables of a rule are implicitly quantified, so they are
+    renamed to avoid collision with any variables in the given set.
+    -}
     refreshRule ::
         InternalVariable (UnifyingRuleVariable rule) =>
         -- | Variables to avoid

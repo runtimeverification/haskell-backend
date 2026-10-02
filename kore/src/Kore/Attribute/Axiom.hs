@@ -88,8 +88,9 @@ data Axiom symbol variable = Axiom
     { productionID :: !ProductionID
     -- ^ The identifier from the front-end identifying a rule or group of rules.
     , priority :: !Priority
-    -- ^ A number associated to each rule,
-    -- which specifies the order of application
+    {- ^ A number associated to each rule,
+    which specifies the order of application
+    -}
     , assoc :: !Assoc
     -- ^ The axiom is an associativity axiom.
     , comm :: !Comm
@@ -103,8 +104,9 @@ data Axiom symbol variable = Axiom
     , concrete :: !(Concrete variable)
     , symbolic :: !(Symbolic variable)
     , simplification :: !Simplification
-    -- ^ This is an axiom used for simplification
-    -- (as opposed to, e.g., function evaluation).
+    {- ^ This is an axiom used for simplification
+    (as opposed to, e.g., function evaluation).
+    -}
     , overload :: !(Overload symbol)
     -- ^ The axiom is an overloaded-production axiom.
     , smtLemma :: !SmtLemma
@@ -114,8 +116,9 @@ data Axiom symbol variable = Axiom
     , sourceLocation :: !SourceLocation
     -- ^ Source and location in the original file.
     , constructor :: !Constructor
-    -- ^ Shows that this is one of the constructor axioms
-    -- (e.g. no confusion, no junk)
+    {- ^ Shows that this is one of the constructor axioms
+    (e.g. no confusion, no junk)
+    -}
     , total :: !Total
     -- ^ Shows that this is one of the functionality axioms
     , subsorts :: !Subsorts

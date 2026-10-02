@@ -738,8 +738,7 @@ test_simplificationIntegration =
                         ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.fBoolId) AxiomIdentifier.DV
                         ,
                             [ axiom
-                                ( mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True)
-                                )
+                                (mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True))
                                 (mkTop Mock.testSort)
                                 makeTruePredicate
                             ]

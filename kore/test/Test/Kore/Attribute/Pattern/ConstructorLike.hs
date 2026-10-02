@@ -48,8 +48,7 @@ test_TermLike =
             Mock.intSort
             ( Mock.sortInjection
                 Mock.testSort
-                ( Mock.builtinInt 3
-                )
+                (Mock.builtinInt 3)
             )
             `shouldBeConstructorLike` False
     , testCase "Constructor-like pattern with two non-consecutive sort injections" $
