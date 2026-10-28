@@ -97,7 +97,7 @@ import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
  )
-import Kore.Simplify.API (evalSimplifier)
+import Kore.Simplify.API (evalSimplifierPrepared)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
@@ -713,14 +713,14 @@ respond reqId serverState moduleName runSMT =
             , overloadGraph
             , metadataTools
             , verifiedModule
-            , equations
+            , preparedEquations
             } =
-            evalSimplifier
+            evalSimplifierPrepared
                 verifiedModule
                 sortGraph
                 overloadGraph
                 metadataTools
-                equations
+                preparedEquations
 
 data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition

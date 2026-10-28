@@ -193,9 +193,11 @@ import Kore.Rewrite.Transition (
     scatter,
  )
 import Kore.Simplify.API (
-    evalSimplifier,
-    evalSimplifierLogged,
+    PreparedEquations,
+    evalSimplifierPrepared,
+    evalSimplifierPreparedLogged,
     evalSimplifierProofs,
+    prepareEquations,
  )
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
@@ -247,6 +249,8 @@ data SerializedModule = SerializedModule
     , verifiedModule :: VerifiedModuleSyntax StepperAttributes
     , rewrites :: Initialized
     , equations :: Map AxiomIdentifier [Equation VariableName]
+    , preparedEquations :: PreparedEquations
+    -- ^ the equations prepared once, for every simplifier of the module
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -254,18 +258,26 @@ data SerializedModule = SerializedModule
 makeSerializedModule ::
     VerifiedModule StepperAttributes ->
     SMT SerializedModule
-makeSerializedModule verifiedModule =
-    evalSimplifier (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
-        rewrites <- initializeAndSimplify verifiedModule
-        return
-            SerializedModule
-                { sortGraph
-                , overloadGraph
-                , metadataTools
-                , verifiedModule = indexedModuleSyntax verifiedModule
-                , rewrites
-                , equations
-                }
+makeSerializedModule verifiedModule = do
+    preparedEquations <- prepareEquations sortGraph overloadGraph metadataTools equations
+    evalSimplifierPrepared
+        (indexedModuleSyntax verifiedModule')
+        sortGraph
+        overloadGraph
+        metadataTools
+        preparedEquations
+        $ do
+            rewrites <- initializeAndSimplify verifiedModule
+            return
+                SerializedModule
+                    { sortGraph
+                    , overloadGraph
+                    , metadataTools
+                    , verifiedModule = indexedModuleSyntax verifiedModule
+                    , rewrites
+                    , equations
+                    , preparedEquations
+                    }
   where
     sortGraph = SortGraph.fromIndexedModule verifiedModule
     overloadGraph = OverloadGraph.fromIndexedModule verifiedModule
@@ -302,12 +314,12 @@ exec
         , metadataTools
         , verifiedModule
         , rewrites = Initialized{rewriteRules}
-        , equations
+        , preparedEquations
         }
     execMode
     inputPattern@(mkRewritingTerm -> initialTerm) = do
         debugInitialPattern inputPattern
-        evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
+        evalSimplifierPrepared verifiedModule' sortGraph overloadGraph metadataTools preparedEquations $ do
             finals <-
                 GraphTraversal.graphTraversal
                     GraphTraversal.GraphTraversalCancel
@@ -475,7 +487,7 @@ rpcExec
         , metadataTools
         , verifiedModule
         , rewrites = Initialized{rewriteRules}
-        , equations
+        , preparedEquations
         }
     StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
@@ -495,9 +507,10 @@ rpcExec
       where
         simplifierRun
             | tracingEnabled =
-                fmap snd . evalSimplifierLogged verifiedModule' sortGraph overloadGraph metadataTools equations
+                fmap snd
+                    . evalSimplifierPreparedLogged verifiedModule' sortGraph overloadGraph metadataTools preparedEquations
             | otherwise =
-                evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations
+                evalSimplifierPrepared verifiedModule' sortGraph overloadGraph metadataTools preparedEquations
 
         verifiedModule' =
             IndexedModule.mapAliasPatterns
@@ -697,12 +710,12 @@ search
         , metadataTools
         , verifiedModule
         , rewrites
-        , equations
+        , preparedEquations
         }
     (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig =
-        evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations $ do
+        evalSimplifierPrepared verifiedModule sortGraph overloadGraph metadataTools preparedEquations $ do
             let Initialized{rewriteRules} = rewrites
             simplifiedPatterns <-
                 Pattern.simplify $

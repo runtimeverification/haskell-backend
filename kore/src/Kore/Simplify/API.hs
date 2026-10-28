@@ -13,6 +13,10 @@ module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
     evalSimplifierLogged,
+    PreparedEquations,
+    prepareEquations,
+    evalSimplifierPrepared,
+    evalSimplifierPreparedLogged,
 ) where
 
 import Data.Map.Strict (
@@ -84,31 +88,39 @@ traceProfSimplify =
         . matchAxiomIdentifier
         . Pattern.toTermLike
 
-mkSimplifierEnv ::
-    Bool ->
-    VerifiedModuleSyntax Attribute.Symbol ->
+{- | The function equations of a module, prepared for the simplifier: their
+variables renamed apart ('mkEquationVariable') and the equations simplified
+('Equation.simplifyExtractedEquations').
+
+The preparation depends only on the module, not on the pattern being simplified,
+so a server prepares the equations once per module ('Kore.Exec.SerializedModule')
+and reuses them in every request ('evalSimplifierPrepared').
+-}
+type PreparedEquations = Map AxiomIdentifier [Equation RewritingVariableName]
+
+{- | The environment in which the equations are prepared: no equations, no
+memoisation and no hooked symbols.
+-}
+earlyEnv ::
     SortGraph ->
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
-    Map AxiomIdentifier [Equation VariableName] ->
-    SMT Env
-mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTools rawEquations =
-    runSimplifier earlyEnv initialize
+    Env
+earlyEnv sortGraph overloadGraph metadataTools =
+    {-# SCC "evalSimplifier/earlyEnv" #-}
+    Env
+        { metadataTools = metadataTools
+        , simplifierCondition
+        , simplifierPattern
+        , simplifierTerm
+        , axiomEquations = Map.empty
+        , memo = Memo.forgetful
+        , injSimplifier
+        , overloadSimplifier
+        , hookedSymbols = Map.empty
+        , tracingEnabled = False
+        }
   where
-    !earlyEnv =
-        {-# SCC "evalSimplifier/earlyEnv" #-}
-        Env
-            { metadataTools = metadataTools
-            , simplifierCondition
-            , simplifierPattern
-            , simplifierTerm
-            , axiomEquations = earlyAxiomEquations
-            , memo = Memo.forgetful
-            , injSimplifier
-            , overloadSimplifier
-            , hookedSymbols = Map.empty
-            , tracingEnabled
-            }
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
         mkInjSimplifier sortGraph
@@ -124,39 +136,48 @@ mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTo
     simplifierTerm =
         {-# SCC "evalSimplifier/simplifierTerm" #-}
         TermLike.simplify
-    -- Initialize without any axiom equations.
-    earlyAxiomEquations = Map.empty
+    overloadSimplifier =
+        {-# SCC "evalSimplifier/overloadSimplifier" #-}
+        mkOverloadSimplifier overloadGraph injSimplifier
 
+-- | Prepare a module's function equations (see 'PreparedEquations').
+prepareEquations ::
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    SMT PreparedEquations
+prepareEquations sortGraph overloadGraph metadataTools rawEquations =
+    runSimplifier (earlyEnv sortGraph overloadGraph metadataTools) $
+        Equation.simplifyExtractedEquations $
+            (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
+                rawEquations
+
+mkSimplifierEnv ::
+    Bool ->
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    PreparedEquations ->
+    SMT Env
+mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTools axiomEquations = do
+    memo <- runSimplifier early Memo.new
+    return
+        early
+            { memo
+            , hookedSymbols
+            , axiomEquations
+            , tracingEnabled
+            }
+  where
+    early = earlyEnv sortGraph overloadGraph metadataTools
     verifiedModule' :: VerifiedModuleSyntax Attribute.Symbol =
         {-# SCC "evalSimplifier/verifiedModule'" #-}
         IndexedModule.mapAliasPatterns
             (Builtin.internalize metadataTools)
             verifiedModule
     hookedSymbols = mkHookedSymbols verifiedModule'
-    overloadSimplifier =
-        {-# SCC "evalSimplifier/overloadSimplifier" #-}
-        mkOverloadSimplifier overloadGraph injSimplifier
-
-    initialize :: Simplifier Env
-    initialize = do
-        axiomEquations <-
-            Equation.simplifyExtractedEquations $
-                (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
-                    rawEquations
-        memo <- Memo.new
-        return
-            Env
-                { metadataTools
-                , simplifierCondition
-                , simplifierPattern
-                , simplifierTerm
-                , memo
-                , injSimplifier
-                , overloadSimplifier
-                , hookedSymbols
-                , axiomEquations
-                , tracingEnabled
-                }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -173,7 +194,20 @@ evalSimplifier ::
     Simplifier a ->
     SMT a
 evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv False verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    equations <- prepareEquations sortGraph overloadGraph metadataTools rawEquations
+    evalSimplifierPrepared verifiedModule sortGraph overloadGraph metadataTools equations simplifier
+
+-- | 'evalSimplifier' with equations prepared beforehand ('prepareEquations').
+evalSimplifierPrepared ::
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    PreparedEquations ->
+    Simplifier a ->
+    SMT a
+evalSimplifierPrepared verifiedModule sortGraph overloadGraph metadataTools equations simplifier = do
+    env <- mkSimplifierEnv False verifiedModule sortGraph overloadGraph metadataTools equations
     runSimplifier env simplifier
 
 evalSimplifierLogged ::
@@ -185,7 +219,26 @@ evalSimplifierLogged ::
     Simplifier a ->
     SMT (Seq SimplifierTrace, a)
 evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv True verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    equations <- prepareEquations sortGraph overloadGraph metadataTools rawEquations
+    evalSimplifierPreparedLogged
+        verifiedModule
+        sortGraph
+        overloadGraph
+        metadataTools
+        equations
+        simplifier
+
+-- | 'evalSimplifierLogged' with equations prepared beforehand ('prepareEquations').
+evalSimplifierPreparedLogged ::
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    PreparedEquations ->
+    Simplifier a ->
+    SMT (Seq SimplifierTrace, a)
+evalSimplifierPreparedLogged verifiedModule sortGraph overloadGraph metadataTools equations simplifier = do
+    env <- mkSimplifierEnv True verifiedModule sortGraph overloadGraph metadataTools equations
     runSimplifierLogged env simplifier
 
 evalSimplifierProofs ::
