@@ -265,18 +265,19 @@ makeSerializedModule verifiedModule = do
         sortGraph
         overloadGraph
         metadataTools
-        preparedEquations $ do
-        rewrites <- initializeAndSimplify verifiedModule
-        return
-            SerializedModule
-                { sortGraph
-                , overloadGraph
-                , metadataTools
-                , verifiedModule = indexedModuleSyntax verifiedModule
-                , rewrites
-                , equations
-                , preparedEquations
-                }
+        preparedEquations
+        $ do
+            rewrites <- initializeAndSimplify verifiedModule
+            return
+                SerializedModule
+                    { sortGraph
+                    , overloadGraph
+                    , metadataTools
+                    , verifiedModule = indexedModuleSyntax verifiedModule
+                    , rewrites
+                    , equations
+                    , preparedEquations
+                    }
   where
     sortGraph = SortGraph.fromIndexedModule verifiedModule
     overloadGraph = OverloadGraph.fromIndexedModule verifiedModule
