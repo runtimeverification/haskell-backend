@@ -260,7 +260,12 @@ makeSerializedModule ::
     SMT SerializedModule
 makeSerializedModule verifiedModule = do
     preparedEquations <- prepareEquations sortGraph overloadGraph metadataTools equations
-    evalSimplifierPrepared (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools preparedEquations $ do
+    evalSimplifierPrepared
+        (indexedModuleSyntax verifiedModule')
+        sortGraph
+        overloadGraph
+        metadataTools
+        preparedEquations $ do
         rewrites <- initializeAndSimplify verifiedModule
         return
             SerializedModule
@@ -501,7 +506,8 @@ rpcExec
       where
         simplifierRun
             | tracingEnabled =
-                fmap snd . evalSimplifierPreparedLogged verifiedModule' sortGraph overloadGraph metadataTools preparedEquations
+                fmap snd
+                    . evalSimplifierPreparedLogged verifiedModule' sortGraph overloadGraph metadataTools preparedEquations
             | otherwise =
                 evalSimplifierPrepared verifiedModule' sortGraph overloadGraph metadataTools preparedEquations
 

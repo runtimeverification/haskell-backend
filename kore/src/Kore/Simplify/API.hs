@@ -220,7 +220,13 @@ evalSimplifierLogged ::
     SMT (Seq SimplifierTrace, a)
 evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
     equations <- prepareEquations sortGraph overloadGraph metadataTools rawEquations
-    evalSimplifierPreparedLogged verifiedModule sortGraph overloadGraph metadataTools equations simplifier
+    evalSimplifierPreparedLogged
+        verifiedModule
+        sortGraph
+        overloadGraph
+        metadataTools
+        equations
+        simplifier
 
 -- | 'evalSimplifierLogged' with equations prepared beforehand ('prepareEquations').
 evalSimplifierPreparedLogged ::
