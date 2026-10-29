@@ -492,9 +492,12 @@ clProxyOptionsParser =
                 ( long "no-fallback-simplify"
                     <> help "disable simplification before fallback requests"
                 )
-            <*> switch
-                ( long "booster-only"
-                    <> help "treat every request as booster-only: no request falls back to kore"
+            -- experiment (branch raoul/no-kore-0.1.155): booster-only by default
+            <*> flag
+                True
+                False
+                ( long "with-kore"
+                    <> help "let requests fall back to kore (default on this branch: every request booster-only)"
                 )
 
     reasonReader :: String -> Either String HaltReason
