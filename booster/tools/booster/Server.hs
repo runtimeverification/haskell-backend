@@ -148,6 +148,7 @@ main = do
                     , fallbackReasons
                     , simplifyAtEnd
                     , simplifyBeforeFallback
+                    , forceBoosterOnly
                     }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -341,6 +342,7 @@ main = do
                             , fallbackReasons
                             , simplifyAtEnd
                             , simplifyBeforeFallback
+                            , forceBoosterOnly
                             , customLogLevels = customLevels
                             , koreCaptureRegistry
                             }
@@ -438,6 +440,8 @@ data ProxyOptions = ProxyOptions
     -- ^ whether to run a post-exec simplification
     , simplifyBeforeFallback :: Bool
     -- ^ whether to run a simplification before fall-back execute requests
+    , forceBoosterOnly :: Bool
+    -- ^ whether to treat every request as booster-only (no kore fallback)
     }
 
 parserInfoModifiers :: InfoMod options
@@ -487,6 +491,10 @@ clProxyOptionsParser =
                 False
                 ( long "no-fallback-simplify"
                     <> help "disable simplification before fallback requests"
+                )
+            <*> switch
+                ( long "booster-only"
+                    <> help "treat every request as booster-only: no request falls back to kore"
                 )
 
     reasonReader :: String -> Either String HaltReason

@@ -82,6 +82,8 @@ data ProxyConfig = ProxyConfig
     , fallbackReasons :: [HaltReason]
     , simplifyAtEnd :: Bool
     , simplifyBeforeFallback :: Bool
+    , forceBoosterOnly :: Bool
+    -- ^ treat every request as @booster-only@: kore answers none
     , customLogLevels :: ![Log.LogLevel]
     , koreCaptureRegistry :: KoreCaptureRegistry
     -- ^ shared with 'KoreServer.captureRegistry'; the proxy uses it
@@ -122,6 +124,17 @@ injectHaskellLogEntries entries = \case
     AddModule AddModuleResult{..} -> AddModule AddModuleResult{haskellLogEntries = entries, ..}
     GetModel GetModelResult{..} -> GetModel GetModelResult{haskellLogEntries = entries, ..}
 
+{- | Set @booster-only@ on every request that carries it (a server started
+with @--booster-only@).
+-}
+setBoosterOnly :: API 'Req -> API 'Req
+setBoosterOnly = \case
+    Execute ExecuteRequest{..} -> Execute ExecuteRequest{boosterOnly = Just True, ..}
+    Implies ImpliesRequest{..} -> Implies ImpliesRequest{boosterOnly = Just True, ..}
+    Simplify SimplifyRequest{..} -> Simplify SimplifyRequest{boosterOnly = Just True, ..}
+    GetModel GetModelRequest{..} -> GetModel GetModelRequest{boosterOnly = Just True, ..}
+    other -> other
+
 {- | Run a request handler with the haskell-logging capture installed
 when the request asked for any entries, then attach the captured
 entries to the response.  The requested name list is a single flat set
@@ -160,10 +173,11 @@ respondEither ::
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore req =
+respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore req0 =
     withHaskellLoggingCapture koreCaptureRegistry (haskellLoggingEntries req) $ case req of
         Execute execReq
-            | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
+            | not cfg.forceBoosterOnly
+            , isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
                 loggedKore ExecuteM req
             | otherwise ->
                 let logSettings =
@@ -266,6 +280,10 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
             (boosterResult, boosterTime) <- Stats.timed $ booster req
             case boosterResult of
                 Left _err -> pure boosterResult
+                Right _
+                    | cfg.forceBoosterOnly -> do
+                        logStats AddModuleM (boosterTime, 0)
+                        pure boosterResult
                 Right _ -> do
                     (koreRes, koreTime) <- Stats.timed $ kore req
                     logStats AddModuleM (boosterTime + koreTime, koreTime)
@@ -339,6 +357,10 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
         Cancel ->
             pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
   where
+    req
+        | cfg.forceBoosterOnly = setBoosterOnly req0
+        | otherwise = req0
+
     handleSimplify :: SimplifyRequest -> m (Either ErrorObj (API 'Res))
     handleSimplify simplifyReq = do
         -- execute in booster first, then in kore. Log the difference
@@ -406,6 +428,14 @@ respondEither cfg@ProxyConfig{boosterState, koreCaptureRegistry} booster kore re
                         koreError ->
                             -- can only be an error
                             pure koreError
+            Left err
+                | cfg.forceBoosterOnly -> do
+                    Booster.Log.withContext CtxProxy $
+                        Booster.Log.logMessage $
+                            "Problem with booster simplify request (booster-only server): "
+                                <> Text.pack (fromError err)
+                    logStats SimplifyM (boosterTime, 0)
+                    pure $ Left err
             Left ErrorObj{getErrMsg, getErrData} -> do
                 -- in case of problems, log the problem and try with kore
                 let boosterError
