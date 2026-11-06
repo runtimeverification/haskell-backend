@@ -1,0 +1,56 @@
+name: 'Cache Stack'
+on:
+  push:
+    branches:
+      - 'master'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Pull requests can restore caches saved on the default branch, so this keeps the
+# stack root warm for the 'Stack / Unit Tests' job in test.yml.
+permissions:
+  contents: read
+
+env:
+  ghc_version: "9.6.5"
+  stack_version: "2.15.1"
+
+jobs:
+  cache-stack:
+    name: 'Cache Stack'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3 libsecp256k1-dev
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Cache Stack root
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.stack
+          key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
+
+      - uses: haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d  # v2.12.1
+        id: setup-haskell-stack
+        with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
+          enable-stack: true
+          stack-setup-ghc: true
+
+      - name: Build all
+        run: |
+          stack build --test --no-run-tests --pedantic
+
+      - name: Run unit tests
+        run: stack test kore:kore-test hs-backend-booster:unit-tests
