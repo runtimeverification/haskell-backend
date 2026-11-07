@@ -48,7 +48,7 @@ For integration testing, we require:
 
 - GNU [make]
 - The [K Framework] frontend (its version should be the one stated in [/deps/k_release](https://github.com/runtimeverification/haskell-backend/blob/master/deps/k_release))
-- Python 3.x with the [`jsonrpcclient`](https://github.com/explodinglabs/jsonrpcclient) library installed
+- Python 3.x with the [`jsonrpcclient`](https://github.com/bensynapse/jsonrpcclient) library installed
 
 You can install/have access to K by either:
   * using [kup]
